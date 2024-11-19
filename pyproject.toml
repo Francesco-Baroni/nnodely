@@ -1,20 +1,20 @@
 [build-system]
-requires = ["setuptools>=42", "wheel"]
+requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "neu4mes"
-version = "0.1.0"
-description = "Model-strucured neural network framework for modeling and control mechanical system"
+name = "nnodely"
+version = "1.0"
+description = "Model-structured neural network framework for the modeling and control of physical systems"
 readme = "README.md"
 requires-python = ">=3.10"
-license = {text = "AGPL-3.0 License"}
+license = {text = "MIT License", file = "LICENSE"}
 authors = [
     {name = "Gastone Pietro Rosati Papini", email = "tonegas@gmail.com"}
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: AGPL-3.0 License",
+    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent"
 ]
 dependencies = [
@@ -27,7 +27,7 @@ dependencies = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/tonegas/neu4mes"
+"Homepage" = "https://github.com/tonegas/nnodely"
 
 [tool.setuptools]
-packages = ["neu4mes"]
+packages = ["nnodely"]
