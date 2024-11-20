@@ -3,15 +3,17 @@
 # -- Path setup --------------------------------------------------------------
 import os
 import sys
+import importlib.metadata
 dirname = os.path.abspath(os.path.dirname(__file__))
-sys.path.insert(0, os.path.join(dirname, "..", "nnodely"))
+sys.path.insert(0, os.path.join(dirname, "..", __package__))
+__version__ = importlib.metadata.version(__package__)
 
 # -- Project information -----------------------------------------------------
 
-project = 'nnodely'
+project = __package__
 author = 'tonegas'
-release = '1.0'
-version = '1.0'
+release = __version__
+version = __version__
 
 # -- General configuration ---------------------------------------------------
 
