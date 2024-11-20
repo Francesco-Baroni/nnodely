@@ -9,4 +9,4 @@ if major < 3:
 elif minor < 10:
     sys.exit("Sorry, You need Python >= 3.10 for "+__package__+".")
 else:
-    print(f'>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>---- {__package__}_v{major}.{minor} ----<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+    print(f'>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>---- {__package__}_v{__version__} ----<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
