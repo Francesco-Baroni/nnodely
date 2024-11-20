@@ -10,6 +10,7 @@ Welcome to nnodely's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+    _autodoc/modules
 
 Indices and tables
 ==================
