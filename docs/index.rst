@@ -8,9 +8,8 @@ Welcome to nnodely's documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
 
-    _autodoc/modules
+   _autodoc/modules
 
 Indices and tables
 ==================
