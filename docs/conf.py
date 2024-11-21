@@ -27,13 +27,13 @@ extensions = [
     'sphinx.ext.viewcode'
 ]
 
-templates_path = ['_templates']
+templates_path = ['docs/_templates']
 exclude_patterns = ['Thumbs.db', '.DS_Store','docs','mydoc']
 
 # -- Options for HTML output -------------------------------------------------
 
 html_theme = "sphinx_rtd_theme"
-html_static_path = ['_static']
+html_static_path = ['docs/_static']
 
 # -- Options for EPUB output -------------------------------------------------
 epub_copyright = '2024, tonegas'  # Add this line
