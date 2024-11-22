@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nnodely"
-version = "0.0.4"
+version = "0.1.0"
 description = "Model-structured neural network framework for the modeling and control of physical systems"
 readme = "README.md"
 requires-python = ">=3.10"
