@@ -91,7 +91,7 @@ The structured neural model is defined by a list of inputs by a list of outputs 
 Let's assume we want to model one of the best-known linear mechanical systems, the mass-spring-damper system.
 
 <p align="center">
-<img src="img/massspringdamper.png" width="250" alt="linearsys" >
+<img src="imgs/massspringdamper.png" width="250" alt="linearsys" >
 </p>
 
 The system is defined as the following equation:
@@ -362,6 +362,6 @@ Output dimensions must follow the same convention `[batch, window, dim]`
 
 <a name="license"></a>
 ## License
-This project is released under the license [GNU Affero General Public License v3.0](https://www.gnu.org/licenses/agpl-3.0.html).
+This project is released under the license [License: MIT](https://opensource.org/licenses/MIT).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
