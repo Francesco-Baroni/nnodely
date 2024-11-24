@@ -17,7 +17,7 @@ from nnodely.logger import logging, nnLogger
 log = nnLogger(__name__, logging.INFO)
 
 
-class nnodely:
+class Modely:
     """
     Create the main object, the nnodely object, that will be used to create the network, train and export it.
 
@@ -1292,4 +1292,4 @@ class nnodely:
     def exportReport(self, name = 'net', model_folder = None):
         self.exporter.exportReport(self, name, model_folder)
 
-Modely = nnodely
+nnodely = Modely

@@ -205,9 +205,9 @@ class TextVisualizer(Visualizer):
             self.__paramjson("num of epochs:", par['num_of_epochs'])
             self.__param("update per epochs:", f"{n_update}")
             if par['recurrent_train']:
-                self.__info("update per epochs=(n_samples-batch_size-prediction_samples+1)/(batch_size+step-1)+1")
+                self.__info("└>(n_samples-batch_size-prediction_samples+1)/(batch_size+step-1)+1")
             else:
-                self.__info("update per epochs=(n_samples-batch_size)/batch_size+1")
+                self.__info("└>(n_samples-batch_size)/batch_size+1")
 
             if par['shuffle_data']:
                 self.__param('shuffle data:', str(par['shuffle_data']))
@@ -223,13 +223,13 @@ class TextVisualizer(Visualizer):
                 self.__paramjson("connect:", par['connect'])
 
             self.__param("train dataset:", f"{par['train_dataset']}")
-            self.__param(" - num of samples:", f"{n_samples}")
-            self.__param(" - batch size:", f"{batch_size}")
-            self.__param(" - unused samples:", f"{unused_samples}")
+            self.__param("\t- num of samples:", f"{n_samples}")
+            self.__param("\t- batch size:", f"{batch_size}")
+            self.__param("\t- unused samples:", f"{unused_samples}")
             if par['recurrent_train']:
-                self.__info("unused samples=n_samples-prediction_samples-update_per_epochs*(batch_size+step-1)")
+                self.__info("\t  └>n_samples-prediction_samples-update_per_epochs*(batch_size+step-1)")
             else:
-                self.__info("unused samples=n_samples-update_per_epochs*batch_size")
+                self.__info("\t  └>n_samples-update_per_epochs*batch_size")
 
             if par['n_samples_val']:
                 self.__param("val dataset:", f"{par['validation_dataset']}")

@@ -9,9 +9,6 @@ from nnodely.logger import logging, nnLogger
 log = nnLogger(__name__, logging.CRITICAL)
 log.setAllLevel(logging.CRITICAL)
 
-sys.path.append(os.getcwd())
-folder = './results'
-
 # 11 Tests
 # Test of export and import the network to a file in different format
 
@@ -19,7 +16,7 @@ class ModelyExportTest(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super(ModelyExportTest, self).__init__(*args, **kwargs)
 
-        self.result_path = folder
+        self.result_path = './results'
         self.test = Modely(visualizer=None, seed=42, workspace=self.result_path)
 
         x = Input('x')
@@ -71,7 +68,7 @@ class ModelyExportTest(unittest.TestCase):
     def test_export_pt(self):
         if os.path.exists(self.test.getWorkspace()):
             shutil.rmtree(self.test.getWorkspace())
-            os.makedirs('./results', exist_ok=True)
+        os.makedirs(self.result_path, exist_ok=True)
         # Export torch file .pt
         # Save torch model and load it
         self.test.neuralizeModel(0.5)
@@ -93,10 +90,13 @@ class ModelyExportTest(unittest.TestCase):
             # You need not neuralized model to load a torch model
             test2.loadTorchModel()
 
+        if os.path.exists(self.test.getWorkspace()):
+            shutil.rmtree(self.test.getWorkspace())
+
     def test_export_json_not_neuralized(self):
         if os.path.exists(self.test.getWorkspace()):
             shutil.rmtree(self.test.getWorkspace())
-            os.makedirs('./results', exist_ok=True)
+        os.makedirs(self.result_path, exist_ok=True)
         # Export json of nnodely model before neuralize
         # Save a not neuralized nnodely json model and load it
         self.test.saveModel()  # Save a model without parameter values and samples values
@@ -109,10 +109,13 @@ class ModelyExportTest(unittest.TestCase):
         test2.loadModel()  # Load the nnodely model with parameter values
         self.assertEqual(test2.model_def.json, self.test.model_def.json)
 
+        if os.path.exists(self.test.getWorkspace()):
+            shutil.rmtree(self.test.getWorkspace())
+
     def test_export_json_untrained(self):
         if os.path.exists(self.test.getWorkspace()):
             shutil.rmtree(self.test.getWorkspace())
-            os.makedirs('./results', exist_ok=True)
+        os.makedirs(self.result_path, exist_ok=True)
         # Export json of nnodely model
         # Save a untrained nnodely json model and load it
         # the new_out and new_out_after_load are different because the model saved model is not trained
@@ -132,10 +135,13 @@ class ModelyExportTest(unittest.TestCase):
         with self.assertRaises(AssertionError):
             self.assertEqual(new_out, new_out_after_load)
 
+        if os.path.exists(self.test.getWorkspace()):
+            shutil.rmtree(self.test.getWorkspace())
+
     def test_export_json_trained(self):
         if os.path.exists(self.test.getWorkspace()):
             shutil.rmtree(self.test.getWorkspace())
-            os.makedirs('./results', exist_ok=True)
+        os.makedirs(self.result_path, exist_ok=True)
         # Export json of nnodely model with parameter valuess
         # The old_out is the same as the new_out_after_load because the model is loaded with the same parameters
         self.test.neuralizeModel(0.5)
@@ -155,10 +161,13 @@ class ModelyExportTest(unittest.TestCase):
             self.assertEqual(new_out, new_out_after_load)
         self.assertEqual(old_out, new_out_after_load)
 
+        if os.path.exists(self.test.getWorkspace()):
+            shutil.rmtree(self.test.getWorkspace())
+
     def test_import_json_new_object(self):
         if os.path.exists(self.test.getWorkspace()):
             shutil.rmtree(self.test.getWorkspace())
-            os.makedirs('./results', exist_ok=True)
+        os.makedirs(self.result_path, exist_ok=True)
         # Import nnodely json model in a new object
         self.test.neuralizeModel(0.5)
         old_out = self.test({'x': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'y': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})
@@ -172,10 +181,13 @@ class ModelyExportTest(unittest.TestCase):
         new_model_out_after_load = test2({'x': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'y': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})
         self.assertEqual(old_out, new_model_out_after_load)
 
+        if os.path.exists(self.test.getWorkspace()):
+            shutil.rmtree(self.test.getWorkspace())
+
     def test_export_torch_script(self):
         if os.path.exists(self.test.getWorkspace()):
             shutil.rmtree(self.test.getWorkspace())
-            os.makedirs('./results', exist_ok=True)
+        os.makedirs(self.result_path, exist_ok=True)
         # Export and import of a torch script .py
         # The old_out is the same as the new_out_after_load because the model is loaded with the same parameters
         with self.assertRaises(RuntimeError):
@@ -194,10 +206,13 @@ class ModelyExportTest(unittest.TestCase):
              self.assertEqual(old_out, new_out)
         self.assertEqual(old_out, new_out_after_load)
 
+        if os.path.exists(self.test.getWorkspace()):
+            shutil.rmtree(self.test.getWorkspace())
+
     def test_export_torch_script_new_object(self):
         if os.path.exists(self.test.getWorkspace()):
             shutil.rmtree(self.test.getWorkspace())
-            os.makedirs('./results', exist_ok=True)
+        os.makedirs(self.result_path, exist_ok=True)
         # Import of a torch script .py
         self.test.neuralizeModel(0.5,clear_model=True)
         old_out = self.test({'x': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'y': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})
@@ -210,10 +225,13 @@ class ModelyExportTest(unittest.TestCase):
         new_out_after_load = test2({'x': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'y': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})
         self.assertEqual(old_out, new_out_after_load)
 
+        if os.path.exists(self.test.getWorkspace()):
+            shutil.rmtree(self.test.getWorkspace())
+
     def test_export_trained_torch_script(self):
         if os.path.exists(self.test.getWorkspace()):
             shutil.rmtree(self.test.getWorkspace())
-            os.makedirs('./results', exist_ok=True)
+        os.makedirs(self.result_path, exist_ok=True)
         # Perform training on an imported tracer model
         data_x = np.arange(0.0, 1, 0.1)
         data_y = np.arange(0.0, 1, 0.1)
@@ -229,10 +247,13 @@ class ModelyExportTest(unittest.TestCase):
         with self.assertRaises(AssertionError):
              self.assertEqual(old_out, new_out_after_train)
 
+        if os.path.exists(self.test.getWorkspace()):
+            shutil.rmtree(self.test.getWorkspace())
+
     def test_export_torch_script_new_object_train(self):
         if os.path.exists(self.test.getWorkspace()):
             shutil.rmtree(self.test.getWorkspace())
-            os.makedirs('./results', exist_ok=True)
+        os.makedirs(self.result_path, exist_ok=True)
         # Perform training on an imported new tracer model
         self.test.neuralizeModel(0.5, clear_model=True)
         old_out = self.test({'x': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'y': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})
@@ -256,7 +277,14 @@ class ModelyExportTest(unittest.TestCase):
              self.assertEqual(old_out, new_out_after_train)
         self.assertEqual(old_out_after_train, new_out_after_train)
 
+        if os.path.exists(self.test.getWorkspace()):
+            shutil.rmtree(self.test.getWorkspace())
+
     def test_export_onnx(self):
+        if os.path.exists(self.test.getWorkspace()):
+            shutil.rmtree(self.test.getWorkspace())
+        os.makedirs(self.result_path, exist_ok=True)
+
         self.test.neuralizeModel(0.5, clear_model=True)
         # Export the all models in onnx format
         self.test.exportONNX(['x', 'y'], ['out', 'out2', 'out3', 'out4', 'out5', 'out6'])  # Export the onnx model
@@ -265,7 +293,14 @@ class ModelyExportTest(unittest.TestCase):
         self.assertTrue(os.path.exists(os.path.join(self.test.getWorkspace(), 'onnx', 'net.onnx')))
         self.assertTrue(os.path.exists(os.path.join(self.test.getWorkspace(), 'onnx', 'net_modelB.onnx')))
 
+        if os.path.exists(self.test.getWorkspace()):
+            shutil.rmtree(self.test.getWorkspace())
+
     def test_export_report(self):
+        if os.path.exists(self.test.getWorkspace()):
+            shutil.rmtree(self.test.getWorkspace())
+        os.makedirs(self.result_path, exist_ok=True)
+
         self.test.resetSeed(42)
         self.test.neuralizeModel(0.5, clear_model=True)
         data_x = np.arange(0.0, 10, 0.1)
@@ -277,8 +312,10 @@ class ModelyExportTest(unittest.TestCase):
         self.test.trainModel(optimizer='SGD', training_params=params)  # Train the traced model
         self.test.exportReport()
 
+        if os.path.exists(self.test.getWorkspace()):
+            shutil.rmtree(self.test.getWorkspace())
+
 if __name__ == '__main__':
     unittest.main()
 
-if os.path.exists(folder):
-    shutil.rmtree(folder)
+
