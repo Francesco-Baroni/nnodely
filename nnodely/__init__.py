@@ -20,7 +20,9 @@ if major < 3:
 elif minor < 10:
     sys.exit("Sorry, You need Python >= 3.10 for "+__package__+".")
 else:
-    print(f'>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>---- {__package__}_v{__version__} ----<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+    print(f'>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'+
+          f' {__package__}_v{__version__} '.center(20, '-')+
+          f'<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
 
 # Network input, outputs and parameters
 from nnodely.input import Input, State, Connect, ClosedLoop

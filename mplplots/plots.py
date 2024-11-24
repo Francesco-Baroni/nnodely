@@ -60,13 +60,13 @@ def plot_results(ax, name_data, key, A, B, sample_time):
     #     self.ax = np.expand_dims(self.ax, axis=0)
     # #plotsamples = self.prediction.shape[1]s
     # plotsamples = 200
-    # for i in range(0, neu4mes.prediction.shape[0]):
+    # for i in range(0, nnodely.prediction.shape[0]):
     #     # Zoomed test data
-    #     self.ax[2*i,0].plot(neu4mes.prediction[i], linestyle='dashed')
-    #     self.ax[2*i,0].plot(neu4mes.label[i])
+    #     self.ax[2*i,0].plot(nnodely.prediction[i], linestyle='dashed')
+    #     self.ax[2*i,0].plot(nnodely.label[i])
     #     self.ax[2*i,0].grid('on')
     #     self.ax[2*i,0].set_xlim((performance['max_se_idxs'][i]-plotsamples, performance['max_se_idxs'][i]+plotsamples))
-    #     self.ax[2*i,0].vlines(performance['max_se_idxs'][i], neu4mes.prediction[i][performance['max_se_idxs'][i]], neu4mes.label[i][performance['max_se_idxs'][i]],
+    #     self.ax[2*i,0].vlines(performance['max_se_idxs'][i], nnodely.prediction[i][performance['max_se_idxs'][i]], nnodely.label[i][performance['max_se_idxs'][i]],
     #                             colors='r', linestyles='dashed')
     #     self.ax[2*i,0].legend(['predicted', 'test'], prop={'family':'serif'})
     #     self.ax[2*i,0].set_title(output_keys[i], family='serif')
@@ -75,13 +75,13 @@ def plot_results(ax, name_data, key, A, B, sample_time):
     #     self.ax[2*i,1].invert_yaxis()
     #     if performance:
     #         text = "Rmse test: {:3.6f}\nFVU: {:3.6f}".format(#\nAIC: {:3.6f}
-    #             neu4mes.performance['rmse_test'][i],
-    #             #neu4mes.performance['aic'][i],
-    #             neu4mes.performance['fvu'][i])
+    #             nnodely.performance['rmse_test'][i],
+    #             #nnodely.performance['aic'][i],
+    #             nnodely.performance['fvu'][i])
     #         self.ax[2*i,1].text(0, 0, text, family='serif', verticalalignment='top')
     #     # test data
-    #     self.ax[2*i+1,0].plot(neu4mes.prediction[i], linestyle='dashed')
-    #     self.ax[2*i+1,0].plot(neu4mes.label[i])
+    #     self.ax[2*i+1,0].plot(nnodely.prediction[i], linestyle='dashed')
+    #     self.ax[2*i+1,0].plot(nnodely.label[i])
     #     self.ax[2*i+1,0].grid('on')
     #     self.ax[2*i+1,0].legend(['predicted', 'test'], prop={'family':'serif'})
     #     self.ax[2*i+1,0].set_title(output_keys[i], family='serif')

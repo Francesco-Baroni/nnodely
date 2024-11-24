@@ -131,7 +131,7 @@ class ModelyTestVisualizer(unittest.TestCase):
 
     # def test_export_mplnotebookvisualizer(self):
     #     m = MPLNotebookVisualizer(5)
-    #     test = Neu4mes(visualizer=m, seed=42)
+    #     test = Modely(visualizer=m, seed=42)
     #     test.addModel('modelA', self.out)
     #     test.addModel('modelB', [self.out2, self.out3, self.out4])
     #     test.addModel('modelC', [self.out4, self.out5, self.out6])

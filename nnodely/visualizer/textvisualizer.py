@@ -33,7 +33,7 @@ class TextVisualizer(Visualizer):
 
     def showModel(self, model):
         if self.verbose >= 1:
-            self.__title(" Neu4mes Model ")
+            self.__title(" nnodely Model ")
             print(color(pformat(model),GREEN))
             self.__line()
 
@@ -50,7 +50,7 @@ class TextVisualizer(Visualizer):
                                  (self.n4m.model_def['Inputs'] | self.n4m.model_def['States']).items()}
             input_ns_forward = {key: value['ns'][1] for key, value in
                                 (self.n4m.model_def['Inputs'] | self.n4m.model_def['States']).items()}
-            self.__title(" Neu4mes Model Input Windows ")
+            self.__title(" nnodely Model Input Windows ")
             #self.__paramjson("time_window_backward:",self.n4m.input_tw_backward)
             #self.__paramjson("time_window_forward:",self.n4m.input_tw_forward)
             self.__paramjson("sample_window_backward:", input_ns_backward)
@@ -62,18 +62,18 @@ class TextVisualizer(Visualizer):
 
     def showModelRelationSamples(self):
         if self.verbose >= 2:
-            self.__title(" Neu4mes Model Relation Samples ")
+            self.__title(" nnodely Model Relation Samples ")
             self.__paramjson("Relation_samples:", self.n4m.relation_samples)
             self.__line()
 
     def showBuiltModel(self):
         if self.verbose >= 2:
-            self.__title(" Neu4mes Built Model ")
+            self.__title(" nnodely Built Model ")
             print(color(pformat(self.n4m.model),GREEN))
             self.__line()
 
     def showWeights(self, weights = None):
-        self.__title(" Neu4mes Models Weights ")
+        self.__title(" nnodely Models Weights ")
         for key, param in self.n4m.model.all_parameters.items():
             if weights is None or key in weights:
                 self.__paramjson(key,param.tolist())
@@ -102,7 +102,7 @@ class TextVisualizer(Visualizer):
 
     def showDataset(self, name):
         if self.verbose >= 1:
-            self.__title(" Neu4mes Model Dataset ")
+            self.__title(" nnodely Model Dataset ")
             self.__param("Dataset Name:", name)
             self.__param("Number of files:", f'{self.n4m.file_count}')
             self.__param("Total number of samples:", f'{self.n4m.num_of_samples[name]}')
@@ -115,7 +115,7 @@ class TextVisualizer(Visualizer):
         if self.verbose >= 1:
             par = self.n4m.run_training_params
             dim = len(self.n4m.model_def['Minimizers'])
-            self.__title(" Neu4mes Training ", 12+(len(self.n4m.model_def['Minimizers'])+1)*20)
+            self.__title(" nnodely Training ", 12+(len(self.n4m.model_def['Minimizers'])+1)*20)
             print(color('|'+(f'Epoch').center(10,' ')+'|'),end='')
             for key in self.n4m.model_def['Minimizers'].keys():
                 print(color((f'{key}').center(19, ' ') + '|'), end='')
@@ -188,13 +188,13 @@ class TextVisualizer(Visualizer):
 
     def showTrainingTime(self, time):
         if self.verbose >= 1:
-            self.__title(" Neu4mes Training Time ")
+            self.__title(" nnodely Training Time ")
             self.__param("Total time of Training:", f'{time}')
             self.__line()
 
     def showTrainParams(self):
         if self.verbose >= 1:
-            self.__title(" Neu4mes Model Train Parameters ")
+            self.__title(" nnodely Model Train Parameters ")
             par = self.n4m.run_training_params
             batch_size = par['train_batch_size']
             n_samples = par['n_samples_train']
@@ -252,7 +252,7 @@ class TextVisualizer(Visualizer):
         if self.verbose >= 1:
             dim_loss = len(max(self.n4m.model_def['Minimizers'].keys(),key=len))
             loss_type_list = set([value["loss"] for ind, (key, value) in enumerate(self.n4m.model_def['Minimizers'].items())])
-            self.__title(f" Neu4mes Model Results for {name_data} ", dim_loss + 2 + (len(loss_type_list) + 2) * 20)
+            self.__title(f" nnodely Model Results for {name_data} ", dim_loss + 2 + (len(loss_type_list) + 2) * 20)
             print(color('|' + (f'Loss').center(dim_loss, ' ') + '|'), end='')
             for loss in loss_type_list:
                 print(color((f'{loss}').center(19, ' ') + '|'), end='')

@@ -41,7 +41,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         # List the output of the model
         x_z = Output('x_z', Fir(x.tw(0.3)) + Fir(F.last()))
 
-        # Add the neural model to the neu4mes structure and neuralization of the model
+        # Add the neural model to the nnodely structure and neuralization of the model
         test = Modely(visualizer=None)
         test.addModel('x_z',x_z)
         test.addMinimize('next-pos', x.z(-1), x_z, 'mse')
@@ -499,7 +499,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         # List the output of the model
         x_z = Output('x_z', Fir(x.tw(0.3)) + Fir(F.last()))
 
-        # Add the neural model to the neu4mes structure and neuralization of the model
+        # Add the neural model to the nnodely structure and neuralization of the model
         test = Modely(visualizer=None)
         test.addModel('x_z', x_z)
         test.addMinimize('next-pos', x.z(-1), x_z, 'mse')
