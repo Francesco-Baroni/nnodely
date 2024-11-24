@@ -1,5 +1,13 @@
-import importlib.metadata
-__version__ = importlib.metadata.version(__package__)
+#import importlib.metadata
+#__version__ = importlib.metadata.version(__package__)
+
+def get_version_from_toml(file_path):
+    with open(file_path, 'r') as f:
+        for line in f:
+            if line.startswith('version'):
+                return line.split('=')[1].strip().strip('"')
+
+__version__ = get_version_from_toml('../pyproject.toml')
 
 import sys
 major, minor = sys.version_info.major, sys.version_info.minor
@@ -13,3 +21,28 @@ elif minor < 10:
     sys.exit("Sorry, You need Python >= 3.10 for "+__package__+".")
 else:
     print(f'>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>---- {__package__}_v{__version__} ----<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+
+# Network input, outputs and parameters
+from nnodely.input import Input, State, Connect, ClosedLoop
+from nnodely.parameter import Parameter, Constant
+from nnodely.output import Output
+
+# Network elements
+from nnodely.activation import Relu, Tanh
+from nnodely.fir import Fir
+from nnodely.linear import Linear
+from nnodely.arithmetic import Add, Sum, Sub, Mul, Pow, Neg
+from nnodely.trigonometric import Sin, Cos, Tan
+from nnodely.parametricfunction import ParamFun
+from nnodely.fuzzify import Fuzzify
+from nnodely.part import TimePart, TimeSelect, SamplePart, SampleSelect, Part, Select
+from nnodely.localmodel import LocalModel
+
+# Main nnodely classes
+from nnodely.nnodely import nnodely, Modely
+from nnodely.visualizer import Visualizer, TextVisualizer, MPLVisualizer, MPLNotebookVisualizer
+from nnodely.optimizer import Optimizer, SGD, Adam
+from nnodely.exporter import Exporter, StandardExporter
+
+# Support functions
+from nnodely.initializer import init_negexp, init_lin, init_constant
