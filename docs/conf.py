@@ -29,12 +29,12 @@ extensions = [
 
 templates_path = []
 exclude_patterns = ['Thumbs.db', '.DS_Store','docs',
-                    'nnodely/logger','nnodely/utils','nnodely/visualizer/*.*','nnodely/exporter/*.*',
-                    'nnodely/initializer','nnodely/optimizer','nnodely/relation',
-                    'nnodely.activation','nnodely.arithmetic','nnodely/fir','nnodely/fuzzify',
-                    'nnodely/input','nnodely/linear','nnodely/localmodel','nnodely/output',
-                    'nnodely/parametricfunction','nnodely/part','nnodely/parameter',
-                    'nnodely/trigonometric']
+                    'nnodely/logger.py','nnodely/utils.py','nnodely/visualizer/*.*','nnodely/exporter/*.*',
+                    'nnodely/initializer.py','nnodely/optimizer.py','nnodely/relation.py',
+                    'nnodely.activation.py','nnodely.arithmetic.py','nnodely/fir.py','nnodely/fuzzify.py',
+                    'nnodely/inpu.py','nnodely/linear.py','nnodely/localmodel.py','nnodely/output.py',
+                    'nnodely/parametricfunction.py','nnodely/part.py','nnodely/parameter.py',
+                    'nnodely/trigonometric.py']
 
 # -- Options for HTML output -------------------------------------------------
 
