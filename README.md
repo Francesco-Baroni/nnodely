@@ -3,7 +3,6 @@
 </p>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Travis-CI Status](https://app.travis-ci.com/tonegas/nnodely.svg?branch=maain)](https://travis-ci.org/tonegas/nnodely) 
 [![Coverage Status](https://coveralls.io/repos/github/tonegas/nnodely/badge.svg?branch=main)](https://coveralls.io/github/tonegas/nnodely?branch=main)
 
 
