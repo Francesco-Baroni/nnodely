@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nnodely"
-version = "0.7.0"
+version = "0.8.0"
 description = "Model-structured neural network framework for the modeling and control of physical systems"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -17,14 +17,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent"
 ]
-dependencies = [
-    "numpy == 2.0.0",
-    "onnx == 1.16.2",
-    "pandas == 2.2.2",
-    "torch == 2.3.1",
-    "reportlab == 4.2.5",
-    "matplotlib == 3.9.0"
-]
+dependencies = []
 
 [project.urls]
 "Homepage" = "https://github.com/tonegas/nnodely"
