@@ -72,8 +72,13 @@ The realized neural controller will be exported using C language or ONNX, and it
 <!-- GETTING STARTED -->
 <a name="settingstarted"></a>
 ## Getting Started
-### Prerequisites
+### Installation
+You can install the nnodely framework from PyPI via:
+  ```sh
+  pip install nnodely
+  ```
 
+### Prerequisites
 You can install the dependencies of the nnodely framework from PyPI via:
   ```sh
   pip install -r requirements.txt
