@@ -42,10 +42,8 @@ The realized neural controller will be exported using C language or ONNX, and it
       <a href="#fonlderstructure">Structure of the Folders</a>
       <ul>
         <li><a href="#nnodelyfolder">nnodely folder</a></li>
-        <li><a href="#examplesfolder">examples folder</a></li>
         <li><a href="#testsfolder">tests folder</a></li>
-        <li><a href="#underdevfolder">underdev folder</a></li>
-        <li><a href="#usagefolder">usage folder</a></li>
+        <li><a href="#examplesfolder">examples folder</a></li>
       </ul>
     </li>
     <li>
@@ -244,21 +242,11 @@ This folder contains all the nnodely library files, the main files are the follo
 13. __nnodely.py__ the main file for create the structured network
 14. __model.py__ containts the pytorch template model for the structured network
 
-### Tutorial Folder
-This folder contains some complex example of the use of the nnodely fromwork. 
-The objective of this folder is demostrate the effectivness of the framework in solving real problems. 
-The examples proposed, some of them related of accompanying article, are as follows:
-1. Modeling a linear mass spring damper. The obejtive is to estimate the future position and velocity of the mass. 
-We consider the system equipped with position sensor and a force sensor.
-2. ...
-
+<a name="testsfolder"></a>
 ### Tests Folder
 This folder contains the unittest of the library in particular each file test a specific functionality.
 
-### Underdev Folder
-This folder contains functionality underdevelopment. 
-These files presents the new functionalities and the syntax chosen.
-
+<a name="examplesfolder"></a>
 ### Examples of usage Folder
 The files in the examples folder are a collection of the functionality of the library.
 Each file present in deep a specific functionality or function of the framework.
