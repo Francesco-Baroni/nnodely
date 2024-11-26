@@ -32,10 +32,9 @@ dynamic = ["version"]
 [tool.setuptools]
 packages = ["nnodely",
             "nnodely.visualizer",
-            "nnodely.visualizer.dynamicmpl",
             "nnodely.exporter",
             "mplplots"]
 
-[tool.setuptools.data-files]
-"imgs" = ["imgs/*"]
-"data" = ["tests/data/*","tests/test_data/*","tests/val_data/*","tests/vector_data/*"]
+#[tool.setuptools.data-files]
+#"imgs" = ["imgs/*"]
+#"data" = ["tests/data/*","tests/test_data/*","tests/val_data/*","tests/vector_data/*"]
