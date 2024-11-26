@@ -5,7 +5,7 @@
 # -- Path setup --------------------------------------------------------------
 import os
 def read_version():
-    version_file = os.path.join(os.path.dirname(__file__), 'nnodely', '__init__.py')
+    version_file = os.path.join(os.path.dirname(__file__), '..', 'nnodely', '__init__.py')
     with open(version_file, 'r') as f:
         for line in f:
             if line.startswith('__version__'):
