@@ -31,7 +31,7 @@ extensions = [
 ]
 
 templates_path = []
-exclude_patterns = ['Thumbs.db', '.DS_Store', 'docs']
+exclude_patterns = ['Thumbs.db', '.DS_Store', 'docs', 'examples', 'tests', 'mplplots']
 
 # -- Options for HTML output -------------------------------------------------
 
