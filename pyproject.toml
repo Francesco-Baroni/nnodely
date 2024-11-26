@@ -23,7 +23,11 @@ dynamic = ["version"]
 "Homepage" = "https://github.com/tonegas/nnodely"
 
 [tool.setuptools]
-packages = ["nnodely","nnodely.visualizer", "nnodely.exporter", "mplplots"]
+packages = ["nnodely",
+            "nnodely.visualizer",
+            "nnodely.visualizer.dynamicmpl",
+            "nnodely.exporter",
+            "mplplots"]
 
 [tool.setuptools.data-files]
 "imgs" = ["imgs/*"]
