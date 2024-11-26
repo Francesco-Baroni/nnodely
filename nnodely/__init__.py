@@ -1,12 +1,5 @@
-def get_version_from_toml(file_path):
-    with open(file_path, 'r') as f:
-        for line in f:
-            if line.startswith('version'):
-                return line.split('=')[1].strip().strip('"')
 
-import os
-dirname = os.path.abspath(os.path.dirname(__file__))
-__version__ = get_version_from_toml(os.path.join(dirname, "..", "pyproject.toml"))
+__version__ = '0.9.0'
 
 import sys
 major, minor = sys.version_info.major, sys.version_info.minor
