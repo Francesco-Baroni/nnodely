@@ -8,6 +8,8 @@ from mplplots import plots
 # Plot data
 line = sys.stdin.readline().strip()
 name, x, y = None, None, []
+chan_centers = []
+
 if line:
     try:
         # Convert to float and append to buffer

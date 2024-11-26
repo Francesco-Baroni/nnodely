@@ -7,6 +7,8 @@ from mplplots import plots
 # Plot data
 line = sys.stdin.readline().strip()
 name, x, x0, x1, params, output = None, None, None, None, None, None
+data_point = {}
+
 if line:
     try:
         # Convert to float and append to buffer

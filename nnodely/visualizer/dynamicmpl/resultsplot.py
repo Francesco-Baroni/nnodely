@@ -6,6 +6,9 @@ from mplplots import plots
 
 line = sys.stdin.readline().strip()
 key, A, B, sample_time = None, None, None, None
+name_data = None
+sample_time = None
+
 if line:
     try:
         # Convert to float and append to buffer
