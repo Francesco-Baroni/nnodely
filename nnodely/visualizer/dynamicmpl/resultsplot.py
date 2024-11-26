@@ -18,10 +18,11 @@ if line:
         A = data_point['prediction_A']
         B = data_point['prediction_B']
         sample_time = data_point['sample_time']
+
+        fig, ax = plt.subplots()
+        ax.cla()
+        plots.plot_results(ax, name_data, key, A, B, sample_time)
+        plt.show()
+
     except ValueError:
         pass
-
-fig, ax = plt.subplots()
-ax.cla()
-plots.plot_results(ax, name_data, key, A, B, sample_time)
-plt.show()

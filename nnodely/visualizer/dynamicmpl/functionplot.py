@@ -22,11 +22,13 @@ if line:
         params = data_point['params']
         input_names = data_point['input_names']
         output = data_point['output']
+
+        if 'x1' in data_point.keys():
+            plots.plot_3d_function(plt, name, x0, x1, params, output, input_names)
+        else:
+            plots.plot_2d_function(plt, name, x, params, output, input_names)
+        plt.show()
+
     except ValueError:
         pass
 
-if 'x1' in data_point.keys():
-    plots.plot_3d_function(plt, name, x0, x1, params, output, input_names)
-else:
-    plots.plot_2d_function(plt, name, x, params, output, input_names)
-plt.show()

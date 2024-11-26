@@ -21,10 +21,11 @@ if line:
         num_of_colors = len(list(tableau_colors.keys()))
         for ind, key in enumerate(data_point['y'].keys()):
             y.append(data_point['y'][key])
+
+        fig, ax = plt.subplots()
+        ax.cla()
+        plots.plot_fuzzy(ax, name, x, y, chan_centers)
+        plt.show()
+
     except ValueError:
         pass
-
-fig, ax = plt.subplots()
-ax.cla()
-plots.plot_fuzzy(ax, name, x, y, chan_centers)
-plt.show()
