@@ -28,7 +28,7 @@ extensions = [
 ]
 
 templates_path = []
-exclude_patterns = ['Thumbs.db', '.DS_Store','docs', 'nnodely']
+exclude_patterns = ['Thumbs.db', '.DS_Store', 'docs']
 
 # -- Options for HTML output -------------------------------------------------
 
