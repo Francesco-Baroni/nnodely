@@ -124,10 +124,8 @@ class ModelyTestVisualizer(unittest.TestCase):
         example = Modely(visualizer=m)
         example.addModel('out', out)
         example.neuralizeModel()
-        print(example({'x': [1], 'F': [1]}))
-        print(example({'x': [1, 2], 'F': [1, 2]}))
         m.showFunctions(list(example.model_def['Functions'].keys()), xlim=[[-5, 5], [-1, 1]])
-        m.closeFunctions()
+        # m.closeFunctions()
 
     # def test_export_mplnotebookvisualizer(self):
     #     m = MPLNotebookVisualizer(5)

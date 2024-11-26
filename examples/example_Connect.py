@@ -16,7 +16,7 @@ data_d_t = linear_function(data_c, 5, 1)
 
 dataset = {'a': data_a, 'b_t': data_b_t, 'c':data_c, 'b_in': data_b_in, 'd_t':data_d_t }
 
-example = 2
+example = 1
 
 if example == 1:
     print("-----------------------------------EXAMPLE 1------------------------------------")
@@ -25,7 +25,7 @@ if example == 1:
     b_t = Input('b_t')
     b = Output('b',Linear(W='condiviso')(a.last())+Linear(W='A')(Fir(parameter='B')(a.tw(0.5))))
 
-    model = Modely(seed=42)
+    model = Modely(seed=42,visualizer=MPLVisualizer())
     model.addModel('b_model', b)
     model.addMinimize('b_min', b, b_t.last())
     model.neuralizeModel(0.1)
