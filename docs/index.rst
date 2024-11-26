@@ -10,6 +10,7 @@ Welcome to nnodely's documentation!
    :maxdepth: 2
 
    _autodoc/modules
+   :exclude-members: activation, loss, model, optimizer, trainer, utils
 
 
 Indices and tables

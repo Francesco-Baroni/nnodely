@@ -33,7 +33,6 @@ extensions = [
 templates_path = []
 #exclude_patterns = ['Thumbs.db', '.DS_Store', 'docs', 'examples', 'tests', 'mplplots']
 exclude_patterns = []
-autodoc_excluded_paths = ['nnodely/fuzzify.py']
 
 # -- Options for HTML output -------------------------------------------------
 
