@@ -1,6 +1,3 @@
-#import importlib.metadata
-#__version__ = importlib.metadata.version(__package__)
-
 def get_version_from_toml(file_path):
     with open(file_path, 'r') as f:
         for line in f:
