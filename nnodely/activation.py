@@ -49,39 +49,29 @@ class ELU(Stream, ToStream):
         self.json['Relations'][self.name] = [elu_relation_name,[obj.name]]
 
 class Tanh_Layer(nn.Module):
-    """
-     :noindex:
-    """
+    """ """
     def __init__(self,):
         super(Tanh_Layer, self).__init__()
     def forward(self, x):
         return torch.tanh(x)
 
 def createTanh(self, *input):
-    """
-     :noindex:
-    """
+    """ """
     return Tanh_Layer()
 
 class ReLU_Layer(nn.Module):
-    """
-     :noindex:
-    """
+    """ """
     def __init__(self,):
         super(ReLU_Layer, self).__init__()
     def forward(self, x):
         return torch.relu(x)
     
 def createRelu(self, *input):
-    """
-     :noindex:
-    """
+    """ """
     return ReLU_Layer()
 
 def createELU(self, *input):
-    """
-     :noindex:
-    """
+    """ """
     return nn.ELU()
 
 setattr(Model, relu_relation_name, createRelu)
