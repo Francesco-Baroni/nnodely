@@ -104,6 +104,7 @@ class Sum(Stream, ToStream):
         self.json['Relations'][self.name] = [sum_relation_name,[obj.name]]
 
 class Add_Layer(nn.Module):
+    #: :noindex:
     def __init__(self):
         super(Add_Layer, self).__init__()
 
@@ -111,9 +112,11 @@ class Add_Layer(nn.Module):
         return torch.add(inputs[0], inputs[1])
 
 def createAdd(name, *inputs):
+    #: :noindex:
     return Add_Layer()
 
 class Sub_Layer(nn.Module):
+    #: :noindex:
     def __init__(self):
         super(Sub_Layer, self).__init__()
 
@@ -122,10 +125,12 @@ class Sub_Layer(nn.Module):
         return torch.add(inputs[0],-inputs[1])
 
 def createSub(self, *inputs):
+    #: :noindex:
     return Sub_Layer()
 
 
 class Mul_Layer(nn.Module):
+    #: :noindex:
     def __init__(self):
         super(Mul_Layer, self).__init__()
 
@@ -133,9 +138,11 @@ class Mul_Layer(nn.Module):
         return inputs[0] * inputs[1]
 
 def createMul(name, *inputs):
+    #: :noindex:
     return Mul_Layer()
 
 class Div_Layer(nn.Module):
+    #: :noindex:
     def __init__(self):
         super(Div_Layer, self).__init__()
 
@@ -143,9 +150,11 @@ class Div_Layer(nn.Module):
         return inputs[0] / inputs[1]
 
 def createDiv(name, *inputs):
+    #: :noindex:
     return Div_Layer()
 
 class Pow_Layer(nn.Module):
+    #: :noindex:
     def __init__(self):
         super(Pow_Layer, self).__init__()
 
@@ -153,9 +162,11 @@ class Pow_Layer(nn.Module):
         return torch.pow(inputs[0], inputs[1])
 
 def createPow(name, *inputs):
+    #: :noindex:
     return Pow_Layer()
 
 class Neg_Layer(nn.Module):
+    #: :noindex:
     def __init__(self):
         super(Neg_Layer, self).__init__()
 
@@ -163,18 +174,11 @@ class Neg_Layer(nn.Module):
         return -x
 
 def createNeg(self, *inputs):
+    #: :noindex:
     return Neg_Layer()
 
-# class Square_Layer(nn.Module):
-#     def __init__(self):
-#         super(Square_Layer, self).__init__()
-#     def forward(self, x):
-#         return torch.pow(x,2)
-
-# def createSquare(self, *inputs):
-#     return Square_Layer()
-
 class Sum_Layer(nn.Module):
+    #: :noindex:
     def __init__(self):
         super(Sum_Layer, self).__init__()
 
@@ -182,6 +186,7 @@ class Sum_Layer(nn.Module):
         return torch.sum(inputs, dim = 2)
 
 def createSum(name, *inputs):
+    #: :noindex:
     return Sum_Layer()
 
 setattr(Model, add_relation_name, createAdd)
