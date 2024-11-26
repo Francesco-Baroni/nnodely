@@ -4,19 +4,22 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 # -- Path setup --------------------------------------------------------------
 import os
-import sys
-import importlib.metadata
-dirname = os.path.abspath(os.path.dirname(__file__))
-sys.path.insert(0, os.path.join(dirname, "..", __package__))
-__version__ = importlib.metadata.version(__package__)
+def read_version():
+    version_file = os.path.join(os.path.dirname(__file__), 'nnodely', '__init__.py')
+    with open(version_file, 'r') as f:
+        for line in f:
+            if line.startswith('__version__'):
+                delim = '"' if '"' in line else "'"
+                return line.split(delim)[1]
+    raise RuntimeError("Unable to find version string.")
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = __package__
 author = 'tonegas'
-release = __version__
-version = __version__
+release = read_version()
+version = read_version()
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

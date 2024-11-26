@@ -1,5 +1,5 @@
 <p align="center">
-<img src="imgs/logo_white_info.png" alt="logo" >
+<img src="https://raw.githubusercontent.com/tonegas/nnodely/main/imgs/logo_white_info.png" alt="logo" >
 </p>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -91,7 +91,7 @@ The structured neural model is defined by a list of inputs by a list of outputs 
 Let's assume we want to model one of the best-known linear mechanical systems, the mass-spring-damper system.
 
 <p align="center">
-<img src="imgs/massspringdamper.png" width="250" alt="linearsys" >
+<img src="https://raw.githubusercontent.com/tonegas/nnodely/main/imgs/massspringdamper.png" width="250" alt="linearsys" >
 </p>
 
 The system is defined as the following equation:
