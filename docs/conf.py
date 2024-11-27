@@ -31,12 +31,11 @@ extensions = [
 ]
 
 templates_path = []
-#exclude_patterns = ['Thumbs.db', '.DS_Store', 'docs', 'examples', 'tests', 'mplplots']
 exclude_patterns = []
-
-autodoc_default_options = {
-    'exclude-members': 'nnodely.activation'
-}
+# exclude_patterns = ['Thumbs.db', '.DS_Store', 'docs', 'examples', 'tests', 'mplplots']
+# autodoc_default_options = {
+#     'exclude-members': 'nnodely.activation'
+# }
 
 # -- Options for HTML output -------------------------------------------------
 
