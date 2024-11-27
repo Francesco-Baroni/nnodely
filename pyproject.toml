@@ -17,12 +17,12 @@ classifiers = [
     "Operating System :: OS Independent"
 ]
 dependencies = [
-    "numpy == 2.0.0",
-    "onnx == 1.16.2",
-    "pandas == 2.2.2",
-    "torch == 2.3.1",
-    "reportlab == 4.2.5",
-    "matplotlib == 3.9.0"
+    "numpy",
+    "onnx",
+    "pandas",
+    "torch",
+    "reportlab",
+    "matplotlib"
 ]
 dynamic = ["version"]
 
