@@ -9,9 +9,7 @@ Welcome to nnodely's documentation!
 .. toctree::
    :maxdepth: 2
 
-.. automodule:: nnodely
-   :members:
-   :exclude-members: activation
+   _autodoc/modules
 
 
 Indices and tables
