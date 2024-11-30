@@ -22,10 +22,10 @@ class MPLVisualizer(TextVisualizer):
         import signal
         import sys
         get_library_path('nnodely')
-        self.training_visualizer_script = os.path.join(get_library_path('nnodely'),'visualizer/dynamicmpl/trainingplot.py')
-        self.time_series_visualizer_script = os.path.join(get_library_path('nnodely'),'visualizer/dynamicmpl/resultsplot.py')
-        self.fuzzy_visualizer_script = os.path.join(get_library_path('nnodely'),'visualizer/dynamicmpl/fuzzyplot.py')
-        self.function_visualizer_script = os.path.join(get_library_path('nnodely'),'visualizer/dynamicmpl/functionplot.py')
+        self.training_visualizer_script = os.path.join(get_library_path('nnodely'),'visualizer','dynamicmpl','trainingplot.py')
+        self.time_series_visualizer_script = os.path.join(get_library_path('nnodely'),'visualizer','dynamicmpl','resultsplot.py')
+        self.fuzzy_visualizer_script = os.path.join(get_library_path('nnodely'),'visualizer','dynamicmpl','fuzzyplot.py')
+        self.function_visualizer_script = os.path.join(get_library_path('nnodely'),'visualizer','dynamicmpl','functionplot.py')
         self.process_training = {}
         self.process_results = {}
         self.process_function = {}
