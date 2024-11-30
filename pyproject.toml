@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "nnodely"
 description = "Model-structured neural network framework for the modeling and control of physical systems"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = {file = "LICENSE"}
 authors = [
     {name = "Gastone Pietro Rosati Papini", email = "tonegas@gmail.com"}

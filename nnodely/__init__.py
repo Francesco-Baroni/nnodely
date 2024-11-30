@@ -8,9 +8,9 @@ import logging
 LOG_LEVEL = logging.INFO
 
 if major < 3:
-    sys.exit("Sorry, Python 2 is not supported. You need Python >= 3.9 for "+__package__+".")
+    sys.exit("Sorry, Python 2 is not supported. You need Python >= 3.10 for "+__package__+".")
 elif minor < 9:
-    sys.exit("Sorry, You need Python >= 3.9 for "+__package__+".")
+    sys.exit("Sorry, You need Python >= 3.10 for "+__package__+".")
 else:
     print(f'>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'+
           f' {__package__}_v{__version__} '.center(20, '-')+
