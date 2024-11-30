@@ -5,6 +5,9 @@ from nnodely.exporter.reporter import Reporter
 from nnodely.exporter.export import save_model, load_model, export_python_model, export_pythononnx_model, export_onnx_model, import_python_model, import_onnx_model
 from nnodely.utils import check
 
+from nnodely.logger import logging, nnLogger
+log = nnLogger(__name__, logging.CRITICAL)
+
 class StandardExporter(Exporter):
     def __init__(self, workspace=None, visualizer=None, save_history=False):
         super().__init__(workspace, visualizer, save_history)
