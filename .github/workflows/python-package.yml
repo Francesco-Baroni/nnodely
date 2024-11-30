@@ -12,11 +12,13 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false
       matrix:
+        fail-fast: false
+        os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ["3.9", "3.10", "3.11", "3.12"]
+        architecture: ['x64', 'x86']
 
     steps:
     - uses: actions/checkout@v4
