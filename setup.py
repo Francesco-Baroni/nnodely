@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import os
-import re
 
+# import re
 # def update_version_in_init(version_file):
 #     with open(version_file, 'r') as f:
 #         content = f.read()
