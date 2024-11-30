@@ -417,6 +417,7 @@ class Modely:
             ## obtain the file names
             try:
                 _,_,files = next(os.walk(source))
+                files.sort()
             except StopIteration as e:
                 check(False,StopIteration, f'ERROR: The path "{source}" does not exist!')
                 return
