@@ -23,8 +23,9 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install coverage coveralls
-        python -m unittest discover -s tests
         pip install -e .
+        python -m unittest discover -s tests
+        
 
     - name: Tests with coverage
       run: |
