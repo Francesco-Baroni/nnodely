@@ -56,7 +56,7 @@ class ModelyTrainingTest(unittest.TestCase):
         self.assertEqual({'A': [[[2.0]],[[2.0]],[[2.0]],[[2.0]],[[2.0]],[[2.0]],[[2.0]],[[2.0]],[[2.0]],[[2.0]]],
                                'B': [[[1.0]],[[1.0]],[[1.0]],[[1.0]],[[1.0]],[[1.0]],[[1.0]],[[1.0]],[[1.0]],[[1.0]]]},
                          test.prediction['dataset']['error1'])
-        self.assertEqual(2 * (1.0 ** 2) * 10.0 / 10.0, test.performance['dataset']['error1']['mse'])
+        self.assertEqual((1.0 ** 2) * 10.0 / 10.0, test.performance['dataset']['error1']['mse'])
         self.assertEqual((2.0 ** 2) * 10.0 / 10.0, test.performance['dataset']['error2']['mse'])
         self.assertEqual((1+4)/2.0, test.performance['dataset']['total']['mean_error'])
 
