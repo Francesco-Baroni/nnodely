@@ -1,7 +1,5 @@
 name: Test Coveralls
 
-github-token: ${{ secrets.GITHUB_TOKEN }}
-
 on:
   push:
     branches: [ "main", "features/4-automotic-coveralls" ]
