@@ -21,6 +21,7 @@ class ModelyTrainingTest(unittest.TestCase):
     def TestAlmostEqual(self, data1, data2, precision=4):
         assert np.asarray(data1, dtype=np.float32).ndim == np.asarray(data2, dtype=np.float32).ndim, f'Inputs must have the same dimension! Received {type(data1)} and {type(data2)}'
         if type(data1) == type(data2) == list:
+            self.assertEqual(len(data1), len(data2))
             for pred, label in zip(data1, data2):
                 self.TestAlmostEqual(pred, label, precision=precision)
         else:
@@ -42,9 +43,9 @@ class ModelyTrainingTest(unittest.TestCase):
         dataset = {'in1': [1,1,1,1,1,1,1,1,1,1], 'out1': [2,2,2,2,2,2,2,2,2,2], 'out2': [5,5,5,5,5,5,5,5,5,5]}
         test.loadData(name='dataset', source=dataset)
         test.trainModel(optimizer='SGD', num_of_epochs=5, lr=0.5)
-        self.TestAlmostEqual( [[[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]]], test.prediction['train_dataset_0.70']['error1']['A'])
-        self.TestAlmostEqual([[[6.0]],[[6.0]],[[6.0]],[[6.0]],[[6.0]],[[6.0]],[[6.0]],[[6.0]],[[6.0]],[[6.0]]] ,test.prediction['train_dataset_0.70']['error1']['B'])
-        self.TestAlmostEqual( [[[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]]], test.prediction['train_dataset_0.70']['error2']['A'])
+        self.TestAlmostEqual( [[[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]]], test.prediction['train_dataset_0.70']['error1']['A'])
+        self.TestAlmostEqual([[[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]]] ,test.prediction['train_dataset_0.70']['error1']['B'])
+        self.TestAlmostEqual( [[[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]]], test.prediction['train_dataset_0.70']['error2']['A'])
         self.TestAlmostEqual([1.0, 16.0, 1.0, 16.0, 1.0], test.training['error1']['train'])
         self.TestAlmostEqual([16.0, 1.0, 16.0, 1.0, 16.0], test.training['error1']['val'])
         self.TestAlmostEqual([16.0, 1.0, 16.0, 1.0, 16.0], test.training['error2']['train'])
@@ -59,9 +60,9 @@ class ModelyTrainingTest(unittest.TestCase):
 
         test.neuralizeModel(clear_model=True)
         test.trainModel(optimizer='SGD', splits=[60,20,20], num_of_epochs=5, lr=0.5, train_batch_size=2)
-        self.TestAlmostEqual( [[[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]]], test.prediction['train_dataset_0.60']['error1']['A'])
-        self.TestAlmostEqual([[[6.0]],[[6.0]],[[6.0]],[[6.0]],[[6.0]],[[6.0]],[[6.0]],[[6.0]],[[6.0]],[[6.0]]] ,test.prediction['train_dataset_0.60']['error1']['B'])
-        self.TestAlmostEqual( [[[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]]], test.prediction['train_dataset_0.70']['error2']['A'])
+        self.TestAlmostEqual( [[[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]]], test.prediction['train_dataset_0.60']['error1']['A'])
+        self.TestAlmostEqual([[[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]]] ,test.prediction['train_dataset_0.60']['error1']['B'])
+        self.TestAlmostEqual( [[[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]]], test.prediction['train_dataset_0.60']['error2']['A'])
         self.TestAlmostEqual([6.0, 11.0, 6.0, 11.0, 6.0], test.training['error1']['train'])
         self.TestAlmostEqual([16.0, 1.0, 16.0, 1.0, 16.0], test.training['error1']['val'])
         self.TestAlmostEqual([11.0, 6.0, 11.0, 6.0, 11.0], test.training['error2']['train'])
@@ -78,7 +79,7 @@ class ModelyTrainingTest(unittest.TestCase):
         a = Parameter('a', values=[[1]])
         output1 = Output('out', Fir(parameter=a)(input1.last()))
 
-        test = Modely(visualizer=TextVisualizer(5),seed=42)
+        test = Modely(visualizer=None,seed=42)
         test.addModel('model', output1)
         test.addClosedLoop(output1, input1)
         test.addMinimize('error1', target1.last(), output1)
@@ -88,9 +89,9 @@ class ModelyTrainingTest(unittest.TestCase):
         dataset = {'in1': [1,1,1,1,1,1,1,1,1,1], 'out1': [2,2,2,2,2,2,2,2,2,2], 'out2': [5,5,5,5,5,5,5,5,5,5]}
         test.loadData(name='dataset', source=dataset)
         test.trainModel(optimizer='SGD', num_of_epochs=5, lr=0.5)
-        self.TestAlmostEqual([[[[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]]]], test.prediction['train_dataset_0.70']['error1']['A'])
-        self.TestAlmostEqual([[[[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]]]] ,test.prediction['train_dataset_0.70']['error1']['B'])
-        self.TestAlmostEqual([[[[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]]]], test.prediction['train_dataset_0.70']['error2']['A'])
+        self.TestAlmostEqual([[[[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]]]], test.prediction['train_dataset_0.70']['error1']['A'])
+        self.TestAlmostEqual([[[[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]]]] ,test.prediction['train_dataset_0.70']['error1']['B'])
+        self.TestAlmostEqual([[[[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]]]], test.prediction['train_dataset_0.70']['error2']['A'])
         self.TestAlmostEqual([1.0, 16.0, 1.0, 16.0, 1.0], test.training['error1']['train'])
         self.TestAlmostEqual([16.0, 1.0, 16.0, 1.0, 16.0], test.training['error1']['val'])
         self.TestAlmostEqual([16.0, 1.0, 16.0, 1.0, 16.0], test.training['error2']['train'])
@@ -105,9 +106,9 @@ class ModelyTrainingTest(unittest.TestCase):
 
         test.neuralizeModel(clear_model=True)
         test.trainModel(optimizer='SGD', splits=[60,20,20], num_of_epochs=5, lr=0.5, train_batch_size=2)
-        self.TestAlmostEqual([[[[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]]]], test.prediction['train_dataset_0.60']['error1']['A'])
-        self.TestAlmostEqual([[[[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]]]] ,test.prediction['train_dataset_0.60']['error1']['B'])
-        self.TestAlmostEqual([[[[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]]]], test.prediction['train_dataset_0.70']['error2']['A'])
+        self.TestAlmostEqual([[[[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]]]], test.prediction['train_dataset_0.60']['error1']['A'])
+        self.TestAlmostEqual([[[[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]]]] ,test.prediction['train_dataset_0.60']['error1']['B'])
+        self.TestAlmostEqual([[[[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]]]], test.prediction['train_dataset_0.60']['error2']['A'])
         self.TestAlmostEqual([6.0, 11.0, 6.0, 11.0, 6.0], test.training['error1']['train'])
         self.TestAlmostEqual([16.0, 1.0, 16.0, 1.0, 16.0], test.training['error1']['val'])
         self.TestAlmostEqual([11.0, 6.0, 11.0, 6.0, 11.0], test.training['error2']['train'])
@@ -141,7 +142,7 @@ class ModelyTrainingTest(unittest.TestCase):
         a = Parameter('a', values=[[1]])
         output1 = Output('out', Fir(parameter=a)(input1.last()))
 
-        test = Modely(visualizer=TextVisualizer(5),seed=42)
+        test = Modely(visualizer=None,seed=42)
         test.addModel('model', output1)
         test.addMinimize('error1', target1.last(), output1)
         test.addMinimize('error2', target2.last(), output1)

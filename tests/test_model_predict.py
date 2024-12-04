@@ -36,7 +36,8 @@ class ModelyPredictTest(unittest.TestCase):
     
     def TestAlmostEqual(self, data1, data2, precision=4):
         assert np.asarray(data1, dtype=np.float32).ndim == np.asarray(data2, dtype=np.float32).ndim, f'Inputs must have the same dimension! Received {type(data1)} and {type(data2)}'
-        if type(data1) == type(data2) == list:  
+        if type(data1) == type(data2) == list:
+            self.assertEqual(len(data1),len(data2))
             for pred, label in zip(data1, data2):
                 self.TestAlmostEqual(pred, label, precision=precision)
         else:
@@ -60,7 +61,19 @@ class ModelyPredictTest(unittest.TestCase):
         results = test({'in1': [[1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11], [12]], 'in2': [[5], [7], [9]]})
         self.assertEqual(3, len(results['out']))
         self.TestAlmostEqual([33.74938201904297, 40.309326171875, 46.86927032470703], results['out'])
-    
+
+    def test_activation(self):
+        torch.manual_seed(1)
+        in1 = Input('in1')
+        out_fun = ELU(in1.last()) + Relu(in1.last()) + Tanh(in1.last())
+        out = Output('out', out_fun)
+        test = Modely(visualizer=None, seed=1)
+        test.addModel('out',out)
+        test.neuralizeModel()
+        results = test({'in1': [-1, -0.5, 0, 0.2, 2, 10]})
+        self.assertEqual(6, len(results['out']))
+        self.TestAlmostEqual([-1.3937146663665771,-0.8555865287780762,0,0.5973753333091736,4.964027404785156,21.0], results['out'])
+
     def test_single_in_window(self):
         # Here there is more sample for each time step but the dimensions of the input is 1
         in1 = Input('in1')
@@ -360,7 +373,7 @@ class ModelyPredictTest(unittest.TestCase):
         test = Modely(visualizer=None)
         test.addModel('out',[out1, out2, out3, out4, out5])
         test.neuralizeModel(0.5)
-        # Time   -2, -1, 0, 1, 2, 3, 4
+        # Time   -3, -2, -1, 0, 1, 2, 3
         input = [-2, -1, 0, 1, 2, 3, 12]
         results = test({'x': input})
 
@@ -369,7 +382,7 @@ class ModelyPredictTest(unittest.TestCase):
         self.assertEqual((2,), np.array(results['out2']).shape)
         self.TestAlmostEqual([-2, -4], results['out2'])
         self.assertEqual((2, 1, 2), np.array(results['out3']).shape)
-        self.TestAlmostEqual([[[-2,1], [-4,2]]], results['out3'])
+        self.TestAlmostEqual([[[-2,1]], [[-4,2]]], results['out3'])
         self.assertEqual((2, 1, 2), np.array(results['out4']).shape)
         self.TestAlmostEqual([[[6.0, -2.0]], [[10.0, 0.0]]], results['out4'])
         self.assertEqual((2, 1, 2), np.array(results['out5']).shape)
@@ -535,8 +548,8 @@ class ModelyPredictTest(unittest.TestCase):
         test.neuralizeModel(0.1)
         with self.assertRaises(StopIteration): ## TODO: change to KeyError when checking the inputs
             test({'in1': [[1, 2, 2, 4]]})
-        results = test({'in1': [1, 2, 2, 4], 'in2': [1, 2, 2, 4]})
 
+        results = test({'in1': [1, 2, 2, 4], 'in2': [1, 2, 2, 4]})
         self.TestAlmostEqual(results['out'], [-0.4379930794239044])
         results = test({'in1': [[1, 2, 2, 4]], 'in2': [[1, 2, 2, 4]]}, sampled=True)
         self.TestAlmostEqual(results['out'], [-0.4379930794239044])
@@ -547,7 +560,6 @@ class ModelyPredictTest(unittest.TestCase):
         results = test({'in1': [[1, 2, 2, 4], [1, 2, 2, 4]], 'in2': [[1, 2, 2, 4], [5, 5, 5, 5]]}, sampled=True)
         self.TestAlmostEqual(results['out'], [-0.4379930794239044,  0.5163354873657227])
 
-        self.TestAlmostEqual(results['out'], [-0.4379930794239044])
         results = test({'in1': [[1, 2, 2, 4]], 'in2': [[1, 2, 2, 4]]}, sampled=True)
         self.TestAlmostEqual(results['out'], [-0.4379930794239044])
         results = test({'in1': [1, 2, 2, 4, 5], 'in2': [1, 2, 2, 4]})
@@ -621,6 +633,7 @@ class ModelyPredictTest(unittest.TestCase):
         test.neuralizeModel(0.1)
         with self.assertRaises(StopIteration):
             test({'in1': [[1, 2, 2, 4]]})
+
         results = test({'in1': [1, 2, 2, 4], 'in2': [1, 2, 2, 4]})
         self.TestAlmostEqual(results['out'], [0.3850506544113159])
         results = test({'in1': [[1, 2, 2, 4]], 'in2': [[1, 2, 2, 4]]}, sampled=True)
@@ -632,7 +645,6 @@ class ModelyPredictTest(unittest.TestCase):
         results = test({'in1': [[1, 2, 2, 4], [1, 2, 2, 4]], 'in2': [[1, 2, 2, 4], [5, 5, 5, 5]]}, sampled=True)
         self.TestAlmostEqual(results['out'], [0.3850506544113159, 1.446676254272461])
 
-        self.TestAlmostEqual(results['out'], [0.3850506544113159])
         results = test({'in1': [[1, 2, 2, 4]], 'in2': [[1, 2, 2, 4]]}, sampled=True)
         self.TestAlmostEqual(results['out'], [0.3850506544113159])
         results = test({'in1': [1, 2, 2, 4, 5], 'in2': [1, 2, 2, 4]})
