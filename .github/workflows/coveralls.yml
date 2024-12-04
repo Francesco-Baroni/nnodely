@@ -2,7 +2,7 @@ name: Test Coveralls
 
 on:
   push:
-    branches: [ "main", "features/4-automotic-coveralls" ]
+    branches: [ "main"]
   pull_request:
     branches: [ "main" ]
 
@@ -24,7 +24,6 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install coverage coveralls
         pip install -e .
-        
 
     - name: Tests with coverage
       run: |
