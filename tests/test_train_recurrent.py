@@ -29,11 +29,13 @@ class ModelyTrainingTest(unittest.TestCase):
     def assertAlmostEqual(self, data1, data2, precision=3):
         if type(data1) == type(data2) == list:
             assert np.asarray(data1, dtype=np.float32).ndim == np.asarray(data2,dtype=np.float32).ndim, f'Inputs must have the same dimension! Received {type(data1)} and {type(data2)}'
+            self.assertEqual(len(data1), len(data2))
             for pred, label in zip(data1, data2):
                 self.assertAlmostEqual(pred, label, precision=precision)
         elif type(data1) == type(data2) == dict:
-                for (pred_key,pred_value), (label_key,label_value) in zip(data1.items(), data2.items()):
-                    self.assertAlmostEqual(pred_value, label_value, precision=precision)
+            self.assertEqual(len(data1.items()), len(data2.items()))
+            for (pred_key,pred_value), (label_key,label_value) in zip(data1.items(), data2.items()):
+                self.assertAlmostEqual(pred_value, label_value, precision=precision)
         else:
             super().assertAlmostEqual(data1, data2, places=precision)
 
@@ -844,15 +846,15 @@ class ModelyTrainingTest(unittest.TestCase):
                              test.internals['inout_1_2']['XY'])
         self.assertAlmostEqual({'inout': [[[0.0], [0.0], [0.0], [W[0][0][0] * 4.0 + W[0][1][0] * 2.0 + b[0][0]],
                                          [W[0][0][0] * 6.0 + W[0][1][0] * 5.0 + b[0][0]]]]},
-                             test.internals['inout_1_0']['state'])
+                             test.internals['inout_1_0']['connect'])
         self.assertAlmostEqual({'inout': [[[0.0], [0.0], [W[0][0][0] * 4.0 + W[0][1][0] * 2.0 + b[0][0]],
                                          [W[0][0][0] * 6.0 + W[0][1][0] * 5.0 + b[0][0]],
                                          [W[0][0][0] * 4.0 + W[0][1][0] * 5.0 + b[0][0]]]]},
-                             test.internals['inout_1_1']['state'])
+                             test.internals['inout_1_1']['connect'])
         self.assertAlmostEqual({'inout': [
             [[0.0], [W[0][0][0] * 4.0 + W[0][1][0] * 2.0 + b[0][0]], [W[0][0][0] * 6.0 + W[0][1][0] * 5.0 + b[0][0]],
              [W[0][0][0] * 4.0 + W[0][1][0] * 5.0 + b[0][0]], [W[0][0][0] * 0.0 + W[0][1][0] * 0.0 + b[0][0]]]]},
-                             test.internals['inout_1_2']['state'])
+                             test.internals['inout_1_2']['connect'])
         with self.assertRaises(KeyError):
             test.internals['inout_2_0']
 
@@ -1396,7 +1398,7 @@ class ModelyTrainingTest(unittest.TestCase):
         target1 = Input('target1')
         target2 = Input('target2', dimensions=2)
 
-        test = Modely(visualizer=TextVisualizer(), seed=42)
+        test = Modely(visualizer=None, seed=42)
         test.addModel('model', [output1,output2])
         test.addMinimize('error1', output1, target1.sw(2))
         test.addMinimize('error2', output2, target2.last())
@@ -1418,7 +1420,7 @@ class ModelyTrainingTest(unittest.TestCase):
         target1 = Input('target1')
         target2 = Input('target2', dimensions=2)
 
-        test2 = Modely(visualizer=TextVisualizer(), seed=42)
+        test2 = Modely(visualizer=None, seed=42)
         test2.addModel('model', [output1, output2])
         test2.addMinimize('error1', output1, target1.sw(2))
         test2.addMinimize('error2', output2, target2.last())

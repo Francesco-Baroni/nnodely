@@ -22,7 +22,6 @@ class ModelyTrainingTest(unittest.TestCase):
         y_data = torch.tensor([[0.5],[0.6],[0.7],[0.8],[0.9],[1.0],[1.1],[1.2],[1.3],[1.4]])
 
         y = linear_interp(x,x_data,y_data)
-        print('Output y of linear_interp with batches:\n', y)
         self.assertEqual(y.shape, x.shape)  # check that the output has the same shape as the input
 
 if __name__ == '__main__':
