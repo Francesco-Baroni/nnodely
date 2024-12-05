@@ -123,4 +123,4 @@ jobs:
       # sigstore-produced signatures and certificates.
       run: >-
         gh release upload v${{ env.BRANCH_VERSION }} dist/**
-        --repo "${{ github.repository }}"
+        --repo ${{ github.repository }}
