@@ -17,4 +17,4 @@ git add .
 git commit -m "$COMMIT_MESSAGE"
 
 # Push the new branch to origin with the commit message
-git push origin --set-upstream origin release/$BRANCH_NAME
+git push --set-upstream origin release/$BRANCH_NAME
