@@ -113,7 +113,7 @@ jobs:
       run: |
         echo "The branch version: ${{ env.BRANCH_VERSION }}"
         gh release create v${{ env.BRANCH_VERSION }}
-        --repo "${{ github.repository }}"
+        --repo ${{ github.repository }}
         --notes "${{ github.event.head_commit.message }}"
     - name: Upload artifact signatures to GitHub Release
       env:
