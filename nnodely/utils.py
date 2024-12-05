@@ -99,3 +99,9 @@ def argmax_max(iterable):
 
 def argmin_min(iterable):
     return min(enumerate(iterable), key=lambda x: x[1])
+
+def argmax_dict(iterable: dict):
+    return max(iterable.items(), key=lambda x: x[1])
+
+def argmin_dict(iterable: dict):
+    return min(iterable.items(), key=lambda x: x[1])
