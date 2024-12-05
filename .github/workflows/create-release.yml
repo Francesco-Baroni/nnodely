@@ -2,11 +2,36 @@ name: Publish New NNodely Release
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - "release/*"
 
 jobs:
+  check-tag-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Extract tag version
+        run: |
+          BRANCH_NAME="${{ github.ref_name }}"
+          BRANCH_VERSION=$(echo $BRANCH_NAME | sed 's/release\///')
+          echo "Tag version: $BRANCH_VERSION"
+          echo "BRANCH_VERSION=$BRANCH_VERSION" >> $GITHUB_ENV
+      - name: Extract file version
+        run: |
+          FILE_VERSION=$(awk -F"'" '/^__version__/ {print $2}' nnodely/__init__.py)
+          echo "File version: $FILE_VERSION"
+          echo "FILE_VERSION=$FILE_VERSION" >> $GITHUB_ENV
+      - name: Compare tag and file versions
+        if: ${{ env.BRANCH_VERSION != env.FILE_VERSION }}
+        run: |
+          echo "Branch version does not match file version"
+          exit 1
+
   build:
     name: Build distribution
+    needs:
+      - check-tag-version
     runs-on: ubuntu-latest
 
     steps:
@@ -32,7 +57,6 @@ jobs:
 
   publish-to-pypi:
     name: Publish to PyPI
-    #if: startsWith(github.ref, 'refs/tags/')  # only publish to PyPI on tag pushes
     needs:
     - build
 
@@ -51,17 +75,6 @@ jobs:
         path: dist/
     - name: Publish distribution 📦 to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
-
-  check-tag-version:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Extract file version
-        run: |
-          FILE_VERSION=$(awk -F"'" '/^__version__/ {print $2}' nnodely/__init__.py)
-          echo "File version: $FILE_VERSION"
-          echo "FILE_VERSION=$FILE_VERSION" >> $GITHUB_ENV
 
   github-release:
     name: >-
