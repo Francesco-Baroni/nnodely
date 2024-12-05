@@ -1,0 +1,31 @@
+name: Publish New nnodely Release
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  check-tag-version:
+    name: Check tag version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Extract tag version
+        run: |
+          BRANCH_NAME="${{ github.ref_name }}"
+          BRANCH_VERSION=$(echo $BRANCH_NAME | sed 's/release\/v//')
+          echo "Tag version: $BRANCH_VERSION"
+          echo "BRANCH_VERSION=$BRANCH_VERSION" >> $GITHUB_ENV
+      - name: Extract file version
+        run: |
+          FILE_VERSION=$(awk -F"'" '/^__version__/ {print $2}' nnodely/__init__.py)
+          echo "File version: $FILE_VERSION"
+          echo "FILE_VERSION=$FILE_VERSION" >> $GITHUB_ENV
+          echo "The branch version: ${{ env.BRANCH_VERSION }}"
+          echo "The file version: ${{ env.FILE_VERSION }}"
+      - name: Compare tag and file versions
+        if: ${{ env.BRANCH_VERSION != env.FILE_VERSION }}
+        run: |
+          echo "Branch version ${{env.BRANCH_VERSION}} does not match file version ${{env.FILE_VERSION}}"
+          exit 1
