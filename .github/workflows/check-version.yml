@@ -20,7 +20,7 @@ jobs:
           echo "File version: $FILE_VERSION"
       - name: Compare tag and file versions
         run: |
-          if [ "$TAG_VERSION" = "$FILE_VERSION" ]; then
+          if [[ $TAG_VERSION == $FILE_VERSION ]]; then
             echo "Tag version matches file version"
           else
             echo "Tag version does not match file version"
