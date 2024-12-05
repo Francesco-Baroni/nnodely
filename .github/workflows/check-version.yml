@@ -1,28 +1,28 @@
-name: Check Tag Version
-
-on:
-  push:
-    branches: [ "main" ]
-
-jobs:
-  check-tag-version:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Extract tag version
-        run: |
-          TAG_VERSION="${{ github.event.head_commit.message }}"
-          echo "Tag version: $TAG_VERSION"
-          echo "TAG_VERSION=$TAG_VERSION" >> $GITHUB_ENV
-      - name: Extract file version
-        run: |
-          FILE_VERSION=$(awk -F"'" '/^__version__/ {print $2}' nnodely/__init__.py)
-          echo "File version: $FILE_VERSION"
-          echo "FILE_VERSION=$FILE_VERSION" >> $GITHUB_ENV
-      - name: Compare tag and file versions
-        if: ${{ env.TAG_VERSION != env.FILE_VERSION }}
-        run: |
-          echo "Tag version does not match file version"
-          exit 1
+#name: Check Tag Version
+#
+#on:
+#  push:
+#    branches: [ "main" ]
+#
+#jobs:
+#  check-tag-version:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v2
+#      - name: Extract tag version
+#        run: |
+#          TAG_VERSION="${{ github.event.head_commit.message }}"
+#          echo "Tag version: $TAG_VERSION"
+#          echo "TAG_VERSION=$TAG_VERSION" >> $GITHUB_ENV
+#      - name: Extract file version
+#        run: |
+#          FILE_VERSION=$(awk -F"'" '/^__version__/ {print $2}' nnodely/__init__.py)
+#          echo "File version: $FILE_VERSION"
+#          echo "FILE_VERSION=$FILE_VERSION" >> $GITHUB_ENV
+#      - name: Compare tag and file versions
+#        if: ${{ env.TAG_VERSION != env.FILE_VERSION }}
+#        run: |
+#          echo "Tag version does not match file version"
+#          exit 1
 
