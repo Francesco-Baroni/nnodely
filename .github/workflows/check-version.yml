@@ -22,6 +22,8 @@ jobs:
           FILE_VERSION=$(awk -F"'" '/^__version__/ {print $2}' nnodely/__init__.py)
           echo "File version: $FILE_VERSION"
           echo "FILE_VERSION=$FILE_VERSION" >> $GITHUB_ENV
+      - name: Print the version
+        run: |
           echo "The branch version: ${{env.BRANCH_VERSION}}"
           echo "The file version: ${{env.FILE_VERSION}}"
       - name: Compare tag and file versions
