@@ -28,7 +28,7 @@ jobs:
       - name: Compare tag and file versions
         if: ${{ env.BRANCH_VERSION != env.FILE_VERSION }}
         run: |
-          echo "Branch version ${{env.BRANCH_VERSION}} does not match file version ${{env.FILE_VERSION}}"
+          echo "Branch version ${{ env.BRANCH_VERSION }} does not match file version ${{ env.FILE_VERSION }}"
           exit 1
 
   build:
@@ -110,6 +110,7 @@ jobs:
         BRANCH_VERSION=$(echo $BRANCH_NAME | sed 's/release\/v//')
         echo "Tag version: $BRANCH_VERSION"
         echo "BRANCH_VERSION=$BRANCH_VERSION" >> $GITHUB_ENV
+        echo "The branch version: ${{ env.BRANCH_VERSION }}"
         gh release create v${{ env.BRANCH_VERSION }}
         --repo "${{ github.repository }}"
         --notes "${{ github.event.head_commit.message }}"

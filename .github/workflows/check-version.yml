@@ -1,4 +1,4 @@
-name: Publish New nnodely Release
+name: Check Version
 
 on:
   push:
