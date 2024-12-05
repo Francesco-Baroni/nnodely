@@ -7,6 +7,7 @@ on:
 
 jobs:
   check-tag-version:
+    name: Check tag version
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
