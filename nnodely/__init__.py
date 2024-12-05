@@ -1,5 +1,5 @@
 
-__version__ = '0.22.6'
+__version__ = '0.22.7'
 
 import sys
 major, minor = sys.version_info.major, sys.version_info.minor
