@@ -16,6 +16,7 @@ else:
           f' {__package__}_v{__version__} '.center(20, '-')+
           f'<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
 
+# Comment
 # Network input, outputs and parameters
 from nnodely.input import Input, State, Connect, ClosedLoop
 from nnodely.parameter import Parameter, Constant
