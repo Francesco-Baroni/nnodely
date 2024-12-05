@@ -26,10 +26,3 @@ jobs:
           echo "Tag version does not match file version"
           exit 1
 
-#        run: |
-#          if [[ $TAG_VERSION == $FILE_VERSION ]]; then
-#            echo "Tag version matches file version"
-#          else
-#            echo "Tag version does not match file version"
-#            exit 1
-#          fi
