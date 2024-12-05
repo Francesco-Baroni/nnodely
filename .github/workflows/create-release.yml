@@ -108,7 +108,7 @@ jobs:
         BRANCH_VERSION=$(echo $BRANCH_NAME | sed 's/release\/v//')
         echo "Tag version: $BRANCH_VERSION"
         echo "BRANCH_VERSION=$BRANCH_VERSION" >> $GITHUB_ENV
-        gh release create v${{env.BRANCH_VERSION}}
+        gh release create v$(echo $BRANCH_VERSION)
         --repo "${{ github.repository }}"
         --notes "${{ github.event.head_commit.message }}"
     - name: Upload artifact signatures to GitHub Release
@@ -118,5 +118,5 @@ jobs:
       # `dist/` contains the built packages, and the
       # sigstore-produced signatures and certificates.
       run: >-
-        gh release upload v${{env.BRANCH_VERSION}} dist/**
+        gh release upload v$(echo $BRANCH_VERSION) dist/**
         --repo "${{ github.repository }}"
