@@ -112,8 +112,9 @@ jobs:
         GITHUB_TOKEN: ${{ github.token }}
       run: |
         echo "The branch version: ${{ env.BRANCH_VERSION }}"
-        gh release create v${{ env.BRANCH_VERSION }}
-        --repo ${{ github.repository }}
+        gh release create 
+        v${{ env.BRANCH_VERSION }}
+        --repo '${{ github.repository }}'
         --notes "${{ github.event.head_commit.message }}"
     - name: Upload artifact signatures to GitHub Release
       env:
@@ -122,5 +123,6 @@ jobs:
       # `dist/` contains the built packages, and the
       # sigstore-produced signatures and certificates.
       run: >-
-        gh release upload v${{ env.BRANCH_VERSION }} dist/**
-        --repo ${{ github.repository }}
+        gh release upload 
+        v${{ env.BRANCH_VERSION }} dist/**
+        --repo '${{ github.repository }}'
