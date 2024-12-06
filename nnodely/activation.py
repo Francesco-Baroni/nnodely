@@ -1,9 +1,10 @@
+import torch
 import torch.nn as nn
 
 from nnodely.relation import Stream, ToStream, toStream
 from nnodely.model import Model
 from nnodely.utils import check
-import torch
+
 
 relu_relation_name = 'ReLU'
 tanh_relation_name = 'Tanh'
