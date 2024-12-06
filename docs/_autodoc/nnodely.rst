@@ -5,7 +5,8 @@ nnodely package
 Subpackages
 -----------
 
-.. toctree::
+.. COMMENT
+   toctree::
    :maxdepth: 4
 
 .. COMMENT
