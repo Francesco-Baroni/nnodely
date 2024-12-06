@@ -143,6 +143,11 @@ Modely module
    :undoc-members:
    :show-inheritance:
 
+..  automodule:: Modely
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 .. COMMENT
     nnodely.optimizer module
     ------------------------
