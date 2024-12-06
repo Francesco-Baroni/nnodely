@@ -9,7 +9,9 @@ Welcome to nnodely's documentation!
 .. toctree::
    :maxdepth: 2
 
-   _autodoc/modules
+.. autoclass:: nnodely.Modely
+   :special-members: __init__
+   :members: resetSeed
 
 
 Indices and tables
