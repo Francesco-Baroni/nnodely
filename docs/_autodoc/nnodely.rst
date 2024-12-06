@@ -7,16 +7,18 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
+.. COMMENT
    nnodely.exporter
    nnodely.visualizer
-
+..
 Submodules
 ----------
 
 nnodely.activation module
 -------------------------
 
-.. automodule:: nnodely.activation
+.. COMMENT
+   automodule:: nnodely.activation
    :members:
    :undoc-members:
    :show-inheritance:
@@ -24,7 +26,8 @@ nnodely.activation module
 nnodely.arithmetic module
 -------------------------
 
-.. automodule:: nnodely.arithmetic
+.. COMMENT
+   automodule:: nnodely.arithmetic
    :members:
    :undoc-members:
    :show-inheritance:
@@ -32,7 +35,8 @@ nnodely.arithmetic module
 nnodely.earlystopping module
 ----------------------------
 
-.. automodule:: nnodely.earlystopping
+.. COMMENT
+   automodule:: nnodely.earlystopping
    :members:
    :undoc-members:
    :show-inheritance:
@@ -40,7 +44,8 @@ nnodely.earlystopping module
 nnodely.fir module
 ------------------
 
-.. automodule:: nnodely.fir
+.. COMMENT
+   automodule:: nnodely.fir
    :members:
    :undoc-members:
    :show-inheritance:
@@ -48,7 +53,8 @@ nnodely.fir module
 nnodely.fuzzify module
 ----------------------
 
-.. automodule:: nnodely.fuzzify
+.. COMMENT
+   automodule:: nnodely.fuzzify
    :members:
    :undoc-members:
    :show-inheritance:
@@ -56,7 +62,8 @@ nnodely.fuzzify module
 nnodely.initializer module
 --------------------------
 
-.. automodule:: nnodely.initializer
+.. COMMENT
+   automodule:: nnodely.initializer
    :members:
    :undoc-members:
    :show-inheritance:
@@ -64,7 +71,8 @@ nnodely.initializer module
 nnodely.input module
 --------------------
 
-.. automodule:: nnodely.input
+.. COMMENT
+   automodule:: nnodely.input
    :members:
    :undoc-members:
    :show-inheritance:
@@ -72,7 +80,8 @@ nnodely.input module
 nnodely.linear module
 ---------------------
 
-.. automodule:: nnodely.linear
+.. COMMENT
+   automodule:: nnodely.linear
    :members:
    :undoc-members:
    :show-inheritance:
@@ -80,7 +89,8 @@ nnodely.linear module
 nnodely.localmodel module
 -------------------------
 
-.. automodule:: nnodely.localmodel
+.. COMMENT
+   automodule:: nnodely.localmodel
    :members:
    :undoc-members:
    :show-inheritance:
@@ -88,7 +98,8 @@ nnodely.localmodel module
 nnodely.logger module
 ---------------------
 
-.. automodule:: nnodely.logger
+.. COMMENT
+   automodule:: nnodely.logger
    :members:
    :undoc-members:
    :show-inheritance:
@@ -96,7 +107,8 @@ nnodely.logger module
 nnodely.loss module
 -------------------
 
-.. automodule:: nnodely.loss
+.. COMMENT
+   automodule:: nnodely.loss
    :members:
    :undoc-members:
    :show-inheritance:
@@ -104,7 +116,8 @@ nnodely.loss module
 nnodely.model module
 --------------------
 
-.. automodule:: nnodely.model
+.. COMMENT
+   automodule:: nnodely.model
    :members:
    :undoc-members:
    :show-inheritance:
@@ -112,7 +125,8 @@ nnodely.model module
 nnodely.modeldef module
 -----------------------
 
-.. automodule:: nnodely.modeldef
+.. COMMENT
+   automodule:: nnodely.modeldef
    :members:
    :undoc-members:
    :show-inheritance:
@@ -120,7 +134,8 @@ nnodely.modeldef module
 nnodely.nnodely module
 ----------------------
 
-.. automodule:: nnodely.nnodely
+.. COMMENT
+   automodule:: nnodely.nnodely
    :members:
    :undoc-members:
    :show-inheritance:
@@ -136,7 +151,8 @@ nnodely.optimizer module
 nnodely.output module
 ---------------------
 
-.. automodule:: nnodely.output
+.. COMMENT
+   automodule:: nnodely.output
    :members:
    :undoc-members:
    :show-inheritance:
@@ -144,7 +160,8 @@ nnodely.output module
 nnodely.parameter module
 ------------------------
 
-.. automodule:: nnodely.parameter
+.. COMMENT
+   automodule:: nnodely.parameter
    :members:
    :undoc-members:
    :show-inheritance:
@@ -152,7 +169,8 @@ nnodely.parameter module
 nnodely.parametricfunction module
 ---------------------------------
 
-.. automodule:: nnodely.parametricfunction
+.. COMMENT
+   automodule:: nnodely.parametricfunction
    :members:
    :undoc-members:
    :show-inheritance:
@@ -160,7 +178,8 @@ nnodely.parametricfunction module
 nnodely.part module
 -------------------
 
-.. automodule:: nnodely.part
+.. COMMENT
+   automodule:: nnodely.part
    :members:
    :undoc-members:
    :show-inheritance:
@@ -168,7 +187,8 @@ nnodely.part module
 nnodely.relation module
 -----------------------
 
-.. automodule:: nnodely.relation
+.. COMMENT
+   automodule:: nnodely.relation
    :members:
    :undoc-members:
    :show-inheritance:
@@ -176,7 +196,8 @@ nnodely.relation module
 nnodely.trigonometric module
 ----------------------------
 
-.. automodule:: nnodely.trigonometric
+.. COMMENT
+   automodule:: nnodely.trigonometric
    :members:
    :undoc-members:
    :show-inheritance:
@@ -184,7 +205,8 @@ nnodely.trigonometric module
 nnodely.utils module
 --------------------
 
-.. automodule:: nnodely.utils
+.. COMMENT
+   automodule:: nnodely.utils
    :members:
    :undoc-members:
    :show-inheritance:
@@ -192,7 +214,8 @@ nnodely.utils module
 Module contents
 ---------------
 
-.. automodule:: nnodely
+.. COMMENT
+   automodule:: nnodely
    :members:
    :undoc-members:
    :show-inheritance:
