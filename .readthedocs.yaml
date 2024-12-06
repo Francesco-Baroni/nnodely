@@ -4,10 +4,10 @@ build:
   os: ubuntu-20.04
   tools:
     python: "3.10"
-  jobs:
-    pre_build:
-      # - sphinx-apidoc -o docs/_autodoc nnodely mplplots
-      - sphinx-apidoc -o docs/_autodoc nnodely
+#  jobs:
+#    pre_build:
+#      # - sphinx-apidoc -o docs/_autodoc nnodely mplplots
+#      - sphinx-apidoc -o docs/_autodoc nnodely
 
 sphinx:
   configuration: docs/conf.py
