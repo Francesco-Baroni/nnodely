@@ -8,7 +8,6 @@ on:
 jobs:
   check-tag-version:
     name: Check tag version equal to file version
-    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
