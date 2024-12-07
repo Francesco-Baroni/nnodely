@@ -7,8 +7,7 @@
 [![Coverage Status](https://readthedocs.org/projects/nnodely/badge/?version=latest&style=default)](https://nnodely.readthedocs.io/en/latest/)
 
 <a name="readme-top"></a>
-### Model-structured neural network framework for the modeling and control of physical systems
-
+## Model-structured neural network framework for the modeling and control of physical systems
 _Model-Structured neural networks_ (MSNNs) are a new neural networks concept. 
 These networks base their structure on mechanical and control theory laws. 
 
