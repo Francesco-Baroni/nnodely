@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Coverage Status](https://coveralls.io/repos/github/tonegas/nnodely/badge.svg?branch=main)](https://coveralls.io/github/tonegas/nnodely?branch=main)
-[![Coverage Status](https://readthedocs.org/projects/nnodely/badge/?version=lastest&style=plastic)](https://nnodely.readthedocs.io/en/latest/)
+[![Coverage Status](https://readthedocs.org/projects/nnodely/badge/?version=latest&style=default)](https://nnodely.readthedocs.io/en/latest/)
 
 <a name="readme-top"></a>
 ### Model-structured neural network framework for the modeling and control of physical systems
