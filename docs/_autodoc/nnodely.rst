@@ -17,15 +17,17 @@ nnodely package
     Submodules
     ----------
 
-.. COMMENT
-    nnodely.activation module
-    -------------------------
 
-.. COMMENT
+nnodely.activation module
+-------------------------
+
+   activation
+..  
    automodule:: nnodely.activation
    :members:
    :undoc-members:
    :show-inheritance:
+
 .. COMMENT
     nnodely.arithmetic module
     -------------------------
