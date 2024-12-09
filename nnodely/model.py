@@ -6,6 +6,12 @@ import torch
 
 import copy
 
+@torch.fx.wrap
+def connect(data_in, rel, shift):
+    virtual = torch.roll(data_in, shifts=-1, dims=1)
+    virtual[:, -shift:, :] = rel
+    return virtual
+
 class Model(nn.Module):
     def __init__(self, model_def):
         super(Model, self).__init__()
@@ -161,10 +167,12 @@ class Model(nn.Module):
                     ## Check if the relation is inside the connect
                     for connect_input, connect_rel in self.connect_update.items():
                         if relation == connect_rel:
-                            shift = result_dict[relation].shape[1]
-                            virtual = torch.roll(kwargs[connect_input], shifts=-1, dims=1)
-                            virtual[:, -shift:, :] = result_dict[relation]
-                            result_dict[connect_input] = virtual.clone()
+                            # shift = result_dict[relation].shape[1]
+                            # virtual = torch.roll(kwargs[connect_input], shifts=-1, dims=1)
+                            # virtual[:, -shift:, :] = result_dict[relation]
+                            # result_dict[connect_input] = virtual.clone()
+                            # available_keys.add(connect_input)
+                            result_dict[connect_input] = connect(kwargs[connect_input], result_dict[relation], result_dict[relation].shape[1])
                             available_keys.add(connect_input)
 
         ## Return a dictionary with all the connected inputs

@@ -68,7 +68,7 @@ class StandardExporter(Exporter):
         return model
 
     def exportONNX(self, model_def, model, inputs_order, outputs_order, name = 'net', model_folder = None, ):
-        check(set(inputs_order) == set(model_def['Inputs'].keys()), ValueError,
+        check(set(inputs_order) == set(model_def['Inputs'].keys() | model_def['States'].keys()), ValueError,
               f'The inputs are not the same as the model inputs ({model_def["Inputs"].keys()}).')
         check(set(outputs_order) == set(model_def['Outputs'].keys()), ValueError,
               f'The outputs are not the same as the model outputs ({model_def["Outputs"].keys()}).')

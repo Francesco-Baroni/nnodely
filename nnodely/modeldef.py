@@ -158,9 +158,9 @@ class ModelDef():
         check(self.json['Inputs'] | self.json['States'] != {}, RuntimeError, "No model is defined!")
         json_inputs = self.json['Inputs'] | self.json['States']
 
-        for key,value in self.json['States'].items():
-            check(closedloop_name in self.json['States'][key] or connect_name in self.json['States'][key],
-                  KeyError, f'Update function is missing for state {key}. Use Connect or ClosedLoop to update the state.')
+        # for key,value in self.json['States'].items():
+        #     check(closedloop_name in self.json['States'][key].keys() or connect_name in self.json['States'][key].keys(),
+        #           KeyError, f'Update function is missing for state {key}. Use Connect or ClosedLoop to update the state.')
 
         input_tw_backward, input_tw_forward, input_ns_backward, input_ns_forward = {}, {}, {}, {}
         for key, value in json_inputs.items():

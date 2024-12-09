@@ -65,6 +65,12 @@ def export_python_model(model_def, model, model_path):
         #file.write("import torch.nn as nn\n")
         file.write("import torch\n\n")
 
+        ## write the connect wrap function
+        file.write(f"def {package_name}_model_connect(data_in, rel, shift):\n")
+        file.write("    virtual = torch.roll(data_in, shifts=-1, dims=1)\n")
+        file.write("    virtual[:, -shift:, :] = rel\n")
+        file.write("    return virtual\n\n")
+
         for name in model_def['Functions'].keys():
             if 'Fuzzify' in name:
                 if 'slicing' not in saved_functions:
@@ -147,11 +153,22 @@ def export_python_model(model_def, model, model_path):
                     f"        {attr} = torch.tensor({getattr(model,key).item()})\n")
 
         file.write("        self.all_parameters = torch.nn.ParameterDict(self.all_parameters)\n")
-        file.write("        self.all_constants = torch.nn.ParameterDict(self.all_constants)\n")
+        file.write("        self.all_constants = torch.nn.ParameterDict(self.all_constants)\n\n")
         file.write("    def update(self, closed_loop={}, connect={}):\n")
-        file.write("        pass\n")
+        file.write("        pass\n\n")  ## TODO: change with the code when i find how to use it properly
+        # file.write("        self.closed_loop_update = {}\n")
+        # file.write("        self.connect_update = {}\n")
+        # file.write("        for key, state in self.state_model.items():\n")
+        # file.write("            if 'connect' in state.keys():\n")
+        # file.write("                self.connect_update[key] = state['connect']\n")
+        # file.write("            elif 'closedLoop' in state.keys():\n")
+        # file.write("                self.closed_loop_update[key] = state['closedLoop']\n")
+        # file.write("        for connect_in, connect_rel in connect.items():\n")
+        # file.write("            self.connect_update[connect_in] = self.outputs[connect_rel]\n")
+        # file.write("        for close_in, close_rel in closed_loop.items():\n")
+        # file.write("            self.closed_loop_update[close_in] = self.outputs[close_rel]\n")
 
-        for line in trace.code.split("\n")[len(saved_functions) + 1:]:
+        for line in trace.code.split("\n")[len(saved_functions) + 2:]:
             if 'self.relation_forward' in line:
                 if 'dropout' in line:
                     attribute = line.split()[0]
@@ -220,8 +237,9 @@ def export_onnx_model(model_def, model, input_order, output_order, model_path):
     dynamic_axes = {}
     for key in input_order:
         input_names.append(key)
-        window_size = model_def['Inputs'][key]['ntot']
-        dummy_inputs.append(torch.randn(size=(1, window_size, model_def['Inputs'][key]['dim'])))
+        window_size = model_def['Inputs'][key]['ntot'] if key in model_def['Inputs'].keys() else model_def['States'][key]['ntot']
+        dim = model_def['Inputs'][key]['dim'] if key in model_def['Inputs'].keys() else model_def['States'][key]['dim']
+        dummy_inputs.append(torch.randn(size=(1, window_size, dim)))
         dynamic_axes[key] = {0: 'batch_size'}
     output_names = output_order
     dummy_inputs = tuple(dummy_inputs)

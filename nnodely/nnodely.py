@@ -1257,7 +1257,7 @@ class Modely:
         else:
             model_def = self.model_def
             model = self.model
-        check(model_def['States'] == {}, TypeError, "The network has state variables. The export to python is not possible.")
+        #check(model_def['States'] == {}, TypeError, "The network has state variables. The export to python is not possible.")
         check(model_def.isDefined(), RuntimeError, "The network has not been defined.")
         check(self.traced == False, RuntimeError,
                   'The model is traced and cannot be exported to Python.\n Run neuralizeModel() to recreate a standard model.')
@@ -1290,6 +1290,7 @@ class Modely:
         model_def.setBuildWindow(self.model_def['Info']['SampleTime'])
         model_def.updateParameters(self.model)
         model = Model(model_def.json)
+        model.update()
         self.exporter.exportONNX(model_def, model, inputs_order, outputs_order, name, model_folder)
 
     def exportReport(self, name = 'net', model_folder = None):
