@@ -76,9 +76,12 @@ def createRelu(self, *input):
      :noindex:
     """
     return ReLU_Layer()
+    
 
 def createELU(self, *input):
-    #: :noindex:
+    """
+     :noindex:
+    """
     return nn.ELU()
 
 setattr(Model, relu_relation_name, createRelu)
