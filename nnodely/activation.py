@@ -12,9 +12,17 @@ elu_relation_name = 'ELU'
 
 class Relu(Stream, ToStream):
     """
-    Relu activation function for the stream object.
-    Example:
-        >>> x = Relu(x)
+        Implement the Rectified-Linear Unit (ReLU) relation function.
+
+        See also:
+            Official PyTorch ReLU documentation: 
+            `torch.nn.ReLU <https://pytorch.org/docs/stable/generated/torch.nn.ReLU.html>`_
+
+        :param obj: The relation stream.
+        :type obj: Stream 
+
+        Example:
+            >>> x = Relu(x)
     """
     def __init__(self, obj:Stream) -> Stream:
         obj = toStream(obj)
@@ -25,9 +33,17 @@ class Relu(Stream, ToStream):
 
 class Tanh(Stream, ToStream):
     """
-    Tanh activation function for the stream object.
-    Example:
-        >>> x = Tanh(x)
+        Implement the Hyperbolic Tangent (Tanh) relation function.
+
+        See also:
+            Official PyTorch tanh documentation: 
+            `torch.nn.Tanh <https://pytorch.org/docs/stable/generated/torch.nn.Tanh.html>`_
+
+        :param obj: The relation stream.
+        :type obj: Stream 
+
+        Example:
+            >>> x = Tanh(x)
     """
     def __init__(self, obj:Stream) -> Stream:
         obj = toStream(obj)
@@ -38,9 +54,17 @@ class Tanh(Stream, ToStream):
 
 class ELU(Stream, ToStream):
     """
-    ELU activation function for the stream object.
-    Example:
-        >>> x = ELU(x)
+        Implement the Exponential-Linear Unit (ELU) relation function.
+
+        See also:
+            Official PyTorch ReLU documentation: 
+            `torch.nn.ELU <https://pytorch.org/docs/stable/generated/torch.nn.ELU.html>`_
+
+        :param obj: The relation stream.
+        :type obj: Stream 
+
+        Example:
+            >>> x = ELU(x)
     """
     def __init__(self, obj:Stream) -> Stream:
         obj = toStream(obj)
@@ -50,7 +74,9 @@ class ELU(Stream, ToStream):
         self.json['Relations'][self.name] = [elu_relation_name,[obj.name]]
 
 class Tanh_Layer(nn.Module):
-    #: :noindex:
+    """
+     :noindex:
+    """
     def __init__(self,):
         super(Tanh_Layer, self).__init__()
     def forward(self, x):

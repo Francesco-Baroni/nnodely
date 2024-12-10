@@ -17,11 +17,131 @@ nnodely package
     Submodules
     ----------
 
+activation module
+-----------------
 
-nnodely.activation module
--------------------------
+.. automodule:: nnodely.activation
+    :undoc-members:
+    :no-inherited-members:
 
-   activation
+    .. autoclass:: nnodely.activation.Relu
+        :undoc-members:
+        :no-inherited-members:
+
+    .. autoclass:: nnodely.activation.Tanh
+        :undoc-members:
+        :no-inherited-members:
+
+    .. autoclass:: nnodely.activation.ELU
+        :undoc-members:
+        :no-inherited-members:
+
+arithmetic module
+-----------------
+
+.. automodule:: nnodely.arithmetic
+    :undoc-members:
+    :no-inherited-members:
+
+    .. autoclass:: nnodely.arithmetic.Add
+        :undoc-members:
+        :no-inherited-members:
+
+    .. autoclass:: nnodely.arithmetic.Sub
+        :undoc-members:
+        :no-inherited-members:
+
+    .. autoclass:: nnodely.arithmetic.Mul
+        :undoc-members:
+        :no-inherited-members:
+
+    .. autoclass:: nnodely.arithmetic.Div
+        :undoc-members:
+        :no-inherited-members:
+
+    .. autoclass:: nnodely.arithmetic.Pow
+        :undoc-members:
+        :no-inherited-members:
+
+    .. autoclass:: nnodely.arithmetic.Neg
+        :undoc-members:
+        :no-inherited-members:
+
+earlystopping module
+--------------------
+
+.. automodule:: nnodely.earlystopping
+    :undoc-members:
+    :no-inherited-members:
+
+    .. autofunction:: nnodely.earlystopping.early_stop_patience
+    .. autofunction:: nnodely.earlystopping.select_best_model
+    .. autofunction:: nnodely.earlystopping.mean_stopping
+    .. autofunction:: nnodely.earlystopping.standard_early_stopping
+
+fir module
+----------
+
+.. automodule:: nnodely.fir
+    :undoc-members:
+    :no-inherited-members:
+
+    .. autoclass:: nnodely.fir.Fir
+        :undoc-members:
+        :no-inherited-members:
+
+fuzzify module
+--------------
+
+.. automodule:: nnodely.fuzzify
+    :undoc-members:
+    :no-inherited-members:
+
+    .. autoclass:: nnodely.fuzzify.Fuzzify
+        :undoc-members:
+        :no-inherited-members:
+
+initializer module
+------------------
+
+.. automodule:: nnodely.initializer
+    :undoc-members:
+    :no-inherited-members:
+
+    .. autofunction:: nnodely.initializer.init_constant
+    .. autofunction:: nnodely.initializer.init_negexp
+    .. autofunction:: nnodely.initializer.init_exp
+    .. autofunction:: nnodely.initializer.init_lin
+
+input module
+------------
+
+.. automodule:: nnodely.input
+    :no-undoc-members:
+    :no-inherited-members:
+
+    .. autoclass:: nnodely.input.Input
+        :undoc-members:
+        :inherited-members:
+        :exclude-members: count, reset_count
+
+    .. autoclass:: nnodely.input.State
+        :undoc-members:
+        :inherited-members:
+        :exclude-members: count, reset_count
+
+
+linear module
+-------------
+
+.. automodule:: nnodely.linear
+    :undoc-members:
+    :no-inherited-members:
+
+    .. autoclass:: nnodely.linear.Linear
+        :undoc-members:
+        :no-inherited-members:
+
 ..  
    automodule:: nnodely.activation
    :members:
@@ -137,8 +257,8 @@ nnodely.activation module
    :undoc-members:
    :show-inheritance:
 
-Modely module
--------------
+Modely 
+======
 
 ..  automodule:: nnodely.nnodely
    :members:

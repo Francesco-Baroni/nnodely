@@ -257,7 +257,7 @@ class Modely:
                                 del X[key]
                             continue
                     X[key] = torch.from_numpy(np.array(val[i])).to(torch.float32) if sampled else torch.from_numpy(
-                            np.array(val[i:i + self.input_n_samples[key]])).to(torch.float32)
+                        np.array(val[i:i + self.input_n_samples[key]])).to(torch.float32)
 
                     if key in model_inputs:
                         input_dim = self.model_def['Inputs'][key]['dim']

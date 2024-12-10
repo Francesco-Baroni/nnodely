@@ -14,6 +14,76 @@ log = nnLogger(__name__, logging.CRITICAL)
 
 linear_relation_name = 'Linear'
 class Linear(NeuObj, AutoToStream):
+    """
+    Represents a Linear relation in the neural network model.
+
+    Notes
+    -----
+    .. note::
+        The Linear relation works along the input dimension (third dimension) of the input tensor.
+        You can find some initialization functions inside the initializer module.
+
+    Parameters
+    ----------
+    output_dimension : int, optional
+        The output dimension of the Linear relation.
+    W_init : Callable, optional
+        A callable for initializing the weights.
+    W_init_params : dict, optional
+        A dictionary of parameters for the weight initializer.
+    b_init : Callable, optional
+        A callable for initializing the bias.
+    b_init_params : dict, optional
+        A dictionary of parameters for the bias initializer.
+    W : Parameter or str, optional
+        The weight parameter object or name. If not given a new parameter will be auto-generated.
+    b : bool, str, or Parameter, optional
+        The bias parameter object, name, or a boolean indicating whether to use bias. If set to 'True' a new parameter will be auto-generated.
+    dropout : int or float, optional
+        The dropout rate. Default is 0.
+
+    Attributes
+    ----------
+    relation_name : str
+        The name of the relation.
+    W_init : Callable
+        The weight initializer.
+    W_init_params : dict
+        The parameters for the weight initializer.
+    b_init : Callable
+        The bias initializer.
+    b_init_params : dict
+        The parameters for the bias initializer.
+    W : Parameter or str
+        The weight parameter object or name.
+    b : bool, str, or Parameter
+        The bias parameter object, name, or a boolean indicating whether to use bias.
+    Wname : str
+        The name of the weight parameter.
+    bname : str
+        The name of the bias parameter.
+    dropout : int or float
+        The dropout rate.
+    output_dimension : int
+        The output dimension of the Linear relation.
+
+    Examples
+    --------
+
+    Example - basic usage:
+        >>> input = Input('in').tw(0.05)
+        >>> relation = Linear(input)
+
+    Example - passing a weight and bias parameter:
+        >>> input = Input('in').last()
+        >>> weight = Parameter('W', values=[[[1]]])
+        >>> bias = Parameter('b', values=[[1]])
+        >>> relation = Linear(W=weight, b=bias)(input)
+
+    Example - parameters initialization:
+        >>> input = Input('in').last()
+        >>> relation = Linear(b=True, W_init=init_negexp, b_init=init_constant, b_init_params={'value':1})(input)
+    """
 
     @enforce_types
     def __init__(self, output_dimension:int|None = None,

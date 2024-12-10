@@ -36,7 +36,7 @@ class NeuObj():
     @classmethod
     def reset_count(self):
         NeuObj.count = 0
-    def __init__(self, name = '', json = {}, dim = 0):
+    def __init__(self, name='', json={}, dim=0):
         NeuObj.count += 1
         if CHECK_NAMES == True:
             check(name not in NeuObj_names, NameError, f"The name {name} is already used change the name of NeuObj.")
@@ -113,6 +113,26 @@ class Stream(Relation):
             return Stream(win_state.name, merge(win_state.json, out_connect.json), win_state.dim,0 )
 
     def connect(self, obj):
+        """
+        Connects the current stream to a given state object.
+
+        Parameters
+        ----------
+        obj : State
+            The state object to connect to.
+
+        Returns
+        -------
+        Stream
+            A new Stream object representing the connected state.
+
+        Raises
+        ------
+        TypeError
+            If the provided object is not of type State.
+        KeyError
+            If the state variable is already connected.
+        """
         from nnodely.input import State
         check(type(obj) is State, TypeError,
               f"The {obj} must be a State and not a {type(obj)}.")
@@ -123,6 +143,26 @@ class Stream(Relation):
         return Stream(self.name, self.json, self.dim,0 )
 
     def closedLoop(self, obj):
+        """
+        Creates a closed loop connection with a given state object.
+
+        Parameters
+        ----------
+        obj : State
+            The state object to create a closed loop with.
+
+        Returns
+        -------
+        Stream
+            A new Stream object representing the closed loop state.
+
+        Raises
+        ------
+        TypeError
+            If the provided object is not of type State.
+        KeyError
+            If the state variable is already connected.
+        """
         from nnodely.input import State
         check(type(obj) is State, TypeError,
               f"The {obj} must be a State and not a {type(obj)}.")
