@@ -5,7 +5,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Coverage Status](https://coveralls.io/repos/github/tonegas/nnodely/badge.svg?branch=main)](https://coveralls.io/github/tonegas/nnodely?branch=main)
 
-
 <a name="readme-top"></a>
 ## Model-structured neural network framework for the modeling and control of physical systems
 
@@ -25,15 +24,15 @@ a hybrind approach between neural networks and physical models.
 
 The main motivation of the framework are to:
 - Modeling, control and estimation of physical systems, whose internal dynamics may be partially unknown;
-- Speed-up the development of MS-NN, which is complex to design using standard deep-learning framework;
+- Speed-up the development of MSNN, which is complex to design using standard deep-learning framework;
 - Support professionals with classical modeling backgrounds, such as physicists and engineers, in using 
 data-driven approaches (but embedding knowledge inside) to address their challenges;
 - A repository of incremental know-how that effectively collects approaches with the same purpose, i.e. building an
-increasingly advanced library of MS-NNs for various applications.
+increasingly advanced library of MSNNs for various applications.
 
 The nnodely framework guides users through six structured phases to model and control physical systems using 
-neural networks. It begins with **Neural Models Definition**, where the architecture and dynamics of the MSNNs are 
-specified. Next is **Dataset Creation**, preparing the data needed for training and validation. 
+neural networks. It begins with **Neural Models Definition**, where the architecture of the MSNNs are specified. 
+Next is **Dataset Creation**, preparing the data needed for training and validation. 
 In **Neural Models Composition**, models are integrated to represent complex systems also including a controller if is needed. 
 **Neural Models Training** follows, optimizing parameters to ensure accurate representation of the target system or a part of it. 
 In **Neural Model Validation**, the trained models are tested for reliability. 
@@ -79,6 +78,10 @@ You can install the nnodely framework from PyPI via:
   pip install nnodely
   ```
 
+### Applications and use cases
+The application of nnodely in some additional use cases are shown in 
+https://github.com/tonegas/nnodely-applications.
+
 ### How to contribute to the project
 Download the source code and install the dependencies using the following commands:
   ```sh
@@ -92,11 +95,11 @@ Or create an issue...
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <a name="basicfunctionalities"></a>
-## Basic Functionalities
+## Basic Example
 <a name="structuredneuralmodel"></a>
-### Build the structured neural model
+### Build the neural model
 
-The structured neural model is defined by a list of inputs by a list of outputs and by a list of relationships that link the inputs to the outputs.
+The neural model, is based of a model-structured neural network, and is defined by a list of inputs by a list of outputs and by a list of relationships that link the inputs to the outputs.
 
 Let's assume we want to model one of the best-known linear mechanical systems, the mass-spring-damper system.
 
