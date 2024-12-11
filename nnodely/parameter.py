@@ -10,6 +10,33 @@ def is_numpy_float(var):
     return isinstance(var, (np.float16, np.float32, np.float64))
 
 class Constant(NeuObj, Stream):
+    """
+    Represents a constant value in the neural network model.
+
+    Parameters
+    ----------
+    name : str
+        The name of the constant.
+    values : list, float, int, or np.ndarray
+        The values of the constant.
+    tw : float or int, optional
+        The time window for the constant. Default is None.
+    sw : int, optional
+        The sample window for the constant. Default is None.
+
+    Attributes
+    ----------
+    name : str
+        The name of the constant.
+    dim : dict
+        A dictionary containing the dimensions of the constant.
+    json : dict
+        A dictionary containing the configuration of the constant.
+
+    Example
+    -------
+        >>> g = Constant('gravity',values=9.81)
+    """
     @enforce_types
     def __init__(self, name:str,
                  values:list|float|int|np.ndarray,
@@ -42,6 +69,56 @@ class Constant(NeuObj, Stream):
         Stream.__init__(self, name, self.json, self.dim)
 
 class Parameter(NeuObj, Stream):
+    """
+    Represents a parameter in the neural network model.
+
+    Notes
+    -----
+    .. note::
+        You can find some initialization functions for the 'init' and 'init_params' parameters inside the initializer module.
+
+    Parameters
+    ----------
+    name : str
+        The name of the parameter.
+    dimensions : int, list, tuple, or None, optional
+        The dimensions of the parameter. Default is None.
+    tw : float or int, optional
+        The time window for the parameter. Default is None.
+    sw : int, optional
+        The sample window for the parameter. Default is None.
+    values : list, float, int, np.ndarray, or None, optional
+        The values of the parameter. Default is None.
+    init : Callable, optional
+        A callable for initializing the parameter values. Default is None.
+    init_params : dict, optional
+        A dictionary of parameters for the initializer. Default is None.
+
+    Attributes
+    ----------
+    name : str
+        The name of the parameter.
+    dim : dict
+        A dictionary containing the dimensions of the parameter.
+    json : dict
+        A dictionary containing the configuration of the parameter.
+
+    Examples
+    --------
+
+    Example - basic usage:
+        >>> k = Parameter('k', dimensions=3, tw=4)
+
+    Example - initialize a parameter with values:
+        >>> x = Input('x')
+        >>> gravity = Parameter('g', dimensions=(4,1),values=[[[1],[2],[3],[4]]])
+        >>> out = Output('out', Linear(W=gravity)(x.sw(3)))
+
+    Example - initialize a parameter with a function:
+        >>> x = Input('x').last()
+        >>> p = Parameter('param', dimensions=1, sw=1, init=init_constant, init_params={'value':1})
+        >>> relation = Fir(parameter=param)(x)
+    """
     @enforce_types
     def __init__(self, name:str,
                  dimensions:int|list|tuple|None = None,

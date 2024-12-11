@@ -1,3 +1,9 @@
+Overview
+========
+
+.. include:: overview.md
+   :parser: myst
+
 nnodely package
 ===============
 
@@ -142,6 +148,119 @@ linear module
         :undoc-members:
         :no-inherited-members:
 
+
+localmodel module
+-----------------
+
+.. automodule:: nnodely.localmodel
+    :undoc-members:
+    :no-inherited-members:
+
+    .. autoclass:: nnodely.localmodel.LocalModel
+        :undoc-members:
+        :no-inherited-members:
+
+optimizer module
+----------------
+
+.. automodule:: nnodely.optimizer
+    :no-undoc-members:
+    :no-inherited-members:
+
+    .. autoclass:: nnodely.optimizer.SGD
+        :undoc-members:
+        :inherited-members:
+        :exclude-members: add_option_to_params, replace_key_with_params, get_torch_optimizer
+
+    .. autoclass:: nnodely.optimizer.Adam
+        :undoc-members:
+        :inherited-members:
+        :exclude-members: add_option_to_params, replace_key_with_params, get_torch_optimizer
+
+output module
+-------------
+
+.. automodule:: nnodely.output
+    :no-undoc-members:
+    :no-inherited-members:
+
+    .. autoclass:: nnodely.output.Output
+        :undoc-members:
+        :inherited-members:
+        :exclude-members: count, reset_count, closedLoop, connect, tw, sw, z
+
+parameter module
+----------------
+
+.. automodule:: nnodely.parameter
+    :undoc-members:
+    :no-inherited-members:
+
+    .. autoclass:: nnodely.parameter.Constant
+        :undoc-members:
+        :no-inherited-members:
+
+    .. autoclass:: nnodely.parameter.Parameter
+        :undoc-members:
+        :no-inherited-members:
+
+part module
+-----------
+
+.. automodule:: nnodely.part
+    :undoc-members:
+    :no-inherited-members:
+
+    .. autoclass:: nnodely.part.Part
+        :undoc-members:
+        :no-inherited-members:
+
+    .. autoclass:: nnodely.part.Select
+        :undoc-members:
+        :no-inherited-members:
+
+    .. autoclass:: nnodely.part.SamplePart
+        :undoc-members:
+        :no-inherited-members:
+
+    .. autoclass:: nnodely.part.SampleSelect
+        :undoc-members:
+        :no-inherited-members:
+
+    .. autoclass:: nnodely.part.TimePart
+        :undoc-members:
+        :no-inherited-members:
+
+trigonometric module
+--------------------
+
+.. automodule:: nnodely.trigonometric
+    :undoc-members:
+    :no-inherited-members:
+
+    .. autoclass:: nnodely.trigonometric.Sin
+        :undoc-members:
+        :no-inherited-members:
+
+    .. autoclass:: nnodely.trigonometric.Cos
+        :undoc-members:
+        :no-inherited-members:
+
+    .. autoclass:: nnodely.trigonometric.Tan
+        :undoc-members:
+        :no-inherited-members:
+
+parametricfunction module
+-------------------------
+
+.. automodule:: nnodely.parametricfunction
+    :undoc-members:
+    :no-inherited-members:
+
+    .. autoclass:: nnodely.parametricfunction.ParamFun
+        :undoc-members:
+        :no-inherited-members:
+
 ..  
    automodule:: nnodely.activation
    :members:
@@ -264,11 +383,12 @@ Modely
    :members:
    :undoc-members:
    :show-inheritance:
+   :exclude-members: resultAnalysis, getWorkspace
 
-..  automodule:: Modely
-   :members:
-   :undoc-members:
-   :show-inheritance:
+.. ..  automodule:: Modely
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:
 
 .. COMMENT
     nnodely.optimizer module
