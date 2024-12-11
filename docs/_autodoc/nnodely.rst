@@ -7,8 +7,8 @@ Modely
    :show-inheritance:
    :exclude-members: resultAnalysis, getWorkspace
 
-model structured building blocks
-================================
+Model structured NN building blocks
+===================================
 
 activation module
 -----------------
@@ -254,8 +254,8 @@ parametricfunction module
    :undoc-members:
    :show-inheritance:
 
-Overview
-========
+Additional information
+======================
 
 .. include:: overview.md
    :parser: myst
