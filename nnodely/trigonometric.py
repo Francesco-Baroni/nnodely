@@ -10,6 +10,19 @@ cos_relation_name = 'Cos'
 tan_relation_name = 'Tan'
 
 class Sin(Stream, ToStream):
+    """
+    Implement the sine function given an input relation.
+
+    See also:
+        Official PyTorch Sin documentation: 
+        `torch.sin <https://pytorch.org/docs/stable/generated/torch.sin.html>`_
+
+    :param obj: the input relation stream
+    :type obj: Stream
+
+    Example:
+        >>> sin = Sin(relation)
+    """
     def __init__(self, obj:Stream) -> Stream:
         obj = toStream(obj)
         check(type(obj) is Stream, TypeError,
@@ -18,6 +31,19 @@ class Sin(Stream, ToStream):
         self.json['Relations'][self.name] = [sin_relation_name, [obj.name]]
 
 class Cos(Stream, ToStream):
+    """
+    Implement the cosine function given an input relation.
+
+    See also:
+        Official PyTorch Cos documentation: 
+        `torch.cos <https://pytorch.org/docs/stable/generated/torch.cos.html>`_
+
+    :param obj: the input relation stream
+    :type obj: Stream
+
+    Example:
+        >>> cos = Cos(relation)
+    """
     def __init__(self, obj:Stream) -> Stream:
         obj = toStream(obj)
         check(type(obj) is Stream, TypeError,
@@ -26,6 +52,19 @@ class Cos(Stream, ToStream):
         self.json['Relations'][self.name] = [cos_relation_name, [obj.name]]
 
 class Tan(Stream, ToStream):
+    """
+    Implement the tangent function given an input relation.
+
+    See also:
+        Official PyTorch Tan documentation: 
+        `torch.tan <https://pytorch.org/docs/stable/generated/torch.tan.html>`_
+
+    :param obj: the input relation stream
+    :type obj: Stream
+
+    Example:
+        >>> tan = Tan(relation)
+    """
     def __init__(self, obj:Stream) -> Stream:
         obj = toStream(obj)
         check(type(obj) is Stream, TypeError,
