@@ -7,7 +7,7 @@ build:
   jobs:
     pre_build:
       # - sphinx-apidoc -o docs/_autodoc nnodely mplplots
-      - sphinx-apidoc -o docs/_autodoc nnodely
+      # - sphinx-apidoc -o docs/_autodoc nnodely
 
 sphinx:
   configuration: docs/conf.py
