@@ -5,7 +5,42 @@ from nnodely.utils import check, merge
 from nnodely.part import SamplePart, TimePart
 
 class InputState(NeuObj, Stream):
+    """
+    Represents an input state in the neural network model.
+
+    Parameters
+    ----------
+    json_name : str
+        The name of the JSON field to store the input state configuration.
+    name : str
+        The name of the input state.
+    dimensions : int, optional
+        The number of dimensions for the input state. Default is 1.
+
+    Attributes
+    ----------
+    json_name : str
+        The name of the JSON field to store the input state configuration.
+    name : str
+        The name of the input state.
+    dim : dict
+        A dictionary containing the dimensions of the input state.
+    json : dict
+        A dictionary containing the configuration of the input state.
+    """
     def __init__(self, json_name, name, dimensions:int = 1):
+        """
+        Initializes the InputState object.
+
+        Parameters
+        ----------
+        json_name : str
+            The name of the JSON field to store the input state configuration.
+        name : str
+            The name of the input state.
+        dimensions : int, optional
+            The number of dimensions for the input state. Default is 1.
+        """
         NeuObj.__init__(self, name)
         check(type(dimensions) == int, TypeError,"The dimensions must be a integer")
         self.json_name = json_name
@@ -14,6 +49,28 @@ class InputState(NeuObj, Stream):
         Stream.__init__(self, name, self.json, self.dim)
 
     def tw(self, tw, offset = None):
+        """
+        Selects a time window for the input state.
+
+        Parameters
+        ----------
+        tw : list or int
+            The time window. If a list, it should contain the start and end values. If an int, it represents the time window size.
+        offset : int, optional
+            The offset for the time window. Default is None.
+
+        Returns
+        -------
+        TimePart
+            A TimePart object representing the selected time window.
+
+        Raises
+        ------
+        ValueError
+            If the time window is not positive.
+        IndexError
+            If the offset is not within the time window.
+        """
         dim = copy.deepcopy(self.dim)
         json = copy.deepcopy(self.json)
         if type(tw) is list:
@@ -42,6 +99,26 @@ class InputState(NeuObj, Stream):
     # T.s(2,offset=-2)      = [0, 1]      # the value of the window is [-1,0]
     # T.s([-2,2],offset=-1)  = [-1,0,1,2]  # the value of the window is [-1,0,1,2]
     def sw(self, sw, offset = None):
+        """
+        Selects a sample window for the input state.
+
+        Parameters
+        ----------
+        sw : list or int
+            The sample window. If a list, it should contain the start and end indices. If an int, it represents the number of steps in the past.
+        offset : int, optional
+            The offset for the sample window. Default is None.
+
+        Returns
+        -------
+        SamplePart
+            A SamplePart object representing the selected sample window.
+
+        Raises
+        ------
+        TypeError
+            If the sample window is not an integer or a list of integers.
+        """
         dim = copy.deepcopy(self.dim)
         json = copy.deepcopy(self.json)
         if type(sw) is list:
@@ -65,6 +142,19 @@ class InputState(NeuObj, Stream):
     # T.z(0)  = 0 #the last passed instant
     # T.z(2)  = -2
     def z(self, delay):
+        """
+        Selects a unitary delay for the input state.
+
+        Parameters
+        ----------
+        delay : int
+            The delay value.
+
+        Returns
+        -------
+        SamplePart
+            A SamplePart object representing the selected delay.
+        """
         dim = copy.deepcopy(self.dim)
         json = copy.deepcopy(self.json)
         sw = [(-delay) - 1, (-delay)]
@@ -73,9 +163,25 @@ class InputState(NeuObj, Stream):
         return SamplePart(Stream(self.name, json, dim), json[self.json_name][self.name]['sw'][0], json[self.json_name][self.name]['sw'][1], None)
 
     def last(self):
+        """
+        Selects the last passed instant for the input state.
+
+        Returns
+        -------
+        SamplePart
+            A SamplePart object representing the last passed instant.
+        """
         return self.z(0)
 
     def next(self):
+        """
+        Selects the next instant for the input state.
+
+        Returns
+        -------
+        SamplePart
+            A SamplePart object representing the next instant.
+        """
         return self.z(-1)
 
     # def s(self, derivate):

@@ -4,22 +4,41 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Coverage Status](https://coveralls.io/repos/github/tonegas/nnodely/badge.svg?branch=main)](https://coveralls.io/github/tonegas/nnodely?branch=main)
-
+[![Coverage Status](https://readthedocs.org/projects/nnodely/badge/?version=latest&style=default)](https://nnodely.readthedocs.io/en/latest/)
 
 <a name="readme-top"></a>
-### Model-structured neural network framework for the modeling and control of physical systems
+## Model-structured neural network framework for the modeling and control of physical systems
 
-_Model-Structured neural networks_ (MSNNs) are a new neural networks concept. 
-These networks base their structure on mechanical and control theory laws. 
+Modeling, control, and estimation of physical systems are fundamental to a wide range of engineering applications. 
+However, integrating data-driven methods like neural networks into these domains presents significant challenges, 
+particularly when it comes to embedding prior domain knowledge into traditional deep learning frameworks. 
+To bridge this gap, we introduce *nnodely* (where "nn" can be read as "m," forming *Modely*), 
+an innovative framework that facilitates the creation and deployment of Model-Structured Neural Networks (MSNNs). 
+MSNNs merge the flexibility of neural networks with structures grounded in physical principles and control theory, 
+providing a powerful tool for representing and managing complex physical systems. Moreover, a MSNN thanks to the reduced
+number of parameters needs fewer data for training and can be used in real-time applications.
 
-The framework's goal is to allow the users fast modeling and control of a mechanical system such as an autonomous vehicle, an industrial robot, a walking robot, a flying drone.
+### Why use nnodely
 
-Below is the workflow that the framework follows.
+The framework's goal is to allow the users fast modeling and control of a any mechanical systems using 
+a hybrind approach between neural networks and physical models.
 
-Using a conceptual representation of your mechanical system the framework generates the structured neural network of model of mechanical device considered. 
-Providing suitable experimental data, the framework will realize an effective training of the neural models by appropriately choosing all the hyper-parameters.
-The framework will allow the user to synthesize and train a structured neural network that will be used as a control system in a few simple steps and without the need to perform new experiments. 
-The realized neural controller will be exported using C language or ONNX, and it will be ready to use.
+The main motivation of the framework are to:
+- Modeling, control and estimation of physical systems, whose internal dynamics may be partially unknown;
+- Speed-up the development of MSNN, which is complex to design using standard deep-learning framework;
+- Support professionals with classical modeling backgrounds, such as physicists and engineers, in using 
+data-driven approaches (but embedding knowledge inside) to address their challenges;
+- A repository of incremental know-how that effectively collects approaches with the same purpose, i.e. building an
+increasingly advanced library of MSNNs for various applications.
+
+The nnodely framework guides users through six structured phases to model and control physical systems using 
+neural networks. It begins with **Neural Models Definition**, where the architecture of the MSNNs are specified. 
+Next is **Dataset Creation**, preparing the data needed for training and validation. 
+In **Neural Models Composition**, models are integrated to represent complex systems also including a controller if is needed. 
+**Neural Models Training** follows, optimizing parameters to ensure accurate representation of the target system or a part of it. 
+In **Neural Model Validation**, the trained models are tested for reliability. 
+Finally, **Network Export** enables the deployment of validated models into practical applications. nnodely support
+a Pytorch (nnodely independent) and ONNX export.
 
 <!-- TABLE OF CONTENTS -->
 <details>
@@ -47,21 +66,6 @@ The realized neural controller will be exported using C language or ONNX, and it
       </ul>
     </li>
     <li>
-      <a href="#shape">Overview on Signal Shape</a>
-      <ul>
-        <li><a href="#inoutshape">Input and output shape from the structured neural model</a></li>
-        <li><a href="#elementwiseshape">Elementwise Arithmetic, Activation, Trigonometric</a></li>
-        <li><a href="#firshape">Fir</a></li>
-        <li><a href="#linearshape">Linear</a></li>
-        <li><a href="#fuzzyshape">Fuzzy</a></li>
-        <li><a href="#partshape">Part and Select</a></li>
-        <li><a href="#timepartshape">TimePart, SimplePart, SampleSelect</a></li>
-        <li><a href="#localmodelshape">LocalModel</a></li>
-        <li><a href="#parametersshape">Parameters</a></li>
-        <li><a href="#paramfunshape">Parametric Function</a></li>
-      </ul>
-    </li>
-    <li>
       <a href="#license">License</a>
     </li>
   </ol>
@@ -69,27 +73,34 @@ The realized neural controller will be exported using C language or ONNX, and it
 
 <!-- GETTING STARTED -->
 <a name="settingstarted"></a>
-## Getting Started
-### Installation
+### Getting Started
 You can install the nnodely framework from PyPI via:
   ```sh
   pip install nnodely
   ```
 
-### Prerequisites
-You can install the dependencies of the nnodely framework from PyPI via:
+### Applications and use cases
+The application of nnodely in some additional use cases are shown in 
+https://github.com/tonegas/nnodely-applications.
+
+### How to contribute to the project
+Download the source code and install the dependencies using the following commands:
   ```sh
+  git clone git@github.com:tonegas/nnodely.git
   pip install -r requirements.txt
   ```
+Give your contribution, open a pull request...
 
+Or create an issue...
+ 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <a name="basicfunctionalities"></a>
-## Basic Functionalities
+## Basic Example
 <a name="structuredneuralmodel"></a>
-### Build the structured neural model
+### Build the neural model
 
-The structured neural model is defined by a list of inputs by a list of outputs and by a list of relationships that link the inputs to the outputs.
+The neural model, is based of a model-structured neural network, and is defined by a list of inputs by a list of outputs and by a list of relationships that link the inputs to the outputs.
 
 Let's assume we want to model one of the best-known linear mechanical systems, the mass-spring-damper system.
 
@@ -228,7 +239,7 @@ print(results)
 ### nnodely folder
 This folder contains all the nnodely library files, the main files are the following:
 1. __activation.py__ this file contains all the activation functions.
-2. __arithmetic.py__ this file contains the aritmetic functions as: +, -, /, *., ^2
+2. __arithmetic.py__ this file contains the aritmetic functions as: +, -, /, *., **,
 3. __fir.py__ this file contains the finite inpulse response filter function. It is a linear operation without bias on the second dimension.
 4. __fuzzify.py__ contains the operation for the fuzzification of a variable, commonly used in the local model as activation function.
 5. __input.py__ contains the Input class used for create an input for the network.
@@ -251,105 +262,6 @@ This folder contains the unittest of the library in particular each file test a 
 The files in the examples folder are a collection of the functionality of the library.
 Each file present in deep a specific functionality or function of the framework.
 This folder is useful to understand the flexibility and capability of the framework.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<a name="shape"></a>
-## Overview on signal shape
-In this section is explained the shape of the input/output of the network.
-
-<a name="inoutshape"></a>
-### Input and output shape from the structured neural model
-The structured network can be called in two way:
-1. The shape of the inputs not sampled are [total time window size, dim] 
-Sampled inputs are reconstructed as soon as the maximum size of the time window is known. 
-'dim' represents the size of the input if is not 1 means that the input is a vector.
-2. The shape of the sampled inputs are [number of samples = batch, size of time window for a sample, dim]
-In the example presented before in the first call the shape for `x` are [1,5,1] for `F` are [1,1,1]
-in the second call for `x` are [2,5,1] for `F` are [2,1,1]. In both cases the last dimensions is ignored as the input are scalar.
-The output of the structured neural model
-The outputs are defined in this way for the different cases:
-1. if the shape is [batch, 1, 1] the final two dimensions are collapsed result [batch]
-2. if the shape is [batch, window, 1] the last dimension is collapsed result [batch, window]
-3. if the shape is [batch, window, dim] the output is equal to [batch, window, dim]
-4. if the shape is [batch, 1, dim] the output is equal to [batch, 1, dim]
-In the example `x_z_est` has the shape of [1] in the first call and [2] because the the window and the dim were equal to 1.
-
-<a name="elementwiseshape"></a>
-### Shape of elementwise Arithmetic, Activation, Trigonometric
-The shape and time windows remain unchanged, for the binary operators shape must be equal.
-```
-input shape = [batch, window, dim] -> output shape = [batch, window, dim]
-```
-
-<a name="firshape"></a>
-### Shape of Fir input/output
-The input must be scalar, the fir compress di time dimension (window) that goes to 1. A vector input is not allowed.
-The output dimension of the Fir is moved on the last dimension for create a vector output.
-```
-input shape = [batch, window, 1] -> output shape = [batch, 1, output dimension of Fir = output_dimension]
-```
-
-<a name="linearshape"></a>
-### Shape of Linear input/output 
-The window remains unchanged and the output dimension is user defined.
-```
-input shape = [batch, window, dimension] -> output shape = [batch, window, output dimension of Linear = output_dimension]
-```
-
-<a name="fuzzyshape"></a>
-### Shape of Fuzzy input/output
-The function fuzzify the input and creates a vector for output.
-The window remains unchanged, input must be scalar. Vector input are not allowed.
-```
-input shape = [batch, window, 1] -> output shape = [batch, window, number of centers of Fuzzy = len(centers)]
-```
-
-<a name="partshape"></a>
-### Shape of Part and Select input/output
-Part selects a slice of the vector input, the input must be a vector.
-Select operation the dimension becomes 1, the input must be a vector.
-For both operation if there is a time component it remains unchanged.
-```
-Part input shape = [batch, window, dimension] -> output shape = [batch, window, selected dimension = [j-i]]
-Select input shape = [batch, window, dimension] -> output shape = [batch, window, 1]
-```
-
-<a name="timepartshape"></a>
-### Shape of TimePart, SimplePart, SampleSelect input/output
-The TimePart selects a time window from the signal (works like timewindow `tw([i,j])` but in this the i,j are absolute). 
-The SamplePart selects a list of samples from the signal (works like samplewindow `sw([i,j])` but in this the i,j are absolute).
-The SampleSelect selects a specific index from the signal (works like zeta operation `z(index)` but in this the index are absolute).
-For all the operation the shape remains unchanged.
-```
-SamplePart input shape = [batch, window, dimension] -> output shape = [batch, selected sample window = [j-i], dimension]
-SampleSelect input shape = [batch, window, dimension] -> output shape = [batch, 1, dimension]
-TimePart input shape = [batch, window, dimension] -> output shape = [batch, selected time window = [j-i]/sample_time, dimension]
-```
-
-<a name="localmodelshape"></a>
-### Shape of LocalModel input/output
-The local model has two main inputs, activation functions and inputs.
-Activation functions have shape of the fuzzy
-```
-input shape = [batch, window, 1] -> output shape = [batch, window, number of centers of Fuzzy = len(centers)]
-```
-Inputs go through input function and output function. 
-The input shape of the input function can be anything as long as the output shape of the input function have the following dimensions
-`[batch, window, 1]` so input functions for example cannot be a Fir with output_dimension different from 1.
-The input shape of the output function is `[batch, window, 1]` while the shape of the output of the output functions can be any
-
-<a name="parametersshape"></a>
-### Shape of Parameters input/output
-Parameter shape are defined as follows `[window = sw or tw/sample_time, dim]` the dimensions can be defined as a tuple and are appended to window
-When the time dimension is not defined it is configured to 1
-
-<a name="paramfunshape"></a>
-### Shape of Parametric Function input/output
-The Parametric functions take inputs and parameters as inputs
-Parameter dimensions are the same as defined by the parameters if the dimensions are not defined they will be equal to `[window = 1,dim = 1]`
-Dimensions of the inputs inside the parametric function are the same as those managed within the Pytorch framework equal to `[batch, window, dim]`
-Output dimensions must follow the same convention `[batch, window, dim]`
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

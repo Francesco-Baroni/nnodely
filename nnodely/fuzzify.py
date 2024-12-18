@@ -16,6 +16,52 @@ fuzzify_relation_name = 'Fuzzify'
 
 
 class Fuzzify(NeuObj):
+    """
+    Represents a Fuzzify relation in the neural network model.
+
+    Parameters
+    ----------
+    output_dimension : int, optional
+        The output dimension of the Fuzzify relation. If provided, `range` must also be provided and `centers` must be None.
+    range : list, optional
+        A list containing the start and end values for the range. Required if `output_dimension` is provided.
+    centers : list, optional
+        A list of center values for the fuzzy functions. Required if `output_dimension` is None.
+        The `output_dimension` will be inferred from the number of centers provided.
+    functions : str, list, or Callable, optional
+        The fuzzy functions to use. Can be a string specifying a predefined function type, a custom function, or a list of callable functions. Default is 'Triangular'.
+    
+    Notes
+    -----
+    .. note::
+        The predefined function types are 'Triangular' and 'Rectangular'.
+        It is also possible to pass a list of custom functions. In this case, each center will be associated with the respective function in the list.
+
+    Attributes
+    ----------
+    relation_name : str
+        The name of the relation.
+    output_dimension : dict
+        The output dimension of the Fuzzify relation.
+    json : dict
+        A dictionary containing the configuration of the Fuzzify relation.
+
+    Example - basic usage:
+        >>> x = Input('x')
+        >>> fuz = Fuzzify(output_dimension=5, range=[1,5])
+        >>> out = Output('out', fuz(x.last()))
+
+    Example - passing the centers:
+        >>> fuz = Fuzzify(centers=[-1,0,3,5], functions='Rectangular')
+        >>> out = Output('out', fuz(x.last()))
+
+    Example - using a custom function:
+        >>> def fun(x):
+        >>>     import torch
+        >>>     return torch.tanh(x)
+        >>> fuz = Fuzzify(output_dimension=11, range=[-5,5], functions=fun)
+        >>> out = Output('out', fuz(x.last()))
+    """
     @enforce_types
     def __init__(self, output_dimension: int | None = None,
                  range: list | None = None,

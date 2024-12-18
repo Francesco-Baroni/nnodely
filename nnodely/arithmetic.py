@@ -20,6 +20,24 @@ neg_relation_name = 'Neg'
 # Merge operator
 sum_relation_name = 'Sum'
 class Add(Stream, ToStream):
+    """
+        Implement the addition function between two tensors. 
+        (it is also possible to use the classical math operator '+')
+
+        See also:
+            Official PyTorch Add documentation: 
+            `torch.add <https://pytorch.org/docs/stable/generated/torch.add.html>`_
+
+        :param input1: the first element of the addition
+        :type obj: Tensor
+        :param input2: the second element of the addition
+        :type obj: Tensor
+
+        Example:
+            >>> add = Add(relation1, relation2)
+            or
+            >>> add = relation1 + relation2
+    """
     def __init__(self, obj1:Stream, obj2:Stream) -> Stream:
         obj1,obj2 = toStream(obj1),toStream(obj2)
         check(type(obj1) is Stream,TypeError,
@@ -33,6 +51,20 @@ class Add(Stream, ToStream):
 
 ## TODO: check the scalar dimension, helpful for the offset
 class Sub(Stream, ToStream):
+    """
+        Implement the subtraction function between two tensors. 
+        (it is also possible to use the classical math operator '-')
+
+        :param input1: the first element of the subtraction
+        :type obj: Tensor
+        :param input2: the second element of the subtraction
+        :type obj: Tensor
+
+        Example:
+            >>> sub = Sub(relation1, relation2)
+            or
+            >>> sub = relation1 - relation2
+    """
     def __init__(self, obj1:Stream, obj2:Stream) -> Stream:
         obj1, obj2 = toStream(obj1), toStream(obj2)
         check(type(obj1) is Stream,TypeError,
@@ -45,6 +77,20 @@ class Sub(Stream, ToStream):
         self.json['Relations'][self.name] = [sub_relation_name,[obj1.name,obj2.name]]
 
 class Mul(Stream, ToStream):
+    """
+        Implement the multiplication function between two tensors. 
+        (it is also possible to use the classical math operator '*')
+
+        :param input1: the first element of the multiplication
+        :type obj: Tensor
+        :param input2: the second element of the multiplication
+        :type obj: Tensor
+
+        Example:
+            >>> mul = Mul(relation1, relation2)
+            or
+            >>> mul = relation1 * relation2
+    """
     def __init__(self, obj1:Stream, obj2:Stream) -> Stream:
         obj1, obj2 = toStream(obj1), toStream(obj2)
         check(type(obj1) is Stream, TypeError,
@@ -57,6 +103,20 @@ class Mul(Stream, ToStream):
         self.json['Relations'][self.name] = [mul_relation_name,[obj1.name,obj2.name]]
 
 class Div(Stream, ToStream):
+    """
+        Implement the division function between two tensors. 
+        (it is also possible to use the classical math operator '/')
+
+        :param input1: the numerator of the division
+        :type obj: Tensor
+        :param input2: the denominator of the division
+        :type obj: Tensor
+
+        Example:
+            >>> div = Div(relation1, relation2)
+            or
+            >>> div = relation1 / relation2
+    """
     def __init__(self, obj1:Stream, obj2:Stream) -> Stream:
         obj1, obj2 = toStream(obj1), toStream(obj2)
         check(type(obj1) is Stream, TypeError,
@@ -69,6 +129,24 @@ class Div(Stream, ToStream):
         self.json['Relations'][self.name] = [div_relation_name,[obj1.name,obj2.name]]
 
 class Pow(Stream, ToStream):
+    """
+        Implement the power function given an input and an exponent. 
+        (it is also possible to use the classical math operator '**')
+
+        See also:
+            Official PyTorch Add documentation: 
+            `torch.add <https://pytorch.org/docs/stable/generated/torch.pow.html>`_
+
+        :param input: the base of the power function
+        :type obj: Tensor
+        :param exp: the exponent of the power function
+        :type obj: float or Tensor
+
+        Example:
+            >>> pow = Pow(relation, exp)
+            or
+            >>> pow = relation1 ** relation2
+    """
     def __init__(self, obj1:Stream, obj2:Stream) -> Stream:
         obj1, obj2 = toStream(obj1), toStream(obj2)
         check(type(obj1) is Stream, TypeError,
@@ -81,6 +159,15 @@ class Pow(Stream, ToStream):
         self.json['Relations'][self.name] = [pow_relation_name,[obj1.name,obj2.name]]
 
 class Neg(Stream, ToStream):
+    """
+        Implement the negate function given an input. 
+
+        :param input: the input to negate
+        :type obj: Tensor
+
+        Example:
+            >>> x = Neg(x)
+    """
     def __init__(self, obj:Stream) -> Stream:
         obj = toStream(obj)
         check(type(obj) is Stream, TypeError,
