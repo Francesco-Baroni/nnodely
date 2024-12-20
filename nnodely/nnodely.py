@@ -925,7 +925,6 @@ class Modely:
         for batch_val, idx in enumerate(list_of_batch_indexes):
             if train:
                 self.optimizer.zero_grad() ## Reset the gradient
-
             ## Reset 
             horizon_losses = {ind: [] for ind in range(len(self.model_def['Minimizers']))}
             for key in non_mandatory_inputs:
@@ -945,7 +944,7 @@ class Modely:
                 ## Forward pass
                 out, minimize_out, out_closed_loop, out_connect = self.model(X)
 
-                internals_dict = {'XY':X,'out':out,'param':self.model.all_parameters,'closedLoop':self.model.closed_loop_update,'connect':self.model.connect_update}
+                internals_dict = {'XY':X,'out':out,'param':self.model.all_parameters}#,'closedLoop':self.model.closed_loop_update,'connect':self.model.connect_update}
 
                 ## Loss Calculation
                 for ind, (key, value) in enumerate(self.model_def['Minimizers'].items()):
@@ -1204,7 +1203,7 @@ class Modely:
     def getWorkspace(self):
         return self.exporter.getWorkspace()
 
-    def saveTorchModel(self, name = 'net', model_folder = None, models = None):
+    def saveTorchModel(self, name = 'net', model_folder = None, models = None): ## save the pytorch weights of the model
         check(self.neuralized == True, RuntimeError, 'The model is not neuralized yet!')
         if models is not None:
             if name == 'net':
@@ -1218,11 +1217,11 @@ class Modely:
             model = self.model
         self.exporter.saveTorchModel(model, name, model_folder)
 
-    def loadTorchModel(self, name = 'net', model_folder = None):
+    def loadTorchModel(self, name = 'net', model_folder = None): ## load the pytorch weights of the model (the model must be compatible)
         check(self.neuralized == True, RuntimeError, 'The model is not neuralized yet.')
         self.exporter.loadTorchModel(self.model, name, model_folder)
 
-    def saveModel(self, name = 'net', model_path = None, models = None):
+    def saveModel(self, name = 'net', model_path = None, models = None): ## save the json model definition
         if models is not None:
             if name == 'net':
                 name += '_' + '_'.join(models)
@@ -1235,7 +1234,7 @@ class Modely:
         check(model_def.isDefined(), RuntimeError, "The network has not been defined.")
         self.exporter.saveModel(model_def.json, name, model_path)
 
-    def loadModel(self, name = None, model_folder = None):
+    def loadModel(self, name = None, model_folder = None): ## load the json model definition
         if name is None:
             name = 'net'
         model_def = self.exporter.loadModel(name, model_folder)
@@ -1245,7 +1244,7 @@ class Modely:
         self.neuralized = False
         self.traced = False
 
-    def exportPythonModel(self, name = 'net', model_path = None, models = None):
+    def exportPythonModel(self, name = 'net', model_path = None, models = None): ## export the model to a stand-alone python file
         if models is not None:
             if name == 'net':
                 name += '_' + '_'.join(models)
@@ -1265,7 +1264,7 @@ class Modely:
         self.exporter.saveModel(model_def.json, name, model_path)
         self.exporter.exportPythonModel(model_def, model, name, model_path)
 
-    def importPythonModel(self, name = None, model_folder = None):
+    def importPythonModel(self, name = None, model_folder = None): ## import the model from a stand-alone python file
         if name is None:
             name = 'net'
         model_def = self.exporter.loadModel(name, model_folder)
@@ -1275,7 +1274,7 @@ class Modely:
         self.traced = True
         self.model_def.updateParameters(self.model)
 
-    def exportONNX(self, inputs_order, outputs_order,  models = None, name = 'net', model_folder = None):
+    def exportONNX(self, inputs_order, outputs_order,  models = None, name = 'net', model_folder = None): ## export the model to ONNX compatible file
         check(self.model_def.isDefined(), RuntimeError, "The network has not been defined.")
         check(self.traced == False, RuntimeError, 'The model is traced and cannot be exported to ONNX.\n Run neuralizeModel() to recreate a standard model.')
         check(self.neuralized == True, RuntimeError, 'The model is not neuralized yet.')

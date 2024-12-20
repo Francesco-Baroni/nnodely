@@ -37,12 +37,13 @@ def load_model(model_path):
         model_def = json.load(file)
     return model_def
 
-def export_python_model(model_def, model, model_path):
+def export_python_model(model_def, model, model_path, recurrent=False):
     package_name = __package__.split('.')[0]
 
     # Get the symbolic tracer
     with torch.no_grad():
         trace = symbolic_trace(model)
+        print('TRACED MODEL \n', trace.code)
 
     ## Standard way to modify the graph
     # # Replace all _tensor_constant variables with their constant values
@@ -155,7 +156,7 @@ def export_python_model(model_def, model, model_path):
         file.write("        self.all_parameters = torch.nn.ParameterDict(self.all_parameters)\n")
         file.write("        self.all_constants = torch.nn.ParameterDict(self.all_constants)\n\n")
         file.write("    def update(self, closed_loop={}, connect={}):\n")
-        file.write("        pass\n\n")  ## TODO: change with the code when i find how to use it properly
+        file.write("        pass\n\n")  
         # file.write("        self.closed_loop_update = {}\n")
         # file.write("        self.connect_update = {}\n")
         # file.write("        for key, state in self.state_model.items():\n")
@@ -186,6 +187,9 @@ def export_python_model(model_def, model, model_path):
                     file.write(f"    {line.replace(attribute, new_attribute)}\n")
             else:
                 file.write(f"    {line}\n")
+
+        if recurrent:
+            pass
 
 def export_pythononnx_model(input_order, outputs_order, model_path, model_onnx_path):
     # Define the mapping dictionary input
@@ -245,14 +249,14 @@ def export_onnx_model(model_def, model, input_order, output_order, model_path):
     dummy_inputs = tuple(dummy_inputs)
 
     torch.onnx.export(
-        model,                            # The model to be exported
-        dummy_inputs,                          # Tuple of inputs to match the forward signature
+        model,                                  # The model to be exported
+        dummy_inputs,                           # Tuple of inputs to match the forward signature
         model_path,                             # File path to save the ONNX model
-        export_params = True,                    # Store the trained parameters in the model file
-        opset_version = 12,                      # ONNX version to export to (you can use 11 or higher)
-        do_constant_folding=True,              # Optimize constant folding for inference
-        input_names = input_names,               # Name each input as they will appear in ONNX
-        output_names = output_names,             # Name the output
+        export_params = True,                   # Store the trained parameters in the model file
+        opset_version = 12,                     # ONNX version to export to (you can use 11 or higher)
+        do_constant_folding=True,               # Optimize constant folding for inference
+        input_names = input_names,              # Name each input as they will appear in ONNX
+        output_names = output_names,            # Name the output
         dynamic_axes = dynamic_axes
     )
 

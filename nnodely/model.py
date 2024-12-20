@@ -43,21 +43,21 @@ class Model(nn.Module):
         for _, items in self.relations.items():
             if items[0] == 'SamplePart':
                 if items[1][0] in json_inputs.keys():
-                    items[2][0] = self.input_ns_backward[items[1][0]] + items[2][0]
-                    items[2][1] = self.input_ns_backward[items[1][0]] + items[2][1]
-                    if len(items) > 3: ## Offset
-                        items[3] = self.input_ns_backward[items[1][0]] + items[3]
+                    items[3][0] = self.input_ns_backward[items[1][0]] + items[3][0]
+                    items[3][1] = self.input_ns_backward[items[1][0]] + items[3][1]
+                    if len(items) > 4: ## Offset
+                        items[4] = self.input_ns_backward[items[1][0]] + items[4]
             if items[0] == 'TimePart':
                 if items[1][0] in json_inputs.keys():
-                    items[2][0] = self.input_ns_backward[items[1][0]] + round(items[2][0]/self.sample_time)
-                    items[2][1] = self.input_ns_backward[items[1][0]] + round(items[2][1]/self.sample_time)
-                    if len(items) > 3: ## Offset
-                        items[3] = self.input_ns_backward[items[1][0]] + round(items[3]/self.sample_time)
+                    items[3][0] = self.input_ns_backward[items[1][0]] + round(items[3][0]/self.sample_time)
+                    items[3][1] = self.input_ns_backward[items[1][0]] + round(items[3][1]/self.sample_time)
+                    if len(items) > 4: ## Offset
+                        items[4] = self.input_ns_backward[items[1][0]] + round(items[4]/self.sample_time)
                 else:
-                    items[2][0] = round(items[2][0]/self.sample_time)
-                    items[2][1] = round(items[2][1]/self.sample_time)
-                    if len(items) > 3: ## Offset
-                        items[3] = round(items[3]/self.sample_time)
+                    items[3][0] = round(items[3][0]/self.sample_time)
+                    items[3][1] = round(items[3][1]/self.sample_time)
+                    if len(items) > 4: ## Offset
+                        items[4] = round(items[4]/self.sample_time)
 
         ## Create all the parameters
         for name, param_data in self.params.items():
@@ -106,8 +106,17 @@ class Model(nn.Module):
                             layer_inputs.append([all_params_and_consts[par] for par in self.functions[item]['params_and_consts']])
                         if 'map_over_dim' in self.functions[item].keys():
                             layer_inputs.append(self.functions[item]['map_over_dim'])
-                    else: 
+                    else:
                         layer_inputs.append(item)
+
+                if rel_name == 'SamplePart':
+                    if layer_inputs[0] == -1:
+                        layer_inputs[0] = self.input_n_samples[input_var[0]]
+                elif rel_name == 'TimePart':
+                    if layer_inputs[0] == -1:
+                        layer_inputs[0] = self.input_n_samples[input_var[0]]
+                    else:
+                        layer_inputs[0] = round(layer_inputs[0] / self.sample_time)
                 ## Initialize the relation
                 self.relation_forward[relation] = func(*layer_inputs)
                 ## Save the inputs needed for the relative relation
