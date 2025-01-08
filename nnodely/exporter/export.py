@@ -43,7 +43,7 @@ def export_python_model(model_def, model, model_path, recurrent=False):
     # Get the symbolic tracer
     with torch.no_grad():
         trace = symbolic_trace(model)
-        print('TRACED MODEL \n', trace.code)
+        #print('TRACED MODEL \n', trace.code)
 
     ## Standard way to modify the graph
     # # Replace all _tensor_constant variables with their constant values
@@ -60,6 +60,8 @@ def export_python_model(model_def, model, model_path, recurrent=False):
     ## Standard way to modify the graph
 
     attributes = sorted(set([line for line in trace.code.split() if 'self.' in line]))
+    #print('attributes: ', attributes)
+    #print('model.relation_forward: ', model.relation_forward.SamplePart14.W)
     saved_functions = []
 
     with open(model_path, 'w') as file:
@@ -67,8 +69,8 @@ def export_python_model(model_def, model, model_path, recurrent=False):
         file.write("import torch\n\n")
 
         ## write the connect wrap function
-        file.write(f"def {package_name}_model_connect(data_in, rel, shift):\n")
-        file.write("    virtual = torch.roll(data_in, shifts=-1, dims=1)\n")
+        file.write(f"def {package_name}_model_connect(data_in, rel, shift: int):\n")
+        file.write("    virtual = torch.cat((data_in[:, shift:, :], data_in[:, :shift, :]), dim=1)\n")
         file.write("    virtual[:, -shift:, :] = rel\n")
         file.write("    return virtual\n\n")
 
@@ -144,6 +146,9 @@ def export_python_model(model_def, model, model_path, recurrent=False):
                     # param = model_def['Relations'][key][2] if 'weights' in attr.split('.')[3] else model_def['Relations'][key][3]
                     # value = model.all_parameters[param].data.squeeze(0) if 'Linear' in key else model.all_parameters[param].data
                     # file.write(f"        self.all_parameters[\"{param}\"] = torch.nn.Parameter(torch.{value}, requires_grad=True)\n")
+                elif 'Part' in key or 'Select' in key: # any(element in key for element in ['Part', 'Select']):
+                    value = model.relation_forward[key].W
+                    file.write(f"        self.all_constants[\"{key}\"] = torch.{value}\n")
             elif 'all_parameters' in attr:
                 key = attr.split('.')[-1]
                 file.write(
@@ -156,7 +161,7 @@ def export_python_model(model_def, model, model_path, recurrent=False):
         file.write("        self.all_parameters = torch.nn.ParameterDict(self.all_parameters)\n")
         file.write("        self.all_constants = torch.nn.ParameterDict(self.all_constants)\n\n")
         file.write("    def update(self, closed_loop={}, connect={}):\n")
-        file.write("        pass\n\n")  
+        file.write("        pass\n")  
         # file.write("        self.closed_loop_update = {}\n")
         # file.write("        self.connect_update = {}\n")
         # file.write("        for key, state in self.state_model.items():\n")
@@ -171,7 +176,12 @@ def export_python_model(model_def, model, model_path, recurrent=False):
 
         for line in trace.code.split("\n")[len(saved_functions) + 2:]:
             if 'self.relation_forward' in line:
-                if 'dropout' in line:
+                if 'Part' in line or 'Select' in line:
+                    attribute = [x for x in line.split() if 'self.relation_forward' in x][0].split('.')[2]
+                    old_line = f"self.relation_forward.{attribute}.W"
+                    new_line = f"self.all_constants.{attribute}"
+                    file.write(f"    {line.replace(old_line, new_line)}\n")
+                elif 'dropout' in line:
                     attribute = line.split()[0]
                     layer = attribute.split('_')[2].capitalize()
                     old_line = f"self.relation_forward.{layer}.dropout"
@@ -189,9 +199,47 @@ def export_python_model(model_def, model, model_path, recurrent=False):
                 file.write(f"    {line}\n")
 
         if recurrent:
-            pass
+            file.write("class RecurrentModel(torch.nn.Module):\n")
+            file.write("    def __init__(self):\n")
+            file.write("        super().__init__()\n")
+            file.write("        self.Cell = TracerModel()\n")
+            file.write("        self.states = dict()\n")
+            for key, value in model_def['States'].items():
+                time_dim, dim = value['ntot'], value['dim']
+                file.write(f"        self.states['{key}'] = torch.zeros(1, {time_dim}, {dim})\n")
+            file.write("\n")
+            file.write("    def forward(self, kwargs):\n")
+            file.write("        n_samples = min([x.size(0) for x in kwargs.values()])\n")
+            
+            result_str = ""
+            for key, value in model_def['Outputs'].items():
+                result_str += f"'{key}':[], "
+            file.write(f"        results = {{{result_str}}}\n")
+            file.write("        X = dict()\n")
+            file.write("        for idx in range(n_samples):\n")
+            file.write(f"            for key, value in kwargs.items():\n")
+            file.write(f"                X[key] = value[idx:idx+1]\n")
+            for key, value in model_def['States'].items():
+                file.write(f"            X['{key}'] = self.states['{key}']\n")
+            file.write("            out, _, closed_loop, connect = self.Cell(X)\n")
+            file.write("            for key, value in results.items():\n")
+            file.write("                results[key].append(out[key])\n")
+            file.write("            for key, val in closed_loop.items():\n")
+            file.write("                shift = val.size(1)\n")
+            file.write("                self.states[key] = nnodely_model_connect(self.states[key], val, shift)\n")
+            file.write("            for key, value in connect.items():\n") 
+            file.write("                self.states[key] = value\n")
+            file.write("        return results\n")
 
-def export_pythononnx_model(input_order, outputs_order, model_path, model_onnx_path):
+def export_pythononnx_model(model_def, input_order, outputs_order, model_path, model_onnx_path, recurrent=False):
+    closed_loop_states, connect_states = [], []
+    for key, value in model_def['States'].items():
+        if 'closedLoop' in value.keys():
+            closed_loop_states.append(key)
+        if 'connect' in value.keys():
+            connect_states.append(key)
+    inputs = [key for key in input_order if key not in model_def['States'].keys()]
+
     # Define the mapping dictionary input
     trace_mapping_input = {}
     forward = 'def forward(self,'
@@ -204,10 +252,26 @@ def export_pythononnx_model(input_order, outputs_order, model_path, model_onnx_p
     outputs = '        return ('
     for i, key in enumerate(outputs_order):
         outputs += f'outputs[0][\'{key}\']' + (',' if i < len(outputs_order) - 1 else ')')
+    outputs += ', ('
+    for key in closed_loop_states:
+        outputs += f'outputs[2][\'{key}\'], '
+    outputs += '), ('
+    for key in connect_states:
+        outputs += f'outputs[3][\'{key}\'], '
+    outputs += ')\n'
 
     # Open and read the file
+    file_content = []
     with open(model_path, 'r') as file:
-        file_content = file.read()
+        #file_content = file.read()
+        for line in file:
+            if 'return ({' in line:
+                file_content.append(line)
+                break
+            file_content.append(line)
+        #file_content = file.readlines()[:-26]
+    file_content = ''.join(file_content)
+    
     # Replace the forward header
     file_content = file_content.replace('def forward(self, kwargs):', forward)
     # Perform the substitution
@@ -224,6 +288,55 @@ def export_pythononnx_model(input_order, outputs_order, model_path, model_onnx_p
     with open(model_onnx_path, 'w') as file:
         file.write(file_content)
 
+        if recurrent:
+            file.write('\n')
+            file.write("class RecurrentModel(torch.nn.Module):\n")
+            file.write("    def __init__(self):\n")
+            file.write("        super().__init__()\n")
+            file.write("        self.Cell = TracerModel()\n")
+            for key, value in model_def['States'].items():
+                time_dim, dim = value['ntot'], value['dim']
+                file.write(f"        self.{key} = torch.zeros(1, {time_dim}, {dim})\n")
+
+            forward_str = "    def forward(self, "
+            for key in inputs:
+                forward_str += f"{key}, "
+            forward_str += "):\n"
+            file.write(forward_str)
+
+            if inputs:
+                file.write(f"        n_samples = {inputs[0]}.size(0)\n")
+            else:
+                file.write("        n_samples = 1\n")
+            
+            #file.write("        results = []\n")
+            for key in outputs_order:
+                file.write(f"        results_{key} = []\n")
+            file.write("        for idx in range(n_samples):\n")
+            call_str = "            out, closed_loop, connect = self.Cell("
+            # for key in inputs:
+            #     call_str += f"{key}[idx:idx+1], "
+            # for key in model_def['States'].keys():
+            #     call_str += f"self.{key}, "
+            for key in input_order:
+                call_str += f"{key}[idx:idx+1], " if key in inputs else f"self.{key}, "
+            call_str += ")\n"
+            file.write(call_str)
+            for idx, key in enumerate(outputs_order):
+                file.write(f"            results_{key}.append(out[{idx}])\n")
+            for idx, key in enumerate(closed_loop_states):
+                file.write(f"            shift = closed_loop[{idx}].size(1)\n")
+                file.write(f"            self.{key} = nnodely_model_connect(self.{key}, closed_loop[{idx}], shift)\n")
+            for idx, key in enumerate(connect_states):
+                file.write(f"            self.{key} = connect[{idx}]\n")
+            for idx, key in enumerate(outputs_order):
+                file.write(f"        results_{key} = torch.cat(results_{key}, dim=0)\n")
+            #file.write("        results = torch.cat(results, dim=0)\n")
+            return_str = "        return "
+            for key in outputs_order:
+                return_str += f"results_{key}, "
+            file.write(return_str)
+
 def import_python_model(name, model_folder):
     sys.path.insert(0, model_folder)
     module_name = os.path.basename(name)
@@ -235,11 +348,23 @@ def import_python_model(name, model_folder):
         module = importlib.import_module(module_name)
     return module.TracerModel()
 
-def export_onnx_model(model_def, model, input_order, output_order, model_path):
+def export_onnx_model(model_def, model, input_order, output_order, model_path, name='net_onnx', recurrent=False):
+    sys.path.insert(0, model_path)
+    module_name = os.path.basename(name)
+    if module_name in sys.modules:
+        # Reload the module if it is already loaded
+        module = importlib.reload(sys.modules[module_name])
+    else:
+        # Import the module if it is not loaded
+        module = importlib.import_module(module_name)
+    #model = module.RecurrentModel()
+
+    model = torch.jit.script(module.RecurrentModel()) if recurrent == True else module.TracerModel()
+    model.eval()
     dummy_inputs = []
     input_names = []
     dynamic_axes = {}
-    for key in input_order:
+    for key in [t for t in input_order if t in model_def['Inputs'].keys()]:
         input_names.append(key)
         window_size = model_def['Inputs'][key]['ntot'] if key in model_def['Inputs'].keys() else model_def['States'][key]['ntot']
         dim = model_def['Inputs'][key]['dim'] if key in model_def['Inputs'].keys() else model_def['States'][key]['dim']
