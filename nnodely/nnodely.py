@@ -69,6 +69,7 @@ class Modely:
         self.traced = False
         self.model = None
         self.states = {}
+        self.recurrent = False
 
         # Dataaset Parameters
         self.data_loaded = False
@@ -341,6 +342,9 @@ class Modely:
                 self.model_def.update()
             else:
                 self.model_def.updateParameters(self.model)
+
+        if self.model_def['States']:
+            self.recurrent = True
 
         self.model_def.setBuildWindow(sample_time)
         self.model = Model(self.model_def.json)
@@ -1262,7 +1266,7 @@ class Modely:
                   'The model is traced and cannot be exported to Python.\n Run neuralizeModel() to recreate a standard model.')
         check(self.neuralized == True, RuntimeError, 'The model is not neuralized yet.')
         self.exporter.saveModel(model_def.json, name, model_path)
-        self.exporter.exportPythonModel(model_def, model, name, model_path)
+        self.exporter.exportPythonModel(model_def, model, name, model_path, recurrent=self.recurrent)
 
     def importPythonModel(self, name = None, model_folder = None): ## import the model from a stand-alone python file
         if name is None:
@@ -1290,7 +1294,7 @@ class Modely:
         model_def.updateParameters(self.model)
         model = Model(model_def.json)
         model.update()
-        self.exporter.exportONNX(model_def, model, inputs_order, outputs_order, name, model_folder)
+        self.exporter.exportONNX(model_def, model, inputs_order, outputs_order, name, model_folder, recurrent=self.recurrent)
 
     def exportReport(self, name = 'net', model_folder = None):
         self.exporter.exportReport(self, name, model_folder)

@@ -196,9 +196,15 @@ class ModelDef():
                       f"{k} has a different number of values for this sample time.")
 
 
-    def updateParameters(self, model):
+    def updateParameters(self, model, recurrent=True):
         if model is not None:
             for key in self.json['Parameters'].keys():
+                # if recurrent:
+                #     if key in model.Cell.all_parameters:
+                #         self.json['Parameters'][key]['values'] = model.Cell.all_parameters[key].tolist()
+                #         if 'init_fun' in self.json['Parameters'][key]:
+                #             del self.json['Parameters'][key]['init_fun']
+                # else:
                 if key in model.all_parameters:
                     self.json['Parameters'][key]['values'] = model.all_parameters[key].tolist()
                     if 'init_fun' in self.json['Parameters'][key]:

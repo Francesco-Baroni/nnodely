@@ -181,7 +181,7 @@ class Model(nn.Module):
                             # virtual[:, -shift:, :] = result_dict[relation]
                             # result_dict[connect_input] = virtual.clone()
                             # available_keys.add(connect_input)
-                            result_dict[connect_input] = connect(kwargs[connect_input], result_dict[relation], result_dict[relation].shape[1])
+                            result_dict[connect_input] = connect(kwargs[connect_input], result_dict[relation], result_dict[relation].size(1))
                             available_keys.add(connect_input)
 
         ## Return a dictionary with all the connected inputs

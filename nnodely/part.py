@@ -61,13 +61,13 @@ class Part_Layer(nn.Module):
         self.i, self.j = i, j
 
         # Create a binary mask matrix for the desired slice
-        self.mask = torch.zeros((j - i, dim))
+        self.W = torch.zeros((j - i, dim))
         for idx in range(j - i):
-            self.mask[idx, i + idx] = 1
+            self.W[idx, i + idx] = 1
 
     def forward(self, x):
-        assert x.ndim >= 3, 'The Part Relation Works only for 3D inputs'
-        return torch.einsum('bij,kj->bik', x, self.mask)
+        ## assert x.ndim >= 3, 'The Part Relation Works only for 3D inputs'
+        return torch.einsum('bij,kj->bik', x, self.W)
 
 ## Select elements on the third dimension in the range [i,j]
 def createPart(self, *inputs):
@@ -116,12 +116,12 @@ class Select(Stream, ToStream):
 class Select_Layer(nn.Module):
     def __init__(self, dim, idx):
         super(Select_Layer, self).__init__()
-        self.mask = torch.zeros(dim)
-        self.mask[idx] = 1
+        self.W = torch.zeros(dim)
+        self.W[idx] = 1
 
     def forward(self, x):
-        assert x.ndim >= 3, 'The Part Relation Works only for 3D inputs'
-        return torch.einsum('ijk,k->ij', x, self.mask).unsqueeze(2)
+        ## assert x.ndim >= 3, 'The Part Relation Works only for 3D inputs'
+        return torch.einsum('ijk,k->ij', x, self.W).unsqueeze(2)
     
 
 ## Select an element i on the third dimension
@@ -243,11 +243,11 @@ class SampleSelect(Stream, ToStream):
 class SampleSelect_Layer(nn.Module):
     def __init__(self, dim, idx):
         super(SampleSelect_Layer, self).__init__()
-        self.mask = torch.zeros(dim)
-        self.mask[idx] = 1
+        self.W = torch.zeros(dim)
+        self.W[idx] = 1
 
     def forward(self, x):
-        return torch.einsum('ijk,j->ik', x, self.mask).unsqueeze(1)
+        return torch.einsum('ijk,j->ik', x, self.W).unsqueeze(1)
 
 def createSampleSelect(self, *inputs):
     return SampleSelect_Layer(dim=inputs[0], idx=inputs[1])
