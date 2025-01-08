@@ -5,7 +5,7 @@ sys.path.append(os.getcwd())
 
 from nnodely import *
 
-example = 3
+example = 6
 
 if example == 1:
     print("-----------------------------------EXAMPLE 1------------------------------------")
@@ -104,26 +104,26 @@ elif example == 3:
     print(test.model.all_parameters['c'])
 
     # Export the model
-    test.exportPythonModel()
+    #test.exportPythonModel()
 
     # Import the model
-    test.importPythonModel(name='net')
+    #test.importPythonModel(name='net')
 
     ## Inference with imported model
-    print(test(sample))
-    print(test.model.all_parameters['a'])
-    print(test.model.all_parameters['b'])
-    print(test.model.all_parameters['c'])
+    #print(test(sample))
+    #print(test.model.all_parameters['a'])
+    #print(test.model.all_parameters['b'])
+    #print(test.model.all_parameters['c'])
 
     ## Train imported model
-    test.trainModel(optimizer='SGD', training_params={'num_of_epochs': 1, 'lr': 0.0001, 'train_batch_size': 1}, splits=[100,0,0], prediction_samples=10)
+    #test.trainModel(optimizer='SGD', training_params={'num_of_epochs': 1, 'lr': 0.0001, 'train_batch_size': 1}, splits=[100,0,0], prediction_samples=10)
 
     ## Inference
-    sample = {'x':[1], 'y':[2], 'z':[3], 'target':[18]}
-    print(test(sample))
-    print(test.model.all_parameters['a'])
-    print(test.model.all_parameters['b'])
-    print(test.model.all_parameters['c'])
+    #sample = {'x':[1], 'y':[2], 'z':[3], 'target':[18]}
+    #print(test(sample))
+    #print(test.model.all_parameters['a'])
+    #print(test.model.all_parameters['b'])
+    #print(test.model.all_parameters['c'])
 
     ## Export in ONNX format
     test.exportONNX(['x','y','z'],['out']) # Export the onnx model
@@ -197,3 +197,79 @@ elif example == 4:
     ## Export in ONNX format
     #test.exportONNX(['x','y','z'],['out']) # Export the onnx model
 
+elif example == 5:
+    print("-----------------------------------EXAMPLE Vehicle (Not Recurrent)------------------------------------")
+    # Create nnodely structure
+    vehicle = nnodely(visualizer=MPLVisualizer(),seed=2, workspace=os.path.join(os.getcwd(), 'results')) #MPLVisualizer()
+
+    # Dimensions of the layers
+    n  = 25
+    na = 21
+
+    #Create neural model inputs
+    velocity = Input('vel')
+    brake = Input('brk')
+    gear = Input('gear')
+    torque = Input('trq')
+    altitude = Input('alt',dimensions=na)
+    acc = Input('acc')
+
+    # Create neural network relations
+    air_drag_force = Linear(b=True)(velocity.last()**2)
+    breaking_force = -Relu(Fir(parameter_init = init_negexp, parameter_init_params={'size_index':0, 'first_value':0.002, 'lambda':3})(brake.sw(n)))
+    gravity_force = Linear(W_init=init_constant, W_init_params={'value':0}, dropout=0.1, W='gravity')(altitude.last())
+    fuzzi_gear = Fuzzify(6, range=[2,7], functions='Rectangular')(gear.last())
+    local_model = LocalModel(input_function=lambda: Fir(parameter_init = init_negexp, parameter_init_params={'size_index':0, 'first_value':0.002, 'lambda':3}))
+    engine_force = local_model(torque.sw(n), fuzzi_gear)
+
+    # Create neural network output
+    out = Output('accelleration', air_drag_force+breaking_force+gravity_force+engine_force)
+
+    # Add the neural model to the nnodely structure and neuralization of the model
+    vehicle.addModel('acc',[out])
+    vehicle.addMinimize('acc_error', acc.last(), out, loss_function='rmse')
+    vehicle.neuralizeModel(0.05)
+
+    ## Export the Onnx Model
+    vehicle.exportONNX(['vel','brk','gear','trq','alt'],['accelleration'])
+
+elif example == 6:
+    print("-----------------------------------EXAMPLE Vehicle (Recurrent)------------------------------------")
+    # Create nnodely structure
+    vehicle = nnodely(visualizer=MPLVisualizer(),seed=2, workspace=os.path.join(os.getcwd(), 'results')) #MPLVisualizer()
+
+    # Dimensions of the layers
+    n  = 25
+    na = 21
+
+    #Create neural model inputs
+    velocity = State('vel')
+    brake = Input('brk')
+    gear = Input('gear')
+    torque = Input('trq')
+    altitude = Input('alt',dimensions=na)
+    acc = Input('acc')
+
+    # Create neural network relations
+    air_drag_force = Linear(b=True)(velocity.last()**2)
+    breaking_force = -Relu(Fir(parameter_init = init_negexp, parameter_init_params={'size_index':0, 'first_value':0.002, 'lambda':3})(brake.sw(n)))
+    gravity_force = Linear(W_init=init_constant, W_init_params={'value':0}, dropout=0.1, W='gravity')(altitude.last())
+    fuzzi_gear = Fuzzify(6, range=[2,7], functions='Rectangular')(gear.last())
+    local_model = LocalModel(input_function=lambda: Fir(parameter_init = init_negexp, parameter_init_params={'size_index':0, 'first_value':0.002, 'lambda':3}))
+    engine_force = local_model(torque.sw(n), fuzzi_gear)
+
+    sum_rel = air_drag_force+breaking_force+gravity_force+engine_force
+    sum_rel.closedLoop(velocity)
+    # Create neural network output
+    out = Output('accelleration', sum_rel)
+
+    # Add the neural model to the nnodely structure and neuralization of the model
+    vehicle.addModel('acc',[out])
+    vehicle.addMinimize('acc_error', acc.last(), out, loss_function='rmse')
+    vehicle.neuralizeModel(0.05)
+
+    data = {'vel':np.random.rand(1,1), 'brk':np.random.rand(25,1), 'gear':np.random.rand(1,1), 'trq':np.random.rand(25,1), 'alt':np.random.rand(1,21), 'acc':np.random.rand(1,1)}
+    inference = vehicle(data)
+
+    ## Export the Onnx Model
+    vehicle.exportONNX(['vel','brk','gear','trq','alt'],['accelleration'])
