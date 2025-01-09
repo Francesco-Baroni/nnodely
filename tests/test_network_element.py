@@ -199,5 +199,18 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         for ind, (key, value) in enumerate({k:v for k,v in test.model.relation_forward.items() if 'Linear' in k}.items()):
             self.assertEqual(list_of_dimensions[ind],list(value.weights.shape))
 
+    def test_network_linear_interpolation(self):
+        torch.manual_seed(1)
+        x = Input('x')
+        rel1 = Interpolation(x_points=[1.0, 2.0, 3.0, 4.0],y_points=[1.0, 4.0, 9.0, 16.0], mode='linear')(x.last())
+        out = Output('out',rel1)
+
+        test = Modely(visualizer=TextVisualizer(verbose=5))
+        test.addModel('fun',[out])
+        test.neuralizeModel(0.01)
+
+        inference = test(inputs={'x':[[1.5],[2.5],[3.5]]})
+        self.assertEqual(inference['out'],[2.5,6.5,12.5])
+
 if __name__ == '__main__':
     unittest.main()
