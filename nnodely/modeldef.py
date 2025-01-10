@@ -167,6 +167,10 @@ class ModelDef():
             if value['sw'] == [0,0] and value['tw'] == [0,0]:
                 assert(False), f"Input {key} has no time window or sample window"
             if value['sw'] == [0, 0] and self.sample_time is not None:
+                ## check if value['tw'] is a multiple of sample_time
+                absolute_tw = abs(value['tw'][0]) + abs(value['tw'][1])
+                check(round(absolute_tw % self.sample_time) == 0, ValueError,
+                      f"Time window of input {key} is not a multiple of sample time. This network cannot be neuralized")
                 input_ns_backward[key] = round(-value['tw'][0] / self.sample_time)
                 input_ns_forward[key] = round(value['tw'][1] / self.sample_time)
             elif self.sample_time is not None:
