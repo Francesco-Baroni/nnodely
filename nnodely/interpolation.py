@@ -12,7 +12,7 @@ from nnodely.logger import logging, nnLogger
 log = nnLogger(__name__, logging.CRITICAL)
 
 interpolation_relation_name = 'Interpolation'
-class Interpolation(NeuObj, AutoToStream):
+class Interpolation(NeuObj):
     """
     Represents an Interpolation relation in the neural network model.
     This class performs linear interpolation of an input tensor `x` given two vectors of points.
@@ -54,6 +54,8 @@ class Interpolation(NeuObj, AutoToStream):
         super().__init__('P' + interpolation_relation_name + str(NeuObj.count))
         check(len(x_points) == len(y_points), ValueError, 'The x_points and y_points must have the same length.')
         check(mode in self.available_modes, ValueError, f'The mode must be one of {self.available_modes}.')
+        check(len(torch.tensor(x_points).shape) == 1, ValueError, 'The x_points must be a 1D tensor.')
+        check(len(torch.tensor(y_points).shape) == 1, ValueError, 'The y_points must be a 1D tensor.')
 
     def __call__(self, obj:Stream) -> Stream:
         stream_name = interpolation_relation_name + str(Stream.count)
@@ -76,6 +78,9 @@ class Interpolation_Layer(nn.Module):
         self.x_points, indices = torch.sort(x_points)
         self.y_points = y_points[indices]
 
+        self.x_points = self.x_points.unsqueeze(-1)
+        self.y_points = self.y_points.unsqueeze(-1)
+
     def forward(self, x):
         if self.mode == 'linear':
             return self.linear_interpolation(x)
@@ -83,23 +88,42 @@ class Interpolation_Layer(nn.Module):
             raise NotImplementedError
     
     def linear_interpolation(self, x):
-        x_interpolated = torch.zeros_like(x)
-        for i, val in enumerate(x):
-            # Find the interval [x1, x2] such that x1 <= val <= x2
-            idx = torch.searchsorted(self.x_points, val).item()
-            if idx == 0:
-                # val is less than the smallest x_point, extrapolate
-                x_interpolated[i] = self.y_points[0]
-            elif idx >= len(self.x_points):
-                # val is greater than the largest x_point, extrapolate
-                x_interpolated[i] = self.y_points[-1]
-            else:
-                # Perform linear interpolation between x_points[idx-1] and x_points[idx]
-                x1, x2 = self.x_points[idx - 1], self.x_points[idx]
-                y1, y2 = self.y_points[idx - 1], self.y_points[idx]
-                # Linear interpolation formula
-                x_interpolated[i] = y1 + (val - x1) * (y2 - y1) / (x2 - x1)
-        return x_interpolated
+        # Inputs: 
+        # x: query point, a tensor of shape torch.Size([N, 1, 1])
+        # x_data: map of x values, sorted in ascending order, a tensor of shape torch.Size([Q, 1])
+        # y_data: map of y values, a tensor of shape torch.Size([Q, 1])
+        # Output:
+        # y: interpolated value at x, a tensor of shape torch.Size([N, 1, 1])
+
+        # Saturate x to the range of x_data
+        x = torch.min(torch.max(x,self.x_points[0]),self.x_points[-1])
+
+        # Find the index of the closest value in x_data
+        idx = torch.argmin(torch.abs(self.x_points[:-1] - x),dim=1)
+        
+        # Linear interpolation
+        y = self.y_points[idx] + (self.y_points[idx+1] - self.y_points[idx])/(self.x_points[idx+1] - self.x_points[idx])*(x - self.x_points[idx])
+        return y
+
+
+
+        # x_interpolated = torch.zeros_like(x)
+        # for i, val in enumerate(x):
+        #     # Find the interval [x1, x2] such that x1 <= val <= x2
+        #     idx = torch.searchsorted(self.x_points, val).item()
+        #     if idx == 0:
+        #         # val is less than the smallest x_point, extrapolate
+        #         x_interpolated[i] = self.y_points[0]
+        #     elif idx >= len(self.x_points):
+        #         # val is greater than the largest x_point, extrapolate
+        #         x_interpolated[i] = self.y_points[-1]
+        #     else:
+        #         # Perform linear interpolation between x_points[idx-1] and x_points[idx]
+        #         x1, x2 = self.x_points[idx - 1], self.x_points[idx]
+        #         y1, y2 = self.y_points[idx - 1], self.y_points[idx]
+        #         # Linear interpolation formula
+        #         x_interpolated[i] = y1 + (val - x1) * (y2 - y1) / (x2 - x1)
+        # return x_interpolated
 
 def createInterpolation(self, *inputs):
     return Interpolation_Layer(x_points=inputs[0], y_points=inputs[1], mode=inputs[2])
