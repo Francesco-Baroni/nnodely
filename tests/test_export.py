@@ -18,6 +18,16 @@ log.setAllLevel(logging.CRITICAL)
 # Test of export and import the network to a file in different format
 
 class ModelyExportTest(unittest.TestCase):
+
+    def TestAlmostEqual(self, data1, data2, precision=4):
+        assert np.asarray(data1, dtype=np.float32).ndim == np.asarray(data2, dtype=np.float32).ndim, f'Inputs must have the same dimension! Received {type(data1)} and {type(data2)}'
+        if type(data1) == type(data2) == list:
+            self.assertEqual(len(data1),len(data2))
+            for pred, label in zip(data1, data2):
+                self.TestAlmostEqual(pred, label, precision=precision)
+        else:
+            self.assertAlmostEqual(data1, data2, places=precision)
+
     def __init__(self, *args, **kwargs):
         super(ModelyExportTest, self).__init__(*args, **kwargs)
 
@@ -443,6 +453,182 @@ class ModelyExportTest(unittest.TestCase):
         # Get the output
         expected_output = np.array([[2.], [4.], [6.]], dtype=np.float32)
         self.assertEqual(outputs[0].tolist(), expected_output.tolist())
+
+    def test_export_and_import_onnx_module_complex(self):
+        # Create nnodely structure
+        vehicle = nnodely(visualizer=MPLVisualizer(),seed=2, workspace=os.path.join(os.getcwd(), 'results')) #MPLVisualizer()
+
+        # Dimensions of the layers
+        n  = 25
+        na = 21
+
+        #Create neural model inputs
+        velocity = Input('vel')
+        brake = Input('brk')
+        gear = Input('gear')
+        torque = Input('trq')
+        altitude = Input('alt',dimensions=na)
+        acc = Input('acc')
+
+        # Create neural network relations
+        air_drag_force = Linear(b=True)(velocity.last()**2)
+        breaking_force = -Relu(Fir(parameter_init = init_negexp, parameter_init_params={'size_index':0, 'first_value':0.002, 'lambda':3})(brake.sw(n)))
+        gravity_force = Linear(W_init=init_constant, W_init_params={'value':0}, dropout=0.1, W='gravity')(altitude.last())
+        fuzzi_gear = Fuzzify(6, range=[2,7], functions='Rectangular')(gear.last())
+        local_model = LocalModel(input_function=lambda: Fir(parameter_init = init_negexp, parameter_init_params={'size_index':0, 'first_value':0.002, 'lambda':3}))
+        engine_force = local_model(torque.sw(n), fuzzi_gear)
+
+        # Create neural network output
+        out = Output('accelleration', air_drag_force+breaking_force+gravity_force+engine_force)
+
+        # Add the neural model to the nnodely structure and neuralization of the model
+        vehicle.addModel('acc',[out])
+        vehicle.addMinimize('acc_error', acc.last(), out, loss_function='rmse')
+        vehicle.neuralizeModel(0.05)
+
+        # Load the training and the validation dataset
+        data_struct = ['vel','trq','brk','gear','alt','acc']
+        data_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)),'vehicle_data')
+        vehicle.loadData(name='dataset', source=data_folder, format=data_struct, skiplines=1)
+
+        # Inference
+        sample = vehicle.getSamples('dataset', window=1)
+        model_inference = vehicle(sample, sampled=True)
+
+        ## Export the Onnx Model
+        vehicle.exportONNX(['vel','brk','gear','trq','alt'],['accelleration'])
+
+        ## ONNX IMPORT
+        onnx_model_path = os.path.join('results', 'onnx', 'net.onnx')
+        outputs = vehicle.onnx_inference(sample, onnx_model_path)
+        self.assertEqual(outputs[0][0][0].tolist(), model_inference['accelleration'])
+
+    def test_export_and_import_python_module_complex_recurrent(self):
+        # Create nnodely structure
+        vehicle = nnodely(visualizer=MPLVisualizer(),seed=2, workspace=os.path.join(os.getcwd(), 'results')) #MPLVisualizer()
+
+        # Dimensions of the layers
+        n  = 25
+        na = 21
+
+        #Create neural model inputs
+        velocity = State('vel')
+        brake = Input('brk')
+        gear = Input('gear')
+        torque = Input('trq')
+        altitude = Input('alt',dimensions=na)
+        acc = Input('acc')
+
+        # Create neural network relations
+        air_drag_force = Linear(b=True)(velocity.last()**2)
+        breaking_force = -Relu(Fir(parameter_init = init_negexp, parameter_init_params={'size_index':0, 'first_value':0.002, 'lambda':3})(brake.sw(n)))
+        gravity_force = Linear(W_init=init_constant, W_init_params={'value':0}, dropout=0.1, W='gravity')(altitude.last())
+        fuzzi_gear = Fuzzify(6, range=[2,7], functions='Rectangular')(gear.last())
+        local_model = LocalModel(input_function=lambda: Fir(parameter_init = init_negexp, parameter_init_params={'size_index':0, 'first_value':0.002, 'lambda':3}))
+        engine_force = local_model(torque.sw(n), fuzzi_gear)
+
+        sum_rel = air_drag_force+breaking_force+gravity_force+engine_force
+        sum_rel.closedLoop(velocity)
+
+        # Create neural network output
+        out = Output('accelleration', sum_rel)
+
+        # Add the neural model to the nnodely structure and neuralization of the model
+        vehicle.addModel('acc',[out])
+        vehicle.addMinimize('acc_error', acc.last(), out, loss_function='rmse')
+        vehicle.neuralizeModel(0.05)
+
+        # Load the training and the validation dataset
+        data_struct = ['vel','trq','brk','gear','alt','acc']
+        data_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)),'vehicle_data')
+        vehicle.loadData(name='dataset', source=data_folder, format=data_struct, skiplines=1)
+
+        # Inference
+        sample = vehicle.getSamples('dataset', window=3)
+        model_inference = vehicle(sample, sampled=True, prediction_samples=3)
+
+        vehicle.exportPythonModel(name='net')
+
+        vehicle.importPythonModel(name='net')
+        model_import_inference = vehicle(sample, sampled=True, prediction_samples=3)
+        self.assertEqual(model_inference['accelleration'], model_import_inference['accelleration'])
+
+        ## Load the exported model.py
+        model_folder = 'results'
+        model_filename = 'net.py'
+        model_path = os.path.join(model_folder, model_filename)
+        sys.path.insert(0, model_folder)
+        ## Import the python exported module
+        module_name = os.path.splitext(model_filename)[0]
+        module = importlib.import_module(module_name)
+        RecurrentModel = getattr(module, 'RecurrentModel')
+        recurrent_model = RecurrentModel()
+        recurrent_model.eval()
+
+        sample = vehicle.getSamples('dataset', window=3)
+        recurrent_sample = {key: torch.tensor(value, dtype=torch.float32) for key, value in sample.items()}
+        model_sample = {key: value for key, value in sample.items() if key != 'vel'}
+        self.TestAlmostEqual([item.detach().item() for item in recurrent_model(recurrent_sample)['accelleration']], vehicle(model_sample, sampled=True, prediction_samples=3)['accelleration'])
+
+    def test_export_and_import_onnx_module_complex_recurrent(self):
+        # Create nnodely structure
+        vehicle = nnodely(visualizer=MPLVisualizer(),seed=2, workspace=os.path.join(os.getcwd(), 'results')) #MPLVisualizer()
+
+        # Dimensions of the layers
+        n  = 25
+        na = 21
+
+        #Create neural model inputs
+        velocity = State('vel')
+        brake = Input('brk')
+        gear = Input('gear')
+        torque = Input('trq')
+        altitude = Input('alt',dimensions=na)
+        acc = Input('acc')
+
+        # Create neural network relations
+        air_drag_force = Linear(b=True)(velocity.last()**2)
+        breaking_force = -Relu(Fir(parameter_init = init_negexp, parameter_init_params={'size_index':0, 'first_value':0.002, 'lambda':3})(brake.sw(n)))
+        gravity_force = Linear(W_init=init_constant, W_init_params={'value':0}, dropout=0.1, W='gravity')(altitude.last())
+        fuzzi_gear = Fuzzify(6, range=[2,7], functions='Rectangular')(gear.last())
+        local_model = LocalModel(input_function=lambda: Fir(parameter_init = init_negexp, parameter_init_params={'size_index':0, 'first_value':0.002, 'lambda':3}))
+        engine_force = local_model(torque.sw(n), fuzzi_gear)
+
+        sum_rel = air_drag_force+breaking_force+gravity_force+engine_force
+        sum_rel.closedLoop(velocity)
+
+        # Create neural network output
+        out = Output('accelleration', sum_rel)
+
+        # Add the neural model to the nnodely structure and neuralization of the model
+        vehicle.addModel('acc',[out])
+        vehicle.addMinimize('acc_error', acc.last(), out, loss_function='rmse')
+        vehicle.neuralizeModel(0.05)
+
+        # Load the training and the validation dataset
+        data_struct = ['vel','trq','brk','gear','alt','acc']
+        data_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)),'vehicle_data')
+        vehicle.loadData(name='dataset', source=data_folder, format=data_struct, skiplines=1)
+
+        ## Export the Onnx Model
+        vehicle.exportONNX(inputs_order=['vel','gear','trq','alt','brk'],outputs_order=['accelleration'])
+
+        sample = vehicle.getSamples('dataset', window=1)
+        model_sample = {key: value for key, value in sample.items() if key != 'vel'}
+        model_inference = vehicle(model_sample, sampled=True, prediction_samples=1)
+
+        ## ONNX IMPORT
+        onnx_model_path = os.path.join('results', 'onnx', 'net.onnx')
+        outputs = vehicle.onnx_inference(sample, onnx_model_path)
+        self.assertEqual(outputs[0][0], model_inference['accelleration'])
+
+        sample = vehicle.getSamples('dataset', window=3)
+        model_sample = {key: value for key, value in sample.items() if key != 'vel'}
+        model_inference = vehicle(model_sample, sampled=True, prediction_samples=3)
+        outputs = vehicle.onnx_inference(sample, onnx_model_path)
+        self.assertEqual(outputs[0].squeeze().tolist(), model_inference['accelleration'])
+
+
 if __name__ == '__main__':
     unittest.main()
 

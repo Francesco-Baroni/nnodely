@@ -5,7 +5,7 @@ sys.path.append(os.getcwd())
 
 from nnodely import *
 
-example = 6
+example = 5
 
 if example == 1:
     print("-----------------------------------EXAMPLE 1------------------------------------")

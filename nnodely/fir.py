@@ -133,7 +133,7 @@ class Fir_Layer(nn.Module):
         # Remove the last dimension (1) to make x shape [batch, window]
         x = x.squeeze(-1)
         # Perform the linear transformation: y = xW^T
-        x = torch.matmul(x, self.weights)
+        x = torch.matmul(x, self.weights).to(dtype=torch.float32)
         # Reshape y to be [batch, 1, output_features]
         x = x.view(batch_size, 1, output_features)
         # Add bias if necessary
