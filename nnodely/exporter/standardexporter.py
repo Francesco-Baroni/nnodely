@@ -2,7 +2,7 @@ import os, torch
 
 from nnodely.exporter.exporter import Exporter
 from nnodely.exporter.reporter import Reporter
-from nnodely.exporter.export import save_model, load_model, export_python_model, export_pythononnx_model, export_onnx_model, import_python_model, import_onnx_model
+from nnodely.exporter.export import save_model, load_model, export_python_model, export_pythononnx_model, export_onnx_model, import_python_model, import_onnx_model, onnx_inference
 from nnodely.utils import check
 
 from nnodely.logger import logging, nnLogger
@@ -97,6 +97,10 @@ class StandardExporter(Exporter):
         except Exception as e:
             log.warning(f"The module {name} it is not found in the folder {model_folder}.\nError: {e}")
         return model
+    
+    def onnx_inference(self, inputs, path):
+        return onnx_inference(inputs, path)
+            
 
     def exportReport(self, n4m, name = 'net', model_folder = None):
         # Combine the folder path and file name to form the complete file path

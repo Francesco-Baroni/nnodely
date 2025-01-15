@@ -1296,6 +1296,9 @@ class Modely:
         model.update()
         self.exporter.exportONNX(model_def, model, inputs_order, outputs_order, name, model_folder, recurrent=self.recurrent)
 
+    def onnx_inference(self, inputs:dict, path:str):
+        return self.exporter.onnx_inference(inputs, path)
+
     def exportReport(self, name = 'net', model_folder = None):
         self.exporter.exportReport(self, name, model_folder)
 

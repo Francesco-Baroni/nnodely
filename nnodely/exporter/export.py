@@ -373,17 +373,33 @@ def export_onnx_model(model_def, model, input_order, output_order, model_path, n
     output_names = output_order
     dummy_inputs = tuple(dummy_inputs)
 
+    for dummy, name in zip(dummy_inputs, input_names):
+        print(name, dummy.size())
+
     torch.onnx.export(
         model,                                  # The model to be exported
         dummy_inputs,                           # Tuple of inputs to match the forward signature
         model_path,                             # File path to save the ONNX model
         export_params = True,                   # Store the trained parameters in the model file
-        opset_version = 12,                     # ONNX version to export to (you can use 11 or higher)
+        opset_version = 17,                     # ONNX version to export to (you can use 11 or higher)
         do_constant_folding=True,               # Optimize constant folding for inference
         input_names = input_names,              # Name each input as they will appear in ONNX
         output_names = output_names,            # Name the output
         dynamic_axes = dynamic_axes
     )
+
+def onnx_inference(inputs, path):
+    import onnxruntime as ort
+    # Create an ONNX Runtime session
+    session = ort.InferenceSession(path)
+    output_data = []
+    for item in session.get_outputs():
+        output_data.append(item.name)
+    input_data = {}
+    for item in session.get_inputs():
+        input_data[item.name] = inputs[item.name]
+    # Run inference
+    return session.run(output_data, input_data)
 
 def import_onnx_model(name, model_folder):
     import onnxruntime as ort
