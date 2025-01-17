@@ -1,4 +1,5 @@
 from itertools import product
+from nnodely.utils import TORCH_DTYPE
 import numpy as np
 
 import torch.nn as nn
@@ -66,7 +67,7 @@ class Model(nn.Module):
             sample_window = round(param_data[window] / aux_sample_time) if window else 1
             param_size = (sample_window,)+tuple(param_data['dim']) if type(param_data['dim']) is list else (sample_window, param_data['dim'])
             if 'values' in param_data:
-                self.all_parameters[name] = nn.Parameter(torch.tensor(param_data['values'], dtype=torch.float32), requires_grad=True)
+                self.all_parameters[name] = nn.Parameter(torch.tensor(param_data['values'], dtype=TORCH_DTYPE), requires_grad=True)
             # TODO clean code
             elif 'init_fun' in param_data:
                 exec(param_data['init_fun']['code'], globals())
@@ -77,13 +78,13 @@ class Model(nn.Module):
                         values[indexes] = function_to_call(indexes, param_size, param_data['init_fun']['params'])
                     else:
                         values[indexes] = function_to_call(indexes, param_size)
-                self.all_parameters[name] = nn.Parameter(torch.tensor(values.tolist(), dtype=torch.float32), requires_grad=True)
+                self.all_parameters[name] = nn.Parameter(torch.tensor(values.tolist(), dtype=TORCH_DTYPE), requires_grad=True)
             else:
-                self.all_parameters[name] = nn.Parameter(torch.rand(size=param_size, dtype=torch.float32), requires_grad=True)
+                self.all_parameters[name] = nn.Parameter(torch.rand(size=param_size, dtype=TORCH_DTYPE), requires_grad=True)
 
         ## Create all the constants
         for name, param_data in self.constants.items():
-            self.all_constants[name] = nn.Parameter(torch.tensor(param_data['values'], dtype=torch.float32), requires_grad=False)
+            self.all_constants[name] = nn.Parameter(torch.tensor(param_data['values'], dtype=TORCH_DTYPE), requires_grad=False)
         all_params_and_consts = self.all_parameters | self.all_constants
 
         ## Create all the relations

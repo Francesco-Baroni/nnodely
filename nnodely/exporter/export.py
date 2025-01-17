@@ -373,9 +373,6 @@ def export_onnx_model(model_def, model, input_order, output_order, model_path, n
     output_names = output_order
     dummy_inputs = tuple(dummy_inputs)
 
-    for dummy, name in zip(dummy_inputs, input_names):
-        print(name, dummy.size())
-
     torch.onnx.export(
         model,                                  # The model to be exported
         dummy_inputs,                           # Tuple of inputs to match the forward signature

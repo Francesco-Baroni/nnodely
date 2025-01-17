@@ -11,7 +11,7 @@ from nnodely.optimizer import Optimizer, SGD, Adam
 from nnodely.exporter import Exporter, StandardExporter
 from nnodely.modeldef import ModelDef
 
-from nnodely.utils import check, argmax_dict, argmin_dict, tensor_to_list
+from nnodely.utils import check, argmax_dict, argmin_dict, tensor_to_list, TORCH_DTYPE, NP_DTYPE
 
 from nnodely.logger import logging, nnLogger
 log = nnLogger(__name__, logging.INFO)
@@ -197,12 +197,12 @@ class Modely:
         if missing_inputs:
             log.warning(f'Inputs not provided: {missing_inputs}. Autofilling with zeros..')
             for key in missing_inputs:
-                inputs[key] = np.zeros(shape=(self.input_n_samples[key] + window_dim - 1, self.model_def['Inputs'][key]['dim']),dtype=np.float32).tolist()
+                inputs[key] = np.zeros(shape=(self.input_n_samples[key] + window_dim - 1, self.model_def['Inputs'][key]['dim']),dtype=NP_DTYPE).tolist()
 
         ## Transform inputs in 3D Tensors
         for key, val in inputs.items():
             input_dim = self.model_def['Inputs'][key]['dim'] if key in model_inputs else self.model_def['States'][key]['dim']
-            inputs[key] = torch.from_numpy(np.array(inputs[key])).to(torch.float32)
+            inputs[key] = torch.from_numpy(np.array(inputs[key])).to(TORCH_DTYPE)
 
             if input_dim > 1:
                 correct_dim = 3 if sampled else 2
@@ -252,7 +252,7 @@ class Modely:
                         else: ## if i have no samples and no states
                             window_size = self.input_n_samples[key]
                             dim = self.model_def['Inputs'][key]['dim'] if key in model_inputs else self.model_def['States'][key]['dim']
-                            X[key] = torch.zeros(size=(1, window_size, dim), dtype=torch.float32, requires_grad=False)
+                            X[key] = torch.zeros(size=(1, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
                             self.states[key] = X[key]
                     first = False
                 else:
@@ -324,13 +324,13 @@ class Modely:
             for key in states:
                 window_size = self.input_n_samples[key]
                 dim = self.model_def['States'][key]['dim']
-                self.states[key] = torch.zeros(size=(batch, window_size, dim), dtype=torch.float32, requires_grad=False)
+                self.states[key] = torch.zeros(size=(batch, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
         else: ## reset all states
             self.states = {}
             for key, state in self.model_def['States'].items():
                 window_size = self.input_n_samples[key]
                 dim = state['dim']
-                self.states[key] = torch.zeros(size=(batch, window_size, dim), dtype=torch.float32, requires_grad=False)
+                self.states[key] = torch.zeros(size=(batch, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
 
     def neuralizeModel(self, sample_time = None, clear_model = False, model_def = None):
         if model_def is not None:
@@ -707,17 +707,17 @@ class Modely:
             XY_train, XY_val, XY_test = {}, {}, {}
             for key, samples in self.data[dataset].items():
                 if val_size == 0.0 and test_size == 0.0: ## we have only training set
-                    XY_train[key] = torch.from_numpy(samples).to(torch.float32)
+                    XY_train[key] = torch.from_numpy(samples).to(TORCH_DTYPE)
                 elif val_size == 0.0 and test_size != 0.0: ## we have only training and test set
-                    XY_train[key] = torch.from_numpy(samples[:n_samples_train]).to(torch.float32)
-                    XY_test[key] = torch.from_numpy(samples[n_samples_train:]).to(torch.float32)
+                    XY_train[key] = torch.from_numpy(samples[:n_samples_train]).to(TORCH_DTYPE)
+                    XY_test[key] = torch.from_numpy(samples[n_samples_train:]).to(TORCH_DTYPE)
                 elif val_size != 0.0 and test_size == 0.0: ## we have only training and validation set
-                    XY_train[key] = torch.from_numpy(samples[:n_samples_train]).to(torch.float32)
-                    XY_val[key] = torch.from_numpy(samples[n_samples_train:]).to(torch.float32)
+                    XY_train[key] = torch.from_numpy(samples[:n_samples_train]).to(TORCH_DTYPE)
+                    XY_val[key] = torch.from_numpy(samples[n_samples_train:]).to(TORCH_DTYPE)
                 else: ## we have training, validation and test set
-                    XY_train[key] = torch.from_numpy(samples[:n_samples_train]).to(torch.float32)
-                    XY_val[key] = torch.from_numpy(samples[n_samples_train:-n_samples_test]).to(torch.float32)
-                    XY_test[key] = torch.from_numpy(samples[n_samples_train+n_samples_val:]).to(torch.float32)
+                    XY_train[key] = torch.from_numpy(samples[:n_samples_train]).to(TORCH_DTYPE)
+                    XY_val[key] = torch.from_numpy(samples[n_samples_train:-n_samples_test]).to(TORCH_DTYPE)
+                    XY_test[key] = torch.from_numpy(samples[n_samples_train+n_samples_val:]).to(TORCH_DTYPE)
 
             ## Set name for resultsAnalysis
             train_dataset = self.__get_parameter(train_dataset = f"train_{dataset}_{train_size:0.2f}")
@@ -741,13 +741,13 @@ class Modely:
             ## Split into train, validation and test
             XY_train, XY_val, XY_test = {}, {}, {}
             n_samples_train = self.num_of_samples[train_dataset]
-            XY_train = {key: torch.from_numpy(val).to(torch.float32) for key, val in self.data[train_dataset].items()}
+            XY_train = {key: torch.from_numpy(val).to(TORCH_DTYPE) for key, val in self.data[train_dataset].items()}
             if validation_dataset in datasets:
                 n_samples_val = self.num_of_samples[validation_dataset]
-                XY_val = {key: torch.from_numpy(val).to(torch.float32) for key, val in self.data[validation_dataset].items()}
+                XY_val = {key: torch.from_numpy(val).to(TORCH_DTYPE) for key, val in self.data[validation_dataset].items()}
             if test_dataset in datasets:
                 n_samples_test = self.num_of_samples[test_dataset]
-                XY_test = {key: torch.from_numpy(val).to(torch.float32) for key, val in self.data[test_dataset].items()}
+                XY_test = {key: torch.from_numpy(val).to(TORCH_DTYPE) for key, val in self.data[test_dataset].items()}
 
         for key in XY_train.keys():
             assert n_samples_train == XY_train[key].shape[0], f'The number of train samples {n_samples_train}!={XY_train[key].shape[0]} not compliant.'
@@ -938,7 +938,7 @@ class Modely:
                 else: ## with zeros
                     window_size = self.input_n_samples[key]
                     dim = self.model_def['Inputs'][key]['dim'] if key in model_inputs else self.model_def['States'][key]['dim']
-                    X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=torch.float32, requires_grad=False)
+                    X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
                     self.states[key] = X[key]
 
             for horizon_idx in range(prediction_samples + 1):
@@ -1045,7 +1045,7 @@ class Modely:
 
             if data is None:
                 check(dataset in self.data.keys(), ValueError, f'The dataset {dataset} is not loaded!')
-                data = {key: torch.from_numpy(val).to(torch.float32) for key, val in self.data[dataset].items()}
+                data = {key: torch.from_numpy(val).to(TORCH_DTYPE) for key, val in self.data[dataset].items()}
             n_samples = len(data[list(data.keys())[0]])
 
             if recurrent:
@@ -1082,7 +1082,7 @@ class Modely:
                         else: ## with zeros
                             window_size = self.input_n_samples[key]
                             dim = self.model_def['Inputs'][key]['dim'] if key in model_inputs else self.model_def['States'][key]['dim']
-                            X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=torch.float32, requires_grad=False)
+                            X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
                             self.states[key] = X[key]
 
                     for horizon_idx in range(prediction_samples + 1):
