@@ -3,6 +3,7 @@ import unittest, sys, os, torch
 from nnodely import *
 from nnodely.relation import Stream
 from nnodely import relation
+import numpy as np
 relation.CHECK_NAMES = False
 
 from nnodely.logger import logging, nnLogger
@@ -198,6 +199,48 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         list_of_dimensions = [[1,1,1],[1,1,5],[1,3,1],[1,3,5]]
         for ind, (key, value) in enumerate({k:v for k,v in test.model.relation_forward.items() if 'Linear' in k}.items()):
             self.assertEqual(list_of_dimensions[ind],list(value.weights.shape))
+
+    def test_network_linear_interpolation_train(self):
+        torch.manual_seed(1)
+        x = Input('x')
+        param = Parameter(name='a', sw=1)
+        rel1 = Fir(parameter=param)(Interpolation(x_points=[1.0, 2.0, 3.0, 4.0],y_points=[2.0, 4.0, 6.0, 8.0], mode='linear')(x.last()))
+        out = Output('out',rel1)
+
+        test = Modely(visualizer=None)
+        test.addModel('fun',[out])
+        test.addMinimize('error', out, x.last())
+        test.neuralizeModel(0.01)
+
+        dataset = {'x':np.random.uniform(1,4,100)}
+        test.loadData(name='dataset', source=dataset)
+        test.trainModel(num_of_epochs=100, train_batch_size=10)
+        self.assertAlmostEqual(test.model.all_parameters['a'].item(), 0.5, places=2)
+
+    def test_network_linear_interpolation(self):
+        torch.manual_seed(1)
+        x = Input('x')
+        rel1 = Interpolation(x_points=[1.0, 2.0, 3.0, 4.0],y_points=[1.0, 4.0, 9.0, 16.0], mode='linear')(x.last())
+        out = Output('out',rel1)
+
+        test = Modely(visualizer=None)
+        test.addModel('fun',[out])
+        test.neuralizeModel(0.01)
+
+        inference = test(inputs={'x':[1.5,2.5,3.5]})
+        self.assertEqual(inference['out'],[2.5,6.5,12.5])
+
+        torch.manual_seed(1)
+        x = Input('x')
+        rel1 = Interpolation(x_points=[1.0, 4.0, 3.0, 2.0],y_points=[1.0, 16.0, 9.0, 4.0], mode='linear')(x.last())
+        out = Output('out',rel1)
+
+        test = Modely(visualizer=None)
+        test.addModel('fun',[out])
+        test.neuralizeModel(0.01)
+
+        inference = test(inputs={'x':[1.5,2.5,3.5]})
+        self.assertEqual(inference['out'],[2.5,6.5,12.5])
 
 if __name__ == '__main__':
     unittest.main()

@@ -161,7 +161,7 @@ def export_python_model(model_def, model, model_path, recurrent=False):
         file.write("        self.all_parameters = torch.nn.ParameterDict(self.all_parameters)\n")
         file.write("        self.all_constants = torch.nn.ParameterDict(self.all_constants)\n\n")
         file.write("    def update(self, closed_loop={}, connect={}):\n")
-        file.write("        pass\n")  
+        file.write("        pass\n")
         # file.write("        self.closed_loop_update = {}\n")
         # file.write("        self.connect_update = {}\n")
         # file.write("        for key, state in self.state_model.items():\n")
@@ -402,30 +402,4 @@ def import_onnx_model(name, model_folder):
     import onnxruntime as ort
     model_path = os.path.join(model_folder, name + '.onnx')
     return ort.InferenceSession(model_path)
-
-    # import numpy as np
-    # ort_sess = ort.InferenceSession("./TODO/mauro/net.onnx")
-    # prova = {'Vo': np.array([[20.0]], dtype=np.float32),
-    #          'VL': np.array([[[50.0], [50.0], [50.2], [30.1], [15.0]]], dtype=np.float32)}
-    # # ortvalue = ort.OrtValue.ortvalue_from_numpy(prova)
-    # outputs = ort_sess.run(None, prova)
-    # # Print Result
-    # print(outputs)
-    #
-    # session = onnxruntime.InferenceSession(onnx_path)
-    # # Get input and output names
-    # input_names = [item.name for item in session.get_inputs()]
-    # output_names = [item.name for item in session.get_outputs()]
-    # # input_name = session.get_inputs()#[0].name
-    # # output_name = session.get_outputs()[0].name
-    #
-    # print('input_name: ', input_names)
-    # print('output_name: ', output_names)
-    #
-    # # Run inference
-    # result = session.run([output_names], {input_names: data})
-    # # Print the result
-    # print(result)
-    #
-    # import onnx
 

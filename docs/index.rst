@@ -9,7 +9,7 @@ Welcome to nnodely's documentation!
 .. toctree::
    :maxdepth: 2
 
-   _autodoc/modules
+   _autodoc/nnodely
 
 
 Indices and tables

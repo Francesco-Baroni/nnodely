@@ -14,6 +14,52 @@ from nnodely.utils import check, merge, enforce_types
 paramfun_relation_name = 'ParamFun'
 
 class ParamFun(NeuObj):
+    """
+    Represents a parametric function in the neural network model.
+
+    Parameters
+    ----------
+    param_fun : Callable
+        The parametric function to be used.
+    constants : list or dict or None, optional
+        A list or dictionary of constants to be used in the function. Default is None.
+    parameters_dimensions : list or dict or None, optional
+        A list or dictionary specifying the dimensions of the parameters. Default is None.
+    parameters : list or dict or None, optional
+        A list or dictionary of parameters to be used in the function. Default is None.
+    map_over_batch : bool, optional
+        A boolean indicating whether to map the function over the batch dimension. Default is False.
+
+    Attributes
+    ----------
+    relation_name : str
+        The name of the relation.
+    param_fun : Callable
+        The parametric function to be used.
+    constants : list or dict or None
+        A list or dictionary of constants to be used in the function.
+    parameters_dimensions : list or dict or None
+        A list or dictionary specifying the dimensions of the parameters.
+    parameters : list or dict or None
+        A list or dictionary of parameters to be used in the function.
+    map_over_batch : bool
+        A boolean indicating whether to map the function over the batch dimension.
+    output_dimension : dict
+        A dictionary containing the output dimensions of the function.
+    json : dict
+        A dictionary containing the configuration of the function.
+
+    Example
+    -------
+        >>> input1 = Input('input1')
+        >>> input2 = Input('input2')
+
+        >>> def my_function(x, y, param1, const1):
+        >>>     return param1 * x + const1 * y
+
+        >>> param_fun = ParamFun(my_function, constants={'const1': 1.0}, parameters_dimensions={'param1': 1})
+        >>> result = param_fun(input1, input2)
+    """
     @enforce_types
     def __init__(self, param_fun:Callable,
                  constants:list|dict|None = None,

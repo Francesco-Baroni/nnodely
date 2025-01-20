@@ -1,5 +1,5 @@
 
-__version__ = '0.15.0'
+__version__ = '0.25.0'
 
 import sys
 major, minor = sys.version_info.major, sys.version_info.minor
@@ -31,6 +31,7 @@ from nnodely.parametricfunction import ParamFun
 from nnodely.fuzzify import Fuzzify
 from nnodely.part import TimePart, TimeSelect, SamplePart, SampleSelect, Part, Select
 from nnodely.localmodel import LocalModel
+from nnodely.interpolation import Interpolation
 
 # Main nnodely classes
 from nnodely.nnodely import nnodely, Modely

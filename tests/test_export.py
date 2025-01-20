@@ -304,9 +304,9 @@ class ModelyExportTest(unittest.TestCase):
         # Export the all models in onnx format
         self.test.exportONNX(['x', 'y'], ['out', 'out2', 'out3', 'out4', 'out5', 'out6'])  # Export the onnx model
         # Export only the modelB in onnx format
-        #self.test.exportONNX(['x', 'y'], ['out3', 'out4', 'out2'], ['modelB'])  # Export the onnx model
+        self.test.exportONNX(['x', 'y'], ['out3', 'out4', 'out2'], ['modelB'])  # Export the onnx model
         self.assertTrue(os.path.exists(os.path.join(self.test.getWorkspace(), 'onnx', 'net.onnx')))
-        #self.assertTrue(os.path.exists(os.path.join(self.test.getWorkspace(), 'onnx', 'net_modelB.onnx')))
+        self.assertTrue(os.path.exists(os.path.join(self.test.getWorkspace(), 'onnx', 'net_modelB.onnx')))
 
         if os.path.exists(self.test.getWorkspace()):
             shutil.rmtree(self.test.getWorkspace())
@@ -332,7 +332,7 @@ class ModelyExportTest(unittest.TestCase):
 
     def test_export_and_import_train_python_module(self):
         result_path = './results'
-        test = Modely(seed=42, workspace=result_path, visualizer=None)
+        test = Modely(visualizer=None, seed=42, workspace=result_path)
         x = Input('x')
         y = State('y')
         z = State('z')
@@ -371,7 +371,7 @@ class ModelyExportTest(unittest.TestCase):
 
     def test_export_and_import_python_module(self):
         result_path = './results'
-        test = Modely(seed=42, workspace=result_path, visualizer=None)
+        test = Modely(visualizer=None, seed=42, workspace=result_path)
         x = Input('x')
         y = State('y')
         z = State('z')
@@ -413,7 +413,7 @@ class ModelyExportTest(unittest.TestCase):
 
     def test_export_and_import_onnx_module(self):
         result_path = './results'
-        test = Modely(seed=42, workspace=result_path, visualizer=None)
+        test = Modely(visualizer=None, seed=42, workspace=result_path)
         x = Input('x')
         y = State('y')
         z = State('z')
@@ -456,7 +456,7 @@ class ModelyExportTest(unittest.TestCase):
 
     def test_export_and_import_onnx_module_complex(self):
         # Create nnodely structure
-        vehicle = nnodely(visualizer=MPLVisualizer(),seed=2, workspace=os.path.join(os.getcwd(), 'results')) #MPLVisualizer()
+        vehicle = Modely(visualizer=None, seed=2, workspace=os.path.join(os.getcwd(), 'results'))
 
         # Dimensions of the layers
         n  = 25
@@ -498,14 +498,14 @@ class ModelyExportTest(unittest.TestCase):
         ## Export the Onnx Model
         vehicle.exportONNX(['vel','brk','gear','trq','alt'],['accelleration'])
 
-        ## ONNX IMPORT
+        ## Onnx Import
         onnx_model_path = os.path.join('results', 'onnx', 'net.onnx')
-        outputs = vehicle.onnx_inference(sample, onnx_model_path)
+        outputs = vehicle.onnxInference(sample, onnx_model_path)
         self.assertEqual(outputs[0][0][0].tolist(), model_inference['accelleration'])
 
     def test_export_and_import_python_module_complex_recurrent(self):
         # Create nnodely structure
-        vehicle = nnodely(visualizer=MPLVisualizer(),seed=2, workspace=os.path.join(os.getcwd(), 'results')) #MPLVisualizer()
+        vehicle = Modely(visualizer=None, seed=2, workspace=os.path.join(os.getcwd(), 'results'))
 
         # Dimensions of the layers
         n  = 25
@@ -572,7 +572,7 @@ class ModelyExportTest(unittest.TestCase):
 
     def test_export_and_import_onnx_module_complex_recurrent(self):
         # Create nnodely structure
-        vehicle = nnodely(visualizer=MPLVisualizer(),seed=2, workspace=os.path.join(os.getcwd(), 'results')) #MPLVisualizer()
+        vehicle = Modely(visualizer=None, seed=2, workspace=os.path.join(os.getcwd(), 'results'))
 
         # Dimensions of the layers
         n  = 25
@@ -619,13 +619,13 @@ class ModelyExportTest(unittest.TestCase):
 
         ## ONNX IMPORT
         onnx_model_path = os.path.join('results', 'onnx', 'net.onnx')
-        outputs = vehicle.onnx_inference(sample, onnx_model_path)
+        outputs = vehicle.onnxInference(sample, onnx_model_path)
         self.assertEqual(outputs[0][0], model_inference['accelleration'])
 
         sample = vehicle.getSamples('dataset', window=3)
         model_sample = {key: value for key, value in sample.items() if key != 'vel'}
         model_inference = vehicle(model_sample, sampled=True, prediction_samples=3)
-        outputs = vehicle.onnx_inference(sample, onnx_model_path)
+        outputs = vehicle.onnxInference(sample, onnx_model_path)
         self.assertEqual(outputs[0].squeeze().tolist(), model_inference['accelleration'])
 
 

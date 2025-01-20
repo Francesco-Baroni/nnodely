@@ -98,7 +98,7 @@ class StandardExporter(Exporter):
             log.warning(f"The module {name} it is not found in the folder {model_folder}.\nError: {e}")
         return model
     
-    def onnx_inference(self, inputs, path):
+    def onnxInference(self, inputs, path):
         return onnx_inference(inputs, path)
             
 

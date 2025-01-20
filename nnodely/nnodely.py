@@ -21,10 +21,23 @@ class Modely:
     """
     Create the main object, the nnodely object, that will be used to create the network, train and export it.
 
-    :param seed: It is the seed used for the random number generator
-    :type seed: int or None
+    Parameters
+    ----------
+    visualizer : str, Visualizer, optional
+        The visualizer to be used. Default is the 'Standard' visualizer.
+    exporter : str, Exporter, optional
+        The exporter to be used. Default is the 'Standard' exporter.
+    seed : int, optional
+        Set the seed for all the random modules inside the nnodely framework. Default is None.
+    workspace : str
+        The path of the workspace where all the exported files will be saved.
+    log_internal : bool
+        Whether or not save the logs. Default is False.
+    save_history : bool
+        Whether or not save the history. Default is False.
 
-    Example:
+    Example
+    -------
         >>> model = Modely()
     """
     def __init__(self,
@@ -128,6 +141,47 @@ class Modely:
 
 
     def __call__(self, inputs={}, sampled=False, closed_loop={}, connect={}, prediction_samples='auto', num_of_samples=None): ##, align_input=False):
+        """
+        Performs inference on the model.
+
+        Parameters
+        ----------
+        inputs : dict, optional
+            A dictionary of input data. The keys are input names and the values are the corresponding data. Default is an empty dictionary.
+        sampled : bool, optional
+            A boolean indicating whether the inputs are already sampled. Default is False.
+        closed_loop : dict, optional
+            A dictionary specifying closed loop connections. The keys are input names and the values are output names. Default is an empty dictionary.
+        connect : dict, optional
+            A dictionary specifying connections. The keys are input names and the values are output names. Default is an empty dictionary.
+        prediction_samples : str or int, optional
+            The number of prediction samples. Can be 'auto', None or an integer. Default is 'auto'.
+        num_of_samples : str or int, optional
+            The number of samples. Can be 'auto', None or an integer. Default is 'auto'.
+
+        Returns
+        -------
+        dict
+            A dictionary containing the model's prediction outputs.
+
+        Raises
+        ------
+        RuntimeError
+            If the network is not neuralized.
+        ValueError
+            If an input variable is not in the model definition or if an output variable is not in the model definition.
+
+        Example
+        -------
+        Example usage:
+            >>> model = Modely()
+            >>> x = Input('x')
+            >>> out = Output('out', Fir(x.last()))
+            >>> model.addModel('example_model', [out])
+            >>> model.neuralizeModel()
+            >>> predictions = model(inputs={'x': [1, 2, 3]})
+        """
+
         ## Copy dict for avoid python bug
         inputs = copy.deepcopy(inputs)
         closed_loop = copy.deepcopy(closed_loop)
@@ -287,6 +341,35 @@ class Modely:
         return result_dict
 
     def getSamples(self, dataset, index = None, window=1):
+        """
+        Retrieves a window of samples from a given dataset.
+
+        Parameters
+        ----------
+        dataset : str
+            The name of the dataset to retrieve samples from.
+        index : int, optional
+            The starting index of the samples. If None, a random index is chosen. Default is None.
+        window : int, optional
+            The number of consecutive samples to retrieve. Default is 1.
+
+        Returns
+        -------
+        dict
+            A dictionary containing the retrieved samples. The keys are input and state names, and the values are lists of samples.
+
+        Raises
+        ------
+        ValueError
+            If the dataset is not loaded.
+
+        Example
+        -------
+        Example usage:
+            >>> model = Modely()
+            >>> model.loadData('dataset_name')
+            >>> samples = model.getSamples('dataset_name', index=10, window=5)
+        """
         if index is None:
             index = random.randint(0, self.num_of_samples[dataset] - window)
         check(self.data_loaded, ValueError, 'The Dataset must first be loaded using <loadData> function!')
@@ -301,22 +384,123 @@ class Modely:
             return result_dict
 
     def addConnect(self, stream_out, state_list_in):
+        """
+        Adds a connection from a relation stream to an input state.
+
+        Parameters
+        ----------
+        stream_out : Stream
+            The relation stream to connect from.
+        state_list_in : list of State
+            The list of input states to connect to.
+
+        Example
+        -------
+        Example usage:
+            >>> model = Modely()
+            >>> x = Input('x')
+            >>> y = State('y')
+            >>> relation = Fir(x.last())
+            >>> model.addConnect(relation, y)
+        """
         self.model_def.addConnect(stream_out, state_list_in)
 
     def addClosedLoop(self, stream_out, state_list_in):
+        """
+        Adds a closed loop connection from a relation stream to an input state.
+
+        Parameters
+        ----------
+        stream_out : Stream
+            The relation stream to connect from.
+        state_list_in : list of State
+            The list of input states to connect to.
+
+        Example
+        -------
+        Example usage:
+            >>> model = Modely()
+            >>> x = Input('x')
+            >>> y = State('y')
+            >>> relation = Fir(x.last())
+            >>> model.addClosedLoop(relation, y)
+        """
         self.model_def.addClosedLoop(stream_out, state_list_in)
 
     def addModel(self, name, stream_list):
+        """
+        Adds a new model with the given name along with a list of Outputs.
+
+        Parameters
+        ----------
+        name : str
+            The name of the model.
+        stream_list : list of Stream
+            The list of Outputs stream in the model.
+
+        Example
+        -------
+        Example usage:
+            >>> model = Modely()
+            >>> x = Input('x')
+            >>> out = Output('out', Fir(x.last()))
+            >>> model.addModel('example_model', [out])
+        """
         self.model_def.addModel(name, stream_list)
 
     def removeModel(self, name_list):
+        """
+        Removes models with the given list of names.
+
+        Parameters
+        ----------
+        name_list : list of str
+            The list of model names to remove.
+
+        Example
+        -------
+        Example usage:
+            >>> model.removeModel(['sub_model1', 'sub_model2'])
+        """
         self.model_def.removeModel(name_list)
 
     def addMinimize(self, name, streamA, streamB, loss_function='mse'):
+        """
+        Adds a minimize loss function to the model.
+
+        Parameters
+        ----------
+        name : str
+            The name of the cost function.
+        streamA : Stream
+            The first relation stream for the minimize operation.
+        streamB : Stream
+            The second relation stream for the minimize operation.
+        loss_function : str, optional
+            The loss function to use from the ones provided. Default is 'mse'.
+
+        Example
+        -------
+        Example usage:
+            >>> model.addMinimize('minimize_op', streamA, streamB, loss_function='mse')
+        """
         self.model_def.addMinimize(name, streamA, streamB, loss_function)
         self.visualizer.showaddMinimize(name)
 
     def removeMinimize(self, name_list):
+        """
+        Removes minimize loss functions using the given list of names.
+
+        Parameters
+        ----------
+        name_list : list of str
+            The list of minimize operation names to remove.
+
+        Example
+        -------
+        Example usage:
+            >>> model.removeMinimize(['minimize_op1', 'minimize_op2'])
+        """
         self.model_def.removeMinimize(name_list)
 
     def resetStates(self, states=[], batch=1):
@@ -333,6 +517,31 @@ class Modely:
                 self.states[key] = torch.zeros(size=(batch, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
 
     def neuralizeModel(self, sample_time = None, clear_model = False, model_def = None):
+        """
+        Neuralizes the model, preparing it for inference and training. This method creates a neural network model starting from the model definition.
+        It will also create all the time windows for the inputs and states.
+
+        Parameters
+        ----------
+        sample_time : float or None, optional
+            The sample time for the model. Default is None.
+        clear_model : bool, optional
+            Whether to clear the existing model definition. Default is False.
+        model_def : dict or None, optional
+            A dictionary defining the model. If provided, it overrides the existing model definition. Default is None.
+
+        Raises
+        ------
+        ValueError
+            If sample_time is not None and model_def is provided.
+            If clear_model is True and model_def is provided.
+
+        Example
+        -------
+        Example usage:
+            >>> model = Modely(name='example_model')
+            >>> model.neuralizeModel(sample_time=0.1, clear_model=True)
+        """
         if model_def is not None:
             check(sample_time == None, ValueError, 'The sample_time must be None if a model_def is provided')
             check(clear_model == False, ValueError, 'The clear_model must be False if a model_def is provided')
@@ -366,6 +575,53 @@ class Modely:
         self.visualizer.showBuiltModel()
 
     def loadData(self, name, source, format=None, skiplines=0, delimiter=',', header=None):
+        """
+        Loads data into the model. The data can be loaded from a directory path containing the csv files or from a crafted dataset.
+
+        Parameters
+        ----------
+        name : str
+            The name of the dataset.
+        source : str or list
+            The source of the data. Can be a directory path containing the csv files or a list of custom data.
+        format : list or None, optional
+            The format of the data. When loading multiple csv files the format parameter will define how to read each column of the file. Default is None.
+        skiplines : int, optional
+            The number of lines to skip at the beginning of the file. Default is 0.
+        delimiter : str, optional
+            The delimiter used in the data files. Default is ','.
+        header : list or None, optional
+            The header of the data files. Default is None.
+
+        Raises
+        ------
+        ValueError
+            If the network is not neuralized.
+            If the delimiter is not valid.
+
+        Example
+        -------
+        Example - load data from files:
+            >>> x = Input('x')
+            >>> y = Input('y')
+            >>> out = Output('out',Fir(x.tw(0.05)))
+            >>> test = Modely(visualizer=None)
+            >>> test.addModel('example_model', out)
+            >>> test.neuralizeModel(0.01)
+            >>> data_struct = ['x', '', 'y']
+            >>> test.loadData(name='example_dataset', source='path/to/data', format=data_struct)
+
+        Example - load data from a crafted dataset:
+            >>> x = Input('x')
+            >>> y = Input('y')
+            >>> out = Output('out',Fir(x.tw(0.05)))
+            >>> test = Modely(visualizer=None)
+            >>> test.addModel('example_model', out)
+            >>> test.neuralizeModel(0.01)
+            >>> data_x = np.array(range(10))
+            >>> dataset = {'x': data_x, 'y': (2*data_x)}
+            >>> test.loadData(name='example_dataset',source=dataset)
+        """
         check(self.neuralized, ValueError, "The network is not neuralized.")
         check(delimiter in ['\t', '\n', ';', ',', ' '], ValueError, 'delimiter not valid!')
 
@@ -479,6 +735,25 @@ class Modely:
         self.visualizer.showDataset(name=name)
 
     def filterData(self, filter_function, dataset_name = None):
+        """
+        Filters the data in the dataset using the provided filter function.
+
+        Parameters
+        ----------
+        filter_function : Callable
+            A function that takes a sample as input and returns True if the sample should be kept, and False if it should be removed.
+        dataset_name : str or None, optional
+            The name of the dataset to filter. If None, all datasets are filtered. Default is None.
+
+        Example
+        -------
+        Example usage:
+            >>> model = Modely()
+            >>> model.loadData('dataset_name', 'path/to/data')
+            >>> def filter_fn(sample):
+            >>>     return sample['input1'] > 0
+            >>> model.filterData(filter_fn, 'dataset_name')
+        """
         idx_to_remove = []
         if dataset_name is None:
             for name in self.data.keys():
@@ -638,7 +913,113 @@ class Modely:
                     training_params = None,
                     add_optimizer_params = None, add_optimizer_defaults = None
                    ):
+        """
+        Trains the model using the provided datasets and parameters.
 
+        Parameters
+        ----------
+        models : list or None, optional
+            A list of models to train. Default is None.
+        train_dataset : str or None, optional
+            The name of the training dataset. Default is None.
+        validation_dataset : str or None, optional
+            The name of the validation dataset. Default is None.
+        test_dataset : str or None, optional
+            The name of the test dataset. Default is None.
+        splits : list or None, optional
+            A list of 3 elements specifying the percentage of splits for training, validation, and testing. The three elements must sum up to 100!
+            The parameter splits is only used when there is only 1 dataset loaded. Default is None.
+        closed_loop : dict or None, optional
+            A dictionary specifying closed loop connections. The keys are input names and the values are output names. Default is None.
+        connect : dict or None, optional
+            A dictionary specifying connections. The keys are input names and the values are output names. Default is None.
+        step : int or None, optional
+            The step size for training. A big value will result in less data used for each epochs and a faster train. Default is None.
+        prediction_samples : int or None, optional
+            The size of the prediction horizon. Number of samples at each recurrent window Default is None.
+        shuffle_data : bool or None, optional
+            Whether to shuffle the data during training. Default is None.
+        early_stopping : Callable or None, optional
+            A callable for early stopping. Default is None.
+        early_stopping_params : dict or None, optional
+            A dictionary of parameters for early stopping. Default is None.
+        select_model : Callable or None, optional
+            A callable for selecting the best model. Default is None.
+        select_model_params : dict or None, optional
+            A dictionary of parameters for selecting the best model. Default is None.
+        minimize_gain : dict or None, optional
+            A dictionary specifying the gain for each minimization loss function. Default is None.
+        num_of_epochs : int or None, optional
+            The number of epochs to train the model. Default is None.
+        train_batch_size : int or None, optional
+            The batch size for training. Default is None.
+        val_batch_size : int or None, optional
+            The batch size for validation. Default is None.
+        test_batch_size : int or None, optional
+            The batch size for testing. Default is None.
+        optimizer : Optimizer or None, optional
+            The optimizer to use for training. Default is None.
+        lr : float or None, optional
+            The learning rate. Default is None.
+        lr_param : dict or None, optional
+            A dictionary of learning rate parameters. Default is None.
+        optimizer_params : dict or None, optional
+            A dictionary of optimizer parameters. Default is None.
+        optimizer_defaults : dict or None, optional
+            A dictionary of default optimizer settings. Default is None.
+        training_params : dict or None, optional
+            A dictionary of training parameters. Default is None.
+        add_optimizer_params : dict or None, optional
+            Additional optimizer parameters. Default is None.
+        add_optimizer_defaults : dict or None, optional
+            Additional default optimizer settings. Default is None.
+
+        Raises
+        ------
+        RuntimeError
+            If no data is loaded or if there are no modules with learnable parameters.
+        KeyError
+            If the sample horizon is not positive.
+        ValueError
+            If an input or output variable is not in the model definition.
+
+        Example
+        -------
+        Example - basic feed-forward training:
+            >>> x = Input('x')
+            >>> F = Input('F')
+
+            >>> xk1 = Output('x[k+1]', Fir()(x.tw(0.2))+Fir()(F.last()))
+
+            >>> mass_spring_damper = Modely(seed=0)
+            >>> mass_spring_damper.addModel('xk1',xk1)
+            >>> mass_spring_damper.neuralizeModel(sample_time = 0.05) 
+
+            >>> data_struct = ['time','x','dx','F']
+            >>> data_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)),'dataset','data')
+            >>> mass_spring_damper.loadData(name='mass_spring_dataset', source=data_folder, format=data_struct, delimiter=';')
+
+            >>> params = {'num_of_epochs': 100,'train_batch_size': 128,'lr':0.001}
+            >>> mass_spring_damper.trainModel(splits=[70,20,10], training_params = params)
+
+        Example - recurrent training:
+            >>> x = Input('x')
+            >>> F = Input('F')
+
+            >>> xk1 = Output('x[k+1]', Fir()(x.tw(0.2))+Fir()(F.last()))
+
+            >>> mass_spring_damper = Modely(seed=0)
+            >>> mass_spring_damper.addModel('xk1',xk1)
+            >>> mass_spring_damper.addClosedLoop(xk1, x)
+            >>> mass_spring_damper.neuralizeModel(sample_time = 0.05) 
+
+            >>> data_struct = ['time','x','dx','F']
+            >>> data_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)),'dataset','data')
+            >>> mass_spring_damper.loadData(name='mass_spring_dataset', source=data_folder, format=data_struct, delimiter=';')
+
+            >>> params = {'num_of_epochs': 100,'train_batch_size': 128,'lr':0.001}
+            >>> mass_spring_damper.trainModel(splits=[70,20,10], prediction_samples=10, training_params = params)
+        """
         check(self.data_loaded, RuntimeError, 'There is no data loaded! The Training will stop.')
         check(list(self.model.parameters()), RuntimeError, 'There are no modules with learnable parameters! The Training will stop.')
 
@@ -1207,7 +1588,31 @@ class Modely:
     def getWorkspace(self):
         return self.exporter.getWorkspace()
 
-    def saveTorchModel(self, name = 'net', model_folder = None, models = None): ## save the pytorch weights of the model
+    def saveTorchModel(self, name = 'net', model_folder = None, models = None):
+        """
+        Saves the neural network model in PyTorch format.
+
+        Parameters
+        ----------
+        name : str, optional
+            The name of the saved model file. Default is 'net'.
+        model_folder : str or None, optional
+            The folder to save the model file in. Default is None.
+        models : list or None, optional
+            A list of model names to save. If None, the entire model is saved. Default is None.
+
+        Raises
+        ------
+        RuntimeError
+            If the model is not neuralized.
+
+        Example
+        -------
+        Example usage:
+            >>> model = Modely()
+            >>> model.neuralizeModel()
+            >>> model.saveTorchModel(name='example_model', model_folder='path/to/save')
+        """
         check(self.neuralized == True, RuntimeError, 'The model is not neuralized yet!')
         if models is not None:
             if name == 'net':
@@ -1221,11 +1626,57 @@ class Modely:
             model = self.model
         self.exporter.saveTorchModel(model, name, model_folder)
 
-    def loadTorchModel(self, name = 'net', model_folder = None): ## load the pytorch weights of the model (the model must be compatible)
+    def loadTorchModel(self, name = 'net', model_folder = None):
+        """
+        Loads a neural network model from a PyTorch format file.
+
+        Parameters
+        ----------
+        name : str, optional
+            The name of the model file to load. Default is 'net'.
+        model_folder : str or None, optional
+            The folder to load the model file from. Default is None.
+
+        Raises
+        ------
+        RuntimeError
+            If the model is not neuralized.
+
+        Example
+        -------
+        Example usage:
+            >>> model = Modely()
+            >>> model.neuralizeModel()
+            >>> model.loadTorchModel(name='example_model', model_folder='path/to/load')
+        """
         check(self.neuralized == True, RuntimeError, 'The model is not neuralized yet.')
         self.exporter.loadTorchModel(self.model, name, model_folder)
 
-    def saveModel(self, name = 'net', model_path = None, models = None): ## save the json model definition
+    def saveModel(self, name = 'net', model_path = None, models = None):
+        """
+        Saves the neural network model definition in a json file.
+
+        Parameters
+        ----------
+        name : str, optional
+            The name of the saved model file. Default is 'net'.
+        model_path : str or None, optional
+            The path to save the model file. Default is None.
+        models : list or None, optional
+            A list of model names to save. If None, the entire model is saved. Default is None.
+
+        Raises
+        ------
+        RuntimeError
+            If the network has not been defined.
+
+        Example
+        -------
+        Example usage:
+            >>> model = Modely()
+            >>> model.neuralizeModel()
+            >>> model.saveModel(name='example_model', model_path='path/to/save')
+        """
         if models is not None:
             if name == 'net':
                 name += '_' + '_'.join(models)
@@ -1238,7 +1689,28 @@ class Modely:
         check(model_def.isDefined(), RuntimeError, "The network has not been defined.")
         self.exporter.saveModel(model_def.json, name, model_path)
 
-    def loadModel(self, name = None, model_folder = None): ## load the json model definition
+    def loadModel(self, name = None, model_folder = None):
+        """
+        Loads a neural network model from a json file containing the model definition.
+
+        Parameters
+        ----------
+        name : str or None, optional
+            The name of the model file to load. Default is 'net'.
+        model_folder : str or None, optional
+            The folder to load the model file from. Default is None.
+
+        Raises
+        ------
+        RuntimeError
+            If there is an error loading the network.
+
+        Example
+        -------
+        Example usage:
+            >>> model = Modely()
+            >>> model.loadModel(name='example_model', model_folder='path/to/load')
+        """
         if name is None:
             name = 'net'
         model_def = self.exporter.loadModel(name, model_folder)
@@ -1248,7 +1720,35 @@ class Modely:
         self.neuralized = False
         self.traced = False
 
-    def exportPythonModel(self, name = 'net', model_path = None, models = None): ## export the model to a stand-alone python file
+    def exportPythonModel(self, name = 'net', model_path = None, models = None):
+        """
+        Exports the neural network model as a standalone PyTorch Module class.
+
+        Parameters
+        ----------
+        name : str, optional
+            The name of the exported model file. Default is 'net'.
+        model_path : str or None, optional
+            The path to save the exported model file. Default is None.
+        models : list or None, optional
+            A list of model names to export. If None, the entire model is exported. Default is None.
+
+        Raises
+        ------
+        TypeError
+            If the network has state variables, which cannot be exported to Python.
+        RuntimeError
+            If the network has not been defined.
+            If the model is traced and cannot be exported to Python.
+            If the model is not neuralized.
+
+        Example
+        -------
+        Example usage:
+            >>> model = Modely(name='example_model')
+            >>> model.neuralizeModel()
+            >>> model.exportPythonModel(name='example_model', model_path='path/to/export')
+        """
         if models is not None:
             if name == 'net':
                 name += '_' + '_'.join(models)
@@ -1268,7 +1768,28 @@ class Modely:
         self.exporter.saveModel(model_def.json, name, model_path)
         self.exporter.exportPythonModel(model_def, model, name, model_path, recurrent=self.recurrent)
 
-    def importPythonModel(self, name = None, model_folder = None): ## import the model from a stand-alone python file
+    def importPythonModel(self, name = None, model_folder = None):
+        """
+        Imports a neural network model from a standalone PyTorch Module class.
+
+        Parameters
+        ----------
+        name : str or None, optional
+            The name of the model file to import. Default is 'net'.
+        model_folder : str or None, optional
+            The folder to import the model file from. Default is None.
+
+        Raises
+        ------
+        RuntimeError
+            If there is an error loading the network.
+
+        Example
+        -------
+        Example usage:
+            >>> model = Modely()
+            >>> model.importPythonModel(name='example_model', model_folder='path/to/import')
+        """
         if name is None:
             name = 'net'
         model_def = self.exporter.loadModel(name, model_folder)
@@ -1278,7 +1799,38 @@ class Modely:
         self.traced = True
         self.model_def.updateParameters(self.model)
 
-    def exportONNX(self, inputs_order, outputs_order,  models = None, name = 'net', model_folder = None): ## export the model to ONNX compatible file
+    def exportONNX(self, inputs_order, outputs_order,  models = None, name = 'net', model_folder = None):
+        """
+        Exports the neural network model to an ONNX file.
+
+        Parameters
+        ----------
+        inputs_order : list
+            The order of the input variables.
+        outputs_order : list
+            The order of the output variables.
+        models : list or None, optional
+            A list of model names to export. If None, the entire model is exported. Default is None.
+        name : str, optional
+            The name of the exported ONNX file. Default is 'net'.
+        model_folder : str or None, optional
+            The folder to save the exported ONNX file. Default is None.
+
+        Raises
+        ------
+        RuntimeError
+            If the network has not been defined.
+            If the model is traced and cannot be exported to ONNX.
+            If the model is not neuralized.
+            If the model is loaded and not created.
+
+        Example
+        -------
+        Example usage:
+            >>> model = Modely()
+            >>> model.neuralizeModel()
+            >>> model.exportONNX(inputs_order=['input1', 'input2'], outputs_order=['output1'], name='example_model', model_folder='path/to/export')
+        """
         check(self.model_def.isDefined(), RuntimeError, "The network has not been defined.")
         check(self.traced == False, RuntimeError, 'The model is traced and cannot be exported to ONNX.\n Run neuralizeModel() to recreate a standard model.')
         check(self.neuralized == True, RuntimeError, 'The model is not neuralized yet.')
@@ -1296,10 +1848,28 @@ class Modely:
         model.update()
         self.exporter.exportONNX(model_def, model, inputs_order, outputs_order, name, model_folder, recurrent=self.recurrent)
 
-    def onnx_inference(self, inputs:dict, path:str):
-        return self.exporter.onnx_inference(inputs, path)
+    def onnxInference(self, inputs:dict, path:str):
+        return self.exporter.onnxInference(inputs, path)
 
     def exportReport(self, name = 'net', model_folder = None):
+        """
+        Generates a PDF report with plots containing the results of the training and validation of the neural network.
+
+        Parameters
+        ----------
+        name : str, optional
+            The name of the exported report file. Default is 'net'.
+        model_folder : str or None, optional
+            The folder to save the exported report file. Default is None.
+
+        Example
+        -------
+        Example usage:
+            >>> model = Modely()
+            >>> model.neuralizeModel()
+            >>> model.trainModel(train_dataset='train_dataset', validation_dataset='val_dataset', num_of_epochs=10)
+            >>> model.exportReport(name='example_model', model_folder='path/to/export')
+        """
         self.exporter.exportReport(self, name, model_folder)
 
 nnodely = Modely

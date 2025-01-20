@@ -9,6 +9,59 @@ from nnodely.utils import check, enforce_types
 localmodel_relation_name = 'LocalModel'
 
 class LocalModel(NeuObj):
+    """
+    Represents a Local Model relation in the neural network model.
+
+    Parameters
+    ----------
+    input_function : Callable, optional
+        A callable function to process the inputs. 
+    output_function : Callable, optional
+        A callable function to process the outputs. 
+    pass_indexes : bool, optional
+        A boolean indicating whether to pass indexes to the functions. Default is False.
+
+    Attributes
+    ----------
+    relation_name : str
+        The name of the relation.
+    pass_indexes : bool
+        A boolean indicating whether to pass indexes to the functions.
+    input_function : Callable
+        The function to process the inputs.
+    output_function : Callable
+        The function to process the outputs.
+
+    Examples
+    --------
+
+    Example - basic usage:
+        >>> x = Input('x')
+        >>> activation = Fuzzify(2,[0,1],functions='Triangular')(x.last())
+        >>> loc = LocalModel(input_function=Fir())
+        >>> out = Output('out', loc(x.tw(1), activation))
+
+    Example - passing a custom function:
+        >>> def myFun(in1,p1,p2):
+        >>>     return p1*in1+p2
+
+        >>> x = Input('x')
+        >>> activation = Fuzzify(2,[0,1],functions='Triangular')(x.last())
+        >>> loc = LocalModel(input_function = lambda:ParamFun(myFun), output_function = lambda:Fir)(x.last(), activation)
+        >>> out = Output('out', loc)
+
+    Example - custom function with multiple activations:
+        >>> x = Input('x')
+        >>> F = Input('F')
+        >>> activationA = Fuzzify(2,[0,1],functions='Triangular')(x.tw(1))
+        >>> activationB = Fuzzify(2,[0,1],functions='Triangular')(F.tw(1))
+
+        >>> def myFun(in1,p1,p2):
+        >>>     return p1*in1+p2
+
+        >>> loc = LocalModel(input_function = lambda:ParamFun(myFun), output_function = Fir(3))(x.tw(1),(activationA,activationB))
+        >>> out = Output('out', loc)
+    """
     @enforce_types
     def __init__(self, input_function:Callable|None = None,
                  output_function:Callable|None = None,

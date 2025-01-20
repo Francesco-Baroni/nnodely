@@ -13,6 +13,80 @@ from nnodely.input import Input
 fir_relation_name = 'Fir'
 
 class Fir(NeuObj, AutoToStream):
+    """
+    Represents a Finite Impulse Response (FIR) relation in the neural network model.
+
+    Notes
+    -----
+    .. note::
+        The FIR relation works along the time dimension (second dimension) of the input tensor.
+        You can find some initialization functions inside the initializer module.
+
+    Parameters
+    ----------
+    output_dimension : int, optional
+        The output dimension of the FIR relation.
+    parameter_init : Callable, optional
+        A callable for initializing the parameters.
+    parameter_init_params : dict, optional
+        A dictionary of parameters for the parameter initializer.
+    bias_init : Callable, optional
+        A callable for initializing the bias.
+    bias_init_params : dict, optional
+        A dictionary of parameters for the bias initializer.
+    parameter : Parameter or str, optional
+        The parameter object or tag. The parameter can be defined using the relative class 'Parameter'.
+        If not given a new parameter will be auto-generated.
+    bias : bool, str, or Parameter, optional
+        The bias parameter object, tag, or a boolean indicating whether to use bias.
+        If set to 'True' a new parameter will be auto-generated.
+    dropout : int or float, optional
+        The dropout rate. Default is 0.
+
+    Attributes
+    ----------
+    relation_name : str
+        The name of the relation.
+    parameter_init : Callable
+        The parameter initializer.
+    parameter_init_params : dict
+        The parameters for the parameter initializer.
+    parameter : Parameter or str
+        The parameter object or name.
+    bias_init : Callable
+        The bias initializer.
+    bias_init_params : dict
+        The parameters for the bias initializer.
+    bias : bool, str, or Parameter
+        The bias object, name, or a boolean indicating whether to use bias.
+    pname : str
+        The name of the parameter.
+    bname : str
+        The name of the bias.
+    dropout : int or float
+        The dropout rate.
+    output_dimension : int
+        The output dimension of the FIR relation.
+
+    Examples
+    --------
+
+    Example - basic usage:
+        >>> input = Input('in')
+        >>> relation = Fir(input.tw(0.05))
+
+    Example - passing a parameter:
+        >>> input = Input('in')
+        >>> par = Parameter('par', dimensions=3, sw=2, init=init_constant)
+        >>> relation = Fir(parameter=par)(input.sw(2))
+
+    Example - parameters initialization:
+        >>> x = Input('x')
+        >>> F = Input('F')
+        >>> fir_x = Fir(parameter_init=init_negexp)(x.tw(0.2)) 
+        >>> fir_F = Fir(parameter_init=init_constant, parameter_init_params={'value':1})(F.last())
+
+    """
     @enforce_types
     def __init__(self, output_dimension:int|None = None,
                  parameter_init:Callable|None = None,

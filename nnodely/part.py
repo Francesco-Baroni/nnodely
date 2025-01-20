@@ -42,6 +42,42 @@ sampleselect_relation_name = 'SampleSelect'
 #     return Part_Layer(i=inputs[0][0], j=inputs[0][1])
 
 class Part(Stream, ToStream):
+    """
+    Represents a selection of a sub-part from a relation in the neural network model.
+
+    Notes
+    -----
+    .. note::
+        The Part relation works along the object dimension (third dimension) of the input.
+
+    Parameters
+    ----------
+    obj : Stream
+        The stream object to create a part from.
+    i : int
+        The starting index of the part.
+    j : int
+        The ending index of the part.
+
+    Attributes
+    ----------
+    name : str
+        The name of the part.
+    dim : dict
+        A dictionary containing the dimensions of the part.
+    json : dict
+        A dictionary containing the configuration of the part.
+
+    Example
+    -------
+        >>> x = Input('x', dimensions=3).last()
+        >>> relation = Part(x, 0, 1)
+
+    Raises
+    ------
+    IndexError
+        If the indices i and j are out of range.
+    """
     @enforce_types
     def __init__(self, obj:Stream, i:int, j:int):
         # check(type(obj) is Stream, TypeError,
@@ -101,6 +137,40 @@ def createPart(self, *inputs):
 #     return Select_Layer(idx=inputs[0])
 
 class Select(Stream, ToStream):
+    """
+    Represents a selection of a single element from a relation in the neural network model.
+
+    Notes
+    -----
+    .. note::
+        The Select relation works along the object dimension (third dimension) of the input.
+
+    Parameters
+    ----------
+    obj : Stream
+        The stream object to select an element from.
+    i : int
+        The index of the element to select.
+
+    Attributes
+    ----------
+    name : str
+        The name of the selection.
+    dim : dict
+        A dictionary containing the dimensions of the selection.
+    json : dict
+        A dictionary containing the configuration of the selection.
+
+    Example
+    -------
+        >>> x = Input('x', dimensions=3).last()
+        >>> relation = Select(x, 1)
+
+    Raises
+    ------
+    IndexError
+        If the index i is out of range.
+    """
     @enforce_types
     def __init__(self, obj:Stream, i:int):
         # check(type(obj) is Stream, TypeError,
@@ -129,6 +199,48 @@ def createSelect(self, *inputs):
     return Select_Layer(dim=inputs[0], idx=inputs[1])
 
 class SamplePart(Stream, ToStream):
+    """
+    Represents a selection of a sub-part from a relation in the neural network model.
+
+    Notes
+    -----
+    .. note::
+        The SamplePart relation works along the time dimension (second dimension) of the input.
+
+    Parameters
+    ----------
+    obj : Stream
+        The stream object to create a part from.
+    i : int
+        The starting index of the part.
+    j : int
+        The ending index of the part.
+    offset : int, optional
+        The offset for the part. Default is None.
+
+    Attributes
+    ----------
+    name : str
+        The name of the part.
+    dim : dict
+        A dictionary containing the dimensions of the part.
+    json : dict
+        A dictionary containing the configuration of the part.
+
+    Example
+    -------
+        >>> x = Input('x').sw(3)
+        >>> relation = SamplePart(x, 0, 1)
+
+    Raises
+    ------
+    KeyError
+        If the input does not have a sample window.
+    ValueError
+        If the indices i and j are out of range or if i is not smaller than j.
+    IndexError
+        If the offset is not within the sample window.
+    """
     @enforce_types
     def __init__(self, obj:Stream, i:int, j:int, offset:int|None = None):
         # check(type(obj) is Stream, TypeError,
@@ -226,7 +338,44 @@ def createSamplePart(self, *inputs):
 #     return SampleSelect_Layer(idx=inputs[0])
 
 class SampleSelect(Stream, ToStream):
+    """
+    Represents a selection of a single element from a relation in the neural network model.
 
+    Notes
+    -----
+    .. note::
+        The SampleSelect relation works along the time dimension (second dimension) of the input.
+
+    Parameters
+    ----------
+    obj : Stream
+        The stream object to select an element from.
+    i : int
+        The index of the element to select.
+
+    Attributes
+    ----------
+    name : str
+        The name of the selection.
+    dim : dict
+        A dictionary containing the dimensions of the selection.
+    json : dict
+        A dictionary containing the configuration of the selection.
+
+    Example
+    -------
+        >>> x = Input('x').sw(3)
+        >>> relation = SampleSelect(x, 1)
+
+    Raises
+    ------
+    IndexError
+        If the index i is out of range.
+    KeyError
+        If the input does not have a sample window.
+    IndexError
+        If the offset is not within the sample window.
+    """
     @enforce_types
     def __init__(self, obj:Stream, i:int):
         # check(type(obj) is Stream, TypeError,
@@ -253,6 +402,43 @@ def createSampleSelect(self, *inputs):
     return SampleSelect_Layer(dim=inputs[0], idx=inputs[1])
 
 class TimePart(Stream, ToStream):
+    """
+    Represents a part of a stream in the neural network model along the time dimension (second dimension).
+
+    Parameters
+    ----------
+    obj : Stream
+        The stream object to create a part from.
+    i : int or float
+        The starting index of the part.
+    j : int or float
+        The ending index of the part.
+    offset : int or float, optional
+        The offset for the part. Default is None.
+
+    Attributes
+    ----------
+    name : str
+        The name of the part.
+    dim : dict
+        A dictionary containing the dimensions of the part.
+    json : dict
+        A dictionary containing the configuration of the part.
+
+    Example
+    -------
+        >>> x = Input('x').sw(10)
+        >>> time_part = TimePart(x, i=0, j=5)
+
+    Raises
+    ------
+    KeyError
+        If the input does not have a time window.
+    ValueError
+        If the indices i and j are out of range or if i is not smaller than j.
+    IndexError
+        If the offset is not within the time window.
+    """
     @enforce_types
     def __init__(self, obj:Stream, i:int|float, j:int|float, offset:int|float|None = None):
         check(type(obj) is Stream, TypeError,
