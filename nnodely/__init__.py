@@ -31,6 +31,7 @@ from nnodely.parametricfunction import ParamFun
 from nnodely.fuzzify import Fuzzify
 from nnodely.part import TimePart, TimeSelect, SamplePart, SampleSelect, Part, Select
 from nnodely.localmodel import LocalModel
+from nnodely.equationlearner import EquationLearner
 
 # Main nnodely classes
 from nnodely.nnodely import nnodely, Modely

@@ -9,6 +9,7 @@ from nnodely.utils import check
 relu_relation_name = 'ReLU'
 tanh_relation_name = 'Tanh'
 elu_relation_name = 'ELU'
+identity_relation_name = 'Identity'
 
 class Relu(Stream, ToStream):
     """
@@ -73,6 +74,27 @@ class ELU(Stream, ToStream):
         super().__init__(elu_relation_name + str(Stream.count),obj.json,obj.dim)
         self.json['Relations'][self.name] = [elu_relation_name,[obj.name]]
 
+class Identity(Stream, ToStream):
+    """
+    Implement the Identity relation function that simply returns the input vector x.
+
+    See also:
+        Official PyTorch Identity documentation: 
+        `torch.nn.Identity <https://pytorch.org/docs/stable/generated/torch.nn.Identity.html>`_
+
+    :param obj: The relation stream.
+    :type obj: Stream 
+
+    Example:
+        >>> x = Identity(x)
+    """
+    def __init__(self, obj: Stream) -> Stream:
+        obj = toStream(obj)
+        check(type(obj) is Stream, TypeError,
+              f"The type of {obj} is {type(obj)} and is not supported for Identity operation.")
+        super().__init__(identity_relation_name + str(Stream.count), obj.json, obj.dim)
+        self.json['Relations'][self.name] = [identity_relation_name, [obj.name]]
+
 class Tanh_Layer(nn.Module):
     """
      :noindex:
@@ -110,6 +132,35 @@ def createELU(self, *input):
     """
     return nn.ELU()
 
+class Identity_Layer(nn.Module):
+    """A placeholder identity operator that is argument-insensitive.
+
+    Args:
+        args: any argument (unused)
+        kwargs: any keyword argument (unused)
+
+    Examples::
+
+        >>> m = Identity(54)
+        >>> input = torch.randn(128, 20)
+        >>> output = m(input)
+        >>> print(output.size())
+        torch.Size([128, 20])
+
+    """
+    def __init__(self, *args):
+        super(Identity_Layer, self).__init__()
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return x
+    
+def createIdentity(self, *input):
+    """
+     :noindex:
+    """
+    return Identity_Layer()
+
 setattr(Model, relu_relation_name, createRelu)
 setattr(Model, tanh_relation_name, createTanh)
 setattr(Model, elu_relation_name, createELU)
+setattr(Model, identity_relation_name, createIdentity)
