@@ -466,7 +466,7 @@ mass_estimator.exportONNX(inputs_order=['Tyf_engine','Tyf_brake','Tyr_brake','th
 ## ONNX IMPORT AND INFERENCE
 sample = mass_estimator.getSamples('training_set', window=10)
 onnx_model_path = os.path.join(path_folder_save, 'onnx', 'net.onnx')
-outputs = mass_estimator.onnx_inference(sample, onnx_model_path)
+outputs = mass_estimator.onnxInference(sample, onnx_model_path)
 print('onnx outputs: ', outputs)
 
 model_sample = {key: value for key, value in sample.items() if key != 'm' and key != 'P'}

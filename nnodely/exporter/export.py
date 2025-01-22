@@ -379,7 +379,7 @@ def export_onnx_model(model_def, model, input_order, output_order, model_path, n
         dummy_inputs,                           # Tuple of inputs to match the forward signature
         model_path,                             # File path to save the ONNX model
         export_params = True,                   # Store the trained parameters in the model file
-        opset_version = 20,                     # ONNX version to export to (you can use 11 or higher)
+        opset_version = 17,                     # ONNX version to export to (you can use 11 or higher)
         do_constant_folding=False,               # Optimize constant folding for inference
         input_names = input_names,              # Name each input as they will appear in ONNX
         output_names = output_names,            # Name the output
