@@ -454,6 +454,26 @@ class ModelyExportTest(unittest.TestCase):
         expected_output = np.array([[2.], [4.], [6.]], dtype=np.float32)
         self.assertEqual(outputs[0].tolist(), expected_output.tolist())
 
+    def test_export_and_import_onnx_module_easy(self):
+        result_path = './results'
+        test = Modely(visualizer=None, seed=42, workspace=result_path)
+        num_cycle = Input('num_cycle')
+        x = State('x')
+        fir_x = Fir()(x.last()+1.0)
+        fir_x.closedLoop(x)
+        out1 = Output('out1', fir_x)
+        out2 = Output('out2', num_cycle.last()+1.0)
+        test.addModel('model', [out1,out2])
+        test.neuralizeModel(0.5)
+
+        ## Export in ONNX format
+        test.exportONNX(['x','num_cycle'],['out1','out2']) # Export the onnx model
+
+        ## ONNX IMPORT
+        onnx_model_path = os.path.join('results', 'onnx', 'net.onnx')
+        outputs = test.onnxInference(inputs={'num_cycle':np.ones(shape=(10, 1, 1)).astype(np.float32)}, path=onnx_model_path)
+        print(outputs)
+
     def test_export_and_import_onnx_module_complex(self):
         # Create nnodely structure
         vehicle = Modely(visualizer=None, seed=2, workspace=os.path.join(os.getcwd(), 'results'))
@@ -572,7 +592,7 @@ class ModelyExportTest(unittest.TestCase):
 
     def test_export_and_import_onnx_module_complex_recurrent(self):
         # Create nnodely structure
-        vehicle = Modely(visualizer=None, seed=2, workspace=os.path.join(os.getcwd(), 'results'))
+        vehicle = Modely(visualizer=None, seed=42, workspace=os.path.join(os.getcwd(), 'results'))
 
         # Dimensions of the layers
         n  = 25

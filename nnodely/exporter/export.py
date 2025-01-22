@@ -124,7 +124,7 @@ def export_python_model(model_def, model, model_path, recurrent=False):
             if 'all_constant' in attr:
                 key = attr.split('.')[-1]
                 file.write(
-                    f"        self.all_constants[\"{key}\"] = torch.tensor({model.all_constants[key].tolist()})\n")
+                    f"        self.all_constants[\"{key}\"] = torch.tensor({model.all_constants[key].tolist()}, requires_grad=False)\n")
                 #file.write(f"        {attr} = torch.tensor({getattr(trace, attr.replace('self.', ''))})\n")
             elif 'relation_forward' in attr:
                 key = attr.split('.')[2]
@@ -148,7 +148,8 @@ def export_python_model(model_def, model, model_path, recurrent=False):
                     # file.write(f"        self.all_parameters[\"{param}\"] = torch.nn.Parameter(torch.{value}, requires_grad=True)\n")
                 elif 'Part' in key or 'Select' in key: # any(element in key for element in ['Part', 'Select']):
                     value = model.relation_forward[key].W
-                    file.write(f"        self.all_constants[\"{key}\"] = torch.{value}\n")
+                    temp_value = str(value).replace(')',', requires_grad=False)')
+                    file.write(f"        self.all_constants[\"{key}\"] = torch.{temp_value}\n")
             elif 'all_parameters' in attr:
                 key = attr.split('.')[-1]
                 file.write(
@@ -378,17 +379,24 @@ def export_onnx_model(model_def, model, input_order, output_order, model_path, n
         dummy_inputs,                           # Tuple of inputs to match the forward signature
         model_path,                             # File path to save the ONNX model
         export_params = True,                   # Store the trained parameters in the model file
-        opset_version = 17,                     # ONNX version to export to (you can use 11 or higher)
-        do_constant_folding=True,               # Optimize constant folding for inference
+        opset_version = 20,                     # ONNX version to export to (you can use 11 or higher)
+        do_constant_folding=False,               # Optimize constant folding for inference
         input_names = input_names,              # Name each input as they will appear in ONNX
         output_names = output_names,            # Name the output
-        dynamic_axes = dynamic_axes
+        dynamic_axes = dynamic_axes,
     )
 
-def onnx_inference(inputs, path):
+def onnx_inference(inputs, path, optimize_graph=False):
     import onnxruntime as ort
     # Create an ONNX Runtime session
-    session = ort.InferenceSession(path)
+    # Define session options
+    if optimize_graph == False: ## TODO: Warning when using constant folding in inference CanUpdateImplicitInputNameInSubgraphs]  Implicit input name Cell.all_constants.Constant75 cannot be safely updated to Cell.all_constants.Constant76 in one of the subgraphs.
+        session_options = ort.SessionOptions()
+        # Set graph optimization level to disable all optimizations
+        session_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_DISABLE_ALL
+        session = ort.InferenceSession(path, sess_options=session_options)
+    else:
+        session = ort.InferenceSession(path)
     output_data = []
     for item in session.get_outputs():
         output_data.append(item.name)
