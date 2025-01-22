@@ -438,18 +438,10 @@ class ModelyExportTest(unittest.TestCase):
 
         ## ONNX IMPORT
         onnx_model_path = os.path.join('results', 'onnx', 'net.onnx')
-        onnx_model = onnx.load(onnx_model_path)
-        # Create an ONNX Runtime session
-        session = ort.InferenceSession(onnx_model_path)
-        # Get input and output names
-        input_name = session.get_inputs()[0].name
-        output_name = session.get_outputs()[0].name
-        # Create dummy input data
-        dummy_input = np.ones(shape=(3, 1, 1)).astype(np.float32)  # Adjust the shape as needed
-        # Prepare the input dictionary
-        input_data = {input_name: dummy_input}
-        # Run inference
-        outputs = session.run([output_name], input_data)
+        dummy_input = {'x':np.ones(shape=(3, 1, 1)).astype(np.float32),
+                       'y':np.ones(shape=(3, 1, 1)).astype(np.float32),
+                       'z':np.ones(shape=(3, 1, 1)).astype(np.float32)}
+        outputs = test.onnxInference(dummy_input,onnx_model_path)
         # Get the output
         expected_output = np.array([[2.], [4.], [6.]], dtype=np.float32)
         self.assertEqual(outputs[0].tolist(), expected_output.tolist())
@@ -472,7 +464,6 @@ class ModelyExportTest(unittest.TestCase):
         ## ONNX IMPORT
         onnx_model_path = os.path.join('results', 'onnx', 'net.onnx')
         outputs = test.onnxInference(inputs={'num_cycle':np.ones(shape=(10, 1, 1)).astype(np.float32)}, path=onnx_model_path)
-        print(outputs)
 
     def test_export_and_import_onnx_module_complex(self):
         # Create nnodely structure
