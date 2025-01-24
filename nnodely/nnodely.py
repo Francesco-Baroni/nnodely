@@ -1292,31 +1292,26 @@ class Modely:
         non_mandatory_inputs = state_closed_loop + state_connect 
         mandatory_inputs = list(set(model_inputs) - set(non_mandatory_inputs))
 
-        ## shuffle TODO
-        # initial_value = 0  #np.random.randint(0, prediction_samples)
-        #n_available_samples = n_samples - prediction_samples 
-        n_available_samples = n_samples - batch_size - prediction_samples + 1
-        # print('n samples: ', n_samples)
-        # print('n available samples: ',n_available_samples)
-        # print('batch_size: ', batch_size)
-        # print('prediction samples: ', prediction_samples)
-        #list_of_batch_indexes = list(range(0, n_available_samples, 1))
-        list_of_batch_indexes = range(0, n_available_samples, (batch_size + step))
-        #print(list_of_batch_indexes)
+        n_available_samples = n_samples - prediction_samples 
+        list_of_batch_indexes = list(range(n_available_samples))
 
         ## Loss vector 
-        aux_losses = torch.zeros([len(self.model_def['Minimizers']), len(list_of_batch_indexes)])
+        check((batch_size+step)>0, ValueError, f"The batch_size+step must be greater than 0.")
+        aux_losses = torch.zeros([len(self.model_def['Minimizers']), round(len(list_of_batch_indexes)/(batch_size+step))])
 
         ## Update with virtual states
         self.model.update(closed_loop=closed_loop, connect=connect)
         X = {}
-        for batch_val, idx in enumerate(list_of_batch_indexes):
-        # batch_val = 0
-        # while len(list_of_batch_indexes) >= batch_size:
-        #     idxs = random.sample(list_of_batch_indexes, batch_size) if shuffle else list_of_batch_indexes[:batch_size]
-        #     for num in idxs:
-        #         list_of_batch_indexes.remove(num)
-            #print(f'Idxs: {idxs}')
+        batch_val = 0
+        while len(list_of_batch_indexes) >= batch_size:
+            idxs = random.sample(list_of_batch_indexes, batch_size) if shuffle else list_of_batch_indexes[:batch_size]
+            for num in idxs:
+                list_of_batch_indexes.remove(num)
+            if step > 0:
+                if len(list_of_batch_indexes) >= step:
+                    step_idxs = random.sample(list_of_batch_indexes, step) if shuffle else list_of_batch_indexes[:step]
+                    for num in step_idxs:
+                        list_of_batch_indexes.remove(num)
             if train:
                 self.optimizer.zero_grad() ## Reset the gradient
 
@@ -1325,8 +1320,7 @@ class Modely:
             for key in non_mandatory_inputs:
                 if key in data.keys():
                 ## with data
-                    #X[key] = data[key][idxs]
-                    X[key] = data[key][idx:idx+batch_size]
+                    X[key] = data[key][idxs]
                 else: ## with zeros
                     window_size = self.input_n_samples[key]
                     dim = self.model_def['Inputs'][key]['dim'] if key in model_inputs else self.model_def['States'][key]['dim']
@@ -1336,10 +1330,8 @@ class Modely:
             for horizon_idx in range(prediction_samples + 1):
                 ## Get data 
                 for key in mandatory_inputs:
-                    #X[key] = data[key][[idx+horizon_idx for idx in idxs]]
-                    X[key] = data[key][idx+horizon_idx:idx+horizon_idx+batch_size]
+                    X[key] = data[key][[idx+horizon_idx for idx in idxs]]
                 ## Forward pass
-                #print('X: ',X)
                 out, minimize_out, out_closed_loop, out_connect = self.model(X)
 
                 internals_dict = {'XY':X,'out':out,'param':self.model.all_parameters,'closedLoop':self.model.closed_loop_update,'connect':self.model.connect_update}
@@ -1370,13 +1362,13 @@ class Modely:
                 loss = sum(horizon_losses[ind])/(prediction_samples+1)
                 aux_losses[ind][batch_val] = loss.item()
                 total_loss += loss
-            #batch_val += 1
 
             ## Gradient Step
             if train:
                 total_loss.backward() ## Backpropagate the error
                 self.optimizer.step()
                 self.visualizer.showWeightsInTrain(batch = batch_val)
+            batch_val += 1
 
         ## Remove virtual states
         for key in (connect.keys() | closed_loop.keys()):
@@ -1444,9 +1436,7 @@ class Modely:
             n_samples = len(data[list(data.keys())[0]])
 
             if recurrent:
-                json_inputs = self.model_def['Inputs'] | self.model_def['States']
                 batch_size = batch_size if batch_size is not None else n_samples - prediction_samples
-                initial_value = 0
 
                 model_inputs = list(self.model_def['Inputs'].keys())
 
@@ -1461,19 +1451,26 @@ class Modely:
                     for horizon_idx in range(prediction_samples + 1):
                         A[key].append([])
                         B[key].append([])
-
+                
+                list_of_batch_indexes = list(range(n_samples - prediction_samples))
                 X = {}
                 ## Update with virtual states
                 self.model.update(closed_loop=closed_loop, connect=connect)
-                for idx in range(initial_value, (n_samples - batch_size - prediction_samples + 1), (batch_size + step)):
+                while len(list_of_batch_indexes) >= batch_size:
+                    idxs = list_of_batch_indexes[:batch_size]
+                    for num in idxs:
+                        list_of_batch_indexes.remove(num)
+                    if step > 0:
+                        if len(list_of_batch_indexes) >= step:
+                            step_idxs = list_of_batch_indexes[:step]
+                            for num in step_idxs:
+                                list_of_batch_indexes.remove(num)
                     ## Reset 
                     horizon_losses = {key: [] for key in self.model_def['Minimizers'].keys()}
                     for key in non_mandatory_inputs:
                         if key in data.keys(): # and len(data[key]) >= (idx + self.input_n_samples[key]): 
                         ## with data
-                            X[key] = data[key][idx:idx+batch_size]
-                        #elif key in self.states.keys(): ## with state
-                            #X[key] = self.states[key]
+                            X[key] = data[key][idxs]
                         else: ## with zeros
                             window_size = self.input_n_samples[key]
                             dim = self.model_def['Inputs'][key]['dim'] if key in model_inputs else self.model_def['States'][key]['dim']
@@ -1483,7 +1480,7 @@ class Modely:
                     for horizon_idx in range(prediction_samples + 1):
                         ## Get data 
                         for key in mandatory_inputs:
-                            X[key] = data[key][idx+horizon_idx:idx+horizon_idx+batch_size]
+                            X[key] = data[key][[idx+horizon_idx for idx in idxs]]
                         ## Forward pass
                         out, minimize_out, out_closed_loop, out_connect = self.model(X)
 
@@ -1526,10 +1523,6 @@ class Modely:
                 for idx in range(0, (n_samples - batch_size + 1), batch_size):
                     ## Build the input tensor
                     XY = {key: val[idx:idx + batch_size] for key, val in data.items()}
-                    #if (closed_loop or connect or self.model_def['States']):
-                        ## Reset state variables with zeros or using inputs
-                        #self.model.reset_states(XY, only=False)
-                        #self.model.reset_connect_variables(connect, XY, only=False)
 
                     ## Model Forward
                     _, minimize_out, _, _ = self.model(XY)  ## Forward pass

@@ -42,11 +42,11 @@ class ModelyTrainingTest(unittest.TestCase):
     def test_recurrent_shuffle(self):
         target = Input('target')
         x = State('x')
-        relation = Fir(x.tw(0.05))
+        relation = Fir(x.last())
         output = Output('out', relation)
         relation.closedLoop(x)
 
-        test = Modely(visualizer=TextVisualizer(), seed=42)
+        test = Modely(visualizer=None, seed=42, log_internal=True)
         test.addModel('model', output)
         test.addMinimize('out', target.next(), relation)
         test.neuralizeModel(0.01)
@@ -54,7 +54,11 @@ class ModelyTrainingTest(unittest.TestCase):
         dataset = {'x': [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20], 'target': [21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40]}
         test.loadData(name='dataset', source=dataset)
 
-        test.trainModel(train_dataset='dataset', optimizer='SGD', lr=1, num_of_epochs=1, train_batch_size=4, prediction_samples=1, shuffle_data=False)
+        test.trainModel(train_dataset='dataset', optimizer='SGD', lr=1, num_of_epochs=1, train_batch_size=4, prediction_samples=1, step=1, shuffle_data=True)
+        self.assertListEqual([[[25.0]], [[22.0]], [[30.0]], [[39.0]]], test.internals['inout_0_0']['XY']['target'])
+        self.assertListEqual([[[26.0]], [[23.0]], [[31.0]], [[40.0]]], test.internals['inout_0_1']['XY']['target'])
+        self.assertListEqual([[[26.0]], [[37.0]], [[24.0]], [[34.0]]], test.internals['inout_1_0']['XY']['target'])
+        self.assertListEqual([[[27.0]], [[38.0]], [[25.0]], [[35.0]]], test.internals['inout_1_1']['XY']['target'])
 
     def test_training_values_fir_connect_linear(self):
         NeuObj.reset_count()
