@@ -198,6 +198,8 @@ class ModelDef():
                 if window == 'tw':
                     check(np.array(v['values']).shape[0] == v['tw']/self.sample_time, ValueError,
                       f"{k} has a different number of values for this sample time.")
+                if v['values'] == "SampleTime":
+                    v['values'] = self.sample_time
 
 
     def updateParameters(self, model):
