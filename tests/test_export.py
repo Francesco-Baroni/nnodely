@@ -443,7 +443,7 @@ class ModelyExportTest(unittest.TestCase):
                        'z':np.ones(shape=(3, 1, 1)).astype(np.float32)}
         outputs = Modely().onnxInference(dummy_input,onnx_model_path)
         # Get the output
-        expected_output = np.array([[2.], [4.], [6.]], dtype=np.float32)
+        expected_output = np.array([[3.], [5.], [7.]], dtype=np.float32)
         self.assertEqual(outputs[0].tolist(), expected_output.tolist())
 
     def test_export_and_import_onnx_module_easy(self):
@@ -463,7 +463,7 @@ class ModelyExportTest(unittest.TestCase):
 
         ## ONNX IMPORT
         onnx_model_path = os.path.join('results', 'onnx', 'net.onnx')
-        outputs = Modely().onnxInference(inputs={'num_cycle':np.ones(shape=(10, 1, 1)).astype(np.float32)}, path=onnx_model_path)
+        outputs = Modely().onnxInference(inputs={'num_cycle':np.ones(shape=(10, 1, 1)).astype(np.float32), 'x':np.ones(shape=(1, 1, 1)).astype(np.float32)}, path=onnx_model_path)
 
     def test_export_and_import_onnx_module_complex(self):
         # Create nnodely structure
@@ -622,21 +622,19 @@ class ModelyExportTest(unittest.TestCase):
         vehicle.loadData(name='dataset', source=data_folder, format=data_struct, skiplines=1)
 
         ## Export the Onnx Model
-        vehicle.exportONNX(inputs_order=['vel','gear','trq','alt','brk'],outputs_order=['accelleration'])
+        vehicle.exportONNX(inputs_order=['gear','trq','alt','brk','vel'],outputs_order=['accelleration'])
 
-        sample = vehicle.getSamples('dataset', window=1)
-        model_sample = {key: value for key, value in sample.items() if key != 'vel'}
+        model_sample = vehicle.getSamples('dataset', window=1)
         model_inference = vehicle(model_sample, sampled=True, prediction_samples=1)
 
         ## ONNX IMPORT
         onnx_model_path = os.path.join('results', 'onnx', 'net.onnx')
-        outputs = Modely().onnxInference(sample, onnx_model_path)
+        outputs = Modely().onnxInference(model_sample, onnx_model_path)
         self.assertEqual(outputs[0][0], model_inference['accelleration'])
 
-        sample = vehicle.getSamples('dataset', window=3)
-        model_sample = {key: value for key, value in sample.items() if key != 'vel'}
+        model_sample = vehicle.getSamples('dataset', window=3)
         model_inference = vehicle(model_sample, sampled=True, prediction_samples=3)
-        outputs = Modely().onnxInference(sample, onnx_model_path)
+        outputs = Modely().onnxInference(model_sample, onnx_model_path)
         self.assertEqual(outputs[0].squeeze().tolist(), model_inference['accelleration'])
 
 

@@ -5,7 +5,7 @@ sys.path.append(os.getcwd())
 
 from nnodely import *
 
-example = 5
+example = 6
 
 if example == 1:
     print("-----------------------------------EXAMPLE 1------------------------------------")
@@ -272,4 +272,4 @@ elif example == 6:
     inference = vehicle(data)
 
     ## Export the Onnx Model
-    vehicle.exportONNX(['vel','brk','gear','trq','alt'],['accelleration'])
+    vehicle.exportONNX(['brk','gear','trq','alt','vel'],['accelleration'])

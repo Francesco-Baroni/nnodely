@@ -295,18 +295,18 @@ def export_pythononnx_model(model_def, input_order, outputs_order, model_path, m
             file.write("    def __init__(self):\n")
             file.write("        super().__init__()\n")
             file.write("        self.Cell = TracerModel()\n")
-            for key, value in model_def['States'].items():
-                time_dim, dim = value['ntot'], value['dim']
-                file.write(f"        self.{key} = torch.zeros(1, {time_dim}, {dim})\n")
+            # for key, value in model_def['States'].items():
+            #     time_dim, dim = value['ntot'], value['dim']
+            #     file.write(f"        self.{key} = torch.zeros(1, {time_dim}, {dim})\n")
 
             forward_str = "    def forward(self, "
-            for key in inputs:
+            for key in input_order:
                 forward_str += f"{key}, "
             forward_str += "):\n"
             file.write(forward_str)
 
-            if inputs:
-                file.write(f"        n_samples = {inputs[0]}.size(0)\n")
+            if input_order:
+                file.write(f"        n_samples = {input_order[0]}.size(0)\n")
             else:
                 file.write("        n_samples = 1\n")
             
@@ -320,16 +320,16 @@ def export_pythononnx_model(model_def, input_order, outputs_order, model_path, m
             # for key in model_def['States'].keys():
             #     call_str += f"self.{key}, "
             for key in input_order:
-                call_str += f"{key}[idx:idx+1], " if key in inputs else f"self.{key}, "
+                call_str += f"{key}[idx:idx+1], " if key in inputs else f"{key}, "
             call_str += ")\n"
             file.write(call_str)
             for idx, key in enumerate(outputs_order):
                 file.write(f"            results_{key}.append(out[{idx}])\n")
             for idx, key in enumerate(closed_loop_states):
                 file.write(f"            shift = closed_loop[{idx}].size(1)\n")
-                file.write(f"            self.{key} = nnodely_model_connect(self.{key}, closed_loop[{idx}], shift)\n")
+                file.write(f"            {key} = nnodely_model_connect({key}, closed_loop[{idx}], shift)\n")
             for idx, key in enumerate(connect_states):
-                file.write(f"            self.{key} = connect[{idx}]\n")
+                file.write(f"            {key} = connect[{idx}]\n")
             for idx, key in enumerate(outputs_order):
                 file.write(f"        results_{key} = torch.cat(results_{key}, dim=0)\n")
             #file.write("        results = torch.cat(results, dim=0)\n")
@@ -365,7 +365,8 @@ def export_onnx_model(model_def, model, input_order, output_order, model_path, n
     dummy_inputs = []
     input_names = []
     dynamic_axes = {}
-    for key in [t for t in input_order if t in model_def['Inputs'].keys()]:
+    #for key in [t for t in input_order if t in model_def['Inputs'].keys()]:
+    for key in input_order:
         input_names.append(key)
         window_size = model_def['Inputs'][key]['ntot'] if key in model_def['Inputs'].keys() else model_def['States'][key]['ntot']
         dim = model_def['Inputs'][key]['dim'] if key in model_def['Inputs'].keys() else model_def['States'][key]['dim']
