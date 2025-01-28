@@ -55,11 +55,20 @@ class ModelyTrainingTest(unittest.TestCase):
         test.loadData(name='dataset', source=dataset)
 
         test.trainModel(train_dataset='dataset', optimizer='SGD', lr=1, num_of_epochs=1, train_batch_size=4, prediction_samples=1, step=1, shuffle_data=True)
+        self.assertListEqual([[[4.0]], [[1.0]], [[9.0]], [[18.0]]], test.internals['inout_0_0']['XY']['x'])
         self.assertListEqual([[[25.0]], [[22.0]], [[30.0]], [[39.0]]], test.internals['inout_0_0']['XY']['target'])
         self.assertListEqual([[[26.0]], [[23.0]], [[31.0]], [[40.0]]], test.internals['inout_0_1']['XY']['target'])
+        self.assertListEqual([[[5.0]], [[16.0]], [[3.0]], [[13.0]]], test.internals['inout_1_0']['XY']['x'])
         self.assertListEqual([[[26.0]], [[37.0]], [[24.0]], [[34.0]]], test.internals['inout_1_0']['XY']['target'])
         self.assertListEqual([[[27.0]], [[38.0]], [[25.0]], [[35.0]]], test.internals['inout_1_1']['XY']['target'])
+        self.assertListEqual([[[15.0]], [[2.0]], [[17.0]], [[14.0]]], test.internals['inout_2_0']['XY']['x'])
+        self.assertListEqual([[[36.0]], [[23.0]], [[38.0]], [[35.0]]], test.internals['inout_2_0']['XY']['target'])
+        self.assertListEqual([[[37.0]], [[24.0]], [[39.0]], [[36.0]]], test.internals['inout_2_1']['XY']['target'])
 
+        test.trainModel(train_dataset='dataset', optimizer='SGD', lr=1, num_of_epochs=1, train_batch_size=2,
+                        prediction_samples=2, step=0, shuffle_data=True)
+        # ( number_samples - window_size - prediction_samples )// (batch_size + step=0) * (predictoin_samples+1)
+        self.assertEqual((20-1-2)//2*3, len(test.internals.keys()))
     def test_training_values_fir_connect_linear(self):
         NeuObj.reset_count()
         input1 = Input('in1')

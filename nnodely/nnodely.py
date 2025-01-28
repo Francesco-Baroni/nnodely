@@ -1334,7 +1334,8 @@ class Modely:
                 ## Forward pass
                 out, minimize_out, out_closed_loop, out_connect = self.model(X)
 
-                internals_dict = {'XY':X,'out':out,'param':self.model.all_parameters,'closedLoop':self.model.closed_loop_update,'connect':self.model.connect_update}
+                if self.log_internal:
+                    internals_dict = {'XY':tensor_to_list(X),'out':out,'param':self.model.all_parameters,'closedLoop':self.model.closed_loop_update,'connect':self.model.connect_update}
 
                 ## Loss Calculation
                 for ind, (key, value) in enumerate(self.model_def['Minimizers'].items()):
@@ -1352,8 +1353,8 @@ class Modely:
                     X[key] = value
                     self.states[key] = X[key].clone()
 
-                internals_dict['state'] = self.states
                 if self.log_internal:
+                    internals_dict['state'] = self.states
                     self.__save_internal('inout_'+str(batch_val)+'_'+str(horizon_idx),internals_dict)
 
             ## Calculate the total loss
