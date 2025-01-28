@@ -18,7 +18,7 @@ else:
 
 # Network input, outputs and parameters
 from nnodely.input import Input, State, Connect, ClosedLoop
-from nnodely.parameter import Parameter, Constant
+from nnodely.parameter import Parameter, Constant, SampleTime
 from nnodely.output import Output
 
 # Network elements
