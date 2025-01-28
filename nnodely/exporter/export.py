@@ -204,24 +204,35 @@ def export_python_model(model_def, model, model_path, recurrent=False):
             file.write("    def __init__(self):\n")
             file.write("        super().__init__()\n")
             file.write("        self.Cell = TracerModel()\n")
+            list_inputs = "        self.inputs = ["
+            for key in model_def['Inputs'].keys():
+                list_inputs += f"'{key}', "
+            list_inputs += "]\n"
+            file.write(list_inputs)
             file.write("        self.states = dict()\n")
-            for key, value in model_def['States'].items():
-                time_dim, dim = value['ntot'], value['dim']
-                file.write(f"        self.states['{key}'] = torch.zeros(1, {time_dim}, {dim})\n")
+            # for key, value in model_def['States'].items():
+            #     time_dim, dim = value['ntot'], value['dim']
+            #     file.write(f"        self.states['{key}'] = torch.zeros(1, {time_dim}, {dim})\n")
             file.write("\n")
             file.write("    def forward(self, kwargs):\n")
-            file.write("        n_samples = min([x.size(0) for x in kwargs.values()])\n")
-            
+            file.write("        n_samples = min([kwargs[key].size(0) for key in self.inputs])\n")
+            for key in model_def['States'].keys():
+                file.write(f"        self.states['{key}'] = kwargs['{key}']\n")
             result_str = ""
             for key, value in model_def['Outputs'].items():
                 result_str += f"'{key}':[], "
             file.write(f"        results = {{{result_str}}}\n")
             file.write("        X = dict()\n")
+            # file.write("        for key in self.states.keys():\n")
+            # file.write("            if key in kwargs.keys():\n")
+            # file.write(f"                self.states[key] = kwargs[key]\n")
             file.write("        for idx in range(n_samples):\n")
-            file.write(f"            for key, value in kwargs.items():\n")
-            file.write(f"                X[key] = value[idx:idx+1]\n")
-            for key, value in model_def['States'].items():
-                file.write(f"            X['{key}'] = self.states['{key}']\n")
+            file.write(f"            for key in self.inputs:\n")
+            file.write(f"                X[key] = kwargs[key][idx]\n")
+            file.write(f"            for key, value in self.states.items():\n")
+            file.write(f"                X[key] = value\n")
+            # for key, value in model_def['States'].items():
+            #     file.write(f"            X['{key}'] = self.states['{key}']\n")
             file.write("            out, _, closed_loop, connect = self.Cell(X)\n")
             file.write("            for key, value in results.items():\n")
             file.write("                results[key].append(out[key])\n")

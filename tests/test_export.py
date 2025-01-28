@@ -405,7 +405,7 @@ class ModelyExportTest(unittest.TestCase):
         model = RecurrentModel()
         model.eval()
         # Create dummy input data
-        dummy_input = {'x': torch.ones(5, 1, 1), 'target': torch.ones(10, 1, 1)}  # Adjust the shape as needed
+        dummy_input = {'x': torch.ones(5, 1, 1, 1), 'target': torch.ones(10, 1, 1, 1), 'y': torch.zeros(1,1,1), 'z':torch.zeros(1,1,1)}  # Adjust the shape as needed
         # Inference with imported model
         with torch.no_grad():
             output = model(dummy_input)
@@ -577,7 +577,8 @@ class ModelyExportTest(unittest.TestCase):
         recurrent_model.eval()
 
         sample = vehicle.getSamples('dataset', window=3)
-        recurrent_sample = {key: torch.tensor(value, dtype=torch.float32) for key, value in sample.items()}
+        recurrent_sample = {key: torch.tensor(value, dtype=torch.float32).unsqueeze(1) for key, value in sample.items()}
+        recurrent_sample['vel'] = torch.zeros(1,1,1)
         model_sample = {key: value for key, value in sample.items() if key != 'vel'}
         self.TestAlmostEqual([item.detach().item() for item in recurrent_model(recurrent_sample)['accelleration']], vehicle(model_sample, sampled=True, prediction_samples=3)['accelleration'])
 
