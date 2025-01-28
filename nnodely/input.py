@@ -3,6 +3,7 @@ import copy
 from nnodely.relation import NeuObj, Stream, ToStream
 from nnodely.utils import check, merge
 from nnodely.part import SamplePart, TimePart
+from nnodely.timeoperation import Derivate, Integrate
 
 class InputState(NeuObj, Stream):
     """
@@ -184,9 +185,16 @@ class InputState(NeuObj, Stream):
         """
         return self.z(-1)
 
-    # def s(self, derivate):
-    #     return Stream((self.name, {'s':derivate}), self.json, self.dim)
-
+    def s(self, order:int):
+        if order > 0:
+            o = self.last()
+            for i in range(order):
+                o = Derivate(o)
+        else:
+            o = self.last()
+            for i in range(-order):
+                o = Integrate(o)
+        return o
 
 class Input(InputState):
     def __init__(self, name, dimensions:int = 1):

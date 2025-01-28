@@ -31,6 +31,7 @@ from nnodely.parametricfunction import ParamFun
 from nnodely.fuzzify import Fuzzify
 from nnodely.part import TimePart, TimeSelect, SamplePart, SampleSelect, Part, Select
 from nnodely.localmodel import LocalModel
+from nnodely.timeoperation import Integrate, Derivate
 from nnodely.interpolation import Interpolation
 
 # Main nnodely classes

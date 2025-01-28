@@ -37,12 +37,25 @@ def plot_results(ax, name_data, key, A, B, sample_time):
     B_t = np.transpose(np.array(B))
     for ind_win in range(A_t.shape[0]):
         for ind_dim in range(A_t.shape[1]):
-            ax.plot(np.arange(0, len(A_t[ind_win, ind_dim]) * sample_time, sample_time), A_t[ind_win, ind_dim],
-                    label=f'real')
-            ax.plot(np.arange(0, len(B_t[ind_win, ind_dim]) * sample_time, sample_time), B_t[ind_win, ind_dim], '-.',
-                    label=f'prediction')
-            correlation = np.corrcoef(A_t[ind_win, ind_dim],B_t[ind_win, ind_dim])[0, 1]
-            ax.text(0.05, 0.95, f'Correlation: {correlation:.2f}', transform=ax.transAxes, verticalalignment='top')
+            if len(A_t.shape) == 3:
+                num_samples = len(A_t[ind_win, ind_dim])
+                time_array = np.linspace(0, (num_samples - 1) * sample_time, num_samples)
+                ax.plot(time_array, A_t[ind_win, ind_dim],
+                        label=f'real')
+                ax.plot(time_array, B_t[ind_win, ind_dim], '-.',
+                        label=f'prediction')
+                correlation = np.corrcoef(A_t[ind_win, ind_dim],B_t[ind_win, ind_dim])[0, 1]
+                ax.text(0.05, 0.95, f'Correlation: {correlation:.2f}', transform=ax.transAxes, verticalalignment='top')
+            else:
+                num_samples = A_t.shape[3]
+                for idx in range(A_t.shape[2]):
+                    time_array = np.linspace(idx * sample_time, (idx + num_samples - 1) * sample_time, num_samples)
+                    ax.plot(time_array, A_t[ind_win, ind_dim, idx],
+                            label=f'real')
+                    ax.plot(time_array, B_t[ind_win, ind_dim, idx], '-.',
+                            label=f'prediction')
+                    correlation = np.corrcoef(A_t[ind_win, ind_dim, idx],B_t[ind_win, ind_dim, idx])[0, 1]
+                    ax.text(0.05, 0.95, f'Correlation: {correlation:.2f}', transform=ax.transAxes, verticalalignment='top')
 
     ax.grid(True)
     ax.legend(loc='best')

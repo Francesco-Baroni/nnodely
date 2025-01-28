@@ -38,6 +38,8 @@ class NeuObj():
         NeuObj.count = 0
     def __init__(self, name='', json={}, dim=0):
         NeuObj.count += 1
+        if name == '':
+            name = 'Auto'+str(NeuObj.count)
         if CHECK_NAMES == True:
             check(name not in NeuObj_names, NameError, f"The name {name} is already used change the name of NeuObj.")
             NeuObj_names.append(name)

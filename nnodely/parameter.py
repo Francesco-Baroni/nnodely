@@ -198,9 +198,10 @@ class SampleTime(NeuObj, Stream, ToStream):
     """
     def __init__(self):
         name = 'SampleTime'
-        NeuObj.__init__(self, name)
+        NeuObj.__init__(self, '')
+
         self.dim = {'dim': 1, 'sw': 1}
         # deepcopy dimention information inside Parameters
-        self.json['Constants'][self.name] = copy.deepcopy(self.dim)
-        self.json['Constants'][self.name]['values'] = name
+        self.json['Constants'][name] = copy.deepcopy(self.dim)
+        self.json['Constants'][name]['values'] = name
         Stream.__init__(self, name, self.json, self.dim)
