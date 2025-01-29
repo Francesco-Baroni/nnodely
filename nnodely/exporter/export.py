@@ -318,15 +318,18 @@ def export_pythononnx_model(model_def, input_order, outputs_order, model_path, m
                 call_str += f"{key}[idx], " if key in inputs else f"{key}, "
             call_str += ")\n"
             file.write(call_str)
-            for idx, key in enumerate(outputs_order):
-                file.write(f"            results_{key}.append(out[{idx}])\n")
+            if len(outputs_order) > 1:
+                for idx, key in enumerate(outputs_order):
+                    file.write(f"            results_{key}.append(out[{idx}])\n")
+            else:
+                file.write(f"            results_{outputs_order[0]}.append(out)\n")
             for idx, key in enumerate(closed_loop_states):
                 file.write(f"            shift = closed_loop[{idx}].size(1)\n")
                 file.write(f"            {key} = nnodely_model_connect({key}, closed_loop[{idx}], shift)\n")
             for idx, key in enumerate(connect_states):
                 file.write(f"            {key} = connect[{idx}]\n")
             for idx, key in enumerate(outputs_order):
-                file.write(f"        results_{key} = torch.cat(results_{key}, dim=0)\n")
+                file.write(f"        results_{key} = torch.stack(results_{key}, dim=0)\n")
             #file.write("        results = torch.cat(results, dim=0)\n")
             return_str = "        return "
             for key in outputs_order:
@@ -365,11 +368,13 @@ def export_onnx_model(model_def, model, input_order, output_order, model_path, n
         if recurrent:
             if key in model_def['Inputs'].keys():
                 dummy_inputs.append(torch.randn(size=(1, 1, window_size, dim)))
+                dynamic_axes[key] = {0: 'horizon', 1: 'batch_size'}
             elif key in model_def['States'].keys():
                 dummy_inputs.append(torch.randn(size=(1, window_size, dim)))
+                dynamic_axes[key] = {0: 'batch_size'}
         else:
             dummy_inputs.append(torch.randn(size=(1, window_size, dim)))
-        dynamic_axes[key] = {0: 'batch_size'}
+            dynamic_axes[key] = {0: 'batch_size'}
     output_names = output_order
     dummy_inputs = tuple(dummy_inputs)
 

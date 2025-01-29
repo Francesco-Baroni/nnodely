@@ -439,11 +439,11 @@ class ModelyExportTest(unittest.TestCase):
         ## ONNX IMPORT
         onnx_model_path = os.path.join('results', 'onnx', 'net.onnx')
         dummy_input = {'x':np.ones(shape=(3, 1, 1, 1)).astype(np.float32),
-                       'y':np.ones(shape=(3, 1, 1)).astype(np.float32),
-                       'z':np.ones(shape=(3, 1, 1)).astype(np.float32)}
+                       'y':np.ones(shape=(1, 1, 1)).astype(np.float32),
+                       'z':np.ones(shape=(1, 1, 1)).astype(np.float32)}
         outputs = Modely().onnxInference(dummy_input,onnx_model_path)
         # Get the output
-        expected_output = np.array([[3.], [5.], [7.]], dtype=np.float32)
+        expected_output = np.array([[[[3.]]], [[[5.]]], [[[7.]]]], dtype=np.float32)
         self.assertEqual(outputs[0].tolist(), expected_output.tolist())
 
     def test_export_and_import_onnx_module_easy(self):
@@ -635,7 +635,7 @@ class ModelyExportTest(unittest.TestCase):
         self.assertEqual(outputs[0][0], model_inference['accelleration'])
 
         model_sample = vehicle.getSamples('dataset', window=3)
-        onnx_sample = {key: (np.expand_dims(value, axis=1).astype(np.float32) if key != 'vel' else value)  for key, value in model_sample.items()}
+        onnx_sample = {key: (np.expand_dims(value, axis=1).astype(np.float32) if key != 'vel' else np.expand_dims(np.array(value[0], dtype=np.float32), axis=0))  for key, value in model_sample.items()}
         model_inference = vehicle(model_sample, sampled=True, prediction_samples=3)
         outputs = Modely().onnxInference(onnx_sample, onnx_model_path)
         self.assertEqual(outputs[0].squeeze().tolist(), model_inference['accelleration'])
