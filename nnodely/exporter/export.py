@@ -37,7 +37,7 @@ def load_model(model_path):
         model_def = json.load(file)
     return model_def
 
-def export_python_model(model_def, model, model_path, recurrent=False):
+def export_python_model(model_def, model, model_path):
     package_name = __package__.split('.')[0]
 
     # Get the symbolic tracer
@@ -199,7 +199,7 @@ def export_python_model(model_def, model, model_path, recurrent=False):
             else:
                 file.write(f"    {line}\n")
 
-        if recurrent:
+        if model_def['States'] != {}:
             file.write("class RecurrentModel(torch.nn.Module):\n")
             file.write("    def __init__(self):\n")
             file.write("        super().__init__()\n")
@@ -235,7 +235,7 @@ def export_python_model(model_def, model, model_path, recurrent=False):
             file.write("                self.states[key] = value\n")
             file.write("        return results\n")
 
-def export_pythononnx_model(model_def, input_order, outputs_order, model_path, model_onnx_path, recurrent=False):
+def export_pythononnx_model(model_def, input_order, outputs_order, model_path, model_onnx_path):
     closed_loop_states, connect_states = [], []
     for key, value in model_def['States'].items():
         if 'closedLoop' in value.keys():
@@ -292,7 +292,7 @@ def export_pythononnx_model(model_def, input_order, outputs_order, model_path, m
     with open(model_onnx_path, 'w') as file:
         file.write(file_content)
 
-        if recurrent:
+        if model_def['States'] != {}:
             file.write('\n')
             file.write("class RecurrentModel(torch.nn.Module):\n")
             file.write("    def __init__(self):\n")
@@ -347,7 +347,7 @@ def import_python_model(name, model_folder):
         module = importlib.import_module(module_name)
     return module.TracerModel()
 
-def export_onnx_model(model_def, model, input_order, output_order, model_path, name='net_onnx', recurrent=False):
+def export_onnx_model(model_def, model, input_order, output_order, model_path, name='net_onnx'):
     sys.path.insert(0, model_path)
     module_name = os.path.basename(name)
     if module_name in sys.modules:
@@ -356,7 +356,7 @@ def export_onnx_model(model_def, model, input_order, output_order, model_path, n
     else:
         # Import the module if it is not loaded
         module = importlib.import_module(module_name)
-    model = torch.jit.script(module.RecurrentModel()) if recurrent == True else module.TracerModel()
+    model = torch.jit.script(module.RecurrentModel()) if model_def['States'] != {} else module.TracerModel()
     model.eval()
     dummy_inputs = []
     input_names = []
@@ -365,7 +365,7 @@ def export_onnx_model(model_def, model, input_order, output_order, model_path, n
         input_names.append(key)
         window_size = model_def['Inputs'][key]['ntot'] if key in model_def['Inputs'].keys() else model_def['States'][key]['ntot']
         dim = model_def['Inputs'][key]['dim'] if key in model_def['Inputs'].keys() else model_def['States'][key]['dim']
-        if recurrent:
+        if model_def['States'] != {}:
             if key in model_def['Inputs'].keys():
                 dummy_inputs.append(torch.randn(size=(1, 1, window_size, dim)))
                 dynamic_axes[key] = {0: 'horizon', 1: 'batch_size'}
