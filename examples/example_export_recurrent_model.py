@@ -274,5 +274,5 @@ elif example == 6:
     ## Export the Onnx Model
     vehicle.exportONNX(['brk','gear','trq','alt','vel'],['accelleration'])
 
-    data = {'vel':np.random.rand(1,1,1).astype(np.float32), 'brk':np.random.rand(2,25,1).astype(np.float32), 'gear':np.random.rand(2,1,1).astype(np.float32), 'trq':np.random.rand(2,25,1).astype(np.float32), 'alt':np.random.rand(2,1,21).astype(np.float32), 'acc':np.random.rand(2,1,1).astype(np.float32)}
+    data = {'vel':np.random.rand(1,1,1).astype(np.float32), 'brk':np.random.rand(5,1,25,1).astype(np.float32), 'gear':np.random.rand(5,1,1,1).astype(np.float32), 'trq':np.random.rand(5,1,25,1).astype(np.float32), 'alt':np.random.rand(5,1,1,21).astype(np.float32)}
     print(Modely().onnxInference(data,'results/onnx/net.onnx'))

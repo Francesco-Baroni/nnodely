@@ -210,9 +210,6 @@ def export_python_model(model_def, model, model_path, recurrent=False):
             list_inputs += "]\n"
             file.write(list_inputs)
             file.write("        self.states = dict()\n")
-            # for key, value in model_def['States'].items():
-            #     time_dim, dim = value['ntot'], value['dim']
-            #     file.write(f"        self.states['{key}'] = torch.zeros(1, {time_dim}, {dim})\n")
             file.write("\n")
             file.write("    def forward(self, kwargs):\n")
             file.write("        n_samples = min([kwargs[key].size(0) for key in self.inputs])\n")
@@ -223,16 +220,11 @@ def export_python_model(model_def, model, model_path, recurrent=False):
                 result_str += f"'{key}':[], "
             file.write(f"        results = {{{result_str}}}\n")
             file.write("        X = dict()\n")
-            # file.write("        for key in self.states.keys():\n")
-            # file.write("            if key in kwargs.keys():\n")
-            # file.write(f"                self.states[key] = kwargs[key]\n")
             file.write("        for idx in range(n_samples):\n")
             file.write(f"            for key in self.inputs:\n")
             file.write(f"                X[key] = kwargs[key][idx]\n")
             file.write(f"            for key, value in self.states.items():\n")
             file.write(f"                X[key] = value\n")
-            # for key, value in model_def['States'].items():
-            #     file.write(f"            X['{key}'] = self.states['{key}']\n")
             file.write("            out, _, closed_loop, connect = self.Cell(X)\n")
             file.write("            for key, value in results.items():\n")
             file.write("                results[key].append(out[key])\n")
@@ -306,9 +298,6 @@ def export_pythononnx_model(model_def, input_order, outputs_order, model_path, m
             file.write("    def __init__(self):\n")
             file.write("        super().__init__()\n")
             file.write("        self.Cell = TracerModel()\n")
-            # for key, value in model_def['States'].items():
-            #     time_dim, dim = value['ntot'], value['dim']
-            #     file.write(f"        self.{key} = torch.zeros(1, {time_dim}, {dim})\n")
 
             forward_str = "    def forward(self, "
             for key in input_order:
@@ -317,21 +306,16 @@ def export_pythononnx_model(model_def, input_order, outputs_order, model_path, m
             file.write(forward_str)
 
             if input_order:
-                file.write(f"        n_samples = {input_order[0]}.size(0)\n")
+                file.write("        n_samples = min([" + ", ".join([f"{key}.size(0)" for key in inputs]) + "])\n")
             else:
                 file.write("        n_samples = 1\n")
             
-            #file.write("        results = []\n")
             for key in outputs_order:
                 file.write(f"        results_{key} = []\n")
             file.write("        for idx in range(n_samples):\n")
             call_str = "            out, closed_loop, connect = self.Cell("
-            # for key in inputs:
-            #     call_str += f"{key}[idx:idx+1], "
-            # for key in model_def['States'].keys():
-            #     call_str += f"self.{key}, "
             for key in input_order:
-                call_str += f"{key}[idx:idx+1], " if key in inputs else f"{key}, "
+                call_str += f"{key}[idx], " if key in inputs else f"{key}, "
             call_str += ")\n"
             file.write(call_str)
             for idx, key in enumerate(outputs_order):
@@ -369,19 +353,22 @@ def export_onnx_model(model_def, model, input_order, output_order, model_path, n
     else:
         # Import the module if it is not loaded
         module = importlib.import_module(module_name)
-    #model = module.RecurrentModel()
-
     model = torch.jit.script(module.RecurrentModel()) if recurrent == True else module.TracerModel()
     model.eval()
     dummy_inputs = []
     input_names = []
     dynamic_axes = {}
-    #for key in [t for t in input_order if t in model_def['Inputs'].keys()]:
     for key in input_order:
         input_names.append(key)
         window_size = model_def['Inputs'][key]['ntot'] if key in model_def['Inputs'].keys() else model_def['States'][key]['ntot']
         dim = model_def['Inputs'][key]['dim'] if key in model_def['Inputs'].keys() else model_def['States'][key]['dim']
-        dummy_inputs.append(torch.randn(size=(1, window_size, dim)))
+        if recurrent:
+            if key in model_def['Inputs'].keys():
+                dummy_inputs.append(torch.randn(size=(1, 1, window_size, dim)))
+            elif key in model_def['States'].keys():
+                dummy_inputs.append(torch.randn(size=(1, window_size, dim)))
+        else:
+            dummy_inputs.append(torch.randn(size=(1, window_size, dim)))
         dynamic_axes[key] = {0: 'batch_size'}
     output_names = output_order
     dummy_inputs = tuple(dummy_inputs)

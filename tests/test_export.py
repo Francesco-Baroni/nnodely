@@ -438,7 +438,7 @@ class ModelyExportTest(unittest.TestCase):
 
         ## ONNX IMPORT
         onnx_model_path = os.path.join('results', 'onnx', 'net.onnx')
-        dummy_input = {'x':np.ones(shape=(3, 1, 1)).astype(np.float32),
+        dummy_input = {'x':np.ones(shape=(3, 1, 1, 1)).astype(np.float32),
                        'y':np.ones(shape=(3, 1, 1)).astype(np.float32),
                        'z':np.ones(shape=(3, 1, 1)).astype(np.float32)}
         outputs = Modely().onnxInference(dummy_input,onnx_model_path)
@@ -463,7 +463,7 @@ class ModelyExportTest(unittest.TestCase):
 
         ## ONNX IMPORT
         onnx_model_path = os.path.join('results', 'onnx', 'net.onnx')
-        outputs = Modely().onnxInference(inputs={'num_cycle':np.ones(shape=(10, 1, 1)).astype(np.float32), 'x':np.ones(shape=(1, 1, 1)).astype(np.float32)}, path=onnx_model_path)
+        outputs = Modely().onnxInference(inputs={'num_cycle':np.ones(shape=(10, 1, 1, 1)).astype(np.float32), 'x':np.ones(shape=(1, 1, 1)).astype(np.float32)}, path=onnx_model_path)
 
     def test_export_and_import_onnx_module_complex(self):
         # Create nnodely structure
@@ -630,12 +630,14 @@ class ModelyExportTest(unittest.TestCase):
 
         ## ONNX IMPORT
         onnx_model_path = os.path.join('results', 'onnx', 'net.onnx')
-        outputs = Modely().onnxInference(model_sample, onnx_model_path)
+        onnx_sample = {key: (np.expand_dims(value, axis=1).astype(np.float32) if key != 'vel' else value)  for key, value in model_sample.items()}
+        outputs = Modely().onnxInference(onnx_sample, onnx_model_path)
         self.assertEqual(outputs[0][0], model_inference['accelleration'])
 
         model_sample = vehicle.getSamples('dataset', window=3)
+        onnx_sample = {key: (np.expand_dims(value, axis=1).astype(np.float32) if key != 'vel' else value)  for key, value in model_sample.items()}
         model_inference = vehicle(model_sample, sampled=True, prediction_samples=3)
-        outputs = Modely().onnxInference(model_sample, onnx_model_path)
+        outputs = Modely().onnxInference(onnx_sample, onnx_model_path)
         self.assertEqual(outputs[0].squeeze().tolist(), model_inference['accelleration'])
 
 
