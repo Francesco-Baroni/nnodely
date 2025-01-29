@@ -28,310 +28,10 @@ class ModelyExportTest(unittest.TestCase):
         else:
             self.assertAlmostEqual(data1, data2, places=precision)
 
-    def __init__(self, *args, **kwargs):
-        super(ModelyExportTest, self).__init__(*args, **kwargs)
-
-        self.result_path = './results'
-        self.test = Modely(visualizer=None, seed=42, workspace=self.result_path)
-
-        x = Input('x')
-        y = Input('y')
-        z = Input('z')
-
-        ## create the relations
-        def myFun(K1, p1, p2):
-            return K1 * p1 * p2
-
-        K_x = Parameter('k_x', dimensions=1, tw=1, init=init_constant, init_params={'value': 1})
-        K_y = Parameter('k_y', dimensions=1, tw=1)
-        w = Parameter('w', dimensions=1, tw=1, init=init_constant, init_params={'value': 1})
-        t = Parameter('t', dimensions=1, tw=1)
-        c_v = Constant('c_v', tw=1, values=[[1], [2]])
-        c = 5
-        w_5 = Parameter('w_5', dimensions=1, tw=5)
-        t_5 = Parameter('t_5', dimensions=1, tw=5)
-        c_5 = [[1], [2], [3], [4], [5], [6], [7], [8], [9], [10]]
-        parfun_x = ParamFun(myFun, parameters=[K_x], constants=[c_v])
-        parfun_y = ParamFun(myFun, parameters=[K_y])
-        parfun_z = ParamFun(myFun)
-        fir_w = Fir(parameter=w_5)(x.tw(5))
-        fir_t = Fir(parameter=t_5)(y.tw(5))
-        time_part = TimePart(x.tw(5), i=1, j=3)
-        sample_select = SampleSelect(x.sw(5), i=1)
-
-        def fuzzyfun(x):
-            return torch.tan(x)
-
-        fuzzy = Fuzzify(output_dimension=4, range=[0, 4], functions=fuzzyfun)(x.tw(1))
-        fuzzyTriang = Fuzzify(centers=[1, 2, 3, 7])(x.tw(1))
-
-        out = Output('out', Fir(parfun_x(x.tw(1)) + parfun_y(y.tw(1), c_v)))
-        # out = Output('out', Fir(parfun_x(x.tw(1))+parfun_y(y.tw(1),c_v)+parfun_z(x.tw(5),t_5,c_5)))
-        out2 = Output('out2', Add(w, x.tw(1)) + Add(t, y.tw(1)) + Add(w, c))
-        out3 = Output('out3', Add(fir_w, fir_t))
-        out4 = Output('out4', Linear(output_dimension=1)(fuzzy+fuzzyTriang))
-        out5 = Output('out5', Fir(time_part) + Fir(sample_select))
-        out6 = Output('out6', LocalModel(output_function=Fir())(x.tw(1), fuzzy))
-
-        self.test.addModel('modelA', out)
-        self.test.addModel('modelB', [out2, out3, out4])
-        self.test.addModel('modelC', [out4, out5, out6])
-        self.test.addMinimize('error1', x.last(), out)
-        self.test.addMinimize('error2', y.last(), out3, loss_function='rmse')
-        self.test.addMinimize('error3', z.last(), out6, loss_function='rmse')
-
-    def test_export_pt(self):
-        if os.path.exists(self.test.getWorkspace()):
-            shutil.rmtree(self.test.getWorkspace())
-        os.makedirs(self.result_path, exist_ok=True)
-        # Export torch file .pt
-        # Save torch model and load it
-        self.test.neuralizeModel(0.5)
-        old_out = self.test({'x': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'y': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})
-        self.test.saveTorchModel()
-        self.test.neuralizeModel(clear_model=True)
-        # The new_out is different from the old_out because the model is cleared
-        new_out = self.test({'x': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'y': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})
-        # The new_out_after_load is the same as the old_out because the model is loaded with the same parameters
-        self.test.loadTorchModel()
-        new_out_after_load = self.test({'x': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'y': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})
-
-        with self.assertRaises(AssertionError):
-            self.assertEqual(old_out, new_out)
-        self.assertEqual(old_out, new_out_after_load)
-
-        with self.assertRaises(RuntimeError):
-            test2 = Modely(visualizer=None, workspace = self.result_path)
-            # You need not neuralized model to load a torch model
-            test2.loadTorchModel()
-
-        if os.path.exists(self.test.getWorkspace()):
-            shutil.rmtree(self.test.getWorkspace())
-
-    def test_export_json_not_neuralized(self):
-        if os.path.exists(self.test.getWorkspace()):
-            shutil.rmtree(self.test.getWorkspace())
-        os.makedirs(self.result_path, exist_ok=True)
-        # Export json of nnodely model before neuralize
-        # Save a not neuralized nnodely json model and load it
-        self.test.saveModel()  # Save a model without parameter values and samples values
-        with self.assertRaises(RuntimeError):
-            self.test({'x': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'y': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})
-        self.test.loadModel()  # Load the nnodely model without parameter values
-        with self.assertRaises(RuntimeError):
-            self.test({'x': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'y': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})
-        test2 = Modely(visualizer=None, workspace=self.test.getWorkspace())
-        test2.loadModel()  # Load the nnodely model with parameter values
-        self.assertEqual(test2.model_def.json, self.test.model_def.json)
-
-        if os.path.exists(self.test.getWorkspace()):
-            shutil.rmtree(self.test.getWorkspace())
-
-    def test_export_json_untrained(self):
-        if os.path.exists(self.test.getWorkspace()):
-            shutil.rmtree(self.test.getWorkspace())
-        os.makedirs(self.result_path, exist_ok=True)
-        # Export json of nnodely model
-        # Save a untrained nnodely json model and load it
-        # the new_out and new_out_after_load are different because the model saved model is not trained
-        self.test.neuralizeModel(0.5)
-        old_out = self.test({'x': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'y': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})
-        self.test.saveModel()  # Save a model without parameter values
-        self.test.neuralizeModel(clear_model=True)  # Create a new torch model
-        new_out = self.test({'x': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'y': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})
-        self.test.loadModel()  # Load the nnodely model without parameter values
-        # Use the preloaded torch model for inference
-        with self.assertRaises(RuntimeError):
-            self.test({'x': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'y': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})
-        self.test.neuralizeModel(0.5)
-        new_out_after_load = self.test({'x': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'y': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})
-        with self.assertRaises(AssertionError):
-            self.assertEqual(old_out, new_out)
-        with self.assertRaises(AssertionError):
-            self.assertEqual(new_out, new_out_after_load)
-
-        if os.path.exists(self.test.getWorkspace()):
-            shutil.rmtree(self.test.getWorkspace())
-
-    def test_export_json_trained(self):
-        if os.path.exists(self.test.getWorkspace()):
-            shutil.rmtree(self.test.getWorkspace())
-        os.makedirs(self.result_path, exist_ok=True)
-        # Export json of nnodely model with parameter valuess
-        # The old_out is the same as the new_out_after_load because the model is loaded with the same parameters
-        self.test.neuralizeModel(0.5)
-        old_out = self.test({'x': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'y': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})
-        self.test.neuralizeModel()  # Load the parameter from torch model to nnodely model json
-        self.test.saveModel()  # Save the model with and without parameter values
-        self.test.neuralizeModel(clear_model=True)  # Create a new torch model
-        new_out = self.test({'x': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'y': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})
-        self.test.loadModel()  # Load the nnodely model with parameter values
-        with self.assertRaises(RuntimeError):
-            self.test({'x': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'y': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})
-        self.test.neuralizeModel()
-        new_out_after_load = self.test({'x': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'y': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})
-        with self.assertRaises(AssertionError):
-            self.assertEqual(old_out, new_out)
-        with self.assertRaises(AssertionError):
-            self.assertEqual(new_out, new_out_after_load)
-        self.assertEqual(old_out, new_out_after_load)
-
-        if os.path.exists(self.test.getWorkspace()):
-            shutil.rmtree(self.test.getWorkspace())
-
-    def test_import_json_new_object(self):
-        if os.path.exists(self.test.getWorkspace()):
-            shutil.rmtree(self.test.getWorkspace())
-        os.makedirs(self.result_path, exist_ok=True)
-        # Import nnodely json model in a new object
-        self.test.neuralizeModel(0.5)
-        old_out = self.test({'x': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'y': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})
-        self.test.neuralizeModel()
-        self.test.saveModel()  # Save the model with and without parameter values
-        test2 = Modely(visualizer=None, workspace=self.test.getWorkspace())
-        test2.loadModel()  # Load the nnodely model with parameter values
-        with self.assertRaises(RuntimeError):
-            test2({'x': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'y': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})
-        test2.neuralizeModel()
-        new_model_out_after_load = test2({'x': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'y': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})
-        self.assertEqual(old_out, new_model_out_after_load)
-
-        if os.path.exists(self.test.getWorkspace()):
-            shutil.rmtree(self.test.getWorkspace())
-
-    def test_export_torch_script(self):
-        if os.path.exists(self.test.getWorkspace()):
-            shutil.rmtree(self.test.getWorkspace())
-        os.makedirs(self.result_path, exist_ok=True)
-        # Export and import of a torch script .py
-        # The old_out is the same as the new_out_after_load because the model is loaded with the same parameters
-        with self.assertRaises(RuntimeError):
-            self.test.exportPythonModel() # The model is not neuralized yet
-        self.test.neuralizeModel(0.5)
-        old_out = self.test({'x': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'y': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})
-        self.test.exportPythonModel()  # Export the trace model
-        self.test.neuralizeModel(clear_model=True)  # Create a new torch model
-        new_out = self.test({'x': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'y': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})
-        self.test.importPythonModel()  # Import the tracer model
-        with self.assertRaises(RuntimeError):
-            self.test.exportPythonModel() # The model is traced
-        # Perform inference with the imported tracer model
-        new_out_after_load = self.test({'x': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'y': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})
-        with self.assertRaises(AssertionError):
-             self.assertEqual(old_out, new_out)
-        self.assertEqual(old_out, new_out_after_load)
-
-        if os.path.exists(self.test.getWorkspace()):
-            shutil.rmtree(self.test.getWorkspace())
-
-    def test_export_torch_script_new_object(self):
-        if os.path.exists(self.test.getWorkspace()):
-            shutil.rmtree(self.test.getWorkspace())
-        os.makedirs(self.result_path, exist_ok=True)
-        # Import of a torch script .py
-        self.test.neuralizeModel(0.5,clear_model=True)
-        old_out = self.test({'x': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'y': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})
-        self.test.exportPythonModel()  # Export the trace model
-        self.test.neuralizeModel(clear_model=True)
-        test2 = Modely(visualizer=None, workspace=self.test.getWorkspace())
-        test2.importPythonModel()  # Load the nnodely model with parameter values
-        with self.assertRaises(RuntimeError):
-            test2.exportPythonModel() # The model is traced
-        new_out_after_load = test2({'x': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'y': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})
-        self.assertEqual(old_out, new_out_after_load)
-
-        if os.path.exists(self.test.getWorkspace()):
-            shutil.rmtree(self.test.getWorkspace())
-
-    def test_export_trained_torch_script(self):
-        if os.path.exists(self.test.getWorkspace()):
-            shutil.rmtree(self.test.getWorkspace())
-        os.makedirs(self.result_path, exist_ok=True)
-        # Perform training on an imported tracer model
-        data_x = np.arange(0.0, 1, 0.1)
-        data_y = np.arange(0.0, 1, 0.1)
-        a, b = -1.0, 2.0
-        dataset = {'x': data_x, 'y': data_y, 'z': a * data_x + b * data_y}
-        params = {'num_of_epochs': 1, 'lr': 0.01}
-        self.test.neuralizeModel(0.5,clear_model=True)
-        old_out = self.test({'x': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'y': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})
-        self.test.exportPythonModel()  # Export the trace model
-        self.test.loadData(name='dataset', source=dataset)  # Create the dataset
-        self.test.trainModel(optimizer='SGD', training_params=params)  # Train the traced model
-        new_out_after_train = self.test({'x': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'y': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})
-        with self.assertRaises(AssertionError):
-             self.assertEqual(old_out, new_out_after_train)
-
-        if os.path.exists(self.test.getWorkspace()):
-            shutil.rmtree(self.test.getWorkspace())
-
-    def test_export_torch_script_new_object_train(self):
-        if os.path.exists(self.test.getWorkspace()):
-            shutil.rmtree(self.test.getWorkspace())
-        os.makedirs(self.result_path, exist_ok=True)
-        # Perform training on an imported new tracer model
-        self.test.neuralizeModel(0.5, clear_model=True)
-        old_out = self.test({'x': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'y': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})
-        self.test.exportPythonModel()  # Export the trace model
-        data_x = np.arange(0.0, 1, 0.1)
-        data_y = np.arange(0.0, 1, 0.1)
-        a, b = -1.0, 2.0
-        dataset = {'x': data_x, 'y': data_y, 'z': a * data_x + b * data_y}
-        params = {'num_of_epochs': 1, 'lr': 0.01}
-        self.test.loadData(name='dataset', source=dataset)  # Create the dataset
-        self.test.trainModel(optimizer='SGD', training_params=params)  # Train the traced model
-        old_out_after_train = self.test({'x': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'y': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})
-        with self.assertRaises(AssertionError):
-             self.assertEqual(old_out, old_out_after_train)
-        test2 = Modely(visualizer=None, workspace=self.test.getWorkspace())
-        test2.importPythonModel()  # Load the nnodely model with parameter values
-        test2.loadData(name='dataset', source=dataset)  # Create the dataset
-        test2.trainModel(optimizer='SGD', training_params=params)  # Train the traced model
-        new_out_after_train = test2({'x': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'y': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})
-        with self.assertRaises(AssertionError):
-             self.assertEqual(old_out, new_out_after_train)
-        self.assertEqual(old_out_after_train, new_out_after_train)
-
-        if os.path.exists(self.test.getWorkspace()):
-            shutil.rmtree(self.test.getWorkspace())
-
-    def test_export_onnx(self):
-        if os.path.exists(self.test.getWorkspace()):
-            shutil.rmtree(self.test.getWorkspace())
-        os.makedirs(self.result_path, exist_ok=True)
-
-        self.test.neuralizeModel(0.5, clear_model=True)
-        # Export the all models in onnx format
-        self.test.exportONNX(['x', 'y'], ['out', 'out2', 'out3', 'out4', 'out5', 'out6'])  # Export the onnx model
-        # Export only the modelB in onnx format
-        self.test.exportONNX(['x', 'y'], ['out3', 'out4', 'out2'], ['modelB'])  # Export the onnx model
-        self.assertTrue(os.path.exists(os.path.join(self.test.getWorkspace(), 'onnx', 'net.onnx')))
-        self.assertTrue(os.path.exists(os.path.join(self.test.getWorkspace(), 'onnx', 'net_modelB.onnx')))
-
-        if os.path.exists(self.test.getWorkspace()):
-            shutil.rmtree(self.test.getWorkspace())
-
-    def test_export_report(self):
-        if os.path.exists(self.test.getWorkspace()):
-            shutil.rmtree(self.test.getWorkspace())
-        os.makedirs(self.result_path, exist_ok=True)
-
-        self.test.resetSeed(42)
-        self.test.neuralizeModel(0.5, clear_model=True)
-        data_x = np.arange(0.0, 10, 0.1)
-        data_y = np.arange(0.0, 10, 0.1)
-        a, b = -1.0, 2.0
-        dataset = {'x': data_x, 'y': data_y, 'z': a * data_x + b * data_y}
-        params = {'num_of_epochs': 20, 'lr': 0.01}
-        self.test.loadData(name='dataset', source=dataset)  # Create the dataset
-        self.test.trainModel(optimizer='SGD', training_params=params)  # Train the traced model
-        self.test.exportReport()
-
-        if os.path.exists(self.test.getWorkspace()):
-            shutil.rmtree(self.test.getWorkspace())
 
     def test_export_and_import_train_python_module(self):
-        result_path = './resultssdsds42'
+        result_path = 'results'
+        network_name = 'net'
         test = Modely(visualizer=None, seed=42, workspace=result_path)
         x = Input('x')
         y = State('y')
@@ -360,20 +60,21 @@ class ModelyExportTest(unittest.TestCase):
         train_result = test(sample)
         train_parameters = test.model.all_parameters
         # Export the model
-        # test.exportPythonModel()
-        # # Import the model
-        # test.importPythonModel(name='net')
-        # # Inference with imported model
-        # self.assertEqual(train_result, test(sample))
-        # self.assertEqual(train_parameters['a'], test.model.all_parameters['a'])
-        # self.assertEqual(train_parameters['b'], test.model.all_parameters['b'])
-        # self.assertEqual(train_parameters['c'], test.model.all_parameters['c'])
+        test.exportPythonModel()
+        # Import the model
+        test.importPythonModel(name=network_name)
+        # Inference with imported model
+        self.assertEqual(train_result, test(sample))
+        self.assertEqual(train_parameters['a'], test.model.all_parameters['a'])
+        self.assertEqual(train_parameters['b'], test.model.all_parameters['b'])
+        self.assertEqual(train_parameters['c'], test.model.all_parameters['c'])
 
         if os.path.exists(test.getWorkspace()):
             shutil.rmtree(test.getWorkspace())
 
     def test_export_and_import_python_module(self):
-        result_path = './results-32'
+        result_path = 'results'
+        network_name = 'exported_model'
         test = Modely(visualizer=None, seed=42, workspace=result_path)
         x = Input('x')
         y = State('y')
@@ -395,16 +96,15 @@ class ModelyExportTest(unittest.TestCase):
         inference_result = test(sample)
         self.assertEqual(inference_result['out'], [5.0])
         # Export the model
-        test.exportPythonModel(name='exported_model')
+        test.exportPythonModel(name=network_name)
+
         ## Load the exported model.py
-        model_filename = 'exported_model.py'
-        sys.path.insert(0, result_path)
         ## Import the python exported module
-        module_name = os.path.splitext(model_filename)[0]
-        module = importlib.import_module(module_name)
+        #from results123.net import RecurrentModel
+        module = importlib.import_module(result_path+'.'+network_name)
         RecurrentModel = getattr(module, 'RecurrentModel')
         model = RecurrentModel()
-        model.eval()
+
         # Create dummy input data
         dummy_input = {'x': torch.ones(5, 1, 1, 1), 'target': torch.ones(10, 1, 1, 1), 'y': torch.zeros(1,1,1), 'z':torch.zeros(1,1,1)}  # Adjust the shape as needed
         # Inference with imported model
@@ -416,7 +116,7 @@ class ModelyExportTest(unittest.TestCase):
             shutil.rmtree(test.getWorkspace())
 
     def test_export_and_import_onnx_module(self):
-        result_path = './results-25'
+        result_path = './results-onnx'
         test = Modely(visualizer=None, seed=42, workspace=result_path)
         x = Input('x')
         y = State('y')
@@ -450,11 +150,11 @@ class ModelyExportTest(unittest.TestCase):
         expected_output = np.array([[[[3.]]], [[[5.]]], [[[7.]]]], dtype=np.float32)
         self.assertEqual(outputs[0].tolist(), expected_output.tolist())
 
-        if os.path.exists(self.test.getWorkspace()):
-            shutil.rmtree(self.test.getWorkspace())
+        if os.path.exists(test.getWorkspace()):
+            shutil.rmtree(test.getWorkspace())
 
     def test_export_and_import_onnx_module_easy(self):
-        result_path = './results-5'
+        result_path = 'results-output'
         test = Modely(visualizer=None, seed=42, workspace=result_path)
         num_cycle = Input('num_cycle')
         x = State('x')
@@ -467,17 +167,21 @@ class ModelyExportTest(unittest.TestCase):
 
         ## Export in ONNX format
         test.exportONNX(['x','num_cycle'],['out1','out2']) # Export the onnx model
+        output_nodely = test({'num_cycle':np.ones(shape=(10)).astype(np.float32).tolist(), 'x':np.ones(shape=(1)).astype(np.float32).tolist()})
 
         ## ONNX IMPORT
-        onnx_model_path = os.path.join('results', 'onnx', 'net.onnx')
+        onnx_model_path = os.path.join(result_path, 'onnx', 'net.onnx')
         outputs = Modely().onnxInference(inputs={'num_cycle':np.ones(shape=(10, 1, 1, 1)).astype(np.float32), 'x':np.ones(shape=(1, 1, 1)).astype(np.float32)}, path=onnx_model_path)
+        self.assertEqual(output_nodely['out1'], outputs[0].squeeze().tolist())
+        self.assertEqual(output_nodely['out2'], outputs[1].squeeze().tolist())
 
-        if os.path.exists(self.test.getWorkspace()):
-            shutil.rmtree(self.test.getWorkspace())
+        if os.path.exists(test.getWorkspace()):
+            shutil.rmtree(test.getWorkspace())
 
+    # TODO modify adding the integral to the acc to compute the velocity
     def test_export_and_import_onnx_module_complex(self):
         # Create nnodely structure
-        result_path = './results-6'
+        result_path = './results-onnx-complex'
         vehicle = Modely(visualizer=None, seed=2, workspace=result_path)
 
         # Dimensions of the layers
@@ -525,11 +229,12 @@ class ModelyExportTest(unittest.TestCase):
         outputs = Modely().onnxInference(sample, onnx_model_path)
         self.assertEqual(outputs[0][0][0].tolist(), model_inference['accelleration'])
 
-        if os.path.exists(self.test.getWorkspace()):
-            shutil.rmtree(self.test.getWorkspace())
+        if os.path.exists(vehicle.getWorkspace()):
+            shutil.rmtree(vehicle.getWorkspace())
 
     def test_export_python_module_recurrent(self):
-        result_path = './results-6'
+        result_path = 'results-recurrent'
+        network_name = 'net'
         test = Modely(visualizer=None, seed=42, workspace=result_path)
         input1 = Input('input1')
         input2 = Input('input2', dimensions=3)
@@ -556,17 +261,14 @@ class ModelyExportTest(unittest.TestCase):
         test.addModel('model', [out1, out2, out3, out4, out5, out6, out7, out8])
         test.neuralizeModel()
 
-        test.exportPythonModel(name='net')
+        test.exportPythonModel(name=network_name)
 
         ## Load the exported model.py
-        model_filename = 'net.py'
-        sys.path.insert(0, result_path)
         ## Import the python exported module
-        module_name = os.path.splitext(model_filename)[0]
-        module = importlib.import_module(module_name)
+        #from results123.net import RecurrentModel
+        module = importlib.import_module(result_path+'.'+network_name)
         RecurrentModel = getattr(module, 'RecurrentModel')
         recurrent_model = RecurrentModel()
-        recurrent_model.eval()
 
         ## Without Horizon and without batch
         recurrent_sample = {'input1': torch.rand(size=(1,1,1,1), dtype=torch.float32),
@@ -616,11 +318,11 @@ class ModelyExportTest(unittest.TestCase):
         self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['state1']).shape), [5,2,1,1])
         self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['state2']).shape), [5,2,1,3])
 
-        if os.path.exists(self.test.getWorkspace()):
-            shutil.rmtree(self.test.getWorkspace())
+        if os.path.exists(test.getWorkspace()):
+            shutil.rmtree(test.getWorkspace())
 
     def test_export_onnx_module_recurrent(self):
-        result_path = './results-7'
+        result_path = './results-recurrent-onnx'
         test = Modely(visualizer=None, seed=42, workspace= result_path)
         onnx_model_path = os.path.join(result_path, 'onnx', 'net.onnx')
         input1 = Input('input1')
@@ -701,13 +403,13 @@ class ModelyExportTest(unittest.TestCase):
         self.assertListEqual(list(inference[6].shape), [5,2,1,1])
         self.assertListEqual(list(inference[7].shape), [5,2,1,3])
 
-        if os.path.exists(self.test.getWorkspace()):
-            shutil.rmtree(self.test.getWorkspace())
-        
+        if os.path.exists(test.getWorkspace()):
+            shutil.rmtree(test.getWorkspace())
 
     def test_export_and_import_python_module_complex_recurrent(self):
-        result_path = './results-8'
         # Create nnodely structure
+        result_path = 'results-vehicle'
+        network_name = 'vehicle'
         vehicle = Modely(visualizer=None, seed=2, workspace=result_path)
 
         # Dimensions of the layers
@@ -750,21 +452,19 @@ class ModelyExportTest(unittest.TestCase):
         sample = vehicle.getSamples('dataset', window=3)
         model_inference = vehicle(sample, sampled=True, prediction_samples=3)
 
-        vehicle.exportPythonModel(name='net')
+        vehicle.exportPythonModel(name=network_name)
 
-        vehicle.importPythonModel(name='net')
-        model_import_inference = vehicle(sample, sampled=True, prediction_samples=3)
+        loaded_vehicle = Modely(visualizer=None, workspace=vehicle.getWorkspace())
+        loaded_vehicle.importPythonModel(name=network_name)
+        model_import_inference = loaded_vehicle(sample, sampled=True, prediction_samples=3)
         self.assertEqual(model_inference['accelleration'], model_import_inference['accelleration'])
 
         ## Load the exported model.py
-        model_filename = 'net.py'
-        sys.path.insert(0, result_path)
         ## Import the python exported module
-        module_name = os.path.splitext(model_filename)[0]
-        module = importlib.import_module(module_name)
+        #from results.net import RecurrentModel
+        module = importlib.import_module(result_path+'.'+network_name)
         RecurrentModel = getattr(module, 'RecurrentModel')
         recurrent_model = RecurrentModel()
-        recurrent_model.eval()
 
         sample = vehicle.getSamples('dataset', window=3)
         recurrent_sample = {key: torch.tensor(value, dtype=torch.float32).unsqueeze(1) for key, value in sample.items()}
@@ -772,12 +472,13 @@ class ModelyExportTest(unittest.TestCase):
         model_sample = {key: value for key, value in sample.items() if key != 'vel'}
         self.TestAlmostEqual([item.detach().item() for item in recurrent_model(recurrent_sample)['accelleration']], vehicle(model_sample, sampled=True, prediction_samples=3)['accelleration'])
 
-        if os.path.exists(self.test.getWorkspace()):
-            shutil.rmtree(self.test.getWorkspace())
+        if os.path.exists(vehicle.getWorkspace()):
+            shutil.rmtree(vehicle.getWorkspace())
 
     def test_export_and_import_onnx_module_complex_recurrent(self):
         # Create nnodely structure
-        result_path = './results-9'
+        result_path = 'results-vehicle'
+        network_name = 'vehicle'
         vehicle = Modely(visualizer=None, seed=42, workspace= result_path)
 
         # Dimensions of the layers
@@ -817,13 +518,13 @@ class ModelyExportTest(unittest.TestCase):
         vehicle.loadData(name='dataset', source=data_folder, format=data_struct, skiplines=1)
 
         ## Export the Onnx Model
-        vehicle.exportONNX(inputs_order=['gear','trq','alt','brk','vel'],outputs_order=['accelleration'])
+        vehicle.exportONNX(inputs_order=['gear','trq','alt','brk','vel'],outputs_order=['accelleration'],name=network_name)
 
         model_sample = vehicle.getSamples('dataset', window=1)
         model_inference = vehicle(model_sample, sampled=True, prediction_samples=1)
 
         ## ONNX IMPORT
-        onnx_model_path = os.path.join(result_path, 'onnx', 'net.onnx')
+        onnx_model_path = os.path.join(result_path, 'onnx', network_name+'.onnx')
         onnx_sample = {key: (np.expand_dims(value, axis=1).astype(np.float32) if key != 'vel' else value)  for key, value in model_sample.items()}
         outputs = Modely().onnxInference(onnx_sample, onnx_model_path)
         self.assertEqual(outputs[0][0], model_inference['accelleration'])
@@ -834,8 +535,8 @@ class ModelyExportTest(unittest.TestCase):
         outputs = Modely().onnxInference(onnx_sample, onnx_model_path)
         self.assertEqual(outputs[0].squeeze().tolist(), model_inference['accelleration'])
 
-        if os.path.exists(self.test.getWorkspace()):
-            shutil.rmtree(self.test.getWorkspace())
+        if os.path.exists(vehicle.getWorkspace()):
+            shutil.rmtree(vehicle.getWorkspace())
 
 
 if __name__ == '__main__':
