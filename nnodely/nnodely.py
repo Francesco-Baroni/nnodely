@@ -1746,8 +1746,6 @@ class Modely:
 
         Raises
         ------
-        TypeError
-            If the network has state variables, which cannot be exported to Python.
         RuntimeError
             If the network has not been defined.
             If the model is traced and cannot be exported to Python.
@@ -1814,10 +1812,14 @@ class Modely:
         """
         Exports the neural network model to an ONNX file.
 
+        -----
+        .. note::
+            The input_order must contain all the inputs and states of the model in the order that you want to export them.
+
         Parameters
         ----------
         inputs_order : list
-            The order of the input variables.
+            The order of the input and state variables.
         outputs_order : list
             The order of the output variables.
         models : list or None, optional
@@ -1838,6 +1840,10 @@ class Modely:
         Example
         -------
         Example usage:
+            >>> input1 = Input('input1').last()
+            >>> input2 = Input('input2').last()
+            >>> out = Output('output1', input1+input2)
+ 
             >>> model = Modely()
             >>> model.neuralizeModel()
             >>> model.exportONNX(inputs_order=['input1', 'input2'], outputs_order=['output1'], name='example_model', model_folder='path/to/export')
@@ -1860,6 +1866,47 @@ class Modely:
         self.exporter.exportONNX(model_def, model, inputs_order, outputs_order, name, model_folder, recurrent=self.recurrent)
 
     def onnxInference(self, inputs:dict, path:str):
+        """
+        Run an inference session using an onnx model previously exported using the nnodely framework. 
+
+        -----
+        .. note:: Feed-Forward ONNX model
+            For feed-forward models, the onnx model expect all the inputs and states to have 3 dimensions. The first dimension is the batch size, the second is the time window and the third is the feature dimension.
+        .. note:: Recurrent ONNX model
+            For recurrent models, the onnx model expect all the inputs to have 4 dimensions. The first dimension is the prediction horizon, the second is the batch size, the third is the time window and the fourth is the feature dimension.
+            For recurrent models, the onnx model expect all the States to have 3 dimensions. The first dimension is the batch size, the second is the time window, the third is the feature dimension
+
+        Parameters
+        ----------
+        inputs : dict
+            A dictionary containing the input and state variables to be used to make the inference. 
+            State variables are mandatory and are used to initialize the states of the model.
+        path : str
+            The path to the ONNX file to use.
+
+        Raises
+        ------
+        RuntimeError
+            If the shape of the inputs are not equals to the ones defined in the onnx model.
+            If the batch size is not equal for all the inputs and states.
+
+        Example
+        -------
+        feed-forward Example:
+            >>> x = Input('x')
+ 
+            >>> onnx_model_path = path/to/net.onnx
+            >>> dummy_input = {'x':np.ones(shape=(3, 1, 1)).astype(np.float32)}
+            >>> predictions = Modely().onnxInference(dummy_input, onnx_model_path)
+        Recurrent Example:
+            >>> x = Input('x')
+            >>> y = State('y')
+ 
+            >>> onnx_model_path = path/to/net.onnx
+            >>> dummy_input = {'x':np.ones(shape=(3, 1, 1, 1)).astype(np.float32)
+                                'y':np.ones(shape=(1, 1, 1)).astype(np.float32)}
+            >>> predictions = Modely().onnxInference(dummy_input, onnx_model_path)
+        """
         return self.exporter.onnxInference(inputs, path)
 
     def exportReport(self, name = 'net', model_folder = None):
