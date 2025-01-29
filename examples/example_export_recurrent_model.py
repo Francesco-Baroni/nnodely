@@ -262,18 +262,18 @@ elif example == 6:
     sum_rel.closedLoop(velocity)
     # Create neural network output
     out1 = Output('accelleration', sum_rel)
-    out2 = Output('velout', velocity.last())
+    out2 = Output('velout', altitude.sw(2))
 
     # Add the neural model to the nnodely structure and neuralization of the model
     vehicle.addModel('acc',[out1,out2])
     vehicle.addMinimize('acc_error', acc.last(), out1, loss_function='rmse')
     vehicle.neuralizeModel(0.05)
 
-    data = {'vel':np.random.rand(1,1), 'brk':np.random.rand(25,1), 'gear':np.random.rand(1,1), 'trq':np.random.rand(25,1), 'alt':np.random.rand(1,21), 'acc':np.random.rand(1,1)}
+    data = {'vel':np.random.rand(1,1), 'brk':np.random.rand(25,1), 'gear':np.random.rand(1,1), 'trq':np.random.rand(25,1), 'alt':np.random.rand(2,21), 'acc':np.random.rand(1,1)}
     inference = vehicle(data)
 
     ## Export the Onnx Model
     vehicle.exportONNX(['brk','gear','trq','alt','vel'],['accelleration','velout'])
 
-    data = {'vel':np.random.rand(3,1,1).astype(np.float32), 'brk':np.random.rand(5,3,25,1).astype(np.float32), 'gear':np.random.rand(5,3,1,1).astype(np.float32), 'trq':np.random.rand(5,3,25,1).astype(np.float32), 'alt':np.random.rand(5,3,1,21).astype(np.float32)}
+    data = {'vel':np.random.rand(3,1,1).astype(np.float32), 'brk':np.random.rand(5,3,25,1).astype(np.float32), 'gear':np.random.rand(5,3,1,1).astype(np.float32), 'trq':np.random.rand(5,3,25,1).astype(np.float32), 'alt':np.random.rand(5,3,2,21).astype(np.float32)}
     print(Modely().onnxInference(data,'results/onnx/net.onnx'))

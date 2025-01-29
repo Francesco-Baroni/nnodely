@@ -255,7 +255,7 @@ def export_pythononnx_model(model_def, input_order, outputs_order, model_path, m
     # Define the mapping dictionary output
     outputs = '        return ('
     for i, key in enumerate(outputs_order):
-        outputs += f'outputs[0][\'{key}\']' + (',' if i < len(outputs_order) - 1 else ')')
+        outputs += f'outputs[0][\'{key}\']' + (',' if i < len(outputs_order) - 1 else ',)')
     outputs += ', ('
     for key in closed_loop_states:
         outputs += f'outputs[2][\'{key}\'], '
@@ -318,11 +318,11 @@ def export_pythononnx_model(model_def, input_order, outputs_order, model_path, m
                 call_str += f"{key}[idx], " if key in inputs else f"{key}, "
             call_str += ")\n"
             file.write(call_str)
-            if len(outputs_order) > 1:
-                for idx, key in enumerate(outputs_order):
-                    file.write(f"            results_{key}.append(out[{idx}])\n")
-            else:
-                file.write(f"            results_{outputs_order[0]}.append(out)\n")
+            #if len(outputs_order) > 1:
+            for idx, key in enumerate(outputs_order):
+                file.write(f"            results_{key}.append(out[{idx}])\n")
+            #else:
+            #    file.write(f"            results_{outputs_order[0]}.append(out)\n")
             for idx, key in enumerate(closed_loop_states):
                 file.write(f"            shift = closed_loop[{idx}].size(1)\n")
                 file.write(f"            {key} = nnodely_model_connect({key}, closed_loop[{idx}], shift)\n")

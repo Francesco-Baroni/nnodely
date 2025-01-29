@@ -514,6 +514,177 @@ class ModelyExportTest(unittest.TestCase):
         outputs = Modely().onnxInference(sample, onnx_model_path)
         self.assertEqual(outputs[0][0][0].tolist(), model_inference['accelleration'])
 
+    def test_export_python_module_recurrent(self):
+        test = Modely(visualizer=None, seed=42, workspace=os.path.join(os.getcwd(), 'results'))
+        input1 = Input('input1')
+        input2 = Input('input2', dimensions=3)
+        input3 = Input('input3')
+        input4 = Input('input4', dimensions=3)
+        state1 = State('state1')
+        state2 = State('state2', dimensions=3)
+
+        rel_1 = Linear(b=True)(input1.last()) + Linear(b=True)(input3.last())
+        rel_1.closedLoop(state1)
+
+        rel_2 = Linear(output_dimension=3, b=True)(input2.last()) + Linear(output_dimension=3, b=True)(input4.last())
+        rel_2.closedLoop(state2)
+
+        out1 = Output('out1', rel_1)
+        out2 = Output('out2', rel_2)
+        out3 = Output('input1', input1.last())
+        out4 = Output('input2', input2.last())
+        out5 = Output('input3', input3.sw(4))
+        out6 = Output('input4', input4.sw(4))
+        out7 = Output('state1', state1.last())
+        out8 = Output('state2', state2.last())
+
+        test.addModel('model', [out1, out2, out3, out4, out5, out6, out7, out8])
+        test.neuralizeModel()
+
+        test.exportPythonModel(name='net')
+
+        ## Load the exported model.py
+        model_folder = 'results'
+        model_filename = 'net.py'
+        model_path = os.path.join(model_folder, model_filename)
+        sys.path.insert(0, model_folder)
+        ## Import the python exported module
+        module_name = os.path.splitext(model_filename)[0]
+        module = importlib.import_module(module_name)
+        RecurrentModel = getattr(module, 'RecurrentModel')
+        recurrent_model = RecurrentModel()
+        recurrent_model.eval()
+
+        ## Without Horizon and without batch
+        recurrent_sample = {'input1': torch.rand(size=(1,1,1,1), dtype=torch.float32),
+                            'input2': torch.rand(size=(1,1,1,3), dtype=torch.float32),
+                            'input3': torch.rand(size=(1,1,4,1), dtype=torch.float32),
+                            'input4': torch.rand(size=(1,1,4,3), dtype=torch.float32)}
+        recurrent_sample['state1'] = torch.rand(size=(1,1,1), dtype=torch.float32)
+        recurrent_sample['state2'] = torch.rand(size=(1,1,3), dtype=torch.float32)
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['out1']).shape), [1,1,1,1])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['out2']).shape), [1,1,1,3])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['input1']).shape), [1,1,1,1])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['input2']).shape), [1,1,1,3])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['input3']).shape), [1,1,4,1])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['input4']).shape), [1,1,4,3])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['state1']).shape), [1,1,1,1])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['state2']).shape), [1,1,1,3])
+
+        ## With Horizon and without batch
+        recurrent_sample = {'input1': torch.rand(size=(5,1,1,1), dtype=torch.float32),
+                            'input2': torch.rand(size=(5,1,1,3), dtype=torch.float32),
+                            'input3': torch.rand(size=(5,1,4,1), dtype=torch.float32),
+                            'input4': torch.rand(size=(5,1,4,3), dtype=torch.float32)}
+        recurrent_sample['state1'] = torch.rand(size=(1,1,1), dtype=torch.float32)
+        recurrent_sample['state2'] = torch.rand(size=(1,1,3), dtype=torch.float32)
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['out1']).shape), [5,1,1,1])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['out2']).shape), [5,1,1,3])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['input1']).shape), [5,1,1,1])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['input2']).shape), [5,1,1,3])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['input3']).shape), [5,1,4,1])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['input4']).shape), [5,1,4,3])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['state1']).shape), [5,1,1,1])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['state2']).shape), [5,1,1,3])
+
+        ## With Horizon and with batch
+        recurrent_sample = {'input1': torch.rand(size=(5,2,1,1), dtype=torch.float32),
+                            'input2': torch.rand(size=(5,2,1,3), dtype=torch.float32),
+                            'input3': torch.rand(size=(5,2,4,1), dtype=torch.float32),
+                            'input4': torch.rand(size=(5,2,4,3), dtype=torch.float32)}
+        recurrent_sample['state1'] = torch.rand(size=(2,1,1), dtype=torch.float32)
+        recurrent_sample['state2'] = torch.rand(size=(2,1,3), dtype=torch.float32)
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['out1']).shape), [5,2,1,1])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['out2']).shape), [5,2,1,3])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['input1']).shape), [5,2,1,1])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['input2']).shape), [5,2,1,3])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['input3']).shape), [5,2,4,1])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['input4']).shape), [5,2,4,3])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['state1']).shape), [5,2,1,1])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['state2']).shape), [5,2,1,3])
+
+    def test_export_onnx_module_recurrent(self):
+        test = Modely(visualizer=None, seed=42, workspace=os.path.join(os.getcwd(), 'results'))
+        onnx_model_path = os.path.join('results', 'onnx', 'net.onnx')
+        input1 = Input('input1')
+        input2 = Input('input2', dimensions=3)
+        input3 = Input('input3')
+        input4 = Input('input4', dimensions=3)
+        state1 = State('state1')
+        state2 = State('state2', dimensions=3)
+
+        rel_1 = Linear(b=True)(input1.last()) + Linear(b=True)(input3.last())
+        rel_1.closedLoop(state1)
+
+        rel_2 = Linear(output_dimension=3, b=True)(input2.last()) + Linear(output_dimension=3, b=True)(input4.last())
+        rel_2.closedLoop(state2)
+
+        out1 = Output('out1', rel_1)
+        out2 = Output('out2', rel_2)
+        out3 = Output('out_input1', input1.last())
+        out4 = Output('out_input2', input2.last())
+        out5 = Output('out_input3', input3.sw(4))
+        out6 = Output('out_input4', input4.sw(4))
+        out7 = Output('out_state1', state1.last())
+        out8 = Output('out_state2', state2.last())
+
+        test.addModel('model', [out1, out2, out3, out4, out5, out6, out7, out8])
+        test.neuralizeModel()
+
+        test.exportONNX(inputs_order=['input1','input2','input3','input4','state1','state2'],outputs_order=['out1', 'out2', 'out_input1', 'out_input2', 'out_input3', 'out_input4', 'out_state1', 'out_state2'])
+
+        ## Without Horizon and without batch
+        recurrent_sample = {'input1': np.random.rand(1,1,1,1).astype(np.float32),
+                            'input2': np.random.rand(1,1,1,3).astype(np.float32),
+                            'input3': np.random.rand(1,1,4,1).astype(np.float32),
+                            'input4': np.random.rand(1,1,4,3).astype(np.float32)}
+        recurrent_sample['state1'] = np.random.rand(1,1,1).astype(np.float32)
+        recurrent_sample['state2'] = np.random.rand(1,1,3).astype(np.float32)
+        inference = Modely().onnxInference(recurrent_sample, onnx_model_path)
+        self.assertListEqual(list(inference[0].shape), [1,1,1,1])
+        self.assertListEqual(list(inference[1].shape), [1,1,1,3])
+        self.assertListEqual(list(inference[2].shape), [1,1,1,1])
+        self.assertListEqual(list(inference[3].shape), [1,1,1,3])
+        self.assertListEqual(list(inference[4].shape), [1,1,4,1])
+        self.assertListEqual(list(inference[5].shape), [1,1,4,3])
+        self.assertListEqual(list(inference[6].shape), [1,1,1,1])
+        self.assertListEqual(list(inference[7].shape), [1,1,1,3])
+
+        ## With Horizon and without batch
+        recurrent_sample = {'input1': np.random.rand(5,1,1,1).astype(np.float32),
+                            'input2': np.random.rand(5,1,1,3).astype(np.float32),
+                            'input3': np.random.rand(5,1,4,1).astype(np.float32),
+                            'input4': np.random.rand(5,1,4,3).astype(np.float32)}
+        recurrent_sample['state1'] = np.random.rand(1,1,1).astype(np.float32)
+        recurrent_sample['state2'] = np.random.rand(1,1,3).astype(np.float32)
+        inference = Modely().onnxInference(recurrent_sample, onnx_model_path)
+        self.assertListEqual(list(inference[0].shape), [5,1,1,1])
+        self.assertListEqual(list(inference[1].shape), [5,1,1,3])
+        self.assertListEqual(list(inference[2].shape), [5,1,1,1])
+        self.assertListEqual(list(inference[3].shape), [5,1,1,3])
+        self.assertListEqual(list(inference[4].shape), [5,1,4,1])
+        self.assertListEqual(list(inference[5].shape), [5,1,4,3])
+        self.assertListEqual(list(inference[6].shape), [5,1,1,1])
+        self.assertListEqual(list(inference[7].shape), [5,1,1,3])
+
+        # ## With Horizon and with batch
+        recurrent_sample = {'input1': np.random.rand(5,2,1,1).astype(np.float32),
+                            'input2': np.random.rand(5,2,1,3).astype(np.float32),
+                            'input3': np.random.rand(5,2,4,1).astype(np.float32),
+                            'input4': np.random.rand(5,2,4,3).astype(np.float32)}
+        recurrent_sample['state1'] = np.random.rand(2,1,1).astype(np.float32)
+        recurrent_sample['state2'] = np.random.rand(2,1,3).astype(np.float32)
+        inference = Modely().onnxInference(recurrent_sample, onnx_model_path)
+        self.assertListEqual(list(inference[0].shape), [5,2,1,1])
+        self.assertListEqual(list(inference[1].shape), [5,2,1,3])
+        self.assertListEqual(list(inference[2].shape), [5,2,1,1])
+        self.assertListEqual(list(inference[3].shape), [5,2,1,3])
+        self.assertListEqual(list(inference[4].shape), [5,2,4,1])
+        self.assertListEqual(list(inference[5].shape), [5,2,4,3])
+        self.assertListEqual(list(inference[6].shape), [5,2,1,1])
+        self.assertListEqual(list(inference[7].shape), [5,2,1,3])
+        
+
     def test_export_and_import_python_module_complex_recurrent(self):
         # Create nnodely structure
         vehicle = Modely(visualizer=None, seed=2, workspace=os.path.join(os.getcwd(), 'results'))
