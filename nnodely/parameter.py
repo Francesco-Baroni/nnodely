@@ -3,8 +3,9 @@ import numpy as np
 
 from collections.abc import Callable
 
-from nnodely.relation import NeuObj, Stream
-from nnodely.utils import check, enforce_types
+from nnodely.relation import NeuObj, Stream, ToStream
+from nnodely.utils import check, enforce_types, NP_DTYPE
+
 
 def is_numpy_float(var):
     return isinstance(var, (np.float16, np.float32, np.float64))
@@ -44,7 +45,7 @@ class Constant(NeuObj, Stream):
                  sw:int|None = None):
 
         NeuObj.__init__(self, name)
-        values = np.array(values)
+        values = np.array(values, dtype=NP_DTYPE)
         shape = values.shape
         values = values.tolist()
         if len(shape) == 0:
@@ -143,7 +144,7 @@ class Parameter(NeuObj, Stream):
             # deepcopy dimention information inside Parameters
             self.json['Parameters'][self.name] = copy.deepcopy(self.dim)
         else:
-            values = np.array(values)
+            values = np.array(values, dtype=NP_DTYPE)
             shape = values.shape
             values = values.tolist()
             check(len(shape) >= 2, ValueError,
@@ -177,4 +178,30 @@ class Parameter(NeuObj, Stream):
             if init_params is not None:
                 self.json['Parameters'][self.name]['init_fun']['params'] = init_params
 
+        Stream.__init__(self, name, self.json, self.dim)
+
+class SampleTime(NeuObj, Stream, ToStream):
+    """
+    Represents a constant that value is equal to the sample time.
+
+    Attributes
+    ----------
+    name : str
+        The name of the constant.
+    dim : dict
+        A dictionary containing the dimensions of the constant.
+    json : dict
+        A dictionary containing the configuration of the constant.
+
+    Example
+    -------
+        >>> dt = SampleTime()
+    """
+    def __init__(self):
+        name = 'SampleTime'
+        NeuObj.__init__(self, name)
+        self.dim = {'dim': 1, 'sw': 1}
+        # deepcopy dimention information inside Parameters
+        self.json['Constants'][self.name] = copy.deepcopy(self.dim)
+        self.json['Constants'][self.name]['values'] = name
         Stream.__init__(self, name, self.json, self.dim)

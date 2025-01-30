@@ -11,7 +11,7 @@ from nnodely.optimizer import Optimizer, SGD, Adam
 from nnodely.exporter import Exporter, StandardExporter
 from nnodely.modeldef import ModelDef
 
-from nnodely.utils import check, argmax_max, argmin_min, tensor_to_list
+from nnodely.utils import check, argmax_dict, argmin_dict, tensor_to_list, TORCH_DTYPE, NP_DTYPE
 
 from nnodely.logger import logging, nnLogger
 log = nnLogger(__name__, logging.INFO)
@@ -81,6 +81,7 @@ class Modely:
         self.neuralized = False
         self.traced = False
         self.model = None
+        self.states = {}
 
         # Dataaset Parameters
         self.data_loaded = False
@@ -89,12 +90,13 @@ class Modely:
         self.data = {}
         self.n_datasets = 0
         self.datasets_loaded = set()
+        self.multifile = {}
 
         # Training Parameters
         self.standard_train_parameters = {
             'models' : None,
             'train_dataset' : None, 'validation_dataset' : None, 'test_dataset' : None, 'splits' : [70, 20, 10],
-            'closed_loop' : {}, 'connect' : {}, 'step' : 1, 'prediction_samples' : 0,
+            'closed_loop' : {}, 'connect' : {}, 'step' : 0, 'prediction_samples' : 0,
             'shuffle_data' : True,
             'early_stopping' : None, 'early_stopping_params' : {},
             'select_model' : 'last', 'select_model_params' : {},
@@ -138,7 +140,7 @@ class Modely:
         np.random.seed(seed)  ## set the numpy seed
 
 
-    def __call__(self, inputs = {}, sampled = False, closed_loop = {}, connect = {}, prediction_samples = 'auto', num_of_samples = 'auto'):#, align_input = False):
+    def __call__(self, inputs={}, sampled=False, closed_loop={}, connect={}, prediction_samples='auto', num_of_samples=None): ##, align_input=False):
         """
         Performs inference on the model.
 
@@ -179,6 +181,7 @@ class Modely:
             >>> model.neuralizeModel()
             >>> predictions = model(inputs={'x': [1, 2, 3]})
         """
+
         ## Copy dict for avoid python bug
         inputs = copy.deepcopy(inputs)
         closed_loop = copy.deepcopy(closed_loop)
@@ -187,172 +190,129 @@ class Modely:
         ## Check neuralize
         check(self.neuralized, RuntimeError, "The network is not neuralized.")
 
-        ## Bild the list of inputs
+        ## Check closed loop integrity
+        for close_in, close_out in closed_loop.items():
+            check(close_in in self.model_def['Inputs'], ValueError, f'the tag {close_in} is not an input variable.')
+            check(close_out in self.model_def['Outputs'], ValueError, f'the tag {close_out} is not an output of the network')
+
+        ## List of keys
         model_inputs = list(self.model_def['Inputs'].keys())
         model_states = list(self.model_def['States'].keys())
-        provided_inputs = list(inputs.keys())
-        missing_inputs = list(set(model_inputs) - set(provided_inputs)) #- set(connect.keys()))
-        extra_inputs = list(set(provided_inputs) - set(model_inputs) - set(model_states))
-        if not set(provided_inputs).issubset(set(model_inputs) | set(model_states)):
-            ## Ignoring extra inputs
-            log.warning(f'The complete model inputs are {model_inputs}, the provided input are {provided_inputs}. Ignoring {extra_inputs}...')
-            for key in extra_inputs:
-                del inputs[key]
-            provided_inputs = list(inputs.keys())
-        non_recurrent_inputs = list(set(provided_inputs) - set(closed_loop.keys()) - set(connect.keys()) - set(model_states))
-        recurrent_inputs = set(closed_loop.keys())|set(connect.keys())|set(model_states)
+        state_closed_loop = [key for key, value in self.model_def['States'].items() if 'closedLoop' in value.keys()] + list(closed_loop.keys())
+        state_connect = [key for key, value in self.model_def['States'].items() if 'connect' in value.keys()] + list(connect.keys())
+        extra_inputs = list(set(list(inputs.keys())) - set(model_inputs) - set(model_states))
+        non_mandatory_inputs = state_closed_loop + state_connect 
+        mandatory_inputs = list(set(model_inputs) - set(non_mandatory_inputs))
 
-        ## Define input windows and check closed loop and connect
-        input_windows = {}
-        for in_var, out_var in (closed_loop.items() | connect.items()):
-            check(in_var in self.model_def['Inputs'], ValueError, f'the tag {in_var} is not an input variable.')
-            check(out_var in self.model_def['Outputs'], ValueError, f'the tag {out_var} is not an output of the network')
-            if in_var in inputs.keys():
-                input_windows[in_var] = len(inputs[in_var]) if sampled else len(inputs[in_var]) - self.input_n_samples[in_var] + 1
-            else:
-                input_windows[in_var] = 1
-        for key in model_states:
-            if key in inputs.keys():
-                input_windows[key] = len(inputs[key]) if sampled else len(inputs[key]) - self.input_n_samples[key] + 1
-            else:
-                input_windows[key] = 1
+        ## Remove extra inputs
+        for key in extra_inputs:
+            log.warning(f'The provided input {key} is not used inside the network. the inference will continue without using it')
+            del inputs[key]
 
-        ## Determine the Maximal number of samples that can be created
-        if non_recurrent_inputs:
-            if sampled:
-                min_dim_ind, min_dim  = argmin_min([len(inputs[key]) for key in non_recurrent_inputs])
-                max_dim_ind, max_dim = argmax_max([len(inputs[key]) for key in non_recurrent_inputs])
-            else:
-                min_dim_ind, min_dim = argmin_min([len(inputs[key])-self.input_n_samples[key]+1 for key in non_recurrent_inputs])
-                max_dim_ind, max_dim  = argmax_max([len(inputs[key])-self.input_n_samples[key]+1 for key in non_recurrent_inputs])
-            min_din_key = non_recurrent_inputs[min_dim_ind]
-            max_din_key = non_recurrent_inputs[max_dim_ind]
-        else:
-            if recurrent_inputs:
-                #ps = 0 if prediction_samples=='auto' or prediction_samples is None else prediction_samples
-                if provided_inputs:
-                    min_dim_ind, min_dim = argmin_min([input_windows[key]  for key in provided_inputs])
-                    max_dim_ind, max_dim = argmax_max([input_windows[key]  for key in provided_inputs])
-                    min_din_key = provided_inputs[min_dim_ind]
-                    max_din_key = provided_inputs[max_dim_ind]
+        ## Get the number of data windows for each input/state
+        num_of_windows = {key: len(value) for key, value in inputs.items()} if sampled else {key: len(value) - self.input_n_samples[key] + 1 for key, value in inputs.items()}
+
+        ## Get the maximum inference window
+        if num_of_samples:
+            window_dim = num_of_samples
+            for key in inputs.keys():
+                input_dim = self.model_def['Inputs'][key]['dim'] if key in model_inputs else self.model_def['States'][key]['dim']
+                if input_dim > 1:
+                    inputs[key] += [[0 for _ in range(input_dim)] for _ in range(num_of_samples - (len(inputs[key]) - self.input_n_samples[key] + 1))]
                 else:
-                    min_dim = max_dim =  1
-            else:
-                min_dim = max_dim = 0
+                    inputs[key] += [0 for _ in range(num_of_samples - (len(inputs[key]) - self.input_n_samples[key] + 1))]
+        elif inputs:
+            windows = []
+            for key in inputs.keys():
+                if key in mandatory_inputs:
+                    n_samples = len(inputs[key]) if sampled else len(inputs[key]) - self.model_def['Inputs'][key]['ntot'] + 1
+                    windows.append(n_samples)
+            if not windows:
+                for key in inputs.keys():
+                    if key in non_mandatory_inputs:
+                        if key in model_inputs:
+                            n_samples = len(inputs[key]) if sampled else len(inputs[key]) - self.model_def['Inputs'][key]['ntot'] + 1
+                        else:
+                            n_samples = len(inputs[key]) if sampled else len(inputs[key]) - self.model_def['States'][key]['ntot'] + 1
+                        windows.append(n_samples)
+            window_dim = min(windows) if windows else 0
+        else: ## No inputs
+            window_dim = 1 if non_mandatory_inputs else 0
+        check(window_dim > 0, StopIteration, f'Missing samples in the input window')
 
-        ## Define the number of samples
-        if num_of_samples != 'auto':
-            window_dim = min_dim = max_dim = num_of_samples
-        else:
-            # Use the minimum number of input samples if the net is not autonoma otherwise the minimum number of state samples
-            window_dim = min_dim
-        check(window_dim > 0, StopIteration, f'Missing at least {abs(min_dim)+1} samples in the input window')
+        if len(set(num_of_windows.values())) > 1:
+            max_ind_key, max_dim = argmax_dict(num_of_windows)
+            min_ind_key, min_dim = argmin_dict(num_of_windows)
+            log.warning(f'Different number of samples between inputs [MAX {num_of_windows[max_ind_key]} = {max_dim}; MIN {num_of_windows[min_ind_key]} = {min_dim}]')
 
         ## Autofill the missing inputs
+        provided_inputs = list(inputs.keys())
+        missing_inputs = list(set(mandatory_inputs) - set(provided_inputs))
         if missing_inputs:
             log.warning(f'Inputs not provided: {missing_inputs}. Autofilling with zeros..')
             for key in missing_inputs:
-                inputs[key] = np.zeros(
-                    shape=(self.input_n_samples[key] + window_dim - 1, self.model_def['Inputs'][key]['dim']),
-                    dtype=np.float32).tolist()
+                inputs[key] = np.zeros(shape=(self.input_n_samples[key] + window_dim - 1, self.model_def['Inputs'][key]['dim']),dtype=NP_DTYPE).tolist()
 
-        n_samples_input = {}
-        for key in inputs.keys():
-            if key in missing_inputs:
-                n_samples_input[key] = 1
-            else:
-                n_samples_input[key] = len(inputs[key]) if sampled else len(inputs[key]) - self.input_n_samples[key] + 1
+        ## Transform inputs in 3D Tensors
+        for key, val in inputs.items():
+            input_dim = self.model_def['Inputs'][key]['dim'] if key in model_inputs else self.model_def['States'][key]['dim']
+            inputs[key] = torch.from_numpy(np.array(inputs[key])).to(TORCH_DTYPE)
 
-        # Vettore di input
-        if num_of_samples != 'auto':
-            for key in inputs.keys():
-                if key in model_inputs:
-                    input_dim = self.model_def['Inputs'][key]['dim']
-                elif key in model_states:
-                    input_dim = self.model_def['States'][key]['dim']
-                if input_dim > 1:
-                    inputs[key] += [[0 for val in range(input_dim)] for val in
-                                    range(num_of_samples - (len(inputs[key]) - self.input_n_samples[key] + 1))]
-                else:
-                    inputs[key] += [0 for val in range(num_of_samples - (len(inputs[key]) - self.input_n_samples[key] + 1))]
-                #n_samples_input[key] = num_of_samples
+            if input_dim > 1:
+                correct_dim = 3 if sampled else 2
+                check(len(inputs[key].shape) == correct_dim, ValueError,f'The input {key} must have {correct_dim} dimensions')
+                check(inputs[key].shape[correct_dim - 1] == input_dim, ValueError,f'The second dimension of the input "{key}" must be equal to {input_dim}')
 
-        ## Warning the users about different time windows between samples
-        if min_dim != max_dim:
-            log.warning(f'Different number of samples between inputs [MAX {max_din_key} = {max_dim}; MIN {min_din_key} = {min_dim}]')
+            if input_dim == 1 and inputs[key].shape[-1] != 1: ## add the input dimension
+                inputs[key] = inputs[key].unsqueeze(-1)
+            if inputs[key].ndim <= 1: ## add the batch dimension
+                inputs[key] = inputs[key].unsqueeze(0)
+            if inputs[key].ndim <= 2: ## add the time dimension
+                inputs[key] = inputs[key].unsqueeze(0)
 
-        result_dict = {} ## initialize the resulting dictionary
+        ## initialize the resulting dictionary
+        result_dict = {}
         for key in self.model_def['Outputs'].keys():
             result_dict[key] = []
 
-        ## Initialize the state variables
-        if prediction_samples == None:
-            # If the prediction sample is None the connection are removed
-            self.model.init_states({}, connect = connect)
-        else:
-            self.model.init_states(self.model_def['States'], connect = connect, reset_states = False)
-
-        ## Cycle through all the samples provided
+        ## Inference
         with torch.inference_mode():
+            self.model.eval()
+            ## Update with virtual states
+            if prediction_samples is not None:
+                self.model.update(closed_loop=closed_loop, connect=connect)
+            else:
+                prediction_samples = 0
             X = {}
-            for i in range(window_dim):
-                for key, val in inputs.items():
-                    # If the prediction sample is None take the input
-                    # If the prediction sample is auto and the sample is less than the available samples take the input
-                    # Every prediction sample take the input
-                    # Otherwise if the key is a state or a connect or a closed_loop variable keep the same input
-                    # If the key is a state or connect input remove the input
-                    if not (prediction_samples is None \
-                        or ((prediction_samples is not None and prediction_samples != 'auto') and i % (prediction_samples + 1) == 0) \
-                        or (prediction_samples == 'auto' and i < n_samples_input[key])):
-                        if key in (closed_loop|connect).keys() or key in model_states:
-                            if (key in model_states or key in connect.keys()) and key in X.keys():
-                                del X[key]
-                            continue
-                    X[key] = torch.from_numpy(np.array(val[i])).to(torch.float32) if sampled else torch.from_numpy(
-                        np.array(val[i:i + self.input_n_samples[key]])).to(torch.float32)
-
-                    if key in model_inputs:
-                        input_dim = self.model_def['Inputs'][key]['dim']
-                    elif key in model_states:
-                        input_dim = self.model_def['States'][key]['dim']
-
-                    if input_dim > 1:
-                        check(len(X[key].shape) == 2, ValueError,
-                                f'The input {key} must have two dimensions')
-                        check(X[key].shape[1] == input_dim, ValueError,
-                                f'The second dimension of the input "{key}" must be equal to {input_dim}')
-
-                    if input_dim == 1 and X[key].shape[-1] != 1: ## add the input dimension
-                        X[key] = X[key].unsqueeze(-1)
-                    if X[key].ndim <= 1: ## add the batch dimension
-                        X[key] = X[key].unsqueeze(0)
-                    if X[key].ndim <= 2: ## add the time dimension
-                        X[key] = X[key].unsqueeze(0)
-
-                ## Reset the state variable
-                if  prediction_samples is None:
-                    ## If prediction sample is None the state is reset every step
-                    self.model.reset_states(X, only=False)
-                    self.model.reset_connect_variables(connect, X, only=False)
-                elif prediction_samples == 'auto':
-                    ## If prediction sample is auto is reset with the available samples
-                    self.model.reset_states(X)
-                    self.model.reset_connect_variables(connect, X)
+            count = 0
+            first = True
+            for idx in range(window_dim):
+                ## Get mandatory data inputs
+                for key in mandatory_inputs:
+                    X[key] = inputs[key][idx:idx+1] if sampled else inputs[key][:, idx:idx + self.input_n_samples[key]]
+                ## reset states
+                if count == 0 or prediction_samples=='auto':
+                    count = prediction_samples
+                    for key in non_mandatory_inputs: ## Get non mandatory data (from inputs, from states, or with zeros)
+                        ## if prediction_samples is 'auto' and i have enough samples
+                        ## if prediction_samples is NOT 'auto' but i have enough extended window (with zeros)
+                        if (key in inputs.keys() and prediction_samples == 'auto' and idx < num_of_windows[key]) or (key in inputs.keys() and prediction_samples != 'auto' and idx < inputs[key].shape[1]):
+                            X[key] = inputs[key][idx:idx+1].clone() if sampled else inputs[key][:, idx:idx + self.input_n_samples[key]].clone()
+                        ## if im in the first reset
+                        ## if i have a state in memory
+                        ## if i have prediction_samples = 'auto' and not enough samples
+                        elif (key in self.states.keys() and (first or prediction_samples == 'auto')) and (prediction_samples == 'auto' or prediction_samples == None):
+                            X[key] = self.states[key]
+                        else: ## if i have no samples and no states
+                            window_size = self.input_n_samples[key]
+                            dim = self.model_def['Inputs'][key]['dim'] if key in model_inputs else self.model_def['States'][key]['dim']
+                            X[key] = torch.zeros(size=(1, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
+                            self.states[key] = X[key]
+                    first = False
                 else:
-                    ## Otherwise the variable are reset every prediction samples
-                    if i%(prediction_samples+1) == 0:
-                        self.model.reset_states(X, only=False)
-                        self.model.reset_connect_variables(connect, X, only=False)
-
-                result, _ = self.model(X)
-
-                ## Update the recurrent variable
-                for close_in, out_var in closed_loop.items():
-                    #if i >= input_windows[close_in]-1:
-                    shift = result[out_var].shape[1]  ## take the output time dimension
-                    X[close_in] = torch.roll(X[close_in], shifts=-1, dims=1) ## Roll the time window
-                    X[close_in][:, -shift:, :] = result[out_var] ## substitute with the predicted value
+                    count -= 1
+                ## Forward pass
+                result, _, out_closed_loop, out_connect = self.model(X)
 
                 ## Append the prediction of the current sample to the result dictionary
                 for key in self.model_def['Outputs'].keys():
@@ -362,6 +322,22 @@ class Modely:
                             result[key] = result[key].squeeze(-1)
                     result_dict[key].append(result[key].detach().squeeze(dim=0).tolist())
 
+                ## Update closed_loop and connect
+                if prediction_samples:
+                    for key, val in out_closed_loop.items():
+                        shift = val.shape[1]  ## take the output time dimension
+                        X[key] = torch.roll(X[key], shifts=-1, dims=1) ## Roll the time window
+                        X[key][:, -shift:, :] = val ## substitute with the predicted value
+                        self.states[key] = X[key]
+                    for key, val in out_connect.items():
+                        X[key] = val
+                        self.states[key] = X[key]
+
+        ## Remove virtual states
+        for key in (connect.keys() | closed_loop.keys()):
+            if key in self.states.keys():
+                del self.states[key]
+        
         return result_dict
 
     def getSamples(self, dataset, index = None, window=1):
@@ -527,6 +503,19 @@ class Modely:
         """
         self.model_def.removeMinimize(name_list)
 
+    def resetStates(self, states=[], batch=1):
+        if states: ## reset only specific states
+            for key in states:
+                window_size = self.input_n_samples[key]
+                dim = self.model_def['States'][key]['dim']
+                self.states[key] = torch.zeros(size=(batch, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
+        else: ## reset all states
+            self.states = {}
+            for key, state in self.model_def['States'].items():
+                window_size = self.input_n_samples[key]
+                dim = state['dim']
+                self.states[key] = torch.zeros(size=(batch, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
+
     def neuralizeModel(self, sample_time = None, clear_model = False, model_def = None):
         """
         Neuralizes the model, preparing it for inference and training. This method creates a neural network model starting from the model definition.
@@ -572,6 +561,9 @@ class Modely:
         for key, value in (self.model_def['Inputs'] | self.model_def['States']).items():
             self.input_n_samples[key] = input_ns_backward[key] + input_ns_forward[key]
         self.max_n_samples = max(input_ns_backward.values()) + max(input_ns_forward.values())
+
+        ## Initialize States 
+        self.resetStates()
 
         self.neuralized = True
         self.traced = False
@@ -677,6 +669,8 @@ class Modely:
                 check(False,StopIteration, f'ERROR: The path "{source}" does not exist!')
                 return
             self.file_count = len(files)
+            if self.file_count > 1: ## Multifile
+                self.multifile[name] = []
 
             ## Cycle through all the files
             for file in files:
@@ -686,6 +680,8 @@ class Modely:
                 except:
                     log.warning(f'Cannot read file {os.path.join(source,file)}')
                     continue
+                if self.file_count > 1:
+                    self.multifile[name].append((self.multifile[name][-1] + (len(df) - max_n_samples + 1)) if self.multifile[name] else len(df) - max_n_samples + 1)
                 ## Cycle through all the windows
                 for key, idxs in format_idx.items():
                     back, forw = input_ns_backward[key], input_ns_forward[key]
@@ -796,19 +792,6 @@ class Modely:
                 self.data[dataset_name][key] = np.delete(self.data[dataset_name][key], idx_to_remove, axis=0)
                 self.num_of_samples[dataset_name] = self.data[dataset_name][key].shape[0]
             self.visualizer.showDataset(name=dataset_name)
-
-    def resetStates(self, values = None, only = True):
-        """
-        Resets the memory of all the State variables of the neural network.
-
-        Example
-        -------
-        Example usage:
-            >>> model = Modely()
-            >>> model.resetStates()
-        """
-        self.model.init_states(self.model_def['States'], reset_states=False)
-        self.model.reset_states(values, only)
 
     def __save_internal(self, key, value):
         self.internals[key] = tensor_to_list(value)
@@ -1092,6 +1075,7 @@ class Modely:
 
             ## Get the dataset name
             dataset = list(self.data.keys())[0] ## take the dataset name
+            train_dataset_name = val_dataset_name = test_dataset_name = dataset
 
             ## Collect the split sizes
             train_size = splits[0] / 100.0
@@ -1099,24 +1083,28 @@ class Modely:
             test_size = 1 - (train_size + val_size)
             num_of_samples = self.num_of_samples[dataset]
             n_samples_train = round(num_of_samples*train_size)
-            n_samples_val = round(num_of_samples*val_size)
-            n_samples_test = round(num_of_samples*test_size)
+            if splits[1] == 0:
+                n_samples_test = num_of_samples-n_samples_train
+                n_samples_val = 0
+            else:
+                n_samples_test = round(num_of_samples*test_size)
+                n_samples_val = num_of_samples-n_samples_train-n_samples_test
 
             ## Split into train, validation and test
             XY_train, XY_val, XY_test = {}, {}, {}
             for key, samples in self.data[dataset].items():
                 if val_size == 0.0 and test_size == 0.0: ## we have only training set
-                    XY_train[key] = torch.from_numpy(samples).to(torch.float32)
+                    XY_train[key] = torch.from_numpy(samples).to(TORCH_DTYPE)
                 elif val_size == 0.0 and test_size != 0.0: ## we have only training and test set
-                    XY_train[key] = torch.from_numpy(samples[:n_samples_train]).to(torch.float32)
-                    XY_test[key] = torch.from_numpy(samples[n_samples_train:]).to(torch.float32)
+                    XY_train[key] = torch.from_numpy(samples[:n_samples_train]).to(TORCH_DTYPE)
+                    XY_test[key] = torch.from_numpy(samples[n_samples_train:]).to(TORCH_DTYPE)
                 elif val_size != 0.0 and test_size == 0.0: ## we have only training and validation set
-                    XY_train[key] = torch.from_numpy(samples[:n_samples_train]).to(torch.float32)
-                    XY_val[key] = torch.from_numpy(samples[n_samples_train:]).to(torch.float32)
+                    XY_train[key] = torch.from_numpy(samples[:n_samples_train]).to(TORCH_DTYPE)
+                    XY_val[key] = torch.from_numpy(samples[n_samples_train:]).to(TORCH_DTYPE)
                 else: ## we have training, validation and test set
-                    XY_train[key] = torch.from_numpy(samples[:n_samples_train]).to(torch.float32)
-                    XY_val[key] = torch.from_numpy(samples[n_samples_train:-n_samples_test]).to(torch.float32)
-                    XY_test[key] = torch.from_numpy(samples[n_samples_train+n_samples_val:]).to(torch.float32)
+                    XY_train[key] = torch.from_numpy(samples[:n_samples_train]).to(TORCH_DTYPE)
+                    XY_val[key] = torch.from_numpy(samples[n_samples_train:-n_samples_test]).to(TORCH_DTYPE)
+                    XY_test[key] = torch.from_numpy(samples[n_samples_train+n_samples_val:]).to(TORCH_DTYPE)
 
             ## Set name for resultsAnalysis
             train_dataset = self.__get_parameter(train_dataset = f"train_{dataset}_{train_size:0.2f}")
@@ -1127,6 +1115,7 @@ class Modely:
             datasets = list(self.data.keys())
             validation_dataset = self.__get_parameter(validation_dataset=validation_dataset)
             test_dataset = self.__get_parameter(test_dataset=test_dataset)
+            train_dataset_name, val_dataset_name, test_dataset_name = train_dataset, validation_dataset, test_dataset
 
             ## Collect the number of samples for each dataset
             n_samples_train, n_samples_val, n_samples_test = 0, 0, 0
@@ -1140,13 +1129,13 @@ class Modely:
             ## Split into train, validation and test
             XY_train, XY_val, XY_test = {}, {}, {}
             n_samples_train = self.num_of_samples[train_dataset]
-            XY_train = {key: torch.from_numpy(val).to(torch.float32) for key, val in self.data[train_dataset].items()}
+            XY_train = {key: torch.from_numpy(val).to(TORCH_DTYPE) for key, val in self.data[train_dataset].items()}
             if validation_dataset in datasets:
                 n_samples_val = self.num_of_samples[validation_dataset]
-                XY_val = {key: torch.from_numpy(val).to(torch.float32) for key, val in self.data[validation_dataset].items()}
+                XY_val = {key: torch.from_numpy(val).to(TORCH_DTYPE) for key, val in self.data[validation_dataset].items()}
             if test_dataset in datasets:
                 n_samples_test = self.num_of_samples[test_dataset]
-                XY_test = {key: torch.from_numpy(val).to(torch.float32) for key, val in self.data[test_dataset].items()}
+                XY_test = {key: torch.from_numpy(val).to(TORCH_DTYPE) for key, val in self.data[test_dataset].items()}
 
         for key in XY_train.keys():
             assert n_samples_train == XY_train[key].shape[0], f'The number of train samples {n_samples_train}!={XY_train[key].shape[0]} not compliant.'
@@ -1217,10 +1206,10 @@ class Modely:
 
         # Evaluate the number of update for epochs and the unsued samples
         if recurrent_train:
-            list_of_batch_indexes = range(0, (n_samples_train - train_batch_size - prediction_samples + 1), (train_batch_size + step - 1))
+            list_of_batch_indexes = range(0, (n_samples_train - train_batch_size - prediction_samples + 1), (train_batch_size + step))
             check(n_samples_train - train_batch_size - prediction_samples + 1 > 0, ValueError,
                   f"The number of available sample are (n_samples_train ({n_samples_train}) - train_batch_size ({train_batch_size}) - prediction_samples ({prediction_samples}) + 1) = {n_samples_train - train_batch_size - prediction_samples + 1}.")
-            update_per_epochs = (n_samples_train - train_batch_size - prediction_samples + 1)//(train_batch_size + step - 1) + 1
+            update_per_epochs = (n_samples_train - train_batch_size - prediction_samples + 1)//(train_batch_size + step) + 1
             unused_samples = n_samples_train - list_of_batch_indexes[-1] - train_batch_size - prediction_samples
         else:
             update_per_epochs =  (n_samples_train - train_batch_size)/train_batch_size + 1
@@ -1246,9 +1235,9 @@ class Modely:
             ## TRAIN
             self.model.train()
             if recurrent_train:
-                losses = self.__recurrentTrain(XY_train, n_samples_train, train_batch_size, minimize_gain, closed_loop, connect, prediction_samples, step, shuffle=shuffle_data, train=True)
+                losses = self.__recurrentTrain(XY_train, n_samples_train, train_dataset_name, train_batch_size, minimize_gain, closed_loop, connect, prediction_samples, step, shuffle=shuffle_data, train=True)
             else:
-                losses = self.__Train(XY_train,n_samples_train, train_batch_size, minimize_gain, shuffle=shuffle_data, train=True)
+                losses = self.__Train(XY_train, n_samples_train, train_batch_size, minimize_gain, shuffle=shuffle_data, train=True)
             ## save the losses
             for ind, key in enumerate(self.model_def['Minimizers'].keys()):
                 train_losses[key].append(torch.mean(losses[ind]).tolist())
@@ -1257,7 +1246,7 @@ class Modely:
                 ## VALIDATION
                 self.model.eval()
                 if recurrent_train:
-                    losses = self.__recurrentTrain(XY_val, n_samples_val, val_batch_size, minimize_gain, closed_loop, connect, prediction_samples, step, shuffle=False, train=False)
+                    losses = self.__recurrentTrain(XY_val, n_samples_val, val_dataset_name, val_batch_size, minimize_gain, closed_loop, connect, prediction_samples, step, shuffle=False, train=False)
                 else:
                     losses = self.__Train(XY_val, n_samples_val, val_batch_size, minimize_gain, shuffle=False, train=False)
                 ## save the losses
@@ -1307,44 +1296,70 @@ class Modely:
         ## Get trained model from torch and set the model_def
         self.model_def.updateParameters(self.model)
 
-    def __recurrentTrain(self, data, n_samples, batch_size, loss_gains, closed_loop, connect, prediction_samples, step, shuffle=True, train=True):
-        ## Sample Shuffle
-        initial_value = 0 #random.randint(0, step - 1) if shuffle else 0
+    def __recurrentTrain(self, data, n_samples, dataset_name, batch_size, loss_gains, closed_loop, connect, prediction_samples, step, shuffle=False, train=True):
+        model_inputs = list(self.model_def['Inputs'].keys())
+        state_closed_loop = [key for key, value in self.model_def['States'].items() if 'closedLoop' in value.keys()] + list(closed_loop.keys())
+        state_connect = [key for key, value in self.model_def['States'].items() if 'connect' in value.keys()] + list(connect.keys())
+        non_mandatory_inputs = state_closed_loop + state_connect 
+        mandatory_inputs = list(set(model_inputs) - set(non_mandatory_inputs))
 
-        n_available_samples = n_samples - batch_size - prediction_samples + 1
-        check(n_available_samples > 0, ValueError, f"The number of available sample are (n_samples_train - train_batch_size - prediction_samples + 1) = {n_available_samples}.")
-        list_of_batch_indexes = range(initial_value, n_available_samples, (batch_size + step - 1))
+        n_available_samples = n_samples - prediction_samples 
+        list_of_batch_indexes = list(range(n_available_samples))
 
-        ## Initialize the train losses vector
-        aux_losses = torch.zeros([len(self.model_def['Minimizers']), len(list_of_batch_indexes)])
+        ## Remove forbidden indexes in case of a multi-file dataset
+        if dataset_name in self.multifile.keys(): ## Multi-file Dataset
+            if n_samples == self.run_training_params['n_samples_train']: ## Training
+                start_idx, end_idx = 0, n_samples
+            elif n_samples == self.run_training_params['n_samples_val']: ## Validation
+                start_idx, end_idx = self.run_training_params['n_samples_train'], self.run_training_params['n_samples_train'] + n_samples
+            else: ## Test
+                start_idx, end_idx = self.run_training_params['n_samples_train'] + self.run_training_params['n_samples_val'], self.run_training_params['n_samples_train'] + self.run_training_params['n_samples_val'] + n_samples
+            forbidden_idxs = []
+            for i in self.multifile[dataset_name]:
+                if i < end_idx and i > start_idx:
+                    forbidden_idxs.extend(range(i-prediction_samples, i, 1))
+            list_of_batch_indexes = [idx for idx in list_of_batch_indexes if idx not in forbidden_idxs]
 
-        json_inputs = self.model_def['Inputs'] | self.model_def['States']
+        ## Loss vector 
+        check((batch_size+step)>0, ValueError, f"The batch_size+step must be greater than 0.")
+        aux_losses = torch.zeros([len(self.model_def['Minimizers']), round(len(list_of_batch_indexes)/(batch_size+step))])
 
-        ## +1 means that n_samples = 1 - batch_size = 1 - prediction_samples = 1 + 1 = 0 # zero epochs
-        ## +1 means that n_samples = 2 - batch_size = 1 - prediction_samples = 1 + 1 = 1 # one epochs
-        for batch_val, idx in enumerate(list_of_batch_indexes):
+        ## Update with virtual states
+        self.model.update(closed_loop=closed_loop, connect=connect)
+        X = {}
+        batch_val = 0
+        while len(list_of_batch_indexes) >= batch_size:
+            idxs = random.sample(list_of_batch_indexes, batch_size) if shuffle else list_of_batch_indexes[:batch_size]
+            for num in idxs:
+                list_of_batch_indexes.remove(num)
+            if step > 0:
+                if len(list_of_batch_indexes) >= step:
+                    step_idxs = random.sample(list_of_batch_indexes, step) if shuffle else list_of_batch_indexes[:step]
+                    for num in step_idxs:
+                        list_of_batch_indexes.remove(num)
             if train:
                 self.optimizer.zero_grad() ## Reset the gradient
-
-            ## Build the input tensor
-            XY = {key: val[idx:idx+batch_size] for key, val in data.items()}
-            # Add missing inputs
-            for key in closed_loop:
-                if key not in XY:
-                    XY[key] = torch.zeros([batch_size, json_inputs[key]['ntot'], json_inputs[key]['dim']]).to(torch.float32)
-
-            ## collect the horizon labels
-            XY_horizon = {key: val[idx:idx+batch_size+prediction_samples] for key, val in data.items()}
+            ## Reset 
             horizon_losses = {ind: [] for ind in range(len(self.model_def['Minimizers']))}
-
-            ## Reset state variables with zeros or using inputs
-            self.model.reset_states(XY, only = False)
-            self.model.reset_connect_variables(connect, XY, only= False)
+            for key in non_mandatory_inputs:
+                if key in data.keys():
+                ## with data
+                    X[key] = data[key][idxs]
+                else: ## with zeros
+                    window_size = self.input_n_samples[key]
+                    dim = self.model_def['Inputs'][key]['dim'] if key in model_inputs else self.model_def['States'][key]['dim']
+                    X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
+                    self.states[key] = X[key]
 
             for horizon_idx in range(prediction_samples + 1):
-                out, minimize_out = self.model(XY)  ## Forward pass
-                if self.log_internal:
-                    self.__save_internal('inout_'+str(idx)+'_'+str(horizon_idx),{'XY':XY,'out':out,'state':self.model.states,'param':self.model.all_parameters,'connect':self.model.connect_variables})
+                ## Get data 
+                for key in mandatory_inputs:
+                    X[key] = data[key][[idx+horizon_idx for idx in idxs]]
+                ## Forward pass
+                out, minimize_out, out_closed_loop, out_connect = self.model(X)
+
+                if self.log_internal and train:
+                    internals_dict = {'XY':tensor_to_list(X),'out':out,'param':self.model.all_parameters,'closedLoop':self.model.closed_loop_update,'connect':self.model.connect_update}
 
                 ## Loss Calculation
                 for ind, (key, value) in enumerate(self.model_def['Minimizers'].items()):
@@ -1352,23 +1367,19 @@ class Modely:
                     loss = (loss * loss_gains[key]) if key in loss_gains.keys() else loss  ## Multiply by the gain if necessary
                     horizon_losses[ind].append(loss)
 
-                ## remove the states variables from the data
-                if prediction_samples > 1:
-                    for state_key in self.model_def['States'].keys():
-                        if state_key in XY.keys():
-                            del XY[state_key]
+                ## Update
+                for key, val in out_closed_loop.items():
+                    shift = val.shape[1]  ## take the output time dimension
+                    X[key] = torch.roll(X[key], shifts=-1, dims=1) ## Roll the time window
+                    X[key][:, -shift:, :] = val ## substitute with the predicted value
+                    self.states[key] = X[key].clone()
+                for key, value in out_connect.items():
+                    X[key] = value
+                    self.states[key] = X[key].clone()
 
-                ## Update the input with the recurrent prediction
-                if horizon_idx < prediction_samples:
-                    for key in XY.keys():
-                        if key in closed_loop.keys(): ## the input is recurrent
-                            shift = out[closed_loop[key]].shape[1]  ## take the output time dimension
-                            XY[key] = torch.roll(XY[key], shifts=-1, dims=1) ## Roll the time window
-                            XY[key][:, -shift:, :] = out[closed_loop[key]] ## substitute with the predicted value
-                        else: ## the input is not recurrent
-                            XY[key] = torch.roll(XY[key], shifts=-1, dims=0)  ## Roll the sample window
-                            XY[key][-1] = XY_horizon[key][batch_size+horizon_idx]  ## take the next sample from the dataset
-
+                if self.log_internal and train:
+                    internals_dict['state'] = self.states
+                    self.__save_internal('inout_'+str(batch_val)+'_'+str(horizon_idx),internals_dict)
 
             ## Calculate the total loss
             total_loss = 0
@@ -1382,6 +1393,12 @@ class Modely:
                 total_loss.backward() ## Backpropagate the error
                 self.optimizer.step()
                 self.visualizer.showWeightsInTrain(batch = batch_val)
+            batch_val += 1
+
+        ## Remove virtual states
+        for key in (connect.keys() | closed_loop.keys()):
+            if key in self.states.keys():
+                del self.states[key]
 
         ## return the losses
         return aux_losses
@@ -1401,7 +1418,7 @@ class Modely:
             if train:
                 self.optimizer.zero_grad()
             ## Model Forward
-            _, minimize_out = self.model(XY)  ## Forward pass
+            _, minimize_out, _, _ = self.model(XY)  ## Forward pass
             ## Loss Calculation
             total_loss = 0
             for ind, (key, value) in enumerate(self.model_def['Minimizers'].items()):
@@ -1418,7 +1435,7 @@ class Modely:
         ## return the losses
         return aux_losses
 
-    def resultAnalysis(self, dataset, data = None, minimize_gain = {}, closed_loop = {}, connect = {},  prediction_samples = None, step = 1, batch_size = None):
+    def resultAnalysis(self, dataset, data = None, minimize_gain = {}, closed_loop = {}, connect = {},  prediction_samples = None, step = 0, batch_size = None):
         import warnings
         with torch.inference_mode():
             ## Init model for retults analysis
@@ -1440,38 +1457,71 @@ class Modely:
 
             if data is None:
                 check(dataset in self.data.keys(), ValueError, f'The dataset {dataset} is not loaded!')
-                data = {key: torch.from_numpy(val).to(torch.float32) for key, val in self.data[dataset].items()}
+                data = {key: torch.from_numpy(val).to(TORCH_DTYPE) for key, val in self.data[dataset].items()}
             n_samples = len(data[list(data.keys())[0]])
 
             if recurrent:
-                json_inputs = self.model_def['Inputs'] | self.model_def['States']
                 batch_size = batch_size if batch_size is not None else n_samples - prediction_samples
-                initial_value = 0
+
+                model_inputs = list(self.model_def['Inputs'].keys())
+
+                state_closed_loop = [key for key, value in self.model_def['States'].items() if 'closedLoop' in value.keys()] + list(closed_loop.keys())
+                state_connect = [key for key, value in self.model_def['States'].items() if 'connect' in value.keys()] + list(connect.keys())
+
+                non_mandatory_inputs = state_closed_loop + state_connect 
+                mandatory_inputs = list(set(model_inputs) - set(non_mandatory_inputs))
 
                 for key, value in self.model_def['Minimizers'].items():
                     total_losses[key], A[key], B[key] = [], [], []
                     for horizon_idx in range(prediction_samples + 1):
                         A[key].append([])
                         B[key].append([])
+                
+                list_of_batch_indexes = list(range(n_samples - prediction_samples))
+                ## Remove forbidden indexes in case of a multi-file dataset
+                if dataset in self.multifile.keys(): ## Multi-file Dataset
+                    if n_samples == self.run_training_params['n_samples_train']: ## Training
+                        start_idx, end_idx = 0, n_samples
+                    elif n_samples == self.run_training_params['n_samples_val']: ## Validation
+                        start_idx, end_idx = self.run_training_params['n_samples_train'], self.run_training_params['n_samples_train'] + n_samples
+                    else: ## Test
+                        start_idx, end_idx = self.run_training_params['n_samples_train'] + self.run_training_params['n_samples_val'], self.run_training_params['n_samples_train'] + self.run_training_params['n_samples_val'] + n_samples
+                    forbidden_idxs = []
+                    for i in self.multifile[dataset]:
+                        if i < end_idx and i > start_idx:
+                            forbidden_idxs.extend(range(i-prediction_samples, i, 1))
+                    list_of_batch_indexes = [idx for idx in list_of_batch_indexes if idx not in forbidden_idxs]
 
-                for idx in range(initial_value, (n_samples - batch_size - prediction_samples + 1), (batch_size + step - 1)):
-                    ## Build the input tensor
-                    XY = {key: val[idx:idx + batch_size] for key, val in data.items()}
-                    # Add missing inputs
-                    for key in closed_loop:
-                        if key not in XY:
-                            XY[key] = torch.zeros([batch_size, json_inputs[key]['ntot'], json_inputs[key]['dim']]).to(
-                                torch.float32)
-                    ## collect the horizon labels
-                    XY_horizon = {key: val[idx:idx + batch_size + prediction_samples] for key, val in data.items()}
+                X = {}
+                ## Update with virtual states
+                self.model.update(closed_loop=closed_loop, connect=connect)
+                while len(list_of_batch_indexes) >= batch_size:
+                    idxs = list_of_batch_indexes[:batch_size]
+                    for num in idxs:
+                        list_of_batch_indexes.remove(num)
+                    if step > 0:
+                        if len(list_of_batch_indexes) >= step:
+                            step_idxs = list_of_batch_indexes[:step]
+                            for num in step_idxs:
+                                list_of_batch_indexes.remove(num)
+                    ## Reset 
                     horizon_losses = {key: [] for key in self.model_def['Minimizers'].keys()}
-
-                    ## Reset state variables with zeros or using inputs
-                    self.model.reset_states(XY, only=False)
-                    self.model.reset_connect_variables(connect, XY, only=False)
+                    for key in non_mandatory_inputs:
+                        if key in data.keys(): # and len(data[key]) >= (idx + self.input_n_samples[key]): 
+                        ## with data
+                            X[key] = data[key][idxs]
+                        else: ## with zeros
+                            window_size = self.input_n_samples[key]
+                            dim = self.model_def['Inputs'][key]['dim'] if key in model_inputs else self.model_def['States'][key]['dim']
+                            X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
+                            self.states[key] = X[key]
 
                     for horizon_idx in range(prediction_samples + 1):
-                        out, minimize_out = self.model(XY)  ## Forward pass
+                        ## Get data 
+                        for key in mandatory_inputs:
+                            X[key] = data[key][[idx+horizon_idx for idx in idxs]]
+                        ## Forward pass
+                        out, minimize_out, out_closed_loop, out_connect = self.model(X)
 
                         ## Loss Calculation
                         for key, value in self.model_def['Minimizers'].items():
@@ -1481,23 +1531,15 @@ class Modely:
                             loss = (loss * minimize_gain[key]) if key in minimize_gain.keys() else loss  ## Multiply by the gain if necessary
                             horizon_losses[key].append(loss)
 
-                        ## remove the states variables from the data
-                        if prediction_samples > 1:
-                            for state_key in self.model_def['States'].keys():
-                                if state_key in XY.keys():
-                                    del XY[state_key]
-
-                        ## Update the input with the recurrent prediction
-                        if horizon_idx < prediction_samples:
-                            for key in XY.keys():
-                                if key in closed_loop.keys():  ## the input is recurrent
-                                    shift = out[closed_loop[key]].shape[1]  ## take the output time dimension
-                                    XY[key] = torch.roll(XY[key], shifts=-1, dims=1)  ## Roll the time window
-                                    XY[key][:, -shift:, :] = out[closed_loop[key]]  ## substitute with the predicted value
-                                else:  ## the input is not recurrent
-                                    XY[key] = torch.roll(XY[key], shifts=-1, dims=0)  ## Roll the sample window
-                                    XY[key][-1] = XY_horizon[key][
-                                        batch_size + horizon_idx]  ## take the next sample from the dataset
+                        ## Update
+                        for key, val in out_closed_loop.items():
+                            shift = val.shape[1]  ## take the output time dimension
+                            X[key] = torch.roll(X[key], shifts=-1, dims=1) ## Roll the time window
+                            X[key][:, -shift:, :] = val ## substitute with the predicted value
+                            self.states[key] = X[key].clone()
+                        for key, value in out_connect.items():
+                            X[key] = value
+                            self.states[key] = X[key].clone()
 
                     ## Calculate the total loss
                     for key in self.model_def['Minimizers'].keys():
@@ -1520,13 +1562,9 @@ class Modely:
                 for idx in range(0, (n_samples - batch_size + 1), batch_size):
                     ## Build the input tensor
                     XY = {key: val[idx:idx + batch_size] for key, val in data.items()}
-                    if (closed_loop or connect or self.model_def['States']):
-                        ## Reset state variables with zeros or using inputs
-                        self.model.reset_states(XY, only=False)
-                        self.model.reset_connect_variables(connect, XY, only=False)
 
                     ## Model Forward
-                    _, minimize_out = self.model(XY)  ## Forward pass
+                    _, minimize_out, _, _ = self.model(XY)  ## Forward pass
                     ## Loss Calculation
                     for key, value in self.model_def['Minimizers'].items():
                         A[key].append(minimize_out[value['A']].numpy())
@@ -1580,6 +1618,11 @@ class Modely:
                 self.prediction[dataset][key] = {}
                 self.prediction[dataset][key]['A'] = A_np.tolist()
                 self.prediction[dataset][key]['B'] = B_np.tolist()
+
+            ## Remove virtual states
+            for key in (connect.keys() | closed_loop.keys()):
+                if key in self.states.keys():
+                    del self.states[key]
 
             self.performance[dataset]['total'] = {}
             self.performance[dataset]['total']['mean_error'] = np.mean([value for key,value in total_losses.items()])
@@ -1738,8 +1781,6 @@ class Modely:
 
         Raises
         ------
-        TypeError
-            If the network has state variables, which cannot be exported to Python.
         RuntimeError
             If the network has not been defined.
             If the model is traced and cannot be exported to Python.
@@ -1763,7 +1804,7 @@ class Modely:
         else:
             model_def = self.model_def
             model = self.model
-        check(model_def['States'] == {}, TypeError, "The network has state variables. The export to python is not possible.")
+        #check(model_def['States'] == {}, TypeError, "The network has state variables. The export to python is not possible.")
         check(model_def.isDefined(), RuntimeError, "The network has not been defined.")
         check(self.traced == False, RuntimeError,
                   'The model is traced and cannot be exported to Python.\n Run neuralizeModel() to recreate a standard model.')
@@ -1806,10 +1847,14 @@ class Modely:
         """
         Exports the neural network model to an ONNX file.
 
+        -----
+        .. note::
+            The input_order must contain all the inputs and states of the model in the order that you want to export them.
+
         Parameters
         ----------
         inputs_order : list
-            The order of the input variables.
+            The order of the input and state variables.
         outputs_order : list
             The order of the output variables.
         models : list or None, optional
@@ -1830,6 +1875,10 @@ class Modely:
         Example
         -------
         Example usage:
+            >>> input1 = Input('input1').last()
+            >>> input2 = Input('input2').last()
+            >>> out = Output('output1', input1+input2)
+ 
             >>> model = Modely()
             >>> model.neuralizeModel()
             >>> model.exportONNX(inputs_order=['input1', 'input2'], outputs_order=['output1'], name='example_model', model_folder='path/to/export')
@@ -1848,7 +1897,52 @@ class Modely:
         model_def.setBuildWindow(self.model_def['Info']['SampleTime'])
         model_def.updateParameters(self.model)
         model = Model(model_def.json)
+        model.update()
         self.exporter.exportONNX(model_def, model, inputs_order, outputs_order, name, model_folder)
+
+    def onnxInference(self, inputs:dict, path:str):
+        """
+        Run an inference session using an onnx model previously exported using the nnodely framework. 
+
+        -----
+        .. note:: Feed-Forward ONNX model
+            For feed-forward models, the onnx model expect all the inputs and states to have 3 dimensions. The first dimension is the batch size, the second is the time window and the third is the feature dimension.
+        .. note:: Recurrent ONNX model
+            For recurrent models, the onnx model expect all the inputs to have 4 dimensions. The first dimension is the prediction horizon, the second is the batch size, the third is the time window and the fourth is the feature dimension.
+            For recurrent models, the onnx model expect all the States to have 3 dimensions. The first dimension is the batch size, the second is the time window, the third is the feature dimension
+
+        Parameters
+        ----------
+        inputs : dict
+            A dictionary containing the input and state variables to be used to make the inference. 
+            State variables are mandatory and are used to initialize the states of the model.
+        path : str
+            The path to the ONNX file to use.
+
+        Raises
+        ------
+        RuntimeError
+            If the shape of the inputs are not equals to the ones defined in the onnx model.
+            If the batch size is not equal for all the inputs and states.
+
+        Example
+        -------
+        feed-forward Example:
+            >>> x = Input('x')
+ 
+            >>> onnx_model_path = path/to/net.onnx
+            >>> dummy_input = {'x':np.ones(shape=(3, 1, 1)).astype(np.float32)}
+            >>> predictions = Modely().onnxInference(dummy_input, onnx_model_path)
+        Recurrent Example:
+            >>> x = Input('x')
+            >>> y = State('y')
+ 
+            >>> onnx_model_path = path/to/net.onnx
+            >>> dummy_input = {'x':np.ones(shape=(3, 1, 1, 1)).astype(np.float32)
+                                'y':np.ones(shape=(1, 1, 1)).astype(np.float32)}
+            >>> predictions = Modely().onnxInference(dummy_input, onnx_model_path)
+        """
+        return self.exporter.onnxInference(inputs, path)
 
     def exportReport(self, name = 'net', model_folder = None):
         """

@@ -72,7 +72,6 @@ print('old_out: ', old_out)
 print('new_out: ', new_out)
 print('new_out_after_load: ', new_out_after_load)
 print(f'the output are equal: {old_out == new_out_after_load}')
-
 try:
     # The model can't be loaded on a new neu4mes obj because
     # the neu4mes model is needed for loading the torch model

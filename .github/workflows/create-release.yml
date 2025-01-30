@@ -118,7 +118,7 @@ jobs:
         tag: ${{ github.ref_name }}
       run: |
         echo "The branch version: $tag"
-        gh release create $tag --title "$tag" --prerelease --repo ${{ github.repository }} --notes "${{ env.TAG_MESSAGE }}"
+        gh release create $tag --title "$tag" --repo ${{ github.repository }} --notes "${{ env.TAG_MESSAGE }}"
     - name: Upload artifact signatures to GitHub Release
       env:
         GITHUB_TOKEN: ${{ github.token }}

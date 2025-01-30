@@ -1,4 +1,5 @@
 import copy, torch, inspect
+import numpy as np
 
 from pprint import pformat
 from functools import wraps
@@ -6,6 +7,9 @@ from typing import get_type_hints
 
 from nnodely.logger import logging, nnLogger
 log = nnLogger(__name__, logging.CRITICAL)
+
+TORCH_DTYPE = torch.float32
+NP_DTYPE = np.float32
 
 def enforce_types(func):
     @wraps(func)
@@ -99,3 +103,9 @@ def argmax_max(iterable):
 
 def argmin_min(iterable):
     return min(enumerate(iterable), key=lambda x: x[1])
+
+def argmax_dict(iterable: dict):
+    return max(iterable.items(), key=lambda x: x[1])
+
+def argmin_dict(iterable: dict):
+    return min(iterable.items(), key=lambda x: x[1])

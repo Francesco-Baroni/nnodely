@@ -2,7 +2,7 @@ import os, torch
 
 from nnodely.exporter.exporter import Exporter
 from nnodely.exporter.reporter import Reporter
-from nnodely.exporter.export import save_model, load_model, export_python_model, export_pythononnx_model, export_onnx_model, import_python_model, import_onnx_model
+from nnodely.exporter.export import save_model, load_model, export_python_model, export_pythononnx_model, export_onnx_model, import_python_model, import_onnx_model, onnx_inference
 from nnodely.utils import check
 
 from nnodely.logger import logging, nnLogger
@@ -67,9 +67,9 @@ class StandardExporter(Exporter):
             check(False, RuntimeError, f"The module {name} it is not found in the folder {model_folder}.\nError: {e}")
         return model
 
-    def exportONNX(self, model_def, model, inputs_order, outputs_order, name = 'net', model_folder = None, ):
-        check(set(inputs_order) == set(model_def['Inputs'].keys()), ValueError,
-              f'The inputs are not the same as the model inputs ({model_def["Inputs"].keys()}).')
+    def exportONNX(self, model_def, model, inputs_order, outputs_order, name = 'net', model_folder = None):
+        check(set(inputs_order) == set(model_def['Inputs'].keys() | model_def['States'].keys()), ValueError,
+              f'The inputs are not the same as the model inputs ({model_def["Inputs"].keys() | model_def["States"].keys()}).')
         check(set(outputs_order) == set(model_def['Outputs'].keys()), ValueError,
               f'The outputs are not the same as the model outputs ({model_def["Outputs"].keys()}).')
         file_name = name + ".py"
@@ -82,11 +82,11 @@ class StandardExporter(Exporter):
         ## Export to python file (onnx compatible)
         export_python_model(model_def, model, model_path)
         self.visualizer.exportModel('Python Torch Model', model_path)
-        export_pythononnx_model(inputs_order, outputs_order, model_path, onnx_python_model_path)
+        export_pythononnx_model(model_def, inputs_order, outputs_order, model_path, onnx_python_model_path)
         self.visualizer.exportModel('Python Onnx Torch Model', onnx_python_model_path)
         ## Export to onnx file (onnx compatible)
         model = import_python_model(file_name.replace('.py', '_onnx'), model_folder)
-        export_onnx_model(model_def, model, inputs_order, outputs_order,  onnx_model_path)
+        export_onnx_model(model_def, model, inputs_order, outputs_order,  onnx_model_path, name=name+'_onnx')
         self.visualizer.exportModel('Onnx Model', onnx_model_path)
 
     def importONNX(self, name = 'net', model_folder = None):
@@ -97,6 +97,10 @@ class StandardExporter(Exporter):
         except Exception as e:
             log.warning(f"The module {name} it is not found in the folder {model_folder}.\nError: {e}")
         return model
+    
+    def onnxInference(self, inputs, path):
+        return onnx_inference(inputs, path)
+            
 
     def exportReport(self, n4m, name = 'net', model_folder = None):
         # Combine the folder path and file name to form the complete file path

@@ -158,15 +158,19 @@ class ModelDef():
         check(self.json['Inputs'] | self.json['States'] != {}, RuntimeError, "No model is defined!")
         json_inputs = self.json['Inputs'] | self.json['States']
 
-        for key,value in self.json['States'].items():
-            check(closedloop_name in self.json['States'][key] or connect_name in self.json['States'][key],
-                  KeyError, f'Update function is missing for state {key}. Use Connect or ClosedLoop to update the state.')
+        # for key,value in self.json['States'].items():
+        #     check(closedloop_name in self.json['States'][key].keys() or connect_name in self.json['States'][key].keys(),
+        #           KeyError, f'Update function is missing for state {key}. Use Connect or ClosedLoop to update the state.')
 
         input_tw_backward, input_tw_forward, input_ns_backward, input_ns_forward = {}, {}, {}, {}
         for key, value in json_inputs.items():
             if value['sw'] == [0,0] and value['tw'] == [0,0]:
                 assert(False), f"Input {key} has no time window or sample window"
             if value['sw'] == [0, 0] and self.sample_time is not None:
+                ## check if value['tw'] is a multiple of sample_time
+                absolute_tw = abs(value['tw'][0]) + abs(value['tw'][1])
+                check(round(absolute_tw % self.sample_time) == 0, ValueError,
+                      f"Time window of input {key} is not a multiple of sample time. This network cannot be neuralized")
                 input_ns_backward[key] = round(-value['tw'][0] / self.sample_time)
                 input_ns_forward[key] = round(value['tw'][1] / self.sample_time)
             elif self.sample_time is not None:
@@ -194,11 +198,19 @@ class ModelDef():
                 if window == 'tw':
                     check(np.array(v['values']).shape[0] == v['tw']/self.sample_time, ValueError,
                       f"{k} has a different number of values for this sample time.")
+                if v['values'] == "SampleTime":
+                    v['values'] = self.sample_time
 
 
-    def updateParameters(self, model):
+    def updateParameters(self, model, recurrent=True):
         if model is not None:
             for key in self.json['Parameters'].keys():
+                # if recurrent:
+                #     if key in model.Cell.all_parameters:
+                #         self.json['Parameters'][key]['values'] = model.Cell.all_parameters[key].tolist()
+                #         if 'init_fun' in self.json['Parameters'][key]:
+                #             del self.json['Parameters'][key]['init_fun']
+                # else:
                 if key in model.all_parameters:
                     self.json['Parameters'][key]['values'] = model.all_parameters[key].tolist()
                     if 'init_fun' in self.json['Parameters'][key]:
