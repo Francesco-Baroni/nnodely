@@ -2,7 +2,7 @@ name: Coveralls
 
 on:
   push:
-    branches: [ "main", "develop"]
+    branches: [ "main", "develop" ]
   pull_request:
     branches: [ "main", "develop" ]
 
@@ -31,3 +31,8 @@ jobs:
 
     - name: Coveralls
       uses: coverallsapp/github-action@v2.3.6
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        path-to-lcov: ./coverage.xml
+        format: 'cobertura'  # Specifica il formato XML
+
