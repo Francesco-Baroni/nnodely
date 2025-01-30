@@ -1083,8 +1083,12 @@ class Modely:
             test_size = 1 - (train_size + val_size)
             num_of_samples = self.num_of_samples[dataset]
             n_samples_train = round(num_of_samples*train_size)
-            n_samples_val = round(num_of_samples*val_size)
-            n_samples_test = round(num_of_samples*test_size)
+            if splits[1] == 0:
+                n_samples_test = num_of_samples-n_samples_train
+                n_samples_val = 0
+            else:
+                n_samples_test = round(num_of_samples*test_size)
+                n_samples_val = num_of_samples-n_samples_train-n_samples_test
 
             ## Split into train, validation and test
             XY_train, XY_val, XY_test = {}, {}, {}
@@ -1354,7 +1358,7 @@ class Modely:
                 ## Forward pass
                 out, minimize_out, out_closed_loop, out_connect = self.model(X)
 
-                if self.log_internal:
+                if self.log_internal and train:
                     internals_dict = {'XY':tensor_to_list(X),'out':out,'param':self.model.all_parameters,'closedLoop':self.model.closed_loop_update,'connect':self.model.connect_update}
 
                 ## Loss Calculation
@@ -1373,7 +1377,7 @@ class Modely:
                     X[key] = value
                     self.states[key] = X[key].clone()
 
-                if self.log_internal:
+                if self.log_internal and train:
                     internals_dict['state'] = self.states
                     self.__save_internal('inout_'+str(batch_val)+'_'+str(horizon_idx),internals_dict)
 
