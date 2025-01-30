@@ -543,6 +543,25 @@ class ModelyCreateDatasetTest(unittest.TestCase):
         ## Try to train the model
         # test.trainModel(splits=[80, 10, 10],
         #                 training_params={'num_of_epochs': 100, 'train_batch_size': 4, 'test_batch_size': 4})
+    
+    def test_multifiles(self):
+        x = State('x')
+        relation = Fir()(x.tw(0.05))
+        output = Output('out', relation)
+
+        test = Modely(visualizer=None, log_internal=True)
+        test.addModel('model', output)
+        test.addClosedLoop(relation, x)
+        test.addMinimize('error', output, x.next())
+        test.neuralizeModel(0.01)
+
+        ## The folder contains 3 files with 10, 20 and 30 samples respectively
+        data_struct = ['x']
+        data_folder = os.path.join(os.path.dirname(__file__), 'multifile/')
+        test.loadData(name='dataset', source=data_folder, format=data_struct, skiplines=1)
+
+        self.assertListEqual(list(test.data['dataset']['x'].shape), [45, 6, 1])
+        self.assertListEqual(test.multifile['dataset'], [5, 20, 45])
 
 
 if __name__ == '__main__':

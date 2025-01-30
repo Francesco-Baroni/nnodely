@@ -90,6 +90,7 @@ class Modely:
         self.data = {}
         self.n_datasets = 0
         self.datasets_loaded = set()
+        self.multifile = {}
 
         # Training Parameters
         self.standard_train_parameters = {
@@ -668,6 +669,8 @@ class Modely:
                 check(False,StopIteration, f'ERROR: The path "{source}" does not exist!')
                 return
             self.file_count = len(files)
+            if self.file_count > 1: ## Multifile
+                self.multifile[name] = []
 
             ## Cycle through all the files
             for file in files:
@@ -677,6 +680,8 @@ class Modely:
                 except:
                     log.warning(f'Cannot read file {os.path.join(source,file)}')
                     continue
+                if self.file_count > 1:
+                    self.multifile[name].append((self.multifile[name][-1] + (len(df) - max_n_samples + 1)) if self.multifile[name] else len(df) - max_n_samples + 1)
                 ## Cycle through all the windows
                 for key, idxs in format_idx.items():
                     back, forw = input_ns_backward[key], input_ns_forward[key]
@@ -1070,6 +1075,7 @@ class Modely:
 
             ## Get the dataset name
             dataset = list(self.data.keys())[0] ## take the dataset name
+            train_dataset_name = val_dataset_name = test_dataset_name = dataset
 
             ## Collect the split sizes
             train_size = splits[0] / 100.0
@@ -1105,6 +1111,7 @@ class Modely:
             datasets = list(self.data.keys())
             validation_dataset = self.__get_parameter(validation_dataset=validation_dataset)
             test_dataset = self.__get_parameter(test_dataset=test_dataset)
+            train_dataset_name, val_dataset_name, test_dataset_name = train_dataset, validation_dataset, test_dataset
 
             ## Collect the number of samples for each dataset
             n_samples_train, n_samples_val, n_samples_test = 0, 0, 0
@@ -1224,9 +1231,9 @@ class Modely:
             ## TRAIN
             self.model.train()
             if recurrent_train:
-                losses = self.__recurrentTrain(XY_train, n_samples_train, train_batch_size, minimize_gain, closed_loop, connect, prediction_samples, step, shuffle=shuffle_data, train=True)
+                losses = self.__recurrentTrain(XY_train, n_samples_train, train_dataset_name, train_batch_size, minimize_gain, closed_loop, connect, prediction_samples, step, shuffle=shuffle_data, train=True)
             else:
-                losses = self.__Train(XY_train,n_samples_train, train_batch_size, minimize_gain, shuffle=shuffle_data, train=True)
+                losses = self.__Train(XY_train, n_samples_train, train_batch_size, minimize_gain, shuffle=shuffle_data, train=True)
             ## save the losses
             for ind, key in enumerate(self.model_def['Minimizers'].keys()):
                 train_losses[key].append(torch.mean(losses[ind]).tolist())
@@ -1235,7 +1242,7 @@ class Modely:
                 ## VALIDATION
                 self.model.eval()
                 if recurrent_train:
-                    losses = self.__recurrentTrain(XY_val, n_samples_val, val_batch_size, minimize_gain, closed_loop, connect, prediction_samples, step, shuffle=False, train=False)
+                    losses = self.__recurrentTrain(XY_val, n_samples_val, val_dataset_name, val_batch_size, minimize_gain, closed_loop, connect, prediction_samples, step, shuffle=False, train=False)
                 else:
                     losses = self.__Train(XY_val, n_samples_val, val_batch_size, minimize_gain, shuffle=False, train=False)
                 ## save the losses
@@ -1285,7 +1292,10 @@ class Modely:
         ## Get trained model from torch and set the model_def
         self.model_def.updateParameters(self.model)
 
-    def __recurrentTrain(self, data, n_samples, batch_size, loss_gains, closed_loop, connect, prediction_samples, step, shuffle=False, train=True):
+    def __recurrentTrain(self, data, n_samples, dataset_name, batch_size, loss_gains, closed_loop, connect, prediction_samples, step, shuffle=False, train=True):
+        #print('n_samples',n_samples)
+        #print('dataset_name',dataset_name)
+        #print('data',data)
         model_inputs = list(self.model_def['Inputs'].keys())
         state_closed_loop = [key for key, value in self.model_def['States'].items() if 'closedLoop' in value.keys()] + list(closed_loop.keys())
         state_connect = [key for key, value in self.model_def['States'].items() if 'connect' in value.keys()] + list(connect.keys())
@@ -1294,6 +1304,22 @@ class Modely:
 
         n_available_samples = n_samples - prediction_samples 
         list_of_batch_indexes = list(range(n_available_samples))
+
+        ## Remove forbidden indexes in case of a multi-file dataset
+        if dataset_name in self.multifile.keys(): ## Multi-file Dataset
+            if n_samples == self.run_training_params['n_samples_train']: ## Training
+                start_idx, end_idx = 0, n_samples
+            elif n_samples == self.run_training_params['n_samples_val']: ## Validation
+                start_idx, end_idx = self.run_training_params['n_samples_train'], self.run_training_params['n_samples_train'] + n_samples
+            else: ## Test
+                start_idx, end_idx = self.run_training_params['n_samples_train'] + self.run_training_params['n_samples_val'], self.run_training_params['n_samples_train'] + self.run_training_params['n_samples_val'] + n_samples
+            forbidden_idxs = []
+            for i in self.multifile[dataset_name]:
+                if i < end_idx and i > start_idx:
+                    forbidden_idxs.extend(range(i-prediction_samples, i, 1))
+            list_of_batch_indexes = [idx for idx in list_of_batch_indexes if idx not in forbidden_idxs]
+        #print('forbidden_idxs',forbidden_idxs)
+        #print('list_of_batch_indexes',list_of_batch_indexes)
 
         ## Loss vector 
         check((batch_size+step)>0, ValueError, f"The batch_size+step must be greater than 0.")

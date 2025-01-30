@@ -69,6 +69,26 @@ class ModelyTrainingTest(unittest.TestCase):
                         prediction_samples=2, step=0, shuffle_data=True)
         # ( number_samples - window_size - prediction_samples )// (batch_size + step=0) * (predictoin_samples+1)
         self.assertEqual((20-1-2)//2*3, len(test.internals.keys()))
+
+    def test_train_multifiles(self):
+        x = State('x')
+        relation = Fir()(x.tw(0.05))
+        output = Output('out', relation)
+
+        test = Modely(visualizer=None, log_internal=True)
+        test.addModel('model', output)
+        test.addClosedLoop(relation, x)
+        test.addMinimize('error', output, x.next())
+        test.neuralizeModel(0.01)
+
+        ## The folder contains 3 files with 10, 20 and 30 samples respectively
+        data_struct = ['x']
+        data_folder = os.path.join(os.path.dirname(__file__), 'multifile/')
+        test.loadData(name='dataset', source=data_folder, format=data_struct, skiplines=1)
+
+        test.trainModel(splits=[70, 20, 10], train_batch_size = 3, num_of_epochs=1, prediction_samples=2)
+        self.assertEqual(len(list(test.internals.keys())), 3*8)
+
     def test_training_values_fir_connect_linear(self):
         NeuObj.reset_count()
         input1 = Input('in1')
