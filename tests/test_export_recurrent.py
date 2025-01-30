@@ -100,7 +100,7 @@ class ModelyExportTest(unittest.TestCase):
 
         ## Load the exported model.py
         ## Import the python exported module
-        #from results123.net import RecurrentModel
+        #from results.exported_model import RecurrentModel
         module = importlib.import_module(result_path+'.'+network_name)
         RecurrentModel = getattr(module, 'RecurrentModel')
         model = RecurrentModel()
@@ -116,7 +116,7 @@ class ModelyExportTest(unittest.TestCase):
             shutil.rmtree(test.getWorkspace())
 
     def test_export_and_import_onnx_module(self):
-        result_path = './results-onnx'
+        result_path = 'results'
         test = Modely(visualizer=None, seed=42, workspace=result_path)
         x = Input('x')
         y = State('y')
@@ -154,7 +154,7 @@ class ModelyExportTest(unittest.TestCase):
             shutil.rmtree(test.getWorkspace())
 
     def test_export_and_import_onnx_module_easy(self):
-        result_path = 'results-output'
+        result_path = 'results'
         test = Modely(visualizer=None, seed=42, workspace=result_path)
         num_cycle = Input('num_cycle')
         x = State('x')
@@ -181,7 +181,7 @@ class ModelyExportTest(unittest.TestCase):
     # TODO modify adding the integral to the acc to compute the velocity
     def test_export_and_import_onnx_module_complex(self):
         # Create nnodely structure
-        result_path = './results-onnx-complex'
+        result_path = 'results'
         vehicle = Modely(visualizer=None, seed=2, workspace=result_path)
 
         # Dimensions of the layers
@@ -233,7 +233,7 @@ class ModelyExportTest(unittest.TestCase):
             shutil.rmtree(vehicle.getWorkspace())
 
     def test_export_python_module_recurrent(self):
-        result_path = 'results-recurrent'
+        result_path = 'results'
         network_name = 'net'
         test = Modely(visualizer=None, seed=42, workspace=result_path)
         input1 = Input('input1')
@@ -265,7 +265,7 @@ class ModelyExportTest(unittest.TestCase):
 
         ## Load the exported model.py
         ## Import the python exported module
-        #from results123.net import RecurrentModel
+        #from results.net import RecurrentModel
         module = importlib.import_module(result_path+'.'+network_name)
         RecurrentModel = getattr(module, 'RecurrentModel')
         recurrent_model = RecurrentModel()
@@ -322,7 +322,7 @@ class ModelyExportTest(unittest.TestCase):
             shutil.rmtree(test.getWorkspace())
 
     def test_export_onnx_module_recurrent(self):
-        result_path = './results-recurrent-onnx'
+        result_path = 'results'
         test = Modely(visualizer=None, seed=42, workspace= result_path)
         onnx_model_path = os.path.join(result_path, 'onnx', 'net.onnx')
         input1 = Input('input1')
@@ -408,7 +408,7 @@ class ModelyExportTest(unittest.TestCase):
 
     def test_export_and_import_python_module_complex_recurrent(self):
         # Create nnodely structure
-        result_path = 'results-vehicle'
+        result_path = 'results'
         network_name = 'vehicle'
         vehicle = Modely(visualizer=None, seed=2, workspace=result_path)
 
@@ -461,7 +461,7 @@ class ModelyExportTest(unittest.TestCase):
 
         ## Load the exported model.py
         ## Import the python exported module
-        #from results.net import RecurrentModel
+        #from results.vehicle import RecurrentModel
         module = importlib.import_module(result_path+'.'+network_name)
         RecurrentModel = getattr(module, 'RecurrentModel')
         recurrent_model = RecurrentModel()
@@ -477,7 +477,7 @@ class ModelyExportTest(unittest.TestCase):
 
     def test_export_and_import_onnx_module_complex_recurrent(self):
         # Create nnodely structure
-        result_path = 'results-vehicle'
+        result_path = 'results'
         network_name = 'vehicle'
         vehicle = Modely(visualizer=None, seed=42, workspace= result_path)
 
