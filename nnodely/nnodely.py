@@ -11,7 +11,7 @@ from nnodely.optimizer import Optimizer, SGD, Adam
 from nnodely.exporter import Exporter, StandardExporter
 from nnodely.modeldef import ModelDef
 
-from nnodely.utils import check, argmax_dict, argmin_dict, tensor_to_list
+from nnodely.utils import check, argmax_dict, argmin_dict, tensor_to_list, TORCH_DTYPE, NP_DTYPE
 
 from nnodely.logger import logging, nnLogger
 log = nnLogger(__name__, logging.INFO)
@@ -95,7 +95,7 @@ class Modely:
         self.standard_train_parameters = {
             'models' : None,
             'train_dataset' : None, 'validation_dataset' : None, 'test_dataset' : None, 'splits' : [70, 20, 10],
-            'closed_loop' : {}, 'connect' : {}, 'step' : 1, 'prediction_samples' : 0,
+            'closed_loop' : {}, 'connect' : {}, 'step' : 0, 'prediction_samples' : 0,
             'shuffle_data' : True,
             'early_stopping' : None, 'early_stopping_params' : {},
             'select_model' : 'last', 'select_model_params' : {},
@@ -250,12 +250,12 @@ class Modely:
         if missing_inputs:
             log.warning(f'Inputs not provided: {missing_inputs}. Autofilling with zeros..')
             for key in missing_inputs:
-                inputs[key] = np.zeros(shape=(self.input_n_samples[key] + window_dim - 1, self.model_def['Inputs'][key]['dim']),dtype=np.float32).tolist()
+                inputs[key] = np.zeros(shape=(self.input_n_samples[key] + window_dim - 1, self.model_def['Inputs'][key]['dim']),dtype=NP_DTYPE).tolist()
 
         ## Transform inputs in 3D Tensors
         for key, val in inputs.items():
             input_dim = self.model_def['Inputs'][key]['dim'] if key in model_inputs else self.model_def['States'][key]['dim']
-            inputs[key] = torch.from_numpy(np.array(inputs[key])).to(torch.float32)
+            inputs[key] = torch.from_numpy(np.array(inputs[key])).to(TORCH_DTYPE)
 
             if input_dim > 1:
                 correct_dim = 3 if sampled else 2
@@ -305,7 +305,7 @@ class Modely:
                         else: ## if i have no samples and no states
                             window_size = self.input_n_samples[key]
                             dim = self.model_def['Inputs'][key]['dim'] if key in model_inputs else self.model_def['States'][key]['dim']
-                            X[key] = torch.zeros(size=(1, window_size, dim), dtype=torch.float32, requires_grad=False)
+                            X[key] = torch.zeros(size=(1, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
                             self.states[key] = X[key]
                     first = False
                 else:
@@ -507,13 +507,13 @@ class Modely:
             for key in states:
                 window_size = self.input_n_samples[key]
                 dim = self.model_def['States'][key]['dim']
-                self.states[key] = torch.zeros(size=(batch, window_size, dim), dtype=torch.float32, requires_grad=False)
+                self.states[key] = torch.zeros(size=(batch, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
         else: ## reset all states
             self.states = {}
             for key, state in self.model_def['States'].items():
                 window_size = self.input_n_samples[key]
                 dim = state['dim']
-                self.states[key] = torch.zeros(size=(batch, window_size, dim), dtype=torch.float32, requires_grad=False)
+                self.states[key] = torch.zeros(size=(batch, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
 
     def neuralizeModel(self, sample_time = None, clear_model = False, model_def = None):
         """
@@ -1084,17 +1084,17 @@ class Modely:
             XY_train, XY_val, XY_test = {}, {}, {}
             for key, samples in self.data[dataset].items():
                 if val_size == 0.0 and test_size == 0.0: ## we have only training set
-                    XY_train[key] = torch.from_numpy(samples).to(torch.float32)
+                    XY_train[key] = torch.from_numpy(samples).to(TORCH_DTYPE)
                 elif val_size == 0.0 and test_size != 0.0: ## we have only training and test set
-                    XY_train[key] = torch.from_numpy(samples[:n_samples_train]).to(torch.float32)
-                    XY_test[key] = torch.from_numpy(samples[n_samples_train:]).to(torch.float32)
+                    XY_train[key] = torch.from_numpy(samples[:n_samples_train]).to(TORCH_DTYPE)
+                    XY_test[key] = torch.from_numpy(samples[n_samples_train:]).to(TORCH_DTYPE)
                 elif val_size != 0.0 and test_size == 0.0: ## we have only training and validation set
-                    XY_train[key] = torch.from_numpy(samples[:n_samples_train]).to(torch.float32)
-                    XY_val[key] = torch.from_numpy(samples[n_samples_train:]).to(torch.float32)
+                    XY_train[key] = torch.from_numpy(samples[:n_samples_train]).to(TORCH_DTYPE)
+                    XY_val[key] = torch.from_numpy(samples[n_samples_train:]).to(TORCH_DTYPE)
                 else: ## we have training, validation and test set
-                    XY_train[key] = torch.from_numpy(samples[:n_samples_train]).to(torch.float32)
-                    XY_val[key] = torch.from_numpy(samples[n_samples_train:-n_samples_test]).to(torch.float32)
-                    XY_test[key] = torch.from_numpy(samples[n_samples_train+n_samples_val:]).to(torch.float32)
+                    XY_train[key] = torch.from_numpy(samples[:n_samples_train]).to(TORCH_DTYPE)
+                    XY_val[key] = torch.from_numpy(samples[n_samples_train:-n_samples_test]).to(TORCH_DTYPE)
+                    XY_test[key] = torch.from_numpy(samples[n_samples_train+n_samples_val:]).to(TORCH_DTYPE)
 
             ## Set name for resultsAnalysis
             train_dataset = self.__get_parameter(train_dataset = f"train_{dataset}_{train_size:0.2f}")
@@ -1118,13 +1118,13 @@ class Modely:
             ## Split into train, validation and test
             XY_train, XY_val, XY_test = {}, {}, {}
             n_samples_train = self.num_of_samples[train_dataset]
-            XY_train = {key: torch.from_numpy(val).to(torch.float32) for key, val in self.data[train_dataset].items()}
+            XY_train = {key: torch.from_numpy(val).to(TORCH_DTYPE) for key, val in self.data[train_dataset].items()}
             if validation_dataset in datasets:
                 n_samples_val = self.num_of_samples[validation_dataset]
-                XY_val = {key: torch.from_numpy(val).to(torch.float32) for key, val in self.data[validation_dataset].items()}
+                XY_val = {key: torch.from_numpy(val).to(TORCH_DTYPE) for key, val in self.data[validation_dataset].items()}
             if test_dataset in datasets:
                 n_samples_test = self.num_of_samples[test_dataset]
-                XY_test = {key: torch.from_numpy(val).to(torch.float32) for key, val in self.data[test_dataset].items()}
+                XY_test = {key: torch.from_numpy(val).to(TORCH_DTYPE) for key, val in self.data[test_dataset].items()}
 
         for key in XY_train.keys():
             assert n_samples_train == XY_train[key].shape[0], f'The number of train samples {n_samples_train}!={XY_train[key].shape[0]} not compliant.'
@@ -1195,10 +1195,10 @@ class Modely:
 
         # Evaluate the number of update for epochs and the unsued samples
         if recurrent_train:
-            list_of_batch_indexes = range(0, (n_samples_train - train_batch_size - prediction_samples + 1), (train_batch_size + step - 1))
+            list_of_batch_indexes = range(0, (n_samples_train - train_batch_size - prediction_samples + 1), (train_batch_size + step))
             check(n_samples_train - train_batch_size - prediction_samples + 1 > 0, ValueError,
                   f"The number of available sample are (n_samples_train ({n_samples_train}) - train_batch_size ({train_batch_size}) - prediction_samples ({prediction_samples}) + 1) = {n_samples_train - train_batch_size - prediction_samples + 1}.")
-            update_per_epochs = (n_samples_train - train_batch_size - prediction_samples + 1)//(train_batch_size + step - 1) + 1
+            update_per_epochs = (n_samples_train - train_batch_size - prediction_samples + 1)//(train_batch_size + step) + 1
             unused_samples = n_samples_train - list_of_batch_indexes[-1] - train_batch_size - prediction_samples
         else:
             update_per_epochs =  (n_samples_train - train_batch_size)/train_batch_size + 1
@@ -1285,48 +1285,56 @@ class Modely:
         ## Get trained model from torch and set the model_def
         self.model_def.updateParameters(self.model)
 
-    def __recurrentTrain(self, data, n_samples, batch_size, loss_gains, closed_loop, connect, prediction_samples, step, shuffle=True, train=True):
+    def __recurrentTrain(self, data, n_samples, batch_size, loss_gains, closed_loop, connect, prediction_samples, step, shuffle=False, train=True):
         model_inputs = list(self.model_def['Inputs'].keys())
         state_closed_loop = [key for key, value in self.model_def['States'].items() if 'closedLoop' in value.keys()] + list(closed_loop.keys())
         state_connect = [key for key, value in self.model_def['States'].items() if 'connect' in value.keys()] + list(connect.keys())
         non_mandatory_inputs = state_closed_loop + state_connect 
         mandatory_inputs = list(set(model_inputs) - set(non_mandatory_inputs))
 
-        ## shuffle TODO
-        initial_value = 0  #np.random.randint(0, prediction_samples)
-        n_available_samples = n_samples - batch_size - prediction_samples + 1
-        list_of_batch_indexes = range(initial_value, n_available_samples, (batch_size + step - 1))
+        n_available_samples = n_samples - prediction_samples 
+        list_of_batch_indexes = list(range(n_available_samples))
 
         ## Loss vector 
-        aux_losses = torch.zeros([len(self.model_def['Minimizers']), len(list_of_batch_indexes)])
+        check((batch_size+step)>0, ValueError, f"The batch_size+step must be greater than 0.")
+        aux_losses = torch.zeros([len(self.model_def['Minimizers']), round(len(list_of_batch_indexes)/(batch_size+step))])
 
         ## Update with virtual states
         self.model.update(closed_loop=closed_loop, connect=connect)
         X = {}
-        for batch_val, idx in enumerate(list_of_batch_indexes):
+        batch_val = 0
+        while len(list_of_batch_indexes) >= batch_size:
+            idxs = random.sample(list_of_batch_indexes, batch_size) if shuffle else list_of_batch_indexes[:batch_size]
+            for num in idxs:
+                list_of_batch_indexes.remove(num)
+            if step > 0:
+                if len(list_of_batch_indexes) >= step:
+                    step_idxs = random.sample(list_of_batch_indexes, step) if shuffle else list_of_batch_indexes[:step]
+                    for num in step_idxs:
+                        list_of_batch_indexes.remove(num)
             if train:
                 self.optimizer.zero_grad() ## Reset the gradient
-
             ## Reset 
             horizon_losses = {ind: [] for ind in range(len(self.model_def['Minimizers']))}
             for key in non_mandatory_inputs:
                 if key in data.keys():
                 ## with data
-                    X[key] = data[key][idx:idx+batch_size]
+                    X[key] = data[key][idxs]
                 else: ## with zeros
                     window_size = self.input_n_samples[key]
                     dim = self.model_def['Inputs'][key]['dim'] if key in model_inputs else self.model_def['States'][key]['dim']
-                    X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=torch.float32, requires_grad=False)
+                    X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
                     self.states[key] = X[key]
 
             for horizon_idx in range(prediction_samples + 1):
                 ## Get data 
                 for key in mandatory_inputs:
-                    X[key] = data[key][idx+horizon_idx:idx+horizon_idx+batch_size]
+                    X[key] = data[key][[idx+horizon_idx for idx in idxs]]
                 ## Forward pass
                 out, minimize_out, out_closed_loop, out_connect = self.model(X)
 
-                internals_dict = {'XY':X,'out':out,'param':self.model.all_parameters,'closedLoop':self.model.closed_loop_update,'connect':self.model.connect_update}
+                if self.log_internal:
+                    internals_dict = {'XY':tensor_to_list(X),'out':out,'param':self.model.all_parameters,'closedLoop':self.model.closed_loop_update,'connect':self.model.connect_update}
 
                 ## Loss Calculation
                 for ind, (key, value) in enumerate(self.model_def['Minimizers'].items()):
@@ -1344,9 +1352,9 @@ class Modely:
                     X[key] = value
                     self.states[key] = X[key].clone()
 
-                internals_dict['state'] = self.states
                 if self.log_internal:
-                    self.__save_internal('inout_'+str(idx)+'_'+str(horizon_idx),internals_dict)
+                    internals_dict['state'] = self.states
+                    self.__save_internal('inout_'+str(batch_val)+'_'+str(horizon_idx),internals_dict)
 
             ## Calculate the total loss
             total_loss = 0
@@ -1360,6 +1368,7 @@ class Modely:
                 total_loss.backward() ## Backpropagate the error
                 self.optimizer.step()
                 self.visualizer.showWeightsInTrain(batch = batch_val)
+            batch_val += 1
 
         ## Remove virtual states
         for key in (connect.keys() | closed_loop.keys()):
@@ -1401,7 +1410,7 @@ class Modely:
         ## return the losses
         return aux_losses
 
-    def resultAnalysis(self, dataset, data = None, minimize_gain = {}, closed_loop = {}, connect = {},  prediction_samples = None, step = 1, batch_size = None):
+    def resultAnalysis(self, dataset, data = None, minimize_gain = {}, closed_loop = {}, connect = {},  prediction_samples = None, step = 0, batch_size = None):
         import warnings
         with torch.inference_mode():
             ## Init model for retults analysis
@@ -1423,13 +1432,11 @@ class Modely:
 
             if data is None:
                 check(dataset in self.data.keys(), ValueError, f'The dataset {dataset} is not loaded!')
-                data = {key: torch.from_numpy(val).to(torch.float32) for key, val in self.data[dataset].items()}
+                data = {key: torch.from_numpy(val).to(TORCH_DTYPE) for key, val in self.data[dataset].items()}
             n_samples = len(data[list(data.keys())[0]])
 
             if recurrent:
-                json_inputs = self.model_def['Inputs'] | self.model_def['States']
                 batch_size = batch_size if batch_size is not None else n_samples - prediction_samples
-                initial_value = 0
 
                 model_inputs = list(self.model_def['Inputs'].keys())
 
@@ -1444,29 +1451,36 @@ class Modely:
                     for horizon_idx in range(prediction_samples + 1):
                         A[key].append([])
                         B[key].append([])
-
+                
+                list_of_batch_indexes = list(range(n_samples - prediction_samples))
                 X = {}
                 ## Update with virtual states
                 self.model.update(closed_loop=closed_loop, connect=connect)
-                for idx in range(initial_value, (n_samples - batch_size - prediction_samples + 1), (batch_size + step - 1)):
+                while len(list_of_batch_indexes) >= batch_size:
+                    idxs = list_of_batch_indexes[:batch_size]
+                    for num in idxs:
+                        list_of_batch_indexes.remove(num)
+                    if step > 0:
+                        if len(list_of_batch_indexes) >= step:
+                            step_idxs = list_of_batch_indexes[:step]
+                            for num in step_idxs:
+                                list_of_batch_indexes.remove(num)
                     ## Reset 
                     horizon_losses = {key: [] for key in self.model_def['Minimizers'].keys()}
                     for key in non_mandatory_inputs:
                         if key in data.keys(): # and len(data[key]) >= (idx + self.input_n_samples[key]): 
                         ## with data
-                            X[key] = data[key][idx:idx+batch_size]
-                        #elif key in self.states.keys(): ## with state
-                            #X[key] = self.states[key]
+                            X[key] = data[key][idxs]
                         else: ## with zeros
                             window_size = self.input_n_samples[key]
                             dim = self.model_def['Inputs'][key]['dim'] if key in model_inputs else self.model_def['States'][key]['dim']
-                            X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=torch.float32, requires_grad=False)
+                            X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
                             self.states[key] = X[key]
 
                     for horizon_idx in range(prediction_samples + 1):
                         ## Get data 
                         for key in mandatory_inputs:
-                            X[key] = data[key][idx+horizon_idx:idx+horizon_idx+batch_size]
+                            X[key] = data[key][[idx+horizon_idx for idx in idxs]]
                         ## Forward pass
                         out, minimize_out, out_closed_loop, out_connect = self.model(X)
 
@@ -1509,10 +1523,6 @@ class Modely:
                 for idx in range(0, (n_samples - batch_size + 1), batch_size):
                     ## Build the input tensor
                     XY = {key: val[idx:idx + batch_size] for key, val in data.items()}
-                    #if (closed_loop or connect or self.model_def['States']):
-                        ## Reset state variables with zeros or using inputs
-                        #self.model.reset_states(XY, only=False)
-                        #self.model.reset_connect_variables(connect, XY, only=False)
 
                     ## Model Forward
                     _, minimize_out, _, _ = self.model(XY)  ## Forward pass
@@ -1732,8 +1742,6 @@ class Modely:
 
         Raises
         ------
-        TypeError
-            If the network has state variables, which cannot be exported to Python.
         RuntimeError
             If the network has not been defined.
             If the model is traced and cannot be exported to Python.
@@ -1757,7 +1765,7 @@ class Modely:
         else:
             model_def = self.model_def
             model = self.model
-        check(model_def['States'] == {}, TypeError, "The network has state variables. The export to python is not possible.")
+        #check(model_def['States'] == {}, TypeError, "The network has state variables. The export to python is not possible.")
         check(model_def.isDefined(), RuntimeError, "The network has not been defined.")
         check(self.traced == False, RuntimeError,
                   'The model is traced and cannot be exported to Python.\n Run neuralizeModel() to recreate a standard model.')
@@ -1800,10 +1808,14 @@ class Modely:
         """
         Exports the neural network model to an ONNX file.
 
+        -----
+        .. note::
+            The input_order must contain all the inputs and states of the model in the order that you want to export them.
+
         Parameters
         ----------
         inputs_order : list
-            The order of the input variables.
+            The order of the input and state variables.
         outputs_order : list
             The order of the output variables.
         models : list or None, optional
@@ -1824,6 +1836,10 @@ class Modely:
         Example
         -------
         Example usage:
+            >>> input1 = Input('input1').last()
+            >>> input2 = Input('input2').last()
+            >>> out = Output('output1', input1+input2)
+ 
             >>> model = Modely()
             >>> model.neuralizeModel()
             >>> model.exportONNX(inputs_order=['input1', 'input2'], outputs_order=['output1'], name='example_model', model_folder='path/to/export')
@@ -1842,7 +1858,52 @@ class Modely:
         model_def.setBuildWindow(self.model_def['Info']['SampleTime'])
         model_def.updateParameters(self.model)
         model = Model(model_def.json)
+        model.update()
         self.exporter.exportONNX(model_def, model, inputs_order, outputs_order, name, model_folder)
+
+    def onnxInference(self, inputs:dict, path:str):
+        """
+        Run an inference session using an onnx model previously exported using the nnodely framework. 
+
+        -----
+        .. note:: Feed-Forward ONNX model
+            For feed-forward models, the onnx model expect all the inputs and states to have 3 dimensions. The first dimension is the batch size, the second is the time window and the third is the feature dimension.
+        .. note:: Recurrent ONNX model
+            For recurrent models, the onnx model expect all the inputs to have 4 dimensions. The first dimension is the prediction horizon, the second is the batch size, the third is the time window and the fourth is the feature dimension.
+            For recurrent models, the onnx model expect all the States to have 3 dimensions. The first dimension is the batch size, the second is the time window, the third is the feature dimension
+
+        Parameters
+        ----------
+        inputs : dict
+            A dictionary containing the input and state variables to be used to make the inference. 
+            State variables are mandatory and are used to initialize the states of the model.
+        path : str
+            The path to the ONNX file to use.
+
+        Raises
+        ------
+        RuntimeError
+            If the shape of the inputs are not equals to the ones defined in the onnx model.
+            If the batch size is not equal for all the inputs and states.
+
+        Example
+        -------
+        feed-forward Example:
+            >>> x = Input('x')
+ 
+            >>> onnx_model_path = path/to/net.onnx
+            >>> dummy_input = {'x':np.ones(shape=(3, 1, 1)).astype(np.float32)}
+            >>> predictions = Modely().onnxInference(dummy_input, onnx_model_path)
+        Recurrent Example:
+            >>> x = Input('x')
+            >>> y = State('y')
+ 
+            >>> onnx_model_path = path/to/net.onnx
+            >>> dummy_input = {'x':np.ones(shape=(3, 1, 1, 1)).astype(np.float32)
+                                'y':np.ones(shape=(1, 1, 1)).astype(np.float32)}
+            >>> predictions = Modely().onnxInference(dummy_input, onnx_model_path)
+        """
+        return self.exporter.onnxInference(inputs, path)
 
     def exportReport(self, name = 'net', model_folder = None):
         """
