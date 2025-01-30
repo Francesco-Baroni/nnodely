@@ -467,7 +467,7 @@ class ModelyExportTest(unittest.TestCase):
         recurrent_model = RecurrentModel()
 
         sample = vehicle.getSamples('dataset', window=3)
-        recurrent_sample = {key: torch.tensor(value, dtype=torch.float32).unsqueeze(1) for key, value in sample.items()}
+        recurrent_sample = {key: torch.tensor(np.array(value), dtype=torch.float32).unsqueeze(1) for key, value in sample.items()}
         recurrent_sample['vel'] = torch.zeros(1,1,1)
         model_sample = {key: value for key, value in sample.items() if key != 'vel'}
         self.TestAlmostEqual([item.detach().item() for item in recurrent_model(recurrent_sample)['accelleration']], vehicle(model_sample, sampled=True, prediction_samples=3)['accelleration'])
