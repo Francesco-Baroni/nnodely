@@ -39,6 +39,75 @@ class ModelyTrainingTest(unittest.TestCase):
         else:
             super().assertAlmostEqual(data1, data2, places=precision)
 
+    def test_recurrent_shuffle(self):
+        target = Input('target')
+        x = State('x')
+        relation = Fir(x.last())
+        output = Output('out', relation)
+        relation.closedLoop(x)
+
+        test = Modely(visualizer=None, seed=42, log_internal=True)
+        test.addModel('model', output)
+        test.addMinimize('out', target.next(), relation)
+        test.neuralizeModel(0.01)
+
+        dataset = {'x': [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20], 'target': [21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40]}
+        test.loadData(name='dataset', source=dataset)
+
+        test.trainModel(train_dataset='dataset', optimizer='SGD', lr=0.01, num_of_epochs=1, train_batch_size=4, prediction_samples=1, step=1, shuffle_data=True)
+        self.assertListEqual([[[4.0]], [[1.0]], [[9.0]], [[18.0]]], test.internals['inout_0_0']['XY']['x'])
+        self.assertListEqual([[[25.0]], [[22.0]], [[30.0]], [[39.0]]], test.internals['inout_0_0']['XY']['target'])
+        self.assertListEqual([[[26.0]], [[23.0]], [[31.0]], [[40.0]]], test.internals['inout_0_1']['XY']['target'])
+        self.assertListEqual([[[5.0]], [[16.0]], [[3.0]], [[13.0]]], test.internals['inout_1_0']['XY']['x'])
+        self.assertListEqual([[[26.0]], [[37.0]], [[24.0]], [[34.0]]], test.internals['inout_1_0']['XY']['target'])
+        self.assertListEqual([[[27.0]], [[38.0]], [[25.0]], [[35.0]]], test.internals['inout_1_1']['XY']['target'])
+        self.assertListEqual([[[15.0]], [[2.0]], [[17.0]], [[14.0]]], test.internals['inout_2_0']['XY']['x'])
+        self.assertListEqual([[[36.0]], [[23.0]], [[38.0]], [[35.0]]], test.internals['inout_2_0']['XY']['target'])
+        self.assertListEqual([[[37.0]], [[24.0]], [[39.0]], [[36.0]]], test.internals['inout_2_1']['XY']['target'])
+
+        test.trainModel(train_dataset='dataset', optimizer='SGD', lr=0.01, num_of_epochs=1, train_batch_size=2,
+                       prediction_samples=2, step=0, shuffle_data=True)
+        # ( number_samples - window_size - prediction_samples )// (batch_size + step=0) * (predictoin_samples+1)
+        self.assertEqual((20-1-2)//2*3, len(test.internals.keys()))
+
+    def test_train_multifiles(self):
+        x = State('x')
+        y = Input('y')
+        relation = Fir()(x.tw(0.05))+Fir(y.sw([-2,2]))
+        output = Output('out', relation)
+
+        test = Modely(visualizer=None, log_internal=True)
+        test.addModel('model', output)
+        test.addClosedLoop(relation, x)
+        test.addMinimize('error', output, x.next())
+        test.neuralizeModel(0.01)
+
+        ## The folder contains 3 files with 10, 20 and 30 samples respectively
+        data_struct = ['x', 'y']
+        data_folder = os.path.join(os.path.dirname(__file__), 'multifile/')
+        test.loadData(name='dataset', source=data_folder, format=data_struct, skiplines=1, delimiter=' ')
+        self.assertEqual(len(test.data['dataset']['x']), 42)
+        self.assertEqual(len(test.data['dataset']['y']), 42)
+
+        test.trainModel(splits=[70, 20, 10], train_batch_size = 3, num_of_epochs=1, prediction_samples=2)
+        self.assertEqual(len(list(test.internals.keys())), 3*7)
+        self.assertEqual(list(np.mean(np.array(test.internals['inout_0_0']['XY']['y']),axis=1)),
+                         list(np.mean(np.array(test.internals['inout_0_1']['XY']['y']),axis=1)))
+        self.assertEqual(list(np.mean(np.array(test.internals['inout_0_0']['XY']['y']), axis=1)),
+                         list(np.mean(np.array(test.internals['inout_0_2']['XY']['y']), axis=1)))
+        self.assertEqual(list(np.mean(np.array(test.internals['inout_1_0']['XY']['y']),axis=1)),
+                         list(np.mean(np.array(test.internals['inout_1_1']['XY']['y']),axis=1)))
+        self.assertEqual(list(np.mean(np.array(test.internals['inout_1_0']['XY']['y']), axis=1)),
+                         list(np.mean(np.array(test.internals['inout_1_2']['XY']['y']), axis=1)))
+        self.assertEqual(list(np.mean(np.array(test.internals['inout_2_0']['XY']['y']),axis=1)),
+                         list(np.mean(np.array(test.internals['inout_2_1']['XY']['y']),axis=1)))
+        self.assertEqual(list(np.mean(np.array(test.internals['inout_2_0']['XY']['y']), axis=1)),
+                         list(np.mean(np.array(test.internals['inout_2_2']['XY']['y']), axis=1)))
+        self.assertEqual(list(np.mean(np.array(test.internals['inout_6_0']['XY']['y']),axis=1)),
+                         list(np.mean(np.array(test.internals['inout_6_1']['XY']['y']),axis=1)))
+        self.assertEqual(list(np.mean(np.array(test.internals['inout_6_0']['XY']['y']), axis=1)),
+                         list(np.mean(np.array(test.internals['inout_6_2']['XY']['y']), axis=1)))
+
     def test_training_values_fir_connect_linear(self):
         NeuObj.reset_count()
         input1 = Input('in1')

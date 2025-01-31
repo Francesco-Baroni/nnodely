@@ -5,7 +5,7 @@ import torch.nn as nn
 from collections.abc import Callable
 
 from nnodely.relation import NeuObj, Stream, AutoToStream
-from nnodely.utils import check, merge, enforce_types
+from nnodely.utils import check, merge, enforce_types, TORCH_DTYPE
 from nnodely.model import Model
 from nnodely.parameter import Parameter
 from nnodely.input import Input
@@ -207,7 +207,7 @@ class Fir_Layer(nn.Module):
         # Remove the last dimension (1) to make x shape [batch, window]
         x = x.squeeze(-1)
         # Perform the linear transformation: y = xW^T
-        x = torch.matmul(x, self.weights)
+        x = torch.matmul(x, self.weights).to(dtype=TORCH_DTYPE)
         # Reshape y to be [batch, 1, output_features]
         x = x.view(batch_size, 1, output_features)
         # Add bias if necessary

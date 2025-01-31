@@ -2,7 +2,7 @@ name: Coveralls
 
 on:
   push:
-    branches: [ "main", "develop"]
+    branches: [ "main", "develop" ]
   pull_request:
     branches: [ "main", "develop" ]
 
@@ -30,4 +30,5 @@ jobs:
         coverage run --omit='./results/*','./docs/*','./examples/*' -m unittest discover tests
 
     - name: Coveralls
-      uses: coverallsapp/github-action@v2
+      uses: coverallsapp/github-action@v2.3.6
+

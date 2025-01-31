@@ -5,6 +5,11 @@ from nnodely import *
 from nnodely import relation
 relation.CHECK_NAMES = False
 
+import torch.onnx
+import onnx
+import onnxruntime as ort
+import importlib
+
 from nnodely.logger import logging, nnLogger
 log = nnLogger(__name__, logging.CRITICAL)
 log.setAllLevel(logging.CRITICAL)
@@ -13,6 +18,16 @@ log.setAllLevel(logging.CRITICAL)
 # Test of export and import the network to a file in different format
 
 class ModelyExportTest(unittest.TestCase):
+
+    def TestAlmostEqual(self, data1, data2, precision=4):
+        assert np.asarray(data1, dtype=np.float32).ndim == np.asarray(data2, dtype=np.float32).ndim, f'Inputs must have the same dimension! Received {type(data1)} and {type(data2)}'
+        if type(data1) == type(data2) == list:
+            self.assertEqual(len(data1),len(data2))
+            for pred, label in zip(data1, data2):
+                self.TestAlmostEqual(pred, label, precision=precision)
+        else:
+            self.assertAlmostEqual(data1, data2, places=precision)
+
     def __init__(self, *args, **kwargs):
         super(ModelyExportTest, self).__init__(*args, **kwargs)
 

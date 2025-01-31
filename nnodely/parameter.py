@@ -4,7 +4,8 @@ import numpy as np
 from collections.abc import Callable
 
 from nnodely.relation import NeuObj, Stream, ToStream
-from nnodely.utils import check, enforce_types
+from nnodely.utils import check, enforce_types, NP_DTYPE
+
 
 def is_numpy_float(var):
     return isinstance(var, (np.float16, np.float32, np.float64))
@@ -44,7 +45,7 @@ class Constant(NeuObj, Stream):
                  sw:int|None = None):
 
         NeuObj.__init__(self, name)
-        values = np.array(values)
+        values = np.array(values, dtype=NP_DTYPE)
         shape = values.shape
         values = values.tolist()
         if len(shape) == 0:
@@ -143,7 +144,7 @@ class Parameter(NeuObj, Stream):
             # deepcopy dimention information inside Parameters
             self.json['Parameters'][self.name] = copy.deepcopy(self.dim)
         else:
-            values = np.array(values)
+            values = np.array(values, dtype=NP_DTYPE)
             shape = values.shape
             values = values.tolist()
             check(len(shape) >= 2, ValueError,
