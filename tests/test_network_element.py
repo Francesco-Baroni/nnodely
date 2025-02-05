@@ -199,5 +199,27 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         for ind, (key, value) in enumerate({k:v for k,v in test.model.relation_forward.items() if 'Linear' in k}.items()):
             self.assertEqual(list_of_dimensions[ind],list(value.weights.shape))
 
+    def test_sigmoid_function(self):
+        torch.manual_seed(1)
+        input = Input('in')
+        sigma_rel = Sigma(input.last())
+        sigma_rel_2 = Sigma(input.sw(2))
+
+        input5 = Input('in5', dimensions=5)
+        sigma_rel_5 = Sigma(input5.last())
+
+        out1 = Output('out1', sigma_rel)
+        out2 = Output('out2', sigma_rel_5)
+        out3 = Output('out3', sigma_rel_2)
+
+        test = Modely(visualizer=None)
+        test.addModel('model',[out1,out2,out3])
+        test.neuralizeModel(0.01)
+
+        result = test(inputs={'in':[[3.0],[-2.0]], 'in5':[[4.0,1.0,0.0,-6.0,2.0]]})
+        self.assertEqual([0.11920291930437088], result['out1'])
+        self.assertEqual([[[0.9820137619972229, 0.7310585975646973, 0.5, 0.0024726230185478926, 0.8807970285415649]]], result['out2'])
+        self.assertEqual([[0.9525741338729858, 0.11920291930437088]], result['out3'])
+
 if __name__ == '__main__':
     unittest.main()
