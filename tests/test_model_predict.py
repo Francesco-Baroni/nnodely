@@ -1237,6 +1237,107 @@ class ModelyPredictTest(unittest.TestCase):
         self.assertEqual((3, 1, 6), np.array(results['out']).shape)
         self.assertEqual([[[1.0, 0.0, 0.0, 0.0, 0.0, 0.0]],[[0.0, 1.0, 0.0, 0.0, 0.0, 0.0]],[[0.0, 0.0, 1.0, 0.0, 0.0, 0.0]]], results['out'])
 
+    def test_sw_on_stream_sw(self):
+        input = Input('in')
+        sw_from_input = input.sw(7)
+
+        out1 = Output('out1', sw_from_input.sw(3))
+
+        test = Modely(visualizer=None)
+        test.addModel('out_A',  out1)
+        test.neuralizeModel()
+        results = test({'in': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]})
+        self.assertEqual((4, 3), np.array(results['out1']).shape)
+        self.assertEqual([[4.0, 5.0, 6.0], [5.0, 6.0, 7.0], [6.0, 7.0, 8.0], [7.0, 8.0, 9.0]], results['out1'])
+
+        out1 = Output('out1', sw_from_input.sw(3))
+        out2 = Output('out2', sw_from_input.sw(8))
+
+        test = Modely(visualizer=None)
+        test.addModel('out_A', [out1,out2])
+        test.neuralizeModel()
+        results = test({'in': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]})
+        self.assertEqual((4, 3), np.array(results['out1']).shape)
+        self.assertEqual([[4.0, 5.0, 6.0], [5.0, 6.0, 7.0], [6.0, 7.0, 8.0], [7.0, 8.0, 9.0]], results['out1'])
+        self.assertEqual((4, 8), np.array(results['out1']).shape)
+        self.assertEqual([[0.0, 14.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+                          [14.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0],
+                          [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0],
+                          [2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]], results['out1'])
+
+    def test_tw_on_stream_tw(self):
+        input = Input('in')
+        tw_from_input = input.tw(3.5)
+
+        out1 = Output('out1', tw_from_input.tw(1.5))
+
+        test = Modely(visualizer=None)
+        test.addModel('out_A',  out1)
+        test.neuralizeModel(0.5)
+        results = test({'in': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]})
+        self.assertEqual((4, 3), np.array(results['out1']).shape)
+        self.assertEqual([[4.0, 5.0, 6.0], [5.0, 6.0, 7.0], [6.0, 7.0, 8.0], [7.0, 8.0, 9.0]], results['out1'])
+
+        out1 = Output('out1', tw_from_input.tw(1.5))
+        out2 = Output('out2', tw_from_input.tw(4))
+
+        test = Modely(visualizer=None)
+        test.addModel('out_A', [out1,out2])
+        test.neuralizeModel(0.5)
+        results = test({'in': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]})
+        self.assertEqual((4, 3), np.array(results['out1']).shape)
+        self.assertEqual([[4.0, 5.0, 6.0], [5.0, 6.0, 7.0], [6.0, 7.0, 8.0], [7.0, 8.0, 9.0]], results['out1'])
+        self.assertEqual((4, 8), np.array(results['out1']).shape)
+        self.assertEqual([[0.0, 14.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+                          [14.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0],
+                          [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0],
+                          [2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]], results['out1'])
+
+
+    def test_sw_on_stream_2(self):
+        input = Input('in')
+        state = State('state')
+        sw_3 = input.sw(4)
+        sw_from_input = input.sw(7)
+        out_c = Connect(sw_from_input,state)
+        out3 = state.sw(3)
+
+        #out1 = Output('out1', sw_from_input)
+        out11 = Output('out11', sw_3)
+        out2 = Output('out2', sw_from_input.sw(8))
+        out3 = Output('out3', sw_from_input.sw(4))
+        #out4 = Output('out4', SamplePart(sw_from_input,0,7))
+        #out5 = Output('out5', SamplePart(sw_from_input,0,3))
+        test = Modely()
+        test.addModel('out_A', [out11,out3])
+        #test.addModel('out_B',[out1,out2,out3,out4,out5])
+        test.neuralizeModel()
+        results = test({'in': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]})
+        from pprint import pprint
+        pprint(results)
+
+        test.Modely()
+        test = Modely()
+        test.addModel('out_A', [out11,out3])
+        #test.addModel('out_B',[out1,out2,out3,out4,out5])
+        test.neuralizeModel()
+        results = test({'in': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]})
+
+    def test_sw_on_stream_3(self):
+        input = Input('in')
+        sw_from_input = input.sw(7)
+        out1 = Output('out1', sw_from_input)
+        out2 = Output('out2', sw_from_input.sw(8))
+        out3 = Output('out3', sw_from_input.sw(3))
+        out4 = Output('out4', SamplePart(sw_from_input,0,7))
+        out5 = Output('out5', SamplePart(sw_from_input,0,3))
+        test = Modely()
+        test.addModel('out_A', [out3])
+        #test.addModel('out_B',[out1,out2,out3,out4,out5])
+        test.neuralizeModel()
+        results = test({'in': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]})
+        from pprint import pprint
+        pprint(results)
 
 if __name__ == '__main__':
     unittest.main()

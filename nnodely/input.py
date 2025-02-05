@@ -1,7 +1,7 @@
 import copy
 
 from nnodely.relation import NeuObj, Stream, ToStream
-from nnodely.utils import check, merge
+from nnodely.utils import check, merge, enforce_types
 from nnodely.part import SamplePart, TimePart
 from nnodely.timeoperation import Derivate, Integrate
 
@@ -49,15 +49,16 @@ class InputState(NeuObj, Stream):
         self.dim = {'dim': dimensions}
         Stream.__init__(self, name, self.json, self.dim)
 
-    def tw(self, tw, offset = None):
+    @enforce_types
+    def tw(self, tw:float|list, offset:float = None):
         """
         Selects a time window for the input state.
 
         Parameters
         ----------
-        tw : list or int
-            The time window. If a list, it should contain the start and end values. If an int, it represents the time window size.
-        offset : int, optional
+        tw : list or float
+            The time window. If a list, it should contain the start and end values. If a float, it represents the time window size.
+        offset : float, optional
             The offset for the time window. Default is None.
 
         Returns
@@ -99,7 +100,8 @@ class InputState(NeuObj, Stream):
     # The offset represent the index of the vector that need to be used to offset the window
     # T.s(2,offset=-2)      = [0, 1]      # the value of the window is [-1,0]
     # T.s([-2,2],offset=-1)  = [-1,0,1,2]  # the value of the window is [-1,0,1,2]
-    def sw(self, sw, offset = None):
+    @enforce_types
+    def sw(self, sw:int|list, offset:int|None = None):
         """
         Selects a sample window for the input state.
 

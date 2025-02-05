@@ -33,7 +33,7 @@ plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 plt.rc('grid', linestyle="--", color='grey')
 
 # Path to the data folder
-data_folder = os.path.join(os.getcwd(),'examples','dataset')
+data_folder = os.path.join(os.getcwd(),'dataset')
 
 # Import the file with the vehicle data
 vehicle_data_csv = os.path.join(data_folder,'other_data','vehicle_data.csv')
