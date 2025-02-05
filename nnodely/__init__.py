@@ -26,7 +26,7 @@ from nnodely.activation import Relu, Tanh, ELU, Sigma, Identity
 from nnodely.fir import Fir
 from nnodely.linear import Linear
 from nnodely.arithmetic import Add, Sum, Sub, Mul, Pow, Neg
-from nnodely.trigonometric import Sin, Cos, Tan
+from nnodely.trigonometric import Sin, Cos, Tan, Cosh, Sech
 from nnodely.parametricfunction import ParamFun
 from nnodely.fuzzify import Fuzzify
 from nnodely.part import TimePart, TimeSelect, SamplePart, SampleSelect, Part, Select

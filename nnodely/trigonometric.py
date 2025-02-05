@@ -8,6 +8,8 @@ from nnodely.utils import check
 sin_relation_name = 'Sin'
 cos_relation_name = 'Cos'
 tan_relation_name = 'Tan'
+cosh_relation_name = 'Cosh'
+sech_relation_name = 'Sech'
 
 class Sin(Stream, ToStream):
     """
@@ -72,6 +74,44 @@ class Tan(Stream, ToStream):
         super().__init__(tan_relation_name + str(Stream.count),obj.json,obj.dim)
         self.json['Relations'][self.name] = [tan_relation_name, [obj.name]]
 
+class Cosh(Stream, ToStream):
+    """
+    Returns a new tensor with the hyperbolic cosine of the elements of input.
+
+    See also:
+        Official PyTorch Cosh documentation: 
+        `torch.cosh <https://pytorch.org/docs/stable/generated/torch.cosh.html>`_
+
+    :param obj: the input relation stream
+    :type obj: Stream
+
+    Example:
+        >>> cosh = Cosh(relation)
+    """
+    def __init__(self, obj:Stream) -> Stream:
+        obj = toStream(obj)
+        check(type(obj) is Stream, TypeError,
+              f"The type of {obj} is {type(obj)} and is not supported for Cosh operation.")
+        super().__init__(cosh_relation_name + str(Stream.count),obj.json,obj.dim)
+        self.json['Relations'][self.name] = [cosh_relation_name, [obj.name]]
+
+class Sech(Stream, ToStream):
+    """
+    Returns a new tensor with the hyperbolic secant of the elements of input.
+
+    :param obj: the input relation stream
+    :type obj: Stream
+
+    Example:
+        >>> sech = Sech(relation)
+    """
+    def __init__(self, obj:Stream) -> Stream:
+        obj = toStream(obj)
+        check(type(obj) is Stream, TypeError,
+              f"The type of {obj} is {type(obj)} and is not supported for Sech operation.")
+        super().__init__(sech_relation_name + str(Stream.count),obj.json,obj.dim)
+        self.json['Relations'][self.name] = [sech_relation_name, [obj.name]]
+
 
 class Sin_Layer(nn.Module):
     def __init__(self,):
@@ -100,7 +140,26 @@ class Tan_Layer(nn.Module):
 def createTan(self, *inputs):
     return Tan_Layer()
 
+class Cosh_Layer(nn.Module):
+    def __init__(self,):
+        super(Cosh_Layer, self).__init__()
+    def forward(self, x):
+        return torch.cosh(x)
+
+def createCosh(self, *inputs):
+    return Cosh_Layer()
+
+class Sech_Layer(nn.Module):
+    def __init__(self,):
+        super(Sech_Layer, self).__init__()
+    def forward(self, x):
+        return 1/torch.cosh(x)
+
+def createSech(self, *inputs):
+    return Sech_Layer()
 
 setattr(Model, sin_relation_name, createSin)
 setattr(Model, cos_relation_name, createCos)
 setattr(Model, tan_relation_name, createTan)
+setattr(Model, cosh_relation_name, createCosh)
+setattr(Model, sech_relation_name, createSech)

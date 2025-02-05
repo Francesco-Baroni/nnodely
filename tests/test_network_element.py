@@ -221,5 +221,36 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         self.assertEqual([[[0.9820137619972229, 0.7310585975646973, 0.5, 0.0024726230185478926, 0.8807970285415649]]], result['out2'])
         self.assertEqual([[0.9525741338729858, 0.11920291930437088]], result['out3'])
 
+    def test_sech_cosh_function(self):
+        torch.manual_seed(1)
+        input = Input('in')
+        sech_rel = Sech(input.last())
+        sech_rel_2 = Sech(input.sw(2))
+        cosh_rel = Cosh(input.last())
+        cosh_rel_2 = Cosh(input.sw(2))
+
+        input5 = Input('in5', dimensions=5)
+        sech_rel_5 = Sech(input5.last())
+        cosh_rel_5 = Cosh(input5.last())
+
+        out1 = Output('sech_out_1', sech_rel)
+        out2 = Output('sech_out_2', sech_rel_2)
+        out3 = Output('sech_out_3', sech_rel_5)
+        out4 = Output('cosh_out_1', cosh_rel)
+        out5 = Output('cosh_out_2', cosh_rel_2)
+        out6 = Output('cosh_out_3', cosh_rel_5)
+
+        test = Modely(visualizer=None)
+        test.addModel('model',[out1,out2,out3,out4,out5,out6])
+        test.neuralizeModel(0.01)
+
+        result = test(inputs={'in':[[3.0],[-2.0]], 'in5':[[4.0,1.0,0.0,-6.0,2.0]]})
+        self.assertEqual([0.2658022344112396], result['sech_out_1'])
+        self.assertEqual([[0.0993279218673706, 0.2658022344112396]], result['sech_out_2'])
+        self.assertEqual([[[0.03661899268627167, 0.6480542421340942, 1.0, 0.004957473836839199, 0.2658022344112396]]], result['sech_out_3'])
+        self.assertEqual([3.762195587158203], result['cosh_out_1'])
+        self.assertEqual([[10.067662239074707, 3.762195587158203]], result['cosh_out_2'])
+        self.assertEqual([[[27.3082332611084, 1.5430806875228882, 1.0, 201.71563720703125, 3.762195587158203]]], result['cosh_out_3'])
+
 if __name__ == '__main__':
     unittest.main()
