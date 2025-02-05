@@ -1032,6 +1032,8 @@ class Modely:
         check(prediction_samples >= 0, KeyError, 'The sample horizon must be positive!')
 
         ## Check close loop and connect
+        if self.log_internal:
+            self.internals = {}
         step = self.__get_parameter(step = step)
         closed_loop = self.__get_parameter(closed_loop = closed_loop)
         connect = self.__get_parameter(connect = connect)
@@ -1320,6 +1322,13 @@ class Modely:
                     forbidden_idxs.extend(range(i-prediction_samples, i, 1))
             list_of_batch_indexes = [idx for idx in list_of_batch_indexes if idx not in forbidden_idxs]
 
+        ## Clip the step 
+        if step < 0: ## clip the step to zero
+            log.warning(f"The step is negative ({step}). The step is set to zero.", stacklevel=5)
+            step = 0
+        if step > (len(list_of_batch_indexes)-batch_size): ## Clip the step to the maximum number of samples
+            log.warning(f"The step ({step}) is greater than the number of available samples ({len(list_of_batch_indexes)-batch_size}). The step is set to the maximum number.", stacklevel=5)
+            step = len(list_of_batch_indexes)-batch_size
         ## Loss vector 
         check((batch_size+step)>0, ValueError, f"The batch_size+step must be greater than 0.")
         aux_losses = torch.zeros([len(self.model_def['Minimizers']), round(len(list_of_batch_indexes)/(batch_size+step))])
