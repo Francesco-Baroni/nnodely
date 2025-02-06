@@ -1501,6 +1501,14 @@ class Modely:
                             forbidden_idxs.extend(range(i-prediction_samples, i, 1))
                     list_of_batch_indexes = [idx for idx in list_of_batch_indexes if idx not in forbidden_idxs]
 
+                ## Clip the step 
+                if step < 0: ## clip the step to zero
+                    log.warning(f"The step is negative ({step}). The step is set to zero.", stacklevel=5)
+                    step = 0
+                if step > (len(list_of_batch_indexes)-batch_size): ## Clip the step to the maximum number of samples
+                    log.warning(f"The step ({step}) is greater than the number of available samples ({len(list_of_batch_indexes)-batch_size}). The step is set to the maximum number.", stacklevel=5)
+                    step = len(list_of_batch_indexes)-batch_size
+
                 X = {}
                 ## Update with virtual states
                 self.model.update(closed_loop=closed_loop, connect=connect)
