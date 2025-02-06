@@ -1,10 +1,11 @@
 import copy
 
 import torch.nn as nn
+import torch
 
-from nnodely.relation import ToStream, Stream
+from nnodely.relation import ToStream, Stream, toStream
 from nnodely.model import Model
-from nnodely.utils import check, enforce_types
+from nnodely.utils import check, enforce_types, merge
 
 part_relation_name = 'Part'
 select_relation_name = 'Select'
@@ -12,6 +13,7 @@ timepart_relation_name = 'TimePart'
 timeselect_relation_name = 'TimeSelect'
 samplepart_relation_name = 'SamplePart'
 sampleselect_relation_name = 'SampleSelect'
+timeconcatenate_relation_name = 'TimeConcatenate'
 
 class Part(Stream, ToStream):
     """
@@ -346,6 +348,51 @@ class TimePart(Stream, ToStream):
             rel.append(offset)
         self.json['Relations'][self.name] = rel
 
+class TimeConcatenate(Stream, ToStream):
+    """
+        Implement the concatenate function between two tensors along the time dimension (second dimension). 
+
+        See also:
+            Official PyTorch Cat documentation: 
+            `torch.cat <https://pytorch.org/docs/main/generated/torch.cat.html>`_
+
+        :param input1: the first relation to concatenate
+        :type obj: Tensor
+        :param input2: the second relation to concatenate
+        :type obj: Tensor
+
+        Example:
+            >>> cat = TimeConcatenate(relation1, relation2)
+    """
+    def __init__(self, obj1:Stream, obj2:Stream) -> Stream:
+        obj1,obj2 = toStream(obj1),toStream(obj2)
+        check(type(obj1) is Stream,TypeError,
+              f"The type of {obj1} is {type(obj1)} and is not supported for the Concatenate operation.")
+        check(type(obj2) is Stream,TypeError,
+              f"The type of {obj2} is {type(obj2)} and is not supported for the Concatenate operation.")
+        
+        #check('tw' in obj1.dim, KeyError, 'Input1 must have a time window')
+        #check('tw' in obj2.dim, KeyError, 'Input2 must have a time window')
+        dim = copy.deepcopy(obj1.dim)
+        if 'tw' in obj1.dim and 'tw' in obj2.dim:
+            dim['tw']  = obj1.dim['tw'] + obj2.dim['tw']
+        elif 'sw' in obj1.dim and 'sw' in obj2.dim:
+            dim['sw']  = obj1.dim['sw'] + obj2.dim['sw']
+        super().__init__(timeconcatenate_relation_name + str(Stream.count),merge(obj1.json,obj2.json),dim)
+        self.json['Relations'][self.name] = [timeconcatenate_relation_name,[obj1.name,obj2.name]]
+
+class TimeConcatenate_Layer(nn.Module):
+    #: :noindex:
+    def __init__(self):
+        super(TimeConcatenate_Layer, self).__init__()
+
+    def forward(self, *inputs):
+        return torch.cat((inputs[0], inputs[1]), dim=1)
+
+def createTimeConcatenate(name, *inputs):
+    #: :noindex:
+    return TimeConcatenate_Layer()
+
 class TimePart_Layer(nn.Module):
     def __init__(self, part, offset):
         super(TimePart_Layer, self).__init__()
@@ -384,3 +431,5 @@ setattr(Model, samplepart_relation_name, createSamplePart)
 setattr(Model, sampleselect_relation_name, createSampleSelect)
 
 setattr(Model, timepart_relation_name, createTimePart)
+
+setattr(Model, timeconcatenate_relation_name, createTimeConcatenate)

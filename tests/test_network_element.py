@@ -5,6 +5,7 @@ from nnodely.relation import Stream
 from nnodely import relation
 relation.CHECK_NAMES = False
 
+import numpy as np
 from nnodely.logger import logging, nnLogger
 log = nnLogger(__name__, logging.CRITICAL)
 log.setAllLevel(logging.CRITICAL)
@@ -251,6 +252,63 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         self.assertEqual([3.762195587158203], result['cosh_out_1'])
         self.assertEqual([[10.067662239074707, 3.762195587158203]], result['cosh_out_2'])
         self.assertEqual([[[27.3082332611084, 1.5430806875228882, 1.0, 201.71563720703125, 3.762195587158203]]], result['cosh_out_3'])
+
+    def test_concatenate_time_concatenate(self):
+        torch.manual_seed(1)
+        input = Input('in')
+        input2 = Input('in2')
+        concatenate_rel = Concatenate(input.last(),input2.last())
+        timeconcatenate_rel = TimeConcatenate(input.last(),input2.last())
+        concatenate_tw_rel = Concatenate(input.tw(3),input2.tw(3))
+        timeconcatenate_tw_rel = TimeConcatenate(input.tw(3),input2.tw(3))
+
+        input3 = Input('in3', dimensions=5)
+        input4 = Input('in4', dimensions=5)
+
+        concatenate_rel_5 = Concatenate(input3.last(),input4.last())
+        timeconcatenate_rel_5 = TimeConcatenate(input3.last(),input4.last())
+        concatenate_tw_rel_5 = Concatenate(input3.tw(3),input4.tw(3))
+        timeconcatenate_tw_rel_5 = TimeConcatenate(input3.tw(3),input4.tw(3))
+
+        out1 = Output('concatenate', concatenate_rel)
+        out2 = Output('time_concatenate', timeconcatenate_rel)
+        out3 = Output('concatenate_tw', concatenate_tw_rel)
+        out4 = Output('time_concatenate_tw', timeconcatenate_tw_rel)
+        out5 = Output('concatenate_5', concatenate_rel_5)
+        out6 = Output('time_concatenate_5', timeconcatenate_rel_5)
+        out7 = Output('concatenate_tw_5', concatenate_tw_rel_5)
+        out8 = Output('time_concatenate_tw_5', timeconcatenate_tw_rel_5)
+
+        test = Modely(visualizer=None)
+        test.addModel('model',[out1,out2,out3,out4,out5,out6,out7,out8])
+        test.neuralizeModel(1)
+
+        result = test(inputs={'in':[[1.0],[2.0],[3.0]], 'in2':[[4.0],[5.0],[6.0]], 
+                              'in3':[[7.0,8.0,9.0,10.0,11.0],[12.0,13.0,14.0,15.0,16.0],[17.0,18.0,19.0,20.0,21.0]], 
+                              'in4':[[22.0,23.0,24.0,25.0,26.0],[27.0,28.0,29.0,30.0,31.0],[32.0,33.0,34.0,35.0,36.0]]})
+        self.assertEqual((1,1,2), np.array(result['concatenate']).shape)
+        self.assertEqual([[[3.0, 6.0]]], result['concatenate'])
+        self.assertEqual((1,2), np.array(result['time_concatenate']).shape)
+        self.assertEqual([[3.0, 6.0]], result['time_concatenate'])
+        self.assertEqual((1,3,2), np.array(result['concatenate_tw']).shape)
+        self.assertEqual([[[1.0, 4.0], [2.0, 5.0], [3.0, 6.0]]], result['concatenate_tw'])
+        self.assertEqual((1,6), np.array(result['time_concatenate_tw']).shape)
+        self.assertEqual([[1.0, 2.0, 3.0, 4.0, 5.0, 6.0]], result['time_concatenate_tw'])
+        self.assertEqual((1,1,10), np.array(result['concatenate_5']).shape)
+        self.assertEqual([[[17.0, 18.0, 19.0, 20.0, 21.0, 32.0, 33.0, 34.0, 35.0, 36.0]]], result['concatenate_5'])
+        self.assertEqual((1,2,5), np.array(result['time_concatenate_5']).shape)
+        self.assertEqual([[[17.0, 18.0, 19.0, 20.0, 21.0], [32.0, 33.0, 34.0, 35.0, 36.0]]], result['time_concatenate_5'])
+        self.assertEqual((1,3,10), np.array(result['concatenate_tw_5']).shape)
+        self.assertEqual([[[7.0, 8.0, 9.0, 10.0, 11.0, 22.0, 23.0, 24.0, 25.0, 26.0], 
+                           [12.0, 13.0, 14.0, 15.0, 16.0, 27.0, 28.0, 29.0, 30.0, 31.0], 
+                           [17.0, 18.0, 19.0, 20.0, 21.0, 32.0, 33.0, 34.0, 35.0, 36.0]]], result['concatenate_tw_5'])
+        self.assertEqual((1,6,5), np.array(result['time_concatenate_tw_5']).shape)
+        self.assertEqual([[[7.0, 8.0, 9.0, 10.0, 11.0], 
+                           [12.0, 13.0, 14.0, 15.0, 16.0], 
+                           [17.0, 18.0, 19.0, 20.0, 21.0], 
+                           [22.0, 23.0, 24.0, 25.0, 26.0], 
+                           [27.0, 28.0, 29.0, 30.0, 31.0], 
+                           [32.0, 33.0, 34.0, 35.0, 36.0]]], result['time_concatenate_tw_5'])
 
 if __name__ == '__main__':
     unittest.main()

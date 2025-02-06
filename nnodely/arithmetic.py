@@ -12,6 +12,7 @@ sub_relation_name = 'Sub'
 mul_relation_name = 'Mul'
 div_relation_name = 'Div'
 pow_relation_name = 'Pow'
+concatenate_relation_name = 'Concatenate'
 
 # Unary operators
 neg_relation_name = 'Neg'
@@ -190,6 +191,33 @@ class Sum(Stream, ToStream):
         super().__init__(sum_relation_name + str(Stream.count),obj.json,obj.dim)
         self.json['Relations'][self.name] = [sum_relation_name,[obj.name]]
 
+class Concatenate(Stream, ToStream):
+    """
+        Implement the concatenate function between two tensors. 
+
+        See also:
+            Official PyTorch Cat documentation: 
+            `torch.cat <https://pytorch.org/docs/main/generated/torch.cat.html>`_
+
+        :param input1: the first relation to concatenate
+        :type obj: Tensor
+        :param input2: the second relation to concatenate
+        :type obj: Tensor
+
+        Example:
+            >>> cat = Concatenate(relation1, relation2)
+    """
+    def __init__(self, obj1:Stream, obj2:Stream) -> Stream:
+        obj1,obj2 = toStream(obj1),toStream(obj2)
+        check(type(obj1) is Stream,TypeError,
+              f"The type of {obj1} is {type(obj1)} and is not supported for the Concatenate operation.")
+        check(type(obj2) is Stream,TypeError,
+              f"The type of {obj2} is {type(obj2)} and is not supported for the Concatenate operation.")
+        #check(obj1.dim == obj2.dim or obj1.dim == {'dim':1} or obj2.dim == {'dim':1}, ValueError,
+        #      f"For addition operators (+) the dimension of {obj1.name} = {obj1.dim} must be the same of {obj2.name} = {obj2.dim}.")
+        super().__init__(concatenate_relation_name + str(Stream.count),merge(obj1.json,obj2.json),obj1.dim)
+        self.json['Relations'][self.name] = [concatenate_relation_name,[obj1.name,obj2.name]]
+
 class Add_Layer(nn.Module):
     #: :noindex:
     def __init__(self):
@@ -276,11 +304,24 @@ def createSum(name, *inputs):
     #: :noindex:
     return Sum_Layer()
 
+class Concatenate_Layer(nn.Module):
+    #: :noindex:
+    def __init__(self):
+        super(Concatenate_Layer, self).__init__()
+
+    def forward(self, *inputs):
+        return torch.cat((inputs[0], inputs[1]), dim=2)
+
+def createConcatenate(name, *inputs):
+    #: :noindex:
+    return Concatenate_Layer()
+
 setattr(Model, add_relation_name, createAdd)
 setattr(Model, sub_relation_name, createSub)
 setattr(Model, mul_relation_name, createMul)
 setattr(Model, div_relation_name, createDiv)
 setattr(Model, pow_relation_name, createPow)
+setattr(Model, concatenate_relation_name, createConcatenate)
 
 setattr(Model, neg_relation_name, createNeg)
 # setattr(Model, square_relation_name, createSquare)
