@@ -33,7 +33,7 @@ plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 plt.rc('grid', linestyle="--", color='grey')
 
 # Path to the data folder
-data_folder = os.path.join(os.getcwd(),'examples','dataset')
+data_folder = os.path.join(os.getcwd(),'dataset')
 
 # Import the file with the vehicle data
 vehicle_data_csv = os.path.join(data_folder,'other_data','vehicle_data.csv')
@@ -414,8 +414,7 @@ m_estim_out = Output('m_out', m_estim)
 P_estim_out = Output('P_out', P_estim)
 
 # Create a nnodely model
-path_folder_save = os.path.join(os.getcwd(),'trained_models')   # folder to save the model
-mass_estimator   = nnodely(visualizer='Standard',seed=12,workspace=path_folder_save)  #visualizer=MPLVisulizer()
+mass_estimator   = nnodely(visualizer='Standard',seed=12,workspace='results')  #visualizer=MPLVisulizer()
 
 # Add the neural model to the nnodely structure and neuralization of the model
 mass_estimator.addModel('mass_estim',[m_estim_out,P_estim_out])
@@ -465,10 +464,10 @@ mass_estimator.exportONNX(inputs_order=['Tyf_engine','Tyf_brake','Tyr_brake','th
 
 ## ONNX IMPORT AND INFERENCE
 sample = mass_estimator.getSamples('training_set', window=10)
-onnx_model_path = os.path.join(path_folder_save, 'onnx', 'net.onnx')
-outputs = mass_estimator.onnxInference(sample, onnx_model_path)
-print('onnx outputs: ', outputs)
-
-model_sample = {key: value for key, value in sample.items() if key != 'm' and key != 'P'}
-model_inference = mass_estimator(model_sample, sampled=True, prediction_samples=1)
-print('model outputs: ', model_inference)
+# Remove sample in m and P
+model_sample = {key: np.array(value).astype(np.float32) if key != 'm' and key != 'P' else np.array([[[value[0][0][0]]]]).astype(np.float32) for key, value in sample.items()}
+print('model outputs: ',mass_estimator(model_sample,sampled=True))
+onnx_sample = {key: np.expand_dims(np.array(value),axis=1).astype(np.float32) if key != 'm' and key != 'P' else np.array([[[value[0][0][0]]]]).astype(np.float32) for key, value in sample.items()}
+onnx_model_path = os.path.join('results', 'onnx', 'net.onnx')
+outputs = Modely().onnxInference(onnx_sample, onnx_model_path)
+print('onnx outputs: ', {'P_out':outputs[1].squeeze().tolist(),'m_out':outputs[0].squeeze().tolist()})

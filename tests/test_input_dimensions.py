@@ -402,9 +402,6 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         dataset = {'x': data_x, 'y': data_y}
         test.loadData(name='dataset', source=dataset)
 
-        print('data x: ',test.data['dataset']['x'].shape)
-        print('data y: ',test.data['dataset']['y'].shape)
-        print('n samples: ',test.max_n_samples)
         ## 100 // (step+batch) = 2
         test.trainModel(train_dataset='dataset', num_of_epochs=1, train_batch_size=10, step=30, prediction_samples=20, shuffle_data=False)
         self.assertEqual(2 * 21, len(test.internals.keys()))
