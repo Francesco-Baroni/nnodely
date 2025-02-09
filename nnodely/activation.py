@@ -6,7 +6,7 @@ from nnodely.model import Model
 from nnodely.utils import check
 
 
-relu_relation_name = 'ReLU'
+relu_relation_name = 'Relu'
 tanh_relation_name = 'Tanh'
 elu_relation_name = 'ELU'
 identity_relation_name = 'Identity'
@@ -132,12 +132,12 @@ def createTanh(self, *input):
     """
     return Tanh_Layer()
 
-class ReLU_Layer(nn.Module):
+class Relu_Layer(nn.Module):
     """
      :noindex:
     """
     def __init__(self,):
-        super(ReLU_Layer, self).__init__()
+        super(Relu_Layer, self).__init__()
     def forward(self, x):
         return torch.relu(x)
     
@@ -145,7 +145,7 @@ def createRelu(self, *input):
     """
      :noindex:
     """
-    return ReLU_Layer()
+    return Relu_Layer()
     
 
 def createELU(self, *input):
