@@ -50,7 +50,7 @@ class InputState(NeuObj, Stream):
         Stream.__init__(self, name, self.json, self.dim)
 
     @enforce_types
-    def tw(self, tw:float|list, offset:float = None):
+    def tw(self, tw:int|float|list, offset:int|float|None = None):
         """
         Selects a time window for the input state.
 
