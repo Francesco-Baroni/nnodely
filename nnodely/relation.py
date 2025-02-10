@@ -88,9 +88,8 @@ class Stream(Relation):
         self.dim = dim
 
     @enforce_types
-    def tw(self, tw:float, offset:float|None = None):
+    def tw(self, tw:float, offset:float|None = None) -> "Stream":
         from nnodely.input import State, Connect
-        from nnodely.utils import merge
         s = State(self.name+"_state",dimensions=self.dim['dim'])
         check(type(tw) == float, ValueError, f"The function tw on Stream can take only integers, but got {type(tw)}.")
         out_connect = Connect(self, s)
@@ -98,25 +97,25 @@ class Stream(Relation):
         return Stream(win_state.name, merge(win_state.json, out_connect.json), win_state.dim,0 )
 
     @enforce_types
-    def sw(self, sw:int, offset:int|None = None):
+    def sw(self, sw:int, offset:int|None = None) -> "Stream":
         from nnodely.input import State, Connect
-        from nnodely.utils import merge
         s = State(self.name+"_state",dimensions=self.dim['dim'])
         check(type(sw) == int, ValueError, f"The function sw on Stream can take only integers, but got {type(sw)}.")
         out_connect = Connect(self, s)
         win_state = s.sw(sw, offset)
         return Stream(win_state.name, merge(win_state.json, out_connect.json), win_state.dim,0 )
 
-    def z(self, delay):
+    @enforce_types
+    def z(self, delay:int) -> "Stream":
         from nnodely.input import State, Connect
-        from nnodely.utils import merge
         s = State(self.name + "_state",dimensions=self.dim['dim'])
         if type(delay) == int and delay > 0:
             out_connect = Connect(self, s)
             win_state = s.z(delay)
             return Stream(win_state.name, merge(win_state.json, out_connect.json), win_state.dim,0 )
 
-    def connect(self, obj):
+    @enforce_types
+    def connect(self, obj) -> "Stream":
         """
         Connects the current stream to a given state object.
 
@@ -146,7 +145,8 @@ class Stream(Relation):
         self.json['States'][obj.name]['connect'] = self.name
         return Stream(self.name, self.json, self.dim,0 )
 
-    def closedLoop(self, obj):
+    @enforce_types
+    def closedLoop(self, obj) -> "Stream":
         """
         Creates a closed loop connection with a given state object.
 
