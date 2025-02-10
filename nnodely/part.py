@@ -15,6 +15,33 @@ samplepart_relation_name = 'SamplePart'
 sampleselect_relation_name = 'SampleSelect'
 timeconcatenate_relation_name = 'TimeConcatenate'
 
+# class Part(Stream, ToStream):
+#     @enforce_types
+#     def __init__(self, obj:Stream, i:int, j:int):
+#         # check(type(obj) is Stream, TypeError,
+#         #       f"The type of {obj} is {type(obj)} and is not supported for Part operation.")
+#         check(i >= 0 and j > 0 and i < obj.dim['dim'] and j <= obj.dim['dim'],
+#               IndexError,
+#               f"i={i} or j={j} are not in the range [0,{obj.dim['dim']}]")
+#         dim = copy.deepcopy(obj.dim)
+#         dim['dim'] = j - i
+#         super().__init__(part_relation_name + str(Stream.count),obj.json,dim)
+#         self.json['Relations'][self.name] = [part_relation_name,[obj.name],[i,j]]
+
+# class Part_Layer(nn.Module):
+#     @enforce_types
+#     def __init__(self, i:int, j:int):
+#         super(Part_Layer, self).__init__()
+#         self.i, self.j = i, j
+
+#     def forward(self, x):
+#         assert x.ndim >= 3, 'The Part Relation Works only for 3D inputs'
+#         return x[:, :, self.i:self.j]
+
+# ## Select elements on the third dimension in the range [i,j]
+# def createPart(self, *inputs):
+#     return Part_Layer(i=inputs[0][0], j=inputs[0][1])
+
 class Part(Stream, ToStream):
     """
     Represents a selection of a sub-part from a relation in the neural network model.
@@ -62,21 +89,53 @@ class Part(Stream, ToStream):
         dim = copy.deepcopy(obj.dim)
         dim['dim'] = j - i
         super().__init__(part_relation_name + str(Stream.count),obj.json,dim)
-        self.json['Relations'][self.name] = [part_relation_name,[obj.name],[i,j]]
+        self.json['Relations'][self.name] = [part_relation_name,[obj.name],obj.dim['dim'],[i,j]]
 
 class Part_Layer(nn.Module):
     @enforce_types
-    def __init__(self, i:int, j:int):
+    def __init__(self, dim:int, i:int, j:int):
         super(Part_Layer, self).__init__()
         self.i, self.j = i, j
 
+        # Create a binary mask matrix for the desired slice
+        self.W = torch.zeros((j - i, dim))
+        for idx in range(j - i):
+            self.W[idx, i + idx] = 1
+
     def forward(self, x):
-        assert x.ndim >= 3, 'The Part Relation Works only for 3D inputs'
-        return x[:, :, self.i:self.j]
+        ## assert x.ndim >= 3, 'The Part Relation Works only for 3D inputs'
+        return torch.einsum('bij,kj->bik', x, self.W)
 
 ## Select elements on the third dimension in the range [i,j]
 def createPart(self, *inputs):
-    return Part_Layer(i=inputs[0][0], j=inputs[0][1])
+    return Part_Layer(dim=inputs[0], i=inputs[1][0], j=inputs[1][1])
+
+# class Select(Stream, ToStream):
+
+#     @enforce_types
+#     def __init__(self, obj:Stream, i:int):
+#         # check(type(obj) is Stream, TypeError,
+#         #       f"The type of {obj} is {type(obj)} and is not supported for Select operation.")
+#         check(i >= 0 and i < obj.dim['dim'],
+#               IndexError,
+#               f"i={i} are not in the range [0,{obj.dim['dim']}]")
+#         dim = copy.deepcopy(obj.dim)
+#         dim['dim'] = 1
+#         super().__init__(select_relation_name + str(Stream.count),obj.json,dim)
+#         self.json['Relations'][self.name] = [select_relation_name,[obj.name],i]
+
+# class Select_Layer(nn.Module):
+#     def __init__(self, idx):
+#         super(Select_Layer, self).__init__()
+#         self.idx = idx
+
+#     def forward(self, x):
+#         #assert x.ndim >= 3, 'The Part Relation Works only for 3D inputs'
+#         return x[:, :, self.idx:self.idx + 1]
+
+# ## Select an element i on the third dimension
+# def createSelect(self, *inputs):
+#     return Select_Layer(idx=inputs[0])
 
 class Select(Stream, ToStream):
     """
@@ -123,20 +182,22 @@ class Select(Stream, ToStream):
         dim = copy.deepcopy(obj.dim)
         dim['dim'] = 1
         super().__init__(select_relation_name + str(Stream.count),obj.json,dim)
-        self.json['Relations'][self.name] = [select_relation_name,[obj.name],i]
+        self.json['Relations'][self.name] = [select_relation_name,[obj.name],obj.dim['dim'],i]
 
 class Select_Layer(nn.Module):
-    def __init__(self, idx):
+    def __init__(self, dim, idx):
         super(Select_Layer, self).__init__()
-        self.idx = idx
+        self.W = torch.zeros(dim)
+        self.W[idx] = 1
 
     def forward(self, x):
-        #assert x.ndim >= 3, 'The Part Relation Works only for 3D inputs'
-        return x[:, :, self.idx:self.idx + 1]
+        ## assert x.ndim >= 3, 'The Part Relation Works only for 3D inputs'
+        return torch.einsum('ijk,k->ij', x, self.W).unsqueeze(2)
+    
 
 ## Select an element i on the third dimension
 def createSelect(self, *inputs):
-    return Select_Layer(idx=inputs[0])
+    return Select_Layer(dim=inputs[0], idx=inputs[1])
 
 class SamplePart(Stream, ToStream):
     """
@@ -199,28 +260,83 @@ class SamplePart(Stream, ToStream):
         dim = copy.deepcopy(obj.dim)
         dim['sw']  = j - i
         super().__init__(samplepart_relation_name + str(Stream.count),obj.json,dim)
-        rel = [samplepart_relation_name,[obj.name],[i,j]]
+        if obj.name in all_inputs:
+            rel = [samplepart_relation_name,[obj.name],-1,[i,j]]
+        else:
+            rel = [samplepart_relation_name,[obj.name],obj.dim['sw'],[i,j]]
+        #rel = [samplepart_relation_name,[obj.name],[i,j]]
         if offset is not None:
             check(i <= offset < j, IndexError,"The offset must be inside the sample window")
             rel.append(offset)
         self.json['Relations'][self.name] = rel
 
+# class SamplePart_Layer(nn.Module):
+#     def __init__(self, part, offset):
+#         super(SamplePart_Layer, self).__init__()
+#         self.back, self.forw = part[0], part[1]
+#         self.offset = offset
+
+#     def forward(self, x):
+#         if self.offset is not None:
+#             x = x - x[:, self.offset].unsqueeze(1)
+#         result = x[:, self.back:self.forw]
+#         return result
+
 class SamplePart_Layer(nn.Module):
-    def __init__(self, part, offset):
+    def __init__(self, dim, part, offset):
         super(SamplePart_Layer, self).__init__()
-        self.back, self.forw = part[0], part[1]
+        back, forw = part[0], part[1]
         self.offset = offset
+        
+        # Create the selection matrix W
+        self.W = torch.zeros(forw - back, dim)
+        for i in range(forw - back):
+            self.W[i, back + i] = 1
 
     def forward(self, x):
         if self.offset is not None:
             x = x - x[:, self.offset].unsqueeze(1)
-        return x[:, self.back:self.forw]
+        result = torch.einsum('bij,ki->bkj', x, self.W)
+        return result
 
 def createSamplePart(self, *inputs):
-    if len(inputs) > 1: ## offset
-        return SamplePart_Layer(part=inputs[0], offset=inputs[1])
+    if len(inputs) > 2: ## offset
+        return SamplePart_Layer(dim=inputs[0], part=inputs[1], offset=inputs[2])
     else:
-        return SamplePart_Layer(part=inputs[0], offset=None)
+        return SamplePart_Layer(dim=inputs[0], part=inputs[1], offset=None)
+
+# def createSamplePart(self, *inputs):
+#     if len(inputs) > 1: ## offset
+#         return SamplePart_Layer(part=inputs[0], offset=inputs[1])
+#     else:
+#         return SamplePart_Layer(part=inputs[0], offset=None)
+
+# class SampleSelect(Stream, ToStream):
+
+#     @enforce_types
+#     def __init__(self, obj:Stream, i:int):
+#         # check(type(obj) is Stream, TypeError,
+#         #       f"The type of {obj} is {type(obj)} and is not supported for SampleSelect operation.")
+#         check('sw' in obj.dim, KeyError, 'Input must have a sample window')
+#         backward_idx = 0
+#         forward_idx = obj.dim['sw']
+#         check(i >= backward_idx and i < forward_idx, ValueError, 'i must be in the sample window of the input')
+#         dim = copy.deepcopy(obj.dim)
+#         del dim['sw']
+#         super().__init__(sampleselect_relation_name + str(Stream.count),obj.json,dim)
+#         self.json['Relations'][self.name] = [sampleselect_relation_name,[obj.name],i]
+
+# class SampleSelect_Layer(nn.Module):
+#     def __init__(self, idx):
+#         super(SampleSelect_Layer, self).__init__()
+#         self.idx = idx
+
+#     def forward(self, x):
+#         #assert x.ndim >= 2, 'The Part Relation Works only for 2D inputs'
+#         return x[:, self.idx:self.idx + 1, :]
+
+# def createSampleSelect(self, *inputs):
+#     return SampleSelect_Layer(idx=inputs[0])
 
 class SampleSelect(Stream, ToStream):
     """
@@ -272,19 +388,19 @@ class SampleSelect(Stream, ToStream):
         dim = copy.deepcopy(obj.dim)
         del dim['sw']
         super().__init__(sampleselect_relation_name + str(Stream.count),obj.json,dim)
-        self.json['Relations'][self.name] = [sampleselect_relation_name,[obj.name],i]
+        self.json['Relations'][self.name] = [sampleselect_relation_name,[obj.name],obj.dim['sw'],i]
 
 class SampleSelect_Layer(nn.Module):
-    def __init__(self, idx):
+    def __init__(self, dim, idx):
         super(SampleSelect_Layer, self).__init__()
-        self.idx = idx
+        self.W = torch.zeros(dim)
+        self.W[idx] = 1
 
     def forward(self, x):
-        #assert x.ndim >= 2, 'The Part Relation Works only for 2D inputs'
-        return x[:, self.idx:self.idx + 1, :]
+        return torch.einsum('ijk,j->ik', x, self.W).unsqueeze(1)
 
 def createSampleSelect(self, *inputs):
-    return SampleSelect_Layer(idx=inputs[0])
+    return SampleSelect_Layer(dim=inputs[0], idx=inputs[1])
 
 class TimePart(Stream, ToStream):
     """
@@ -342,11 +458,16 @@ class TimePart(Stream, ToStream):
         dim = copy.deepcopy(obj.dim)
         dim['tw']  = j - i
         super().__init__(timepart_relation_name + str(Stream.count),obj.json,dim)
-        rel = [timepart_relation_name,[obj.name],[i,j]]
+        if obj.name in all_inputs:
+            rel = [timepart_relation_name,[obj.name],-1,[i,j]]
+        else:
+            rel = [timepart_relation_name,[obj.name],obj.dim['tw'],[i,j]]
+        #rel = [timepart_relation_name,[obj.name],[i,j]]
         if offset is not None:
             check(i <= offset < j, IndexError,"The offset must be inside the time window")
             rel.append(offset)
         self.json['Relations'][self.name] = rel
+
 
 class TimeConcatenate(Stream, ToStream):
     """
@@ -393,22 +514,35 @@ def createTimeConcatenate(name, *inputs):
     #: :noindex:
     return TimeConcatenate_Layer()
 
+
 class TimePart_Layer(nn.Module):
-    def __init__(self, part, offset):
+    def __init__(self, dim, part, offset):
         super(TimePart_Layer, self).__init__()
-        self.back, self.forw = part[0], part[1]
+        back, forw = part[0], part[1]
         self.offset = offset
+
+        # Create the selection matrix W
+        self.W = torch.zeros(size=(forw - back, int(dim)))
+        for i in range(forw - back):
+            self.W[i, back + i] = 1
 
     def forward(self, x):
         if self.offset is not None:
             x = x - x[:, self.offset].unsqueeze(1)
-        return x[:, self.back:self.forw]
+        result = torch.einsum('bij,ki->bkj', x, self.W)
+        return result
 
 def createTimePart(self, *inputs):
-    if len(inputs) > 1: ## offset
-        return TimePart_Layer(part=inputs[0], offset=inputs[1])
+    if len(inputs) > 2: ## offset
+        return TimePart_Layer(dim=inputs[0], part=inputs[1], offset=inputs[2])
     else:
-        return TimePart_Layer(part=inputs[0], offset=None)
+        return TimePart_Layer(dim=inputs[0], part=inputs[1], offset=None)
+
+# def createTimePart(self, *inputs):
+#     if len(inputs) > 1: ## offset
+#         return TimePart_Layer(part=inputs[0], offset=inputs[1])
+#     else:
+#         return TimePart_Layer(part=inputs[0], offset=None)
 
 class TimeSelect(Stream, ToStream):
 

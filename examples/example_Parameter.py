@@ -66,7 +66,7 @@ print('result: ', example({'xx':[[1,2,4,4],[1,2,4,4],[1,2,4,4]],'y':[1,2,4,2]}))
 #
 
 print("------------------------EXAMPLE 5------------------------")
-# Example 4
+# Example 5
 # Sum Parameter to constant
 g = Parameter('p14', values=[[1,2,3,4]])
 o = Constant('c14', values=[[1,2,3,4]])
@@ -76,4 +76,16 @@ example = Modely()
 example.addModel('out',[out])
 example.neuralizeModel()
 print('result: ', example({'xxx':[[1,2,4,4],[0,0,0,0],[-1,-1,-1,-1]]}))
+#
+
+print("------------------------EXAMPLE 6------------------------")
+# Example 6
+# Create a constant equal to the sample time
+g = SampleTime()
+x = Input('x1')
+out = Output('out', x.last()+g)
+example = Modely()
+example.addModel('out',[out])
+example.neuralizeModel(0.14)
+print('result: ', example({'x1':[0,0,0,0,-1,-1,-1,-1]}))
 #

@@ -12,7 +12,7 @@ log.setAllLevel(logging.CRITICAL)
 
 sys.path.append(os.getcwd())
 
-# 4 Tests
+# 5 Tests
 # This file tests the value of the training parameters
 
 data_folder = os.path.join(os.path.dirname(__file__), 'data/')
@@ -119,6 +119,22 @@ class ModelyTrainingTest(unittest.TestCase):
         self.assertListEqual([[[-51.0]]],test.model.all_parameters['W'].data.numpy().tolist())
         self.assertListEqual([[-15.0]], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[-51.0]], test.model.all_parameters['a'].data.numpy().tolist())
+
+    def test_network_linear_interpolation_train(self):
+        x = Input('x')
+        param = Parameter(name='a', sw=1)
+        rel1 = Fir(parameter=param)(Interpolation(x_points=[1.0, 2.0, 3.0, 4.0],y_points=[2.0, 4.0, 6.0, 8.0], mode='linear')(x.last()))
+        out = Output('out',rel1)
+
+        test = Modely(visualizer=None, seed=1)
+        test.addModel('fun',[out])
+        test.addMinimize('error', out, x.last())
+        test.neuralizeModel(0.01)
+
+        dataset = {'x':np.random.uniform(1,4,100)}
+        test.loadData(name='dataset', source=dataset)
+        test.trainModel(num_of_epochs=100, train_batch_size=10)
+        self.assertAlmostEqual(test.model.all_parameters['a'].item(), 0.5, places=2)
 
     def test_multimodel_with_loss_gain_and_lr_gain(self):
         ## Model1

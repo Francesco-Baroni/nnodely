@@ -1,10 +1,17 @@
 from itertools import product
+from nnodely.utils import TORCH_DTYPE
 import numpy as np
 
 import torch.nn as nn
 import torch
 
 import copy
+
+@torch.fx.wrap
+def connect(data_in, rel, shift):
+    virtual = torch.roll(data_in, shifts=-1, dims=1)
+    virtual[:, -shift:, :] = rel
+    return virtual
 
 class Model(nn.Module):
     def __init__(self, model_def):
@@ -37,21 +44,21 @@ class Model(nn.Module):
         for _, items in self.relations.items():
             if items[0] == 'SamplePart':
                 if items[1][0] in json_inputs.keys():
-                    items[2][0] = self.input_ns_backward[items[1][0]] + items[2][0]
-                    items[2][1] = self.input_ns_backward[items[1][0]] + items[2][1]
-                    if len(items) > 3: ## Offset
-                        items[3] = self.input_ns_backward[items[1][0]] + items[3]
+                    items[3][0] = self.input_ns_backward[items[1][0]] + items[3][0]
+                    items[3][1] = self.input_ns_backward[items[1][0]] + items[3][1]
+                    if len(items) > 4: ## Offset
+                        items[4] = self.input_ns_backward[items[1][0]] + items[4]
             if items[0] == 'TimePart':
                 if items[1][0] in json_inputs.keys():
-                    items[2][0] = self.input_ns_backward[items[1][0]] + round(items[2][0]/self.sample_time)
-                    items[2][1] = self.input_ns_backward[items[1][0]] + round(items[2][1]/self.sample_time)
-                    if len(items) > 3: ## Offset
-                        items[3] = self.input_ns_backward[items[1][0]] + round(items[3]/self.sample_time)
+                    items[3][0] = self.input_ns_backward[items[1][0]] + round(items[3][0]/self.sample_time)
+                    items[3][1] = self.input_ns_backward[items[1][0]] + round(items[3][1]/self.sample_time)
+                    if len(items) > 4: ## Offset
+                        items[4] = self.input_ns_backward[items[1][0]] + round(items[4]/self.sample_time)
                 else:
-                    items[2][0] = round(items[2][0]/self.sample_time)
-                    items[2][1] = round(items[2][1]/self.sample_time)
-                    if len(items) > 3: ## Offset
-                        items[3] = round(items[3]/self.sample_time)
+                    items[3][0] = round(items[3][0]/self.sample_time)
+                    items[3][1] = round(items[3][1]/self.sample_time)
+                    if len(items) > 4: ## Offset
+                        items[4] = round(items[4]/self.sample_time)
 
         ## Create all the parameters
         for name, param_data in self.params.items():
@@ -60,7 +67,7 @@ class Model(nn.Module):
             sample_window = round(param_data[window] / aux_sample_time) if window else 1
             param_size = (sample_window,)+tuple(param_data['dim']) if type(param_data['dim']) is list else (sample_window, param_data['dim'])
             if 'values' in param_data:
-                self.all_parameters[name] = nn.Parameter(torch.tensor(param_data['values'], dtype=torch.float32), requires_grad=True)
+                self.all_parameters[name] = nn.Parameter(torch.tensor(param_data['values'], dtype=TORCH_DTYPE), requires_grad=True)
             # TODO clean code
             elif 'init_fun' in param_data:
                 exec(param_data['init_fun']['code'], globals())
@@ -71,13 +78,13 @@ class Model(nn.Module):
                         values[indexes] = function_to_call(indexes, param_size, param_data['init_fun']['params'])
                     else:
                         values[indexes] = function_to_call(indexes, param_size)
-                self.all_parameters[name] = nn.Parameter(torch.tensor(values.tolist(), dtype=torch.float32), requires_grad=True)
+                self.all_parameters[name] = nn.Parameter(torch.tensor(values.tolist(), dtype=TORCH_DTYPE), requires_grad=True)
             else:
-                self.all_parameters[name] = nn.Parameter(torch.rand(size=param_size, dtype=torch.float32), requires_grad=True)
+                self.all_parameters[name] = nn.Parameter(torch.rand(size=param_size, dtype=TORCH_DTYPE), requires_grad=True)
 
         ## Create all the constants
         for name, param_data in self.constants.items():
-            self.all_constants[name] = nn.Parameter(torch.tensor(param_data['values'], dtype=torch.float32), requires_grad=False)
+            self.all_constants[name] = nn.Parameter(torch.tensor(param_data['values'], dtype=TORCH_DTYPE), requires_grad=False)
         all_params_and_consts = self.all_parameters | self.all_constants
 
         ## Create all the relations
@@ -100,8 +107,17 @@ class Model(nn.Module):
                             layer_inputs.append([all_params_and_consts[par] for par in self.functions[item]['params_and_consts']])
                         if 'map_over_dim' in self.functions[item].keys():
                             layer_inputs.append(self.functions[item]['map_over_dim'])
-                    else: 
+                    else:
                         layer_inputs.append(item)
+
+                if rel_name == 'SamplePart':
+                    if layer_inputs[0] == -1:
+                        layer_inputs[0] = self.input_n_samples[input_var[0]]
+                elif rel_name == 'TimePart':
+                    if layer_inputs[0] == -1:
+                        layer_inputs[0] = self.input_n_samples[input_var[0]]
+                    else:
+                        layer_inputs[0] = round(layer_inputs[0] / self.sample_time)
                 ## Initialize the relation
                 self.relation_forward[relation] = func(*layer_inputs)
                 ## Save the inputs needed for the relative relation
@@ -161,10 +177,12 @@ class Model(nn.Module):
                     ## Check if the relation is inside the connect
                     for connect_input, connect_rel in self.connect_update.items():
                         if relation == connect_rel:
-                            shift = result_dict[relation].shape[1]
-                            virtual = torch.roll(kwargs[connect_input], shifts=-1, dims=1)
-                            virtual[:, -shift:, :] = result_dict[relation]
-                            result_dict[connect_input] = virtual.clone()
+                            # shift = result_dict[relation].shape[1]
+                            # virtual = torch.roll(kwargs[connect_input], shifts=-1, dims=1)
+                            # virtual[:, -shift:, :] = result_dict[relation]
+                            # result_dict[connect_input] = virtual.clone()
+                            # available_keys.add(connect_input)
+                            result_dict[connect_input] = connect(kwargs[connect_input], result_dict[relation], result_dict[relation].size(1))
                             available_keys.add(connect_input)
 
         ## Return a dictionary with all the connected inputs

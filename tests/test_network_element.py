@@ -1,18 +1,18 @@
 import unittest, sys, os, torch
+import numpy as np
 
 from nnodely import *
 from nnodely.relation import Stream
 from nnodely import relation
 relation.CHECK_NAMES = False
 
-import numpy as np
 from nnodely.logger import logging, nnLogger
 log = nnLogger(__name__, logging.CRITICAL)
 log.setAllLevel(logging.CRITICAL)
 
 sys.path.append(os.getcwd())
 
-# 11 Tests
+# 16 Tests
 # This file tests the dimensions and the of the element created in the pytorch environment
 
 class ModelyNetworkBuildingTest(unittest.TestCase):
@@ -200,6 +200,31 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         for ind, (key, value) in enumerate({k:v for k,v in test.model.relation_forward.items() if 'Linear' in k}.items()):
             self.assertEqual(list_of_dimensions[ind],list(value.weights.shape))
 
+    def test_network_linear_interpolation(self):
+        torch.manual_seed(1)
+        x = Input('x')
+        rel1 = Interpolation(x_points=[1.0, 2.0, 3.0, 4.0],y_points=[1.0, 4.0, 9.0, 16.0], mode='linear')(x.last())
+        out = Output('out',rel1)
+
+        test = Modely(visualizer=None)
+        test.addModel('fun',[out])
+        test.neuralizeModel(0.01)
+
+        inference = test(inputs={'x':[1.5,2.5,3.5]})
+        self.assertEqual(inference['out'],[2.5,6.5,12.5])
+
+        torch.manual_seed(1)
+        x = Input('x')
+        rel1 = Interpolation(x_points=[1.0, 4.0, 3.0, 2.0],y_points=[1.0, 16.0, 9.0, 4.0], mode='linear')(x.last())
+        out = Output('out',rel1)
+
+        test = Modely(visualizer=None)
+        test.addModel('fun',[out])
+        test.neuralizeModel(0.01)
+
+        inference = test(inputs={'x':[1.5,2.5,3.5]})
+        self.assertEqual(inference['out'],[2.5,6.5,12.5])
+
     def test_sigmoid_function(self):
         torch.manual_seed(1)
         input = Input('in')
@@ -283,8 +308,8 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         test.addModel('model',[out1,out2,out3,out4,out5,out6,out7,out8])
         test.neuralizeModel(1)
 
-        result = test(inputs={'in':[[1.0],[2.0],[3.0]], 'in2':[[4.0],[5.0],[6.0]], 
-                              'in3':[[7.0,8.0,9.0,10.0,11.0],[12.0,13.0,14.0,15.0,16.0],[17.0,18.0,19.0,20.0,21.0]], 
+        result = test(inputs={'in':[[1.0],[2.0],[3.0]], 'in2':[[4.0],[5.0],[6.0]],
+                              'in3':[[7.0,8.0,9.0,10.0,11.0],[12.0,13.0,14.0,15.0,16.0],[17.0,18.0,19.0,20.0,21.0]],
                               'in4':[[22.0,23.0,24.0,25.0,26.0],[27.0,28.0,29.0,30.0,31.0],[32.0,33.0,34.0,35.0,36.0]]})
         self.assertEqual((1,1,2), np.array(result['concatenate']).shape)
         self.assertEqual([[[3.0, 6.0]]], result['concatenate'])
@@ -299,24 +324,24 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         self.assertEqual((1,2,5), np.array(result['time_concatenate_5']).shape)
         self.assertEqual([[[17.0, 18.0, 19.0, 20.0, 21.0], [32.0, 33.0, 34.0, 35.0, 36.0]]], result['time_concatenate_5'])
         self.assertEqual((1,3,10), np.array(result['concatenate_tw_5']).shape)
-        self.assertEqual([[[7.0, 8.0, 9.0, 10.0, 11.0, 22.0, 23.0, 24.0, 25.0, 26.0], 
-                           [12.0, 13.0, 14.0, 15.0, 16.0, 27.0, 28.0, 29.0, 30.0, 31.0], 
+        self.assertEqual([[[7.0, 8.0, 9.0, 10.0, 11.0, 22.0, 23.0, 24.0, 25.0, 26.0],
+                           [12.0, 13.0, 14.0, 15.0, 16.0, 27.0, 28.0, 29.0, 30.0, 31.0],
                            [17.0, 18.0, 19.0, 20.0, 21.0, 32.0, 33.0, 34.0, 35.0, 36.0]]], result['concatenate_tw_5'])
         self.assertEqual((1,6,5), np.array(result['time_concatenate_tw_5']).shape)
-        self.assertEqual([[[7.0, 8.0, 9.0, 10.0, 11.0], 
-                           [12.0, 13.0, 14.0, 15.0, 16.0], 
-                           [17.0, 18.0, 19.0, 20.0, 21.0], 
-                           [22.0, 23.0, 24.0, 25.0, 26.0], 
-                           [27.0, 28.0, 29.0, 30.0, 31.0], 
+        self.assertEqual([[[7.0, 8.0, 9.0, 10.0, 11.0],
+                           [12.0, 13.0, 14.0, 15.0, 16.0],
+                           [17.0, 18.0, 19.0, 20.0, 21.0],
+                           [22.0, 23.0, 24.0, 25.0, 26.0],
+                           [27.0, 28.0, 29.0, 30.0, 31.0],
                            [32.0, 33.0, 34.0, 35.0, 36.0]]], result['time_concatenate_tw_5'])
-        
+
     def test_equation_learner(self):
         x = Input('x')
         F = Input('F')
 
         def myFun(K1,K2,p1,p2):
             return K1*p1+K2*p2
-        
+
         K1 = Parameter('k1', dimensions =  1, sw = 1,values=[[2.0]])
         K2 = Parameter('k2', dimensions =  1, sw = 1,values=[[3.0]])
 

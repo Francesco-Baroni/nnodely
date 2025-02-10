@@ -161,11 +161,11 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
 
-## VsCode environment
-.vscode/
+# vscode test
+.vscode
 
-## Temporary files
-temp
-
-## Results folder
+# default results folder
 results
+
+# default temp folder
+temp

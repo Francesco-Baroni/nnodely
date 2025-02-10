@@ -4,6 +4,8 @@ from nnodely import *
 from nnodely import relation
 relation.CHECK_NAMES = False
 
+import numpy as np
+
 from nnodely.logger import logging, nnLogger
 log = nnLogger(__name__, logging.CRITICAL)
 log.setAllLevel(logging.CRITICAL)
@@ -382,6 +384,34 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         # self.assertEqual(2,test.model_def['Info']['ns'][1])
         # self.assertEqual(6,test.model_def['Info']['ntot'])
 
+    def test_batch_size_and_step(self):
+        test = Modely(visualizer=None, seed=42, log_internal=True)
+        x = Input('x')
+        y = State('y')
 
+        rel_out = Fir(x.last()) + Fir(y.last())
+        out = Output('out', rel_out)
+
+        test.addClosedLoop(rel_out, y)
+        test.addModel('modelA', out)
+        test.addMinimize('error1', out, x.next())
+        test.neuralizeModel()
+
+        data_x = np.random.rand(101, 1)
+        data_y = np.random.rand(101, 1)
+        dataset = {'x': data_x, 'y': data_y}
+        test.loadData(name='dataset', source=dataset)
+
+        ## 100 // (step+batch) = 2
+        test.trainModel(train_dataset='dataset', num_of_epochs=1, train_batch_size=10, step=30, prediction_samples=20, shuffle_data=False)
+        self.assertEqual(2 * 21, len(test.internals.keys()))
+
+        ## Clip the step to the maximum number of samples (100 - prediction_samples - batch) = 70
+        test.trainModel(train_dataset='dataset', num_of_epochs=1, train_batch_size=10, step=200, prediction_samples=20, shuffle_data=True)
+        self.assertEqual(1 * 21, len(test.internals.keys()))
+
+        ## Clip the step to 0 
+        test.trainModel(train_dataset='dataset', num_of_epochs=1, train_batch_size=10, step=-4, prediction_samples=20, shuffle_data=True)
+        self.assertEqual(8 * 21, len(test.internals.keys()))
 if __name__ == '__main__':
     unittest.main()

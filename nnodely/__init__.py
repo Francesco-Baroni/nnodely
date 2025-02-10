@@ -1,5 +1,5 @@
 
-__version__ = '0.25.0'
+__version__ = '1.0.1'
 
 import sys
 major, minor = sys.version_info.major, sys.version_info.minor
@@ -18,7 +18,7 @@ else:
 
 # Network input, outputs and parameters
 from nnodely.input import Input, State, Connect, ClosedLoop
-from nnodely.parameter import Parameter, Constant
+from nnodely.parameter import Parameter, Constant, SampleTime
 from nnodely.output import Output
 
 # Network elements
@@ -32,6 +32,7 @@ from nnodely.fuzzify import Fuzzify
 from nnodely.part import TimePart, TimeSelect, SamplePart, SampleSelect, Part, Select, TimeConcatenate
 from nnodely.localmodel import LocalModel
 from nnodely.equationlearner import EquationLearner
+from nnodely.interpolation import Interpolation
 
 # Main nnodely classes
 from nnodely.nnodely import nnodely, Modely
