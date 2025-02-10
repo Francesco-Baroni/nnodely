@@ -552,6 +552,9 @@ class Modely:
             else:
                 self.model_def.updateParameters(self.model)
 
+        for key, state in self.model_def['States'].items():
+            check("connect" in state.keys() or  'closedLoop' in state.keys(), KeyError, f'The connect or closed loop missing for state "{key}"')
+
         self.model_def.setBuildWindow(sample_time)
         self.model = Model(self.model_def.json)
 
