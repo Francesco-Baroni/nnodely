@@ -21,11 +21,12 @@ def enforce_types(func):
         for arg, arg_type in hints.items():
             if arg in all_args and not isinstance(all_args[arg], arg_type):
                 raise TypeError(
-                    f"Expected argument '{arg}' to be of type {arg_type.__name__}, but got {type(all_args[arg]).__name__}")
+                    f"Expected argument '{arg}' to be of type {arg_type}, but got {type(all_args[arg]).__name__}")
 
         return func(*args, **kwargs)
 
     return wrapper
+
 
 # Linear interpolation function, operating on batches of input data and returning batches of output data
 def linear_interp(x,x_data,y_data):
