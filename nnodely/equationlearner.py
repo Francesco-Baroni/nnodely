@@ -16,34 +16,71 @@ from nnodely.arithmetic import Concatenate
 from nnodely import *
 
 equationlearner_relation_name = 'EquationLearner'
-Available_functions = [Sin, Cos, Tan, Cosh, Sech, Add, Mul, Sub, Neg, Pow, Sum, Concatenate, Relu, Tanh, ELU, Identity, Sigma, ParamFun]
-dub_functions = [Fuzzify, LocalModel]
-
-# class EquationLearner(NeuObj):
-#     @enforce_types
-#     def __init__(self, functions:list|None = None) -> Stream:
-
-#         self.relation_name = equationlearner_relation_name
-
-#         # input parameters
-#         self.functions = functions
-#         self.n_activations = len(self.functions)
-#         check(self.n_activations > 0, ValueError, 'At least one activation function must be provided')
-#         super().__init__(equationlearner_relation_name + str(NeuObj.count))
-#         for func in self.functions:
-#             check(callable(func), TypeError, 'The activation functions must be callable')
-
-#     def __call__(self, inputs):
-#         linear_layer = Linear(output_dimension=self.n_activations)(inputs)
-#         for idx, func in enumerate(self.functions):
-#             if idx == 0:
-#                 out = func(Select(linear_layer,idx))
-#             else:
-#                 out = Concatenate(out, func(Select(linear_layer,idx)))
-#         return out
-
+Available_functions = [Sin, Cos, Tan, Cosh, Sech, Add, Mul, Sub, Neg, Pow, Sum, Concatenate, Relu, Tanh, ELU, Identity, Sigma]
+Initialized_functions = [ParamFun, Fuzzify]
 
 class EquationLearner(NeuObj):
+    """
+    Represents a nnodely implementation of the Task-Parametrized Equation Learner block.
+
+    See also:
+        Task-Parametrized Equation Learner official paper: 
+        `Equation Learner <https://www.sciencedirect.com/science/article/pii/S0921889022001981>`_
+
+    Parameters
+    ----------
+    functions : list
+        A list of callable functions to be used as activation functions.
+    linear_in : Linear, optional
+        A Linear layer to process the input before applying the activation functions. If not provided a random initialized linear layer will be used instead.
+    linear_out : Linear, optional
+        A Linear layer to process the output after applying the activation functions. Can be omitted.
+
+    Attributes
+    ----------
+    relation_name : str
+        The name of the relation.
+    linear_in : Linear or None
+        The Linear layer to process the input.
+    linear_out : Linear or None
+        The Linear layer to process the output.
+    functions : list
+        The list of activation functions.
+    func_parameters : dict
+        A dictionary mapping function indices to the number of parameters they require.
+    n_activations : int
+        The total number of activation functions.
+
+    Examples
+    --------
+
+    Example - basic usage:
+        >>> x = Input('x')
+
+        >>> equation_learner = EquationLearner(functions=[Tan, Sin, Cos])
+        >>> out = Output('out',equation_learner(x.last()))
+
+    Example - passing a linear layer:
+        >>> x = Input('x')
+
+        >>> linear_layer = Linear(output_dimension=3, W_init=init_constant, W_init_params={'value':0})
+        >>> equation_learner = EquationLearner(functions=[Tan, Sin, Cos], linear_in=linear_layer)
+
+        >>> out = Output('out',equation_learner(x.last()))
+
+    Example - passing a custom parametric function and multiple inputs:
+        >>> x = Input('x')
+        >>> F = Input('F')
+
+        >>> def myFun(K1,p1):
+                return K1*p1
+
+        >>> K = Parameter('k', dimensions =  1, sw = 1,values=[[2.0]])
+        >>> parfun = ParamFun(myFun, parameters = [K] )
+
+        >>> equation_learner = EquationLearner([parfun])
+        >>> out = Output('out',equation_learner((x.last(),F.last())))
+    """
     @enforce_types
     def __init__(self, functions:list, linear_in:Linear|None = None, linear_out:Linear|None = None) -> Stream:
 
@@ -58,11 +95,19 @@ class EquationLearner(NeuObj):
         self.func_parameters = {}
         for func_idx, func in enumerate(self.functions):
             check(callable(func), TypeError, 'The activation functions must be callable')
-            check(func in Available_functions, ValueError, f'The function {func} is not available for the EquationLearner operation')
-            init_signature = inspect.signature(func.__init__)  # Get constructor signature
-            parameters = list(init_signature.parameters.values())
-            # Exclude 'self' from the argument count
-            num_args = len([param for param in parameters if param.name != "self"])
+            if type(func) in Initialized_functions:
+                if type(func) == ParamFun:
+                    funinfo = inspect.getfullargspec(func.param_fun)
+                    num_args = len(funinfo.args) - len(func.parameters) if func.parameters else len(funinfo.args)
+                elif type(func) == Fuzzify:
+                    init_signature = inspect.signature(func.__call__)  
+                    parameters = list(init_signature.parameters.values())
+                    num_args = len([param for param in parameters if param.name != "self"])
+            else:
+                check(func in Available_functions, ValueError, f'The function {func} is not available for the EquationLearner operation')
+                init_signature = inspect.signature(func.__init__)  
+                parameters = list(init_signature.parameters.values())
+                num_args = len([param for param in parameters if param.name != "self"])
             self.func_parameters[func_idx] = num_args
 
         self.n_activations = sum(self.func_parameters.values())
@@ -71,20 +116,18 @@ class EquationLearner(NeuObj):
     def __call__(self, inputs):
         if type(inputs) is not tuple:
             inputs = (inputs,)
+        check(len(set([x.dim['sw'] if 'sw' in x.dim.keys() else x.dim['tw'] for x in inputs])) == 1, ValueError, 'All inputs must have the same time dimension')
         for input_idx, inp in enumerate(inputs):
             concatenated_input = inp if input_idx == 0 else Concatenate(concatenated_input, inp)
         linear_layer = self.linear_in(concatenated_input) if self.linear_in else Linear(output_dimension=self.n_activations)(concatenated_input)
         idx = 0
         for func_idx, func in enumerate(self.functions):
             arguments = [Select(linear_layer,idx+arg_idx) for arg_idx in range(self.func_parameters[func_idx])]
-            if func_idx == 0:
-                out = func(*arguments)
-            else:
-                out = Concatenate(out, func(*arguments))
+            idx += self.func_parameters[func_idx]
+            out = func(*arguments) if func_idx == 0 else Concatenate(out, func(*arguments))
         if self.linear_out:
             out = self.linear_out(out)
         return out
-
 
 # class EquationLearner(NeuObj):
 #     @enforce_types

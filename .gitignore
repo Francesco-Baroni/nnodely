@@ -166,3 +166,6 @@ cython_debug/
 
 ## Temporary files
 temp
+
+## Results folder
+results

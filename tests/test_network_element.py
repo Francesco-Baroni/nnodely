@@ -309,6 +309,64 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
                            [22.0, 23.0, 24.0, 25.0, 26.0], 
                            [27.0, 28.0, 29.0, 30.0, 31.0], 
                            [32.0, 33.0, 34.0, 35.0, 36.0]]], result['time_concatenate_tw_5'])
+        
+    def test_equation_learner(self):
+        x = Input('x')
+        F = Input('F')
+
+        def myFun(K1,K2,p1,p2):
+            return K1*p1+K2*p2
+        
+        K1 = Parameter('k1', dimensions =  1, sw = 1,values=[[2.0]])
+        K2 = Parameter('k2', dimensions =  1, sw = 1,values=[[3.0]])
+
+        parfun = ParamFun(myFun, parameters = [K1,K2])
+        fuzzi = Fuzzify(centers=[0,1,2,3])
+
+        linear_layer_in = Linear(output_dimension=3, W_init=init_constant, W_init_params={'value':0}, b_init=init_constant, b_init_params={'value':0}, b=False)
+        linear_layer_out = Linear(output_dimension=1, W_init=init_constant, W_init_params={'value':1}, b_init=init_constant, b_init_params={'value':0}, b=False)
+
+        equation_learner = EquationLearner(functions=[Tan, Sin, Cos], linear_in=linear_layer_in)(x.last())
+        equation_learner_out = EquationLearner(functions=[Tan, Sin, Cos], linear_in=linear_layer_in, linear_out=linear_layer_out)(x.last())
+        equation_learner_tw = EquationLearner(functions=[Tan, Sin, Cos], linear_in=linear_layer_in)(x.sw(2))
+        equation_learner_multi_tw = EquationLearner(functions=[Tan, Sin, Cos], linear_in=linear_layer_in)((x.sw(2),F.sw(2)))
+
+        linear_layer_in_2 = Linear(output_dimension=5, W_init=init_constant, W_init_params={'value':1}, b_init=init_constant, b_init_params={'value':0}, b=False)
+
+        equation_learner_2 = EquationLearner(functions=[Add, Mul, Identity], linear_in=linear_layer_in_2)(x.last())
+        equation_learner_2_tw = EquationLearner(functions=[Add, Mul, Identity], linear_in=linear_layer_in_2)(x.sw(2))
+        equation_learner_2_multi_tw = EquationLearner(functions=[Add, Mul, Identity], linear_in=linear_layer_in_2)((x.sw(2),F.sw(2)))
+
+        linear_layer_in_3 = Linear(output_dimension=5, W_init=init_constant, W_init_params={'value':1}, b_init=init_constant, b_init_params={'value':0}, b=False)
+
+        equation_learner_3 = EquationLearner(functions=[parfun, Add, fuzzi], linear_in=linear_layer_in_3)(x.last())
+        equation_learner_3_tw = EquationLearner(functions=[parfun, Add, fuzzi], linear_in=linear_layer_in_3)(x.sw(2))
+        equation_learner_3_multi_tw = EquationLearner(functions=[parfun, Add, fuzzi], linear_in=linear_layer_in_3)((x.sw(2),F.sw(2)))
+
+        out = Output('el',equation_learner)
+        out2 = Output('el_out',equation_learner_out)
+        out3 = Output('el_tw',equation_learner_tw)
+        out4 = Output('el_multi_tw',equation_learner_multi_tw)
+        out5 = Output('el2',equation_learner_2)
+        out6 = Output('el2_tw',equation_learner_2_tw)
+        out7 = Output('el2_multi_tw',equation_learner_2_multi_tw)
+        out8 = Output('el3',equation_learner_3)
+        out9 = Output('el3_tw',equation_learner_3_tw)
+        out10 = Output('el3_multi_tw',equation_learner_3_multi_tw)
+        example = Modely(visualizer=None)
+        example.addModel('model',[out,out2,out3,out4,out5,out6,out7,out8,out9,out10])
+        example.neuralizeModel()
+        result = example({'x':[1.0,2.0], 'F':[3.0,4.0]})
+        self.assertEqual(result['el'], [[[0.0, 0.0, 1.0]]])
+        self.assertEqual(result['el_out'], [1.0])
+        self.assertEqual(result['el_tw'], [[[0.0, 0.0, 1.0], [0.0, 0.0, 1.0]]])
+        self.assertEqual(result['el_multi_tw'], [[[0.0, 0.0, 1.0], [0.0, 0.0, 1.0]]])
+        self.assertEqual(result['el2'], [[[4.0, 4.0, 2.0]]])
+        self.assertEqual(result['el2_tw'], [[[2.0, 1.0, 1.0], [4.0, 4.0, 2.0]]])
+        self.assertEqual(result['el2_multi_tw'], [[[8.0, 16.0, 4.0], [12.0, 36.0, 6.0]]])
+        self.assertEqual(result['el3'], [[[10.0, 4.0, 0.0, 0.0, 1.0, 0.0]]])
+        self.assertEqual(result['el3_tw'], [[[5.0, 2.0, 0.0, 1.0, 0.0, 0.0], [10.0, 4.0, 0.0, 0.0, 1.0, 0.0]]])
+        self.assertEqual(result['el3_multi_tw'], [[[20.0, 8.0, 0.0, 0.0, 0.0, 1.0], [30.0, 12.0, 0.0, 0.0, 0.0, 1.0]]])
 
 if __name__ == '__main__':
     unittest.main()

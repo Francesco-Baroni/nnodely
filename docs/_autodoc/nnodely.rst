@@ -147,6 +147,18 @@ localmodel module
         :undoc-members:
         :no-inherited-members:
 
+
+equationlearner module
+----------------------
+
+.. automodule:: nnodely.equationlearner
+    :undoc-members:
+    :no-inherited-members:
+
+    .. autoclass:: nnodely.localmodel.EquationLearner
+        :undoc-members:
+        :no-inherited-members:
+
 optimizer module
 ----------------
 
