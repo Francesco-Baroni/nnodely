@@ -32,6 +32,14 @@ class Model(nn.Module):
         self.input_n_samples = {key:value['ntot'] for key, value in (model_def['Inputs']|model_def['States']).items()}
         self.minimizers_keys = [self.minimizers[key]['A'] for key in self.minimizers] + [self.minimizers[key]['B'] for key in self.minimizers]
 
+        #print('inputs: ',self.inputs)
+        #print('outputs: ',self.outputs)
+        #print('relations: ',self.relations)
+        #print('params: ',self.params)
+        #print('constants: ',self.constants)
+        #print('sample_time: ',self.sample_time)
+        #print('state_model: ',self.state_model)
+
         ## Build the network
         self.all_parameters = {}
         self.all_constants = {}
@@ -123,8 +131,6 @@ class Model(nn.Module):
                 self.relation_forward[relation] = func(*layer_inputs)
                 ## Save the inputs needed for the relative relation
                 self.relation_inputs[relation] = input_var
-            else:
-                print(f"Key Error: [{rel_name}] Relation not defined")
 
         ## Add the gradient to all the relations and parameters that requires it
         self.relation_forward = nn.ParameterDict(self.relation_forward)
@@ -170,6 +176,10 @@ class Model(nn.Module):
                             layer_inputs.append(self.all_parameters[key])
                         else: ## relation than takes another relation or a connect variable
                             layer_inputs.append(result_dict[key])
+
+                    #print('relation: ',relation)
+                    #print('layer inputs: ',layer_inputs)
+                    #print('relation forward: ',self.relation_forward)
 
                     ## Execute the current relation
                     result_dict[relation] = self.relation_forward[relation](*layer_inputs)
