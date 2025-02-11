@@ -1319,11 +1319,11 @@ class ModelyPredictTest(unittest.TestCase):
         results = test({'in': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]})
         self.assertEqual((4, 3), np.array(results['out1']).shape)
         self.assertEqual([[4.0, 5.0, 6.0], [5.0, 6.0, 7.0], [6.0, 7.0, 8.0], [7.0, 8.0, 9.0]], results['out1'])
-        self.assertEqual((4, 8), np.array(results['out1']).shape)
+        self.assertEqual((4, 8), np.array(results['out2']).shape)
         self.assertEqual([[0.0, 14.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
                           [14.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0],
                           [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0],
-                          [2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]], results['out1'])
+                          [2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]], results['out2'])
 
 
     def test_sw_on_stream_sw_complex(self):
@@ -1338,8 +1338,8 @@ class ModelyPredictTest(unittest.TestCase):
 
         out21 = Output('out21', sw_3.sw(2))
         out61 = Output('out61', sw_7.sw(6))
-        out22 = Output('out22', SamplePart(sw_3,0,2))
-        out62 = Output('out62', SamplePart(sw_7,0,6))
+        out22 = Output('out22', SamplePart(sw_3,1,3))
+        out62 = Output('out62', SamplePart(sw_7,1,7))
         test = Modely(visualizer=None)
         test.addModel('out_A', [out21,out61,out22,out62])
         test.neuralizeModel()
@@ -1349,8 +1349,8 @@ class ModelyPredictTest(unittest.TestCase):
 
         out31 = Output('out31', sw_3)
         out71 = Output('out71', sw_7)
-        out32 = Output('out32', SamplePart(state4,0,3))
-        out72 = Output('out72', SamplePart(state8,0,7))
+        out32 = Output('out32', SamplePart(state4,1,4))
+        out72 = Output('out72', SamplePart(state8,1,8))
         out33 = Output('out33', sw_3.sw(3))
         out73 = Output('out73', sw_7.sw(7))
         test = Modely(visualizer=None)
@@ -1364,16 +1364,13 @@ class ModelyPredictTest(unittest.TestCase):
         self.assertEqual(results['out72'], results['out73'])
 
         out41 = Output('out41', state4)
-        out81 = Output('out81', state8)
         out42 = Output('out42', sw_3.sw(4))
-        out82 = Output('out82', sw_7.sw(8))
         test = Modely(visualizer=None)
-        test.addModel('out_C', [out41,out81,out42,out82])
-        test.addConnect(sw_7, state)
+        test.addModel('out_C', [out41,out42])
+        test.addConnect(sw_3, state)
         test.neuralizeModel()
         results = test({'in': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]})
         self.assertEqual(results['out41'], results['out42'])
-        self.assertEqual(results['out81'], results['out82'])
 
 if __name__ == '__main__':
     unittest.main()

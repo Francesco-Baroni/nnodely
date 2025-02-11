@@ -11,6 +11,7 @@ import onnxruntime as ort
 import importlib
 
 from nnodely.logger import logging, nnLogger
+from nnodely.relation import NeuObj, Stream
 log = nnLogger(__name__, logging.CRITICAL)
 log.setAllLevel(logging.CRITICAL)
 
@@ -538,6 +539,33 @@ class ModelyExportTest(unittest.TestCase):
         if os.path.exists(vehicle.getWorkspace()):
             shutil.rmtree(vehicle.getWorkspace())
 
+    def test_export_sw_on_stream_sw_complex(self):
+        NeuObj.reset_count()
+        Stream.reset_count()
+        # Create nnodely structure
+        result_path = 'results'
+        network_name = 'swnet'
+        input = Input('inin')
+
+        sw_7 = input.sw(7)
+
+        out61 = Output('out61', sw_7.sw(6))
+        out62 = Output('out62', SamplePart(sw_7,1,7))
+        test = Modely(visualizer=None, workspace=result_path)
+        test.addModel('out', [out61,out62])
+        test.neuralizeModel()
+        sample = [14, 1, 2, 3, 4, 5, 6]
+        results = test({'inin':sample})
+
+        onnx_model_path = os.path.join(result_path, 'onnx', network_name+'.onnx')
+        test.exportONNX(inputs_order=['inin','SamplePart2_state'],outputs_order=['out61','out62'],name=network_name)
+        outputs = Modely().onnxInference({'inin':np.array([[[[14],[1],[2],[3],[4],[5],[6]]]]).astype(np.float32),'SamplePart2_state':np.array([[[0],[0],[0],[0],[0],[0]]]).astype(np.float32)}, onnx_model_path)
+        self.assertEqual(outputs[0].squeeze().tolist(), results['out61'][0])
+        self.assertEqual(outputs[1].squeeze().tolist(), results['out62'][0])
+        self.assertEqual(results['out61'][0], results['out62'][0])
+
+        if os.path.exists(test.getWorkspace()):
+            shutil.rmtree(test.getWorkspace())
 
 if __name__ == '__main__':
     unittest.main()

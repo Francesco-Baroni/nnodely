@@ -8,9 +8,10 @@ import torch
 import copy
 
 @torch.fx.wrap
-def connect(data_in, rel, shift):
+def connect(data_in, rel):
     virtual = torch.roll(data_in, shifts=-1, dims=1)
-    virtual[:, -shift:, :] = rel
+    max_dim = min(rel.size(1), data_in.size(1))
+    virtual[:, -max_dim:, :] = rel[:, -max_dim:, :]
     return virtual
 
 class Model(nn.Module):
@@ -182,7 +183,7 @@ class Model(nn.Module):
                             # virtual[:, -shift:, :] = result_dict[relation]
                             # result_dict[connect_input] = virtual.clone()
                             # available_keys.add(connect_input)
-                            result_dict[connect_input] = connect(kwargs[connect_input], result_dict[relation], result_dict[relation].size(1))
+                            result_dict[connect_input] = connect(kwargs[connect_input], result_dict[relation])
                             available_keys.add(connect_input)
 
         ## Return a dictionary with all the connected inputs

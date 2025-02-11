@@ -88,10 +88,9 @@ class Stream(Relation):
         self.dim = dim
 
     @enforce_types
-    def tw(self, tw:float, offset:float|None = None) -> "Stream":
+    def tw(self, tw:float|int, offset:float|int|None = None) -> "Stream":
         from nnodely.input import State, Connect
         s = State(self.name+"_state",dimensions=self.dim['dim'])
-        check(type(tw) == float, ValueError, f"The function tw on Stream can take only integers, but got {type(tw)}.")
         out_connect = Connect(self, s)
         win_state = s.tw(tw, offset)
         return Stream(win_state.name, merge(win_state.json, out_connect.json), win_state.dim,0 )
@@ -100,7 +99,6 @@ class Stream(Relation):
     def sw(self, sw:int, offset:int|None = None) -> "Stream":
         from nnodely.input import State, Connect
         s = State(self.name+"_state",dimensions=self.dim['dim'])
-        check(type(sw) == int, ValueError, f"The function sw on Stream can take only integers, but got {type(sw)}.")
         out_connect = Connect(self, s)
         win_state = s.sw(sw, offset)
         return Stream(win_state.name, merge(win_state.json, out_connect.json), win_state.dim,0 )
