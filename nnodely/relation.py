@@ -91,7 +91,7 @@ class Stream(Relation):
     def tw(self, tw:float, offset:float|None = None) -> "Stream":
         from nnodely.input import State, Connect
         s = State(self.name+"_state",dimensions=self.dim['dim'])
-        check(type(tw) == float, ValueError, f"The function tw on Stream can take only integers, but got {type(tw)}.")
+        check(type(tw) == float, ValueError, f"The function tw on Stream can take only floats, but got {type(tw)}.")
         out_connect = Connect(self, s)
         win_state = s.tw(tw, offset)
         return Stream(win_state.name, merge(win_state.json, out_connect.json), win_state.dim,0 )
