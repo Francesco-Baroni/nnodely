@@ -740,7 +740,7 @@ class ModelyPredictTest(unittest.TestCase):
         self.TestAlmostEqual([4294967808.0, 4328522240.0,  4263366656.0], results['outtot'])
 
     def test_parameter_and_linear(self):
-        input = Input('in').last()
+        input = Input('in1').last()
         W15 = Parameter('W15', dimensions=(1, 5), values=[[[1,2,3,4,5]]])
         b15 = Parameter('b15', dimensions=5, values=[[1,2,3,4,5]])
         input4 = Input('in4',dimensions=4).last()
@@ -756,7 +756,7 @@ class ModelyPredictTest(unittest.TestCase):
         n.addModel('out',[o,o3,oW,oWb])
         #n.addModel('out', [oW])
         n.neuralizeModel()
-        results = n({'in': [1, 2], 'in4': [[6, 2, 2, 4], [7, 2, 2, 4]]})
+        results = n({'in1': [1, 2], 'in4': [[6, 2, 2, 4], [7, 2, 2, 4]]})
         #self.assertEqual((2,), np.array(results['out']).shape)
         #self.TestAlmostEqual([9.274794578552246,10.3853759765625], results['out'])
         #self.assertEqual((2,1,3), np.array(results['out3']).shape)
@@ -778,7 +778,7 @@ class ModelyPredictTest(unittest.TestCase):
         self.assertEqual((2, 1, 5), np.array(results['outWb']).shape)
         self.TestAlmostEqual([[[-7, 36, 51, 68, 89]],[[-5, 40, 57, 76, 99]]], results['outWb'])
 
-        input2 = Input('in').sw([-1,1])
+        input2 = Input('in1').sw([-1,1])
         input42 = Input('in4', dimensions=4).sw([-1,1])
 
         o = Output('out' , Linear(input2) + Linear(input42))
@@ -788,7 +788,7 @@ class ModelyPredictTest(unittest.TestCase):
         n = Modely(visualizer=None)
         n.addModel('out',[o,o3,oW,oWb])
         n.neuralizeModel()
-        results = n({'in': [1, 2], 'in4': [[6, 2, 2, 4], [7, 2, 2, 4]]})
+        results = n({'in1': [1, 2], 'in4': [[6, 2, 2, 4], [7, 2, 2, 4]]})
         self.assertEqual((1, 2), np.array(results['out']).shape)
         self.TestAlmostEqual([[7.3881096839904785, 7.91458797454834]], results['out'])
         self.assertEqual((1, 2, 3), np.array(results['out3']).shape)
@@ -801,7 +801,7 @@ class ModelyPredictTest(unittest.TestCase):
 
     def test_initialization(self):
         torch.manual_seed(1)
-        input = Input('in')
+        input = Input('in1')
         W = Parameter('W', dimensions=(1,1), init=init_constant)
         b = Parameter('b', dimensions=1, init=init_constant)
         o = Output('out', Linear(W=W,b=b)(input.last()))
@@ -824,7 +824,7 @@ class ModelyPredictTest(unittest.TestCase):
         n = Modely(visualizer=None)
         n.addModel('model',[o,o52,opar,opar2,ol,ol52,ofpar,ofpar2])
         n.neuralizeModel()
-        results = n({'in': [1, 1, 2]})
+        results = n({'in1': [1, 1, 2]})
         self.assertEqual((2,), np.array(results['out']).shape)
         self.TestAlmostEqual([2,3], results['out'])
         self.assertEqual((2,), np.array(results['out52']).shape)
@@ -1227,13 +1227,13 @@ class ModelyPredictTest(unittest.TestCase):
         self.assertEqual([[-96.0, -120.0, -144.0]], results['out3'])
 
     def test_predict_fuzzify(self):
-        input = Input('in')
+        input = Input('in1')
         fuzzi = Fuzzify(6, range=[0, 5], functions='Rectangular')(input.last())
         out = Output('out', fuzzi)
         test = Modely(visualizer=None)
         test.addModel('out',[out])
         test.neuralizeModel()
-        results = test({'in': [0, 1, 2]})
+        results = test({'in1': [0, 1, 2]})
         self.assertEqual((3, 1, 6), np.array(results['out']).shape)
         self.assertEqual([[[1.0, 0.0, 0.0, 0.0, 0.0, 0.0]],[[0.0, 1.0, 0.0, 0.0, 0.0, 0.0]],[[0.0, 0.0, 1.0, 0.0, 0.0, 0.0]]], results['out'])
 

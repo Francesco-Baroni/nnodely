@@ -518,7 +518,7 @@ class ModelyExportTest(unittest.TestCase):
         vehicle.loadData(name='dataset', source=data_folder, format=data_struct, skiplines=1)
 
         ## Export the Onnx Model
-        vehicle.exportONNX(inputs_order=['gear','trq','alt','brk','vel'],outputs_order=['accelleration'],name=network_name)
+        vehicle.exportONNX(name=network_name)
 
         model_sample = vehicle.getSamples('dataset', window=1)
         model_inference = vehicle(model_sample, sampled=True, prediction_samples=1)

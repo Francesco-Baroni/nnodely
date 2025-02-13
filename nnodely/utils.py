@@ -4,12 +4,15 @@ import numpy as np
 from pprint import pformat
 from functools import wraps
 from typing import get_type_hints
+import keyword
 
 from nnodely.logger import logging, nnLogger
 log = nnLogger(__name__, logging.CRITICAL)
 
 TORCH_DTYPE = torch.float32
 NP_DTYPE = np.float32
+
+ForbiddenTags = keyword.kwlist
 
 def enforce_types(func):
     @wraps(func)

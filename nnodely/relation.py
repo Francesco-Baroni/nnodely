@@ -2,7 +2,7 @@ import copy
 
 import numpy as np
 
-from nnodely.utils import check, merge
+from nnodely.utils import check, merge, ForbiddenTags
 
 from nnodely.logger import logging, nnLogger
 log = nnLogger(__name__, logging.CRITICAL)
@@ -39,7 +39,8 @@ class NeuObj():
     def __init__(self, name='', json={}, dim=0):
         NeuObj.count += 1
         if CHECK_NAMES == True:
-            check(name not in NeuObj_names, NameError, f"The name {name} is already used change the name of NeuObj.")
+            check(name not in NeuObj_names, NameError, f"The name '{name}' is already used change the name of NeuObj.")
+            check(name not in ForbiddenTags, NameError, f"The name '{name}' is a forbidden tag.")
             NeuObj_names.append(name)
         self.name = name
         self.dim = dim
@@ -81,6 +82,7 @@ class Stream(Relation):
 
     def __init__(self, name, json, dim, count = 1):
         Stream.count += count
+        check(name not in ForbiddenTags, NameError, f"The name '{name}' is a forbidden tag.")
         self.name = name
         self.json = copy.deepcopy(json)
         self.dim = dim

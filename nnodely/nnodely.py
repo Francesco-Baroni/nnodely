@@ -10,6 +10,7 @@ from nnodely.model import Model
 from nnodely.optimizer import Optimizer, SGD, Adam
 from nnodely.exporter import Exporter, StandardExporter
 from nnodely.modeldef import ModelDef
+from nnodely import relation
 
 from nnodely.utils import check, argmax_dict, argmin_dict, tensor_to_list, TORCH_DTYPE, NP_DTYPE
 
@@ -339,6 +340,9 @@ class Modely:
                 del self.states[key]
         
         return result_dict
+    
+    def clearTags():
+        relation.NeuObj_names = []
 
     def getSamples(self, dataset, index = None, window=1):
         """
@@ -1860,7 +1864,7 @@ class Modely:
         self.traced = True
         self.model_def.updateParameters(self.model)
 
-    def exportONNX(self, inputs_order, outputs_order,  models = None, name = 'net', model_folder = None):
+    def exportONNX(self, inputs_order=None, outputs_order=None,  models = None, name = 'net', model_folder = None):
         """
         Exports the neural network model to an ONNX file.
 
