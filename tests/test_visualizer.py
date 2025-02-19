@@ -127,6 +127,28 @@ class ModelyTestVisualizer(unittest.TestCase):
         m.showFunctions(list(example.model_def['Functions'].keys()), xlim=[[-5, 5], [-1, 1]])
         m.closeFunctions()
 
+    def test_structure_plot(self):
+        X = Input('X')
+        Y = Input('Y')
+        Z = Input('Z')
+        t_state = State('t_state')
+        k_state = State('k_state')
+
+        func1 = Fir(X.last()) + Fir(Y.last())
+        func2 = Fir(Z.last()) + t_state.last()
+        func3 = Fir(k_state.last()) * Constant('g', sw=1, values=[[9.8]])
+
+        out = Output('out', func1 + func2 + func3)
+
+        example = Modely(visualizer=MPLVisualizer())
+        example.addClosedLoop(func1, t_state)
+        example.addConnect(func2, k_state)
+        example.addModel('model', out)
+        example.neuralizeModel()
+
+        example.plotStructure()
+
+
     # def test_export_mplnotebookvisualizer(self):
     #     m = MPLNotebookVisualizer(5)
     #     test = Modely(visualizer=m, seed=42)

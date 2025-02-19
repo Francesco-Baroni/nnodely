@@ -1982,4 +1982,21 @@ class Modely:
         """
         self.exporter.exportReport(self, name, model_folder)
 
+    def plotStructure(self):
+        """
+        Plots the diagram structure of the neural network model.
+        
+        Raises
+        ------
+        RuntimeError
+            If the network has not been neuralized.
+
+        Example
+        -------
+        Example usage:
+            >>> model = Modely()
+            >>> model.plotStructure()
+        """
+        self.visualizer.showStructure(self.model_def.json)
+
 nnodely = Modely

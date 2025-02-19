@@ -6,6 +6,8 @@ from nnodely.parametricfunction import return_standard_inputs, return_function
 from nnodely.utils import check
 from nnodely.modeldef import ModelDef
 
+import matplotlib as plt
+
 from nnodely.logger import logging, nnLogger
 log = nnLogger(__name__, logging.INFO)
 
@@ -208,8 +210,3 @@ class MPLVisualizer(TextVisualizer):
                 self.process_results[name_data][minimizer].terminate()
                 self.process_results[name_data][minimizer].wait()
                 self.process_results[name_data].pop(minimizer)
-
-
-
-
-
