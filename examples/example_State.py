@@ -5,7 +5,7 @@ sys.path.append(os.getcwd())
 
 from nnodely import *
 
-example = 1
+example = 10
 data_struct = ['time', ('x', 'x_state'), 'x_s', 'F']
 data_folder = './data/'
 
@@ -150,7 +150,7 @@ elif example == 4:
 
 elif example == 5:
     print("-----------------------------------EXAMPLE 5------------------------------------")
-    # Recurrent Training with multi-dimensional output and multi-window ####')
+    # Recurrent Training with multi-dimensional output and multi-window
     x = Input('x', dimensions=3) 
     F = Input('F')
     x_state = State('x_state', dimensions=3)
@@ -185,7 +185,7 @@ elif example == 5:
 
 elif example == 6:
     print("-----------------------------------EXAMPLE 6------------------------------------")
-    # Recurrent Training with state variables and close_loop ####')
+    # Recurrent Training with state variables and close_loop
     x = Input('x') 
     F = Input('F')
     x_state = State('x_state')
@@ -217,3 +217,48 @@ elif example == 6:
           'lr':0.01}
     mass_spring_damper.trainModel(splits=[50,30,20], closed_loop={'F':'out'}, prediction_samples=3, shuffle_data=False, training_params=params)
     print('finale state: ', mass_spring_damper.model.states)
+
+elif example == 7:
+    print("-----------------------------------EXAMPLE7------------------------------------")
+    # Simple integral operation
+    x = Input('x')
+    out = Output('int',Integrate(x.last()))
+    integrator = Modely(seed=42)
+    integrator.addModel('out', out)
+    integrator.neuralizeModel(0.1)
+    print(integrator({'x':[1,1,1,1,1,1,1]}))
+
+elif example == 8:
+    print("-----------------------------------EXAMPLE 8------------------------------------")
+    # Simple one pole convergence
+    x = Input('x')
+    xs = State('x_state')
+    int = Integrate((x.last()-xs.last()))
+    int.closedLoop(xs)
+    out = Output('pole',int)
+    integrator = Modely(seed=42)
+    integrator.addModel('out', out)
+    integrator.neuralizeModel(0.1)
+    print(integrator({'x':[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]}))
+
+elif example == 9:
+    print("-----------------------------------EXAMPLE 9------------------------------------")
+    # Simple derivative operation
+    x = Input('x')
+    der = Derivate(x.last())
+    out = Output('der',der)
+    integrator = Modely(seed=42)
+    integrator.addModel('out', out)
+    integrator.neuralizeModel(1)
+    print(integrator({'x':[1,2,3,2,1,1,1,1]}))
+
+
+elif example == 10:
+    print("-----------------------------------EXAMPLE 10-----------------------------------")
+    # Simple derivative operation
+    x = Input('x').s(1)
+    out = Output('der',x)
+    integrator = Modely(seed=42)
+    integrator.addModel('out', out)
+    integrator.neuralizeModel(1)
+    print(integrator({'x':[1,2,3,2,1,1,1,1]}))

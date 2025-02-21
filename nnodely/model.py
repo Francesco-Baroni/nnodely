@@ -8,9 +8,10 @@ import torch
 import copy
 
 @torch.fx.wrap
-def connect(data_in, rel, shift):
+def connect(data_in, rel):
     virtual = torch.roll(data_in, shifts=-1, dims=1)
-    virtual[:, -shift:, :] = rel
+    max_dim = min(rel.size(1), data_in.size(1))
+    virtual[:, -max_dim:, :] = rel[:, -max_dim:, :]
     return virtual
 
 class Model(nn.Module):
@@ -30,6 +31,14 @@ class Model(nn.Module):
         self.input_ns_backward = {key:value['ns'][0] for key, value in (model_def['Inputs']|model_def['States']).items()}
         self.input_n_samples = {key:value['ntot'] for key, value in (model_def['Inputs']|model_def['States']).items()}
         self.minimizers_keys = [self.minimizers[key]['A'] for key in self.minimizers] + [self.minimizers[key]['B'] for key in self.minimizers]
+
+        #print('inputs: ',self.inputs)
+        #print('outputs: ',self.outputs)
+        #print('relations: ',self.relations)
+        #print('params: ',self.params)
+        #print('constants: ',self.constants)
+        #print('sample_time: ',self.sample_time)
+        #print('state_model: ',self.state_model)
 
         ## Build the network
         self.all_parameters = {}
@@ -122,8 +131,6 @@ class Model(nn.Module):
                 self.relation_forward[relation] = func(*layer_inputs)
                 ## Save the inputs needed for the relative relation
                 self.relation_inputs[relation] = input_var
-            else:
-                print(f"Key Error: [{rel_name}] Relation not defined")
 
         ## Add the gradient to all the relations and parameters that requires it
         self.relation_forward = nn.ParameterDict(self.relation_forward)
@@ -170,6 +177,10 @@ class Model(nn.Module):
                         else: ## relation than takes another relation or a connect variable
                             layer_inputs.append(result_dict[key])
 
+                    #print('relation: ',relation)
+                    #print('layer inputs: ',layer_inputs)
+                    #print('relation forward: ',self.relation_forward)
+
                     ## Execute the current relation
                     result_dict[relation] = self.relation_forward[relation](*layer_inputs)
                     available_keys.add(relation)
@@ -182,7 +193,7 @@ class Model(nn.Module):
                             # virtual[:, -shift:, :] = result_dict[relation]
                             # result_dict[connect_input] = virtual.clone()
                             # available_keys.add(connect_input)
-                            result_dict[connect_input] = connect(kwargs[connect_input], result_dict[relation], result_dict[relation].size(1))
+                            result_dict[connect_input] = connect(kwargs[connect_input], result_dict[relation])
                             available_keys.add(connect_input)
 
         ## Return a dictionary with all the connected inputs

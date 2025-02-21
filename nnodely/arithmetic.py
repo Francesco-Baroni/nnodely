@@ -15,7 +15,6 @@ pow_relation_name = 'Pow'
 
 # Unary operators
 neg_relation_name = 'Neg'
-# square_relation_name = 'Square'
 
 # Merge operator
 sum_relation_name = 'Sum'

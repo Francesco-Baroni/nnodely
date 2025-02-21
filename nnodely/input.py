@@ -1,19 +1,20 @@
 import copy
 
 from nnodely.relation import NeuObj, Stream, ToStream
-from nnodely.utils import check, merge
+from nnodely.utils import check, merge, enforce_types
 from nnodely.part import SamplePart, TimePart
+from nnodely.timeoperation import Derivate, Integrate
 
 class InputState(NeuObj, Stream):
     """
-    Represents an input state in the neural network model.
+    Represents an Input or State in the neural network model.
 
     Parameters
     ----------
     json_name : str
-        The name of the JSON field to store the input state configuration.
+        The name of the JSON field to store the Input or the State configuration.
     name : str
-        The name of the input state.
+        The name of the Input or the State.
     dimensions : int, optional
         The number of dimensions for the input state. Default is 1.
 
@@ -22,24 +23,24 @@ class InputState(NeuObj, Stream):
     json_name : str
         The name of the JSON field to store the input state configuration.
     name : str
-        The name of the input state.
+        The name of the Input or the State.
     dim : dict
-        A dictionary containing the dimensions of the input state.
+        A dictionary containing the dimensions of the Input or the State.
     json : dict
-        A dictionary containing the configuration of the input state.
+        A dictionary containing the configuration of the Input or the State.
     """
-    def __init__(self, json_name, name, dimensions:int = 1):
+    def __init__(self, json_name:str, name:str, dimensions:int = 1):
         """
         Initializes the InputState object.
 
         Parameters
         ----------
         json_name : str
-            The name of the JSON field to store the input state configuration.
+            The name of the JSON field to store the Input or the State configuration.
         name : str
-            The name of the input state.
+            The name of the Input or the State.
         dimensions : int, optional
-            The number of dimensions for the input state. Default is 1.
+            The number of dimensions for the Input or the State. Default is 1.
         """
         NeuObj.__init__(self, name)
         check(type(dimensions) == int, TypeError,"The dimensions must be a integer")
@@ -48,21 +49,22 @@ class InputState(NeuObj, Stream):
         self.dim = {'dim': dimensions}
         Stream.__init__(self, name, self.json, self.dim)
 
-    def tw(self, tw, offset = None):
+    @enforce_types
+    def tw(self, tw:int|float|list, offset:int|float|None = None) -> Stream:
         """
-        Selects a time window for the input state.
+        Selects a time window for the Input and State.
 
         Parameters
         ----------
-        tw : list or int
-            The time window. If a list, it should contain the start and end values. If an int, it represents the time window size.
-        offset : int, optional
+        tw : list or float
+            The time window. If a list, it should contain the start and end values. If a float, it represents the time window size.
+        offset : float, optional
             The offset for the time window. Default is None.
 
         Returns
         -------
-        TimePart
-            A TimePart object representing the selected time window.
+        Stream
+            A Stream representing the TimePart object with the selected time window.
 
         Raises
         ------
@@ -86,43 +88,50 @@ class InputState(NeuObj, Stream):
                   "The offset must be inside the time window")
         return TimePart(Stream(self.name, json, dim), json[self.json_name][self.name]['tw'][0], json[self.json_name][self.name]['tw'][1], offset)
 
-    # Select a sample window
-    # Example T = [-3,-2,-1,0,1,2]       # time vector 0 represent the last passed instant
-    # If sw is an integer #1 represent the number of step in the past
-    # T.s(2)                = [-1, 0]    # represents two time step in the past
-    # If sw is a list [#1,#2] the numbers represent the time index in the vector second element excluded
-    # T.s([-2,0])           = [-1, 0]    # represents two time step in the past zero in the future
-    # T.s([0,1])            = [1]        # the first time in the future
-    # T.s([-4,-2])          = [-3,-2]
-    # The total number of samples can be computed #2-#1
-    # The offset represent the index of the vector that need to be used to offset the window
-    # T.s(2,offset=-2)      = [0, 1]      # the value of the window is [-1,0]
-    # T.s([-2,2],offset=-1)  = [-1,0,1,2]  # the value of the window is [-1,0,1,2]
-    def sw(self, sw, offset = None):
+
+    @enforce_types
+    def sw(self, sw:int|list, offset:int|None = None) -> Stream:
         """
-        Selects a sample window for the input state.
+        Selects a sample window for the Input and the State
 
         Parameters
         ----------
-        sw : list or int
+        sw : list, int
             The sample window. If a list, it should contain the start and end indices. If an int, it represents the number of steps in the past.
         offset : int, optional
             The offset for the sample window. Default is None.
 
         Returns
         -------
-        SamplePart
-            A SamplePart object representing the selected sample window.
+        Stream
+            A Stream representing the SamplePart object with the selected samples.
 
         Raises
         ------
         TypeError
             If the sample window is not an integer or a list of integers.
+
+        Examples
+        --------
+        Select a sample window considering a signal T = [-3,-2,-1,0,1,2] where the time vector 0 represent the last passed instant
+        If sw is an integer #1 represent the number of step in the past
+            T.s(2) = [-1, 0]    # represents two sample step in the past
+
+        If sw is a list [#1,#2] the numbers represent the sample indexes in the vector with the second element excluded
+            T.s([-2,0])  = [-1, 0]    # represents two time step in the past zero in the future
+            T.s([0,1])   = [1]        # the first time in the future
+            T.s([-4,-2]) = [-3,-2]
+
+        The total number of samples can be computed #2-#1
+        The offset represent the index of the vector that need to be used to offset the window
+            T.s(2,offset=-2)       = [0, 1]      # the value of the window is [-1,0]
+            T.s([-2,2],offset=-1)  = [-1,0,1,2]  # the value of the window is [-1,0,1,2]
         """
         dim = copy.deepcopy(self.dim)
         json = copy.deepcopy(self.json)
         if type(sw) is list:
             check(type(sw[0]) == int and type(sw[1]) == int, TypeError, "The sample window must be integer")
+            check(sw[1] > sw[0], TypeError, "The dimension of the sample window must be positive")
             json[self.json_name][self.name]['sw'] = sw
             sw = sw[1] - sw[0]
         else:
@@ -136,14 +145,10 @@ class InputState(NeuObj, Stream):
                   "The offset must be inside the sample window")
         return SamplePart(Stream(self.name, json, dim), json[self.json_name][self.name]['sw'][0], json[self.json_name][self.name]['sw'][1], offset)
 
-    # Select the unitary delay
-    # Example T = [-3,-2,-1,0,1,2] # time vector 0 represent the last passed instant
-    # T.z(-1) = 1
-    # T.z(0)  = 0 #the last passed instant
-    # T.z(2)  = -2
-    def z(self, delay):
+    @enforce_types
+    def z(self, delay:int) -> Stream:
         """
-        Selects a unitary delay for the input state.
+        Considering the Zeta transform notation. The function is used to selects a unitary delay from the Input or the State.
 
         Parameters
         ----------
@@ -152,8 +157,15 @@ class InputState(NeuObj, Stream):
 
         Returns
         -------
-        SamplePart
-            A SamplePart object representing the selected delay.
+        Stream
+            A Stream representing the SamplePart object with the selected delay.
+
+        Examples
+        --------
+        Select the unitary delay considering a signal T = [-3,-2,-1,0,1,2], where the time vector 0 represent the last passed instant
+            T.z(-1) = 1
+            T.z(0)  = 0 # the last passed instant
+            T.z(2)  = -2
         """
         dim = copy.deepcopy(self.dim)
         json = copy.deepcopy(self.json)
@@ -162,31 +174,58 @@ class InputState(NeuObj, Stream):
         dim['sw'] = sw[1] - sw[0]
         return SamplePart(Stream(self.name, json, dim), json[self.json_name][self.name]['sw'][0], json[self.json_name][self.name]['sw'][1], None)
 
-    def last(self):
+    @enforce_types
+    def last(self) -> Stream:
         """
         Selects the last passed instant for the input state.
 
         Returns
         -------
-        SamplePart
-            A SamplePart object representing the last passed instant.
+        Stream
+            A Stream representing the SamplePart object with the last passed instant.
         """
         return self.z(0)
 
-    def next(self):
+    @enforce_types
+    def next(self) -> Stream:
         """
         Selects the next instant for the input state.
 
         Returns
         -------
-        SamplePart
-            A SamplePart object representing the next instant.
+        Stream
+            A Stream representing the SamplePart object with the next instant.
         """
         return self.z(-1)
 
-    # def s(self, derivate):
-    #     return Stream((self.name, {'s':derivate}), self.json, self.dim)
+    @enforce_types
+    def s(self, order:int,  method:str|None = None) -> Stream:
+        """
+        Considering the Laplace transform notation. The function is used to operate an integral or derivate operation on the input.
+        The order of the integral or the derivative operation is indicated by the order parameter.
 
+        Parameters
+        ----------
+        order : int
+            Order of the Laplace transform
+        method : str, optional
+            Integration or derivation method
+
+        Returns
+        -------
+        Stream
+            A Stream of the signal represents the integral or derivation operation.
+        """
+        check(order != 0, ValueError, "The order must be a positive or negative integer not a zero")
+        if order > 0:
+            o = self.last()
+            for i in range(order):
+                o = Derivate(o, method = method)
+        elif order < 0:
+            o = self.last()
+            for i in range(-order):
+                o = Integrate(o, method = method)
+        return o
 
 class Input(InputState):
     def __init__(self, name, dimensions:int = 1):
@@ -200,19 +239,6 @@ class State(InputState):
 # connect operation
 connect_name = 'connect'
 closedloop_name = 'closedLoop'
-
-
-# class Connect(Stream, ToStream):
-#     def __init__(self, obj1: Stream, obj2: State) -> Stream:
-#         check(type(obj1) is Stream, TypeError,
-#               f"The {obj1} must be a Stream or Output and not a {type(obj1)}.")
-#         obj1.connect(obj2)
-#
-# class ClosedLoop(Stream, ToStream):
-#     def __init__(self, obj1: Stream, obj2: State) -> Stream:
-#         check(type(obj1) is Stream, TypeError,
-#               f"The {obj1} must be a Stream or Output and not a {type(obj1)}.")
-#         obj1.closedloop(obj2)
 
 class Connect(Stream, ToStream):
     def __init__(self, obj1:Stream, obj2:State) -> Stream:
