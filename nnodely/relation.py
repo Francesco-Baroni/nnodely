@@ -88,29 +88,126 @@ class Stream(Relation):
         self.dim = dim
 
     @enforce_types
-    def tw(self, tw:float|int, offset:float|int|None = None) -> "Stream":
+    def tw(self, tw:float|int|list, offset:float|int|None = None) -> "Stream":
+        """
+        Selects a time window on Stream. It is possible to create a smaller or bigger time window on the stream.
+        The Time Window must be in the past not in the future.
+
+        Parameters
+        ----------
+        tw : float, int, list
+            The time window represents the time in the past. If a list, it should contain the start and end times, both indexes must be in the past.
+        offset : float, int, optional
+            The offset for the sample window. Default is None.
+
+        Returns
+        -------
+        Stream
+            A Stream representing the TimePart object with the selected time window.
+
+        """
         from nnodely.input import State, Connect
+        if type(tw) is list:
+            check(0 >= tw[1] > tw[0] and tw[0] < 0, ValueError, "The dimension of the sample window must be in the past.")
         s = State(self.name+"_state",dimensions=self.dim['dim'])
         out_connect = Connect(self, s)
         win_state = s.tw(tw, offset)
         return Stream(win_state.name, merge(win_state.json, out_connect.json), win_state.dim,0 )
 
     @enforce_types
-    def sw(self, sw:int, offset:int|None = None) -> "Stream":
+    def sw(self, sw:int|list, offset:int|None = None) -> "Stream":
+        """
+        Selects a sample window on Stream. It is possible to create a smaller or bigger window on the stream.
+        The Sample Window must be in the past not in the future.
+
+        Parameters
+        ----------
+        sw : int, list
+            The sample window represents the number of steps in the past. If a list, it should contain the start and end indices, both indexes must be in the past.
+        offset : int, optional
+            The offset for the sample window. Default is None.
+
+        Returns
+        -------
+        Stream
+            A Stream representing the SamplePart object with the selected samples.
+
+        """
         from nnodely.input import State, Connect
+        if type(sw) is list:
+            check(0 >= sw[1] > sw[0] and sw[0] < 0, ValueError, "The dimension of the sample window must be in the past.")
         s = State(self.name+"_state",dimensions=self.dim['dim'])
         out_connect = Connect(self, s)
         win_state = s.sw(sw, offset)
         return Stream(win_state.name, merge(win_state.json, out_connect.json), win_state.dim,0 )
 
     @enforce_types
-    def z(self, delay:int) -> "Stream":
-        from nnodely.input import State, Connect
-        s = State(self.name + "_state",dimensions=self.dim['dim'])
-        if type(delay) == int and delay > 0:
-            out_connect = Connect(self, s)
-            win_state = s.z(delay)
-            return Stream(win_state.name, merge(win_state.json, out_connect.json), win_state.dim,0 )
+    def z(self, delay:int|float) -> "Stream":
+        """
+        Considering the Zeta transform notation. The function is used to delay a Stream.
+        The value of the delay can be only positive.
+
+        Parameters
+        ----------
+        delay : int
+            The delay value.
+
+        Returns
+        -------
+        Stream
+            A Stream representing the delayed Stream
+        """
+        check(delay > 0, ValueError, "The delay must be a positive integer")
+        check('sw' in self.dim, TypeError, "The stream is not defined in samples but in time")
+        return self.sw([-self.dim['sw']-delay,-delay])
+
+    @enforce_types
+    def delay(self, delay:int|float) -> "Stream":
+        """
+        The function is used to delay a Stream.
+        The value of the delay can be only positive.
+
+        Parameters
+        ----------
+        delay : int, float
+            The delay value.
+
+        Returns
+        -------
+        Stream
+            A Stream representing the delayed Stream
+        """
+        check(delay > 0, ValueError, "The delay must be a positive integer")
+        check('tw' in self.dim, TypeError, "The stream is not defined in time but in sample")
+        return self.tw([-self.dim['tw']-delay,-delay])
+
+    @enforce_types
+    def s(self, order:int,  method:str|None = None) -> "Stream":
+        """
+        Considering the Laplace transform notation. The function is used to operate an integral or derivate operation on a Stream.
+        The order of the integral or the derivative operation is indicated by the order parameter.
+
+        Parameters
+        ----------
+        order : int
+            Order of the Laplace transform
+        method : str, optional
+            Integration or derivation method
+
+        Returns
+        -------
+        Stream
+            A Stream of the signal represents the integral or derivation operation.
+        """
+        from nnodely.timeoperation import Derivate, Integrate
+        check(order != 0, ValueError, "The order must be a positive or negative integer not a zero")
+        if order > 0:
+            for i in range(order):
+                o = Derivate(self, method = method)
+        elif order < 0:
+            for i in range(-order):
+                o = Integrate(self, method = method)
+        return o
 
     @enforce_types
     def connect(self, obj) -> "Stream":
