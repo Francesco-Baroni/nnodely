@@ -46,6 +46,9 @@ class Add(Stream, ToStream):
         check(obj1.dim == obj2.dim or obj1.dim == {'dim':1} or obj2.dim == {'dim':1}, ValueError,
               f"For addition operators (+) the dimension of {obj1.name} = {obj1.dim} must be the same of {obj2.name} = {obj2.dim}.")
         super().__init__(add_relation_name + str(Stream.count),merge(obj1.json,obj2.json),obj1.dim)
+        # if self.json['Relations'][obj1.name][0] == add_relation_name:
+        #     self.json['Relations'][obj1.name][1].append(obj2.name)
+        # else:
         self.json['Relations'][self.name] = [add_relation_name,[obj1.name,obj2.name]]
 
 ## TODO: check the scalar dimension, helpful for the offset
