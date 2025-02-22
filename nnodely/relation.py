@@ -282,6 +282,7 @@ class AutoToStream():
     def __new__(cls, *args,  **kwargs):
         if len(args) > 0 and (issubclass(type(args[0]),NeuObj) or type(args[0]) is Stream):
             instance = super().__new__(cls)
+            #instance.__init__(**kwargs)
             instance.__init__()
             return instance(args[0])
         instance = super().__new__(cls)
