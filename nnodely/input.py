@@ -199,7 +199,7 @@ class InputState(NeuObj, Stream):
         return self.z(-1)
 
     @enforce_types
-    def s(self, order:int,  method:str|None = None) -> Stream:
+    def s(self, order:int,  method:str = 'ForwardEuler') -> Stream:
         """
         Considering the Laplace transform notation. The function is used to operate an integral or derivate operation on the input.
         The order of the integral or the derivative operation is indicated by the order parameter.
