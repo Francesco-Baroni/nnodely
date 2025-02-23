@@ -3,8 +3,8 @@ import torch
 
 from nnodely.relation import ToStream, Stream, toStream
 from nnodely.model import Model
-from nnodely.utils import check, merge
-
+from nnodely.utils import check, merge, enforce_types
+from nnodely.parameter import Parameter, Constant
 
 # Binary operators
 add_relation_name = 'Add'
@@ -37,7 +37,8 @@ class Add(Stream, ToStream):
             or
             >>> add = relation1 + relation2
     """
-    def __init__(self, obj1:Stream, obj2:Stream) -> Stream:
+    @enforce_types
+    def __init__(self, obj1:Stream|Parameter|Constant, obj2:Stream|Parameter|Constant|int|float) -> Stream:
         obj1,obj2 = toStream(obj1),toStream(obj2)
         check(type(obj1) is Stream,TypeError,
               f"The type of {obj1} is {type(obj1)} and is not supported for add operation.")
@@ -64,7 +65,8 @@ class Sub(Stream, ToStream):
             or
             >>> sub = relation1 - relation2
     """
-    def __init__(self, obj1:Stream, obj2:Stream) -> Stream:
+    @enforce_types
+    def __init__(self, obj1:Stream|Parameter|Constant, obj2:Stream|Parameter|Constant|int|float) -> Stream:
         obj1, obj2 = toStream(obj1), toStream(obj2)
         check(type(obj1) is Stream,TypeError,
               f"The type of {obj1} is {type(obj1)} and is not supported for sub operation.")
@@ -90,7 +92,8 @@ class Mul(Stream, ToStream):
             or
             >>> mul = relation1 * relation2
     """
-    def __init__(self, obj1:Stream, obj2:Stream) -> Stream:
+    @enforce_types
+    def __init__(self, obj1:Stream|Parameter|Constant, obj2:Stream|Parameter|Constant|int|float) -> Stream:
         obj1, obj2 = toStream(obj1), toStream(obj2)
         check(type(obj1) is Stream, TypeError,
               f"The type of {obj1} is {type(obj1)} and is not supported for mul operation.")
@@ -116,7 +119,8 @@ class Div(Stream, ToStream):
             or
             >>> div = relation1 / relation2
     """
-    def __init__(self, obj1:Stream, obj2:Stream) -> Stream:
+    @enforce_types
+    def __init__(self, obj1:Stream|Parameter|Constant, obj2:Stream|Parameter|Constant|int|float) -> Stream:
         obj1, obj2 = toStream(obj1), toStream(obj2)
         check(type(obj1) is Stream, TypeError,
               f"The type of {obj1} is {type(obj1)} and is not supported for div operation.")
@@ -146,7 +150,8 @@ class Pow(Stream, ToStream):
             or
             >>> pow = relation1 ** relation2
     """
-    def __init__(self, obj1:Stream, obj2:Stream) -> Stream:
+    @enforce_types
+    def __init__(self, obj1:Stream|Parameter|Constant, obj2:Stream|Parameter|Constant|int|float) -> Stream:
         obj1, obj2 = toStream(obj1), toStream(obj2)
         check(type(obj1) is Stream, TypeError,
               f"The type of {obj1} is {type(obj1)} and is not supported for exp operation.")
@@ -167,7 +172,8 @@ class Neg(Stream, ToStream):
         Example:
             >>> x = Neg(x)
     """
-    def __init__(self, obj:Stream) -> Stream:
+    @enforce_types
+    def __init__(self, obj:Stream|Parameter|Constant) -> Stream:
         obj = toStream(obj)
         check(type(obj) is Stream, TypeError,
               f"The type of {obj} is {type(obj)} and is not supported for neg operation.")
@@ -175,7 +181,8 @@ class Neg(Stream, ToStream):
         self.json['Relations'][self.name] = [neg_relation_name,[obj.name]]
 
 class Sum(Stream, ToStream):
-    def __init__(self, obj:Stream) -> Stream:
+    @enforce_types
+    def __init__(self, obj:Stream|Parameter|Constant) -> Stream:
         obj = toStream(obj)
         check(type(obj) is Stream, TypeError,
               f"The type of {obj} is {type(obj)} and is not supported for sum operation.")
