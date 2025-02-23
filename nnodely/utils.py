@@ -74,8 +74,16 @@ def tensor_to_list(data):
         #     self.json['Relations'][self.name] = [add_relation_name, self.json['Relations'][obj1.name][1]+[obj2.name]]
         #     del self.json['Relations'][obj1.name]
         # else:
+        # Devo aggiungere un operazione che rimuove un operazione di Add,Sub,Mul,Div se può essere unita ad un'altra operazione dello stesso tipo
+        #
 def merge(source, destination, main = True):
     if main:
+        for key, value in destination["Functions"].items():
+            if key in source["Functions"].keys() and 'n_input' in value.keys() and 'n_input' in source["Functions"][key].keys():
+                check(value == {} or source["Functions"][key] == {} or value['n_input'] == source["Functions"][key]['n_input'],
+                      TypeError,
+                      f"The ParamFun {key} is present multiple times, with different number of inputs. "
+                      f"The ParamFun {key} is called with {value['n_input']} parameters and with {source['Functions'][key]['n_input']} parameters.")
         log.debug("Merge Source")
         log.debug("\n"+pformat(source))
         log.debug("Merge Destination")

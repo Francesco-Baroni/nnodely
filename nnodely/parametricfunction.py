@@ -10,6 +10,9 @@ from nnodely.model import Model
 from nnodely.parameter import Parameter, Constant
 from nnodely.utils import check, merge, enforce_types
 
+from nnodely.logger import logging, nnLogger
+log = nnLogger(__name__, logging.CRITICAL)
+
 
 paramfun_relation_name = 'ParamFun'
 
@@ -84,6 +87,7 @@ class ParamFun(NeuObj):
             'name' : param_fun.__name__,
         }
         self.json['Functions'][self.name]['params_and_consts'] = []
+        self.json_stream = {}
 
     def __call__(self, *obj):
         stream_name = paramfun_relation_name + str(Stream.count)
@@ -93,14 +97,18 @@ class ParamFun(NeuObj):
         n_call_input = len(obj)
         n_new_constants_and_params = n_function_input - n_call_input
 
-        if 'n_input' not in self.json['Functions'][self.name]:
-            self.json['Functions'][self.name]['n_input'] = n_call_input
-            self.__set_params_and_consts(n_new_constants_and_params)
+        if n_call_input not in self.json_stream:
+            if len(self.json_stream) > 0:
+                log.warning(f"The function {self.name} was called with a different number of inputs. If both functions enter in the model an error will be raised.")
+
+            self.json_stream[n_call_input] = copy.deepcopy(self.json)
+            self.json_stream[n_call_input]['Functions'][self.name]['n_input'] = n_call_input
+            self.__set_params_and_consts(self.json_stream[n_call_input], n_new_constants_and_params)
 
             input_dimensions = []
             input_types = []
             for ind, o in enumerate(obj):
-                if type(o) in (int,float,list):
+                if type(o) in (int, float, list):
                     obj_type = Constant
                 else:
                     obj_type = type(o)
@@ -110,15 +118,45 @@ class ParamFun(NeuObj):
                 input_types.append(obj_type)
                 input_dimensions.append(o.dim)
 
-            self.json['Functions'][self.name]['in_dim'] = copy.deepcopy(input_dimensions)
-            self.__infer_output_dimensions(input_types, input_dimensions)
-            self.json['Functions'][self.name]['out_dim'] = copy.deepcopy(self.output_dimension)
+            # Create the missing parameters
+            missing_params = n_new_constants_and_params - len(self.json_stream[n_call_input]['Functions'][self.name]['params_and_consts'])
+            check(missing_params == 0, ValueError, f"The function is called with different number of inputs.")
 
-        # Create the missing parameters
-        missing_params = n_new_constants_and_params - len(self.json['Functions'][self.name]['params_and_consts'])
-        check(missing_params == 0, ValueError, f"The function is called with different number of inputs.")
+            self.json_stream[n_call_input]['Functions'][self.name]['in_dim'] = copy.deepcopy(input_dimensions)
+            self.json_stream[n_call_input]['Functions'][self.name]['map_over_dim'] = self.__map_over_batch(
+                    n_call_input,
+                    n_new_constants_and_params)
+            output_dimension = self.__infer_output_dimensions(self.json_stream[n_call_input], input_types,
+                                                                  input_dimensions)
+            #self.json_stream[n_call_input]['Functions'][self.name]['out_dim'] = output_dimension
 
-        stream_json = copy.deepcopy(self.json)
+        else:
+            input_dimensions = []
+            input_types = []
+            for ind, o in enumerate(obj):
+                if type(o) in (int, float, list):
+                    obj_type = Constant
+                else:
+                    obj_type = type(o)
+                o = toStream(o)
+                check(type(o) is Stream, TypeError,
+                      f"The type of {o} is {type(o)} and is not supported for ParamFun operation.")
+                input_types.append(obj_type)
+                input_dimensions.append(o.dim)
+            output_dimension = self.__infer_output_dimensions(self.json_stream[n_call_input], input_types, input_dimensions)
+
+            # Save the all the input dimension used for call the parametric function
+            in_dim = self.json_stream[n_call_input]['Functions'][self.name]['in_dim']
+            if type(in_dim[0]) is dict:
+                if in_dim != input_dimensions:
+                    in_dim = [in_dim, input_dimensions]
+                    log.warning(f"The function {self.name} was called with inputs with different dimensions.")
+            elif input_dimensions not in in_dim:
+                in_dim.append(input_dimensions)
+                log.warning(f"The function {self.name} was called with inputs with different dimensions.")
+            self.json_stream[n_call_input]['Functions'][self.name]['in_dim'] = in_dim
+
+        stream_json = copy.deepcopy(self.json_stream[n_call_input])
         input_names = []
         for ind, o in enumerate(obj):
             o = toStream(o)
@@ -127,23 +165,34 @@ class ParamFun(NeuObj):
             stream_json = merge(stream_json, o.json)
             input_names.append(o.name)
 
-        output_dimension = copy.deepcopy(self.output_dimension)
         stream_json['Relations'][stream_name] = [paramfun_relation_name, input_names, self.name]
-
         return Stream(stream_name, stream_json, output_dimension)
 
-    def __set_params_and_consts(self, n_new_constants_and_params):
+    def __map_over_batch(self, n_call_input, n_constants_and_params):
+        input_map_dim = ()
+
+        for i in range(n_call_input):
+            input_map_dim += (0,)
+        for i in range(n_constants_and_params):
+            input_map_dim += (None,)
+
+        if self.map_over_batch:
+            return list(input_map_dim)
+        else:
+            return False
+
+    def __set_params_and_consts(self, stream_json, n_new_constants_and_params):
         funinfo = inspect.getfullargspec(self.param_fun)
 
         # Create the missing constants from list
         if type(self.constants) is list:
             for const in self.constants:
                 if type(const) is Constant:
-                    self.json['Functions'][self.name]['params_and_consts'].append(const.name)
-                    self.json['Constants'][const.name] = copy.deepcopy(const.json['Constants'][const.name])
+                    stream_json['Functions'][self.name]['params_and_consts'].append(const.name)
+                    stream_json['Constants'][const.name] = copy.deepcopy(const.json['Constants'][const.name])
                 elif type(const) is str:
-                    self.json['Functions'][self.name]['params_and_consts'].append(const)
-                    self.json['Constants'][const] = {'dim': 1}
+                    stream_json['Functions'][self.name]['params_and_consts'].append(const)
+                    stream_json['Constants'][const] = {'dim': 1}
                 else:
                     check(type(const) is Constant or type(const) is str, TypeError,
                           'The element inside the \"constants\" list must be a Constant or str')
@@ -154,11 +203,11 @@ class ParamFun(NeuObj):
                   '\"parameters_dimensions\" must be None if \"parameters\" is set using list')
             for param in self.parameters:
                 if type(param) is Parameter:
-                    self.json['Functions'][self.name]['params_and_consts'].append(param.name)
-                    self.json['Parameters'][param.name] = copy.deepcopy(param.json['Parameters'][param.name])
+                    stream_json['Functions'][self.name]['params_and_consts'].append(param.name)
+                    stream_json['Parameters'][param.name] = copy.deepcopy(param.json['Parameters'][param.name])
                 elif type(param) is str:
-                    self.json['Functions'][self.name]['params_and_consts'].append(param)
-                    self.json['Parameters'][param] = {'dim': 1}
+                    stream_json['Functions'][self.name]['params_and_consts'].append(param)
+                    stream_json['Parameters'][param] = {'dim': 1}
                 else:
                     check(type(param) is Parameter or type(param) is str, TypeError,
                           'The element inside the \"parameters\" list must be a Parameter or str')
@@ -166,11 +215,11 @@ class ParamFun(NeuObj):
             for i, param_dim in enumerate(self.parameters_dimensions):
                 idx = i + len(funinfo.args) - len(self.parameters_dimensions)
                 param_name = self.name + str(idx)
-                self.json['Functions'][self.name]['params_and_consts'].append(param_name)
-                self.json['Parameters'][param_name] = {'dim': list(self.parameters_dimensions[i])}
+                stream_json['Functions'][self.name]['params_and_consts'].append(param_name)
+                stream_json['Parameters'][param_name] = {'dim': list(self.parameters_dimensions[i])}
 
         # Create the missing parameters and constants from dict
-        missing_params = n_new_constants_and_params - len(self.json['Functions'][self.name]['params_and_consts'])
+        missing_params = n_new_constants_and_params - len(stream_json['Functions'][self.name]['params_and_consts'])
         if missing_params or type(self.constants) is dict or type(self.parameters) is dict or type(self.parameters_dimensions) is dict:
             n_input = len(funinfo.args) - missing_params
             n_elem_dict = (len(self.constants if type(self.constants) is dict else [])
@@ -184,11 +233,11 @@ class ParamFun(NeuObj):
                                   f'The parameter {key} must be removed from \"parameters_dimensions\".')
                         param = self.parameters[key]
                         if type(self.parameters[key]) is Parameter:
-                            self.json['Functions'][self.name]['params_and_consts'].append(param.name)
-                            self.json['Parameters'][param.name] = copy.deepcopy(param.json['Parameters'][param.name])
+                            stream_json['Functions'][self.name]['params_and_consts'].append(param.name)
+                            stream_json['Parameters'][param.name] = copy.deepcopy(param.json['Parameters'][param.name])
                         elif type(self.parameters[key]) is str:
-                            self.json['Functions'][self.name]['params_and_consts'].append(param)
-                            self.json['Parameters'][param] = {'dim': 1}
+                            stream_json['Functions'][self.name]['params_and_consts'].append(param)
+                            stream_json['Parameters'][param] = {'dim': 1}
                         else:
                             check(type(param) is Parameter or type(param) is str, TypeError,
                                   'The element inside the \"parameters\" dict must be a Parameter or str')
@@ -198,35 +247,35 @@ class ParamFun(NeuObj):
                         dim = self.parameters_dimensions[key]
                         check(isinstance(dim,(list,tuple,int)), TypeError,
                               'The element inside the \"parameters_dimensions\" dict must be a tuple or int')
-                        self.json['Functions'][self.name]['params_and_consts'].append(param_name)
-                        self.json['Parameters'][param_name] = {'dim': list(dim) if type(dim) is tuple else dim}
+                        stream_json['Functions'][self.name]['params_and_consts'].append(param_name)
+                        stream_json['Parameters'][param_name] = {'dim': list(dim) if type(dim) is tuple else dim}
                         n_elem_dict -= 1
                     elif type(self.constants) is dict and key in self.constants:
                         const = self.constants[key]
                         if type(self.constants[key]) is Constant:
-                            self.json['Functions'][self.name]['params_and_consts'].append(const.name)
-                            self.json['Constants'][const.name] = copy.deepcopy(const.json['Constants'][const.name])
+                            stream_json['Functions'][self.name]['params_and_consts'].append(const.name)
+                            stream_json['Constants'][const.name] = copy.deepcopy(const.json['Constants'][const.name])
                         elif type(self.constants[key]) is str:
-                            self.json['Functions'][self.name]['params_and_consts'].append(const)
-                            self.json['Constants'][const] = {'dim': 1}
+                            stream_json['Functions'][self.name]['params_and_consts'].append(const)
+                            stream_json['Constants'][const] = {'dim': 1}
                         else:
                             check(type(const) is Constant or type(const) is str, TypeError,
                                   'The element inside the \"constants\" dict must be a Constant or str')
                         n_elem_dict -= 1
                     else:
                         param_name = self.name + key
-                        self.json['Functions'][self.name]['params_and_consts'].append(param_name)
-                        self.json['Parameters'][param_name] = {'dim': 1}
+                        stream_json['Functions'][self.name]['params_and_consts'].append(param_name)
+                        stream_json['Parameters'][param_name] = {'dim': 1}
             check(n_elem_dict == 0, ValueError, 'Some of the input parameters are not used in the function.')
 
-    def __infer_output_dimensions(self, input_types, input_dimensions):
+    def __infer_output_dimensions(self, stream_json, input_types, input_dimensions):
         import torch
         batch_dim = 5
 
-        all_inputs_dim = input_dimensions
-        all_inputs_type = input_types
-        params_and_consts = self.json['Constants'] | self.json['Parameters']
-        for name in self.json['Functions'][self.name]['params_and_consts']:
+        all_inputs_dim = copy.deepcopy(input_dimensions)
+        all_inputs_type = copy.deepcopy(input_types)
+        params_and_consts = stream_json['Constants'] | stream_json['Parameters']
+        for name in stream_json['Functions'][self.name]['params_and_consts']:
             all_inputs_dim.append(params_and_consts[name])
             all_inputs_type.append(Constant)
 
@@ -244,7 +293,6 @@ class ParamFun(NeuObj):
         inputs = []
         inputs_win_type = []
         inputs_win = []
-        input_map_dim = ()
 
         for t, dim in zip(all_inputs_type,all_inputs_dim):
             window = 'tw' if 'tw' in dim else ('sw' if 'sw' in dim else None)
@@ -255,41 +303,33 @@ class ParamFun(NeuObj):
             else:
                 dim_win = 1
             if t in (Parameter, Constant):
-                if self.map_over_batch:
-                    input_map_dim += (None,)
                 if type(dim['dim']) is list:
                     inputs.append(torch.rand(size=(dim_win,) + tuple(dim['dim'])))
                 else:
                     inputs.append(torch.rand(size=(dim_win, dim['dim'])))
             else:
                 inputs.append(torch.rand(size=(batch_dim, dim_win, dim['dim'])))
-                if self.map_over_batch:
-                    input_map_dim += (0,)
 
             inputs_win_type.append(window)
             inputs_win.append(dim_win)
 
         if self.map_over_batch:
-            self.json['Functions'][self.name]['map_over_dim'] = list(input_map_dim)
-            function_to_call = torch.func.vmap(self.param_fun,in_dims=input_map_dim)
+            function_to_call = torch.func.vmap(self.param_fun,in_dims=tuple(stream_json['Functions'][self.name]['map_over_dim']))
         else:
-            self.json['Functions'][self.name]['map_over_dim'] = False
             function_to_call = self.param_fun
         out = function_to_call(*inputs)
         out_shape = out.shape
         check(out_shape[0] == batch_dim, ValueError, "The batch output dimension it is not correct.")
         out_dim = list(out_shape[2:])
         check(len(out_dim) == 1, ValueError, "The output dimension of the function is bigger than a vector.")
-        out_win_from_input = False
+        out_win_type = 'sw'
+        out_win = out_shape[1]
         for idx, win in enumerate(inputs_win):
             if out_shape[1] == win and all_inputs_type[idx] not in (Parameter, Constant):
-                out_win_from_input = True
                 out_win_type = inputs_win_type[idx]
                 out_win = all_inputs_dim[idx][out_win_type]
-        if out_win_from_input == False:
-            out_win_type = 'sw'
-            out_win = out_shape[1]
-        self.output_dimension = {'dim': out_dim[0], out_win_type : out_win}
+
+        return { 'dim': out_dim[0], out_win_type : out_win }
 
 def return_standard_inputs(json, model_def, xlim = None, num_points = 1000):
     check(json['n_input'] == 1 or json['n_input'] == 2, ValueError, "The function must have only one or two inputs.")

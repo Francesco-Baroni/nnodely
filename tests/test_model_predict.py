@@ -581,7 +581,7 @@ class ModelyPredictTest(unittest.TestCase):
         self.TestAlmostEqual(results['out'], [[[0.22182656824588776, -0.11421152949333191, 0.5385046601295471]], [[0.22182656824588776, -0.11421152949333191,  0.5385046601295471]]])
 
         parfun = ParamFun(myfun2)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             Output('out', parfun(Fir(3)(parfun(in1.tw(0.4), in2.tw(0.4)))))
 
         parfun = ParamFun(myfun2)
@@ -670,7 +670,7 @@ class ModelyPredictTest(unittest.TestCase):
                                               [[0.3850506544113159, 0.3850506544113159, 0.3850506544113159]]])
 
         parfun = ParamFun(myfun2)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             Output('out', parfun(Fir(3)(parfun(in1.tw(0.4), in2.tw(0.4)))))
 
         parfun = ParamFun(myfun2)
@@ -1247,6 +1247,30 @@ class ModelyPredictTest(unittest.TestCase):
         self.assertEqual([[72.0, 84.0, 96.0]], results['out1'])
         self.assertEqual([[-72.0, -84.0, -96.0]], results['out2'])
         self.assertEqual([[-96.0, -120.0, -144.0]], results['out3'])
+
+    def test_predict_paramfun_map_over_batch(self):
+        input2 = Input('in2')
+        pp = Parameter('pp', values=[[7],[8],[9]])
+        ll = Constant('ll', values=[[12],[13],[14]])
+        oo = Constant('oo', values=[[1],[2],[3]])
+        pp, oo, input2.tw(0.03), ll
+        def fun_test(x, y, z, k):
+            return (x + y) * (z - k)
+
+        pp_map = ParamFun(fun_test,parameters=[pp], constants=[ll,oo], map_over_batch=True)
+        pp = ParamFun(fun_test, parameters=[pp], constants=[ll, oo])
+
+        NeuObj.reset_count()
+        out1 = Output('out1',pp_map(input2.tw(0.03)))
+        out2 = Output('out2', pp(input2.tw(0.03)))
+        test = Modely(visualizer=None)
+        test.addModel('out',[out1,out2])
+        test.neuralizeModel(0.01)
+        results = test({'in2': [0, 1, 2]})
+        self.assertEqual((1, 3), np.array(results['out1']).shape)
+        self.assertEqual([[-72.0, -84.0, -96.0]], results['out1'])
+        self.assertEqual((1, 3), np.array(results['out2']).shape)
+        self.assertEqual([[-72.0, -84.0, -96.0]], results['out2'])
 
     def test_predict_fuzzify(self):
         input = Input('in')
