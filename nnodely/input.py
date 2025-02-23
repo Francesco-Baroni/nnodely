@@ -227,11 +227,13 @@ class InputState(NeuObj):
         return o
 
 class Input(InputState):
-    def __init__(self, name, dimensions:int = 1):
+    @enforce_types
+    def __init__(self, name:str, dimensions:int = 1):
         InputState.__init__(self, 'Inputs', name, dimensions)
 
 class State(InputState):
-    def __init__(self, name, dimensions:int = 1):
+    @enforce_types
+    def __init__(self, name:str, dimensions:int = 1):
         InputState.__init__(self, 'States', name, dimensions)
 
 
