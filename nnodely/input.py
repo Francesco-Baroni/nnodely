@@ -240,6 +240,7 @@ connect_name = 'connect'
 closedloop_name = 'closedLoop'
 
 class Connect(Stream, ToStream):
+    @enforce_types
     def __init__(self, obj1:Stream, obj2:State) -> Stream:
         check(type(obj1) is Stream, TypeError,
               f"The {obj1} must be a Stream and not a {type(obj1)}.")
@@ -251,6 +252,7 @@ class Connect(Stream, ToStream):
         self.json['States'][obj2.name][connect_name] = obj1.name
 
 class ClosedLoop(Stream, ToStream):
+    @enforce_types
     def __init__(self, obj1:Stream, obj2: State) -> Stream:
         check(type(obj1) is Stream, TypeError,
               f"The {obj1} must be a Stream and not a {type(obj1)}.")
