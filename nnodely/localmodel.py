@@ -80,21 +80,21 @@ class LocalModel(NeuObj):
 
 
     def __call__(self, inputs, activations):
-        self.out_sum = []
+        out_sum = []
         if type(activations) is not tuple:
             activations = (activations,)
-        self.___activations_matrix(activations,inputs)
+        self.___activations_matrix(activations,inputs,out_sum)
 
-        out = self.out_sum[0]
-        for ind in range(1,len(self.out_sum)):
-            out = out + self.out_sum[ind]
+        out = out_sum[0]
+        for ind in range(1,len(out_sum)):
+            out = out + out_sum[ind]
         return out
 
     # Definisci una funzione ricorsiva per annidare i cicli for
-    def ___activations_matrix(self, activations, inputs, idx=0, idx_list=[]):
+    def ___activations_matrix(self, activations, inputs, out, idx=0, idx_list=[]):
         if idx != len(activations):
             for i in range(activations[idx].dim['dim']):
-                self.___activations_matrix(activations, inputs, idx+1, idx_list+[i])
+                self.___activations_matrix(activations, inputs, out, idx+1, idx_list+[i])
         else:
             if self.input_function is not None:
                 if len(inspect.getfullargspec(self.input_function).args) == 0:
@@ -125,11 +125,11 @@ class LocalModel(NeuObj):
 
             if self.output_function is not None:
                 if len(inspect.getfullargspec(self.output_function).args) == 0:
-                    self.out_sum.append(self.output_function()(prod))
+                    out.append(self.output_function()(prod))
                 else:
                     if self.pass_indexes:
-                        self.out_sum.append(self.output_function(idx_list)(prod))
+                        out.append(self.output_function(idx_list)(prod))
                     else:
-                        self.out_sum.append(self.output_function(prod))
+                        out.append(self.output_function(prod))
             else:
-                self.out_sum.append(prod)
+                out.append(prod)
