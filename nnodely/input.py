@@ -5,7 +5,7 @@ from nnodely.utils import check, merge, enforce_types
 from nnodely.part import SamplePart, TimePart
 from nnodely.timeoperation import Derivate, Integrate
 
-class InputState(NeuObj, Stream):
+class InputState(NeuObj):
     """
     Represents an Input or State in the neural network model.
 
@@ -47,7 +47,6 @@ class InputState(NeuObj, Stream):
         self.json_name = json_name
         self.json[self.json_name][self.name] = {'dim': dimensions, 'tw': [0, 0], 'sw': [0,0] }
         self.dim = {'dim': dimensions}
-        Stream.__init__(self, name, self.json, self.dim)
 
     @enforce_types
     def tw(self, tw:int|float|list, offset:int|float|None = None) -> Stream:
