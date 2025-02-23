@@ -10,7 +10,7 @@ from nnodely.utils import check, enforce_types, NP_DTYPE
 def is_numpy_float(var):
     return isinstance(var, (np.float16, np.float32, np.float64))
 
-class Constant(NeuObj, Stream):
+class Constant(NeuObj):
     """
     Represents a constant value in the neural network model.
 
@@ -67,7 +67,6 @@ class Constant(NeuObj, Stream):
         # deepcopy dimention information inside Parameters
         self.json['Constants'][self.name] = copy.deepcopy(self.dim)
         self.json['Constants'][self.name]['values'] = values
-        Stream.__init__(self, name, self.json, self.dim)
 
 class Parameter(NeuObj, Stream):
     """

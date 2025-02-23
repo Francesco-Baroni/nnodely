@@ -360,7 +360,7 @@ class ModelyJsonTest(unittest.TestCase):
         self.assertEqual({'dim': 1, 'tw': 0.01}, out.dim)
         self.assertEqual({'pp': {'dim': 1}}, out.json['Parameters'])
         self.assertEqual({'oo': {'dim': 1, 'sw': 1, 'values': [[1]]}, 'll': {'dim': 1, 'sw': 1, 'values': [[1]]}}, out.json['Constants'])
-        self.assertEqual(['TimePart4', 'll', 'oo', 'pp'], out.json['Relations']['ParamFun5'][1])
+        self.assertEqual(['TimePart2', 'll', 'oo', 'pp'], out.json['Relations']['ParamFun3'][1])
 
     def test_check_multiple_streams_compatibility(self):
         x = Input('x')
