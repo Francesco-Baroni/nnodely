@@ -362,5 +362,29 @@ class ModelyJsonTest(unittest.TestCase):
         self.assertEqual({'oo': {'dim': 1, 'sw': 1, 'values': [[1]]}, 'll': {'dim': 1, 'sw': 1, 'values': [[1]]}}, out.json['Constants'])
         self.assertEqual(['TimePart4', 'll', 'oo', 'pp'], out.json['Relations']['ParamFun5'][1])
 
+    def test_check_multiple_streams_compatibility(self):
+        x = Input('x')
+        F = Input('F')
+
+        def myFun(p1, p2, k1, k2):
+            import torch
+            return k1 * torch.sin(p1) + k2 * torch.cos(p2)
+
+        K1 = Parameter('k1', dimensions=1, sw=1, values=[[2.0]])
+        K2 = Parameter('k2', dimensions=1, sw=1, values=[[3.0]])
+        parfun = ParamFun(myFun, parameters=[K1, K2])
+
+        #rel1 = parfun(x.last(), F.last())
+        rel2 = parfun(Tanh(F.sw(1)+F.sw([-2,-1])+F.sw([-3,-2])+F.sw([-4,-3])), Tanh(F.sw([0,1])))
+        #out1 = Output('out1', rel1)
+        out2 = Output('out2', rel2)
+
+        m = MPLVisualizer(5)
+        example = Modely(visualizer=m)
+        example.addModel('model', [out2])
+        example.neuralizeModel(0.25)
+        #m.showFunctions(list(example.model_def['Functions'].keys()), xlim=[[-5, 5], [-1, 1]])
+        print(example({'x': [1, 3, 3, 1], 'F': [1, 2, 2, 1, 2, 1, 3]}))
+
 if __name__ == '__main__':
     unittest.main()

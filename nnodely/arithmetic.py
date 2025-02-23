@@ -46,9 +46,6 @@ class Add(Stream, ToStream):
         check(obj1.dim == obj2.dim or obj1.dim == {'dim':1} or obj2.dim == {'dim':1}, ValueError,
               f"For addition operators (+) the dimension of {obj1.name} = {obj1.dim} must be the same of {obj2.name} = {obj2.dim}.")
         super().__init__(add_relation_name + str(Stream.count),merge(obj1.json,obj2.json),obj1.dim)
-        # if self.json['Relations'][obj1.name][0] == add_relation_name:
-        #     self.json['Relations'][obj1.name][1].append(obj2.name)
-        # else:
         self.json['Relations'][self.name] = [add_relation_name,[obj1.name,obj2.name]]
 
 ## TODO: check the scalar dimension, helpful for the offset
@@ -177,13 +174,6 @@ class Neg(Stream, ToStream):
         super().__init__(neg_relation_name+str(Stream.count), obj.json, obj.dim)
         self.json['Relations'][self.name] = [neg_relation_name,[obj.name]]
 
-# class Square(Stream, ToStream):
-#     def __init__(self, obj:Stream) -> Stream:
-#         check(type(obj) is Stream, TypeError,
-#               f"The type of {obj.name} is {type(obj)} and is not supported for neg operation.")
-#         super().__init__(square_relation_name+str(Stream.count), obj.json, obj.dim)
-#         self.json['Relations'][self.name] = [square_relation_name,[obj.name]]
-
 class Sum(Stream, ToStream):
     def __init__(self, obj:Stream) -> Stream:
         obj = toStream(obj)
@@ -198,7 +188,12 @@ class Add_Layer(nn.Module):
         super(Add_Layer, self).__init__()
 
     def forward(self, *inputs):
-        return torch.add(inputs[0], inputs[1])
+        results = inputs[0]
+        for input in inputs[1:]:
+            results = results + input
+        return results
+        #return torch.add(inputs[0],inputs[1]))
+        #return torch.sum(torch.stack(list(inputs)),dim=0)
 
 def createAdd(name, *inputs):
     #: :noindex:
@@ -211,7 +206,12 @@ class Sub_Layer(nn.Module):
 
     def forward(self, *inputs):
         # Perform element-wise subtraction
-        return torch.add(inputs[0],-inputs[1])
+        results = inputs[0]
+        for input in inputs[1:]:
+            results = results - input
+        return results
+        #return torch.add(inputs[0], -inputs[1])
+        #return torch.add(inputs[0],-torch.sum(torch.stack(list(inputs[1:])),dim=0))
 
 def createSub(self, *inputs):
     #: :noindex:
@@ -224,7 +224,13 @@ class Mul_Layer(nn.Module):
         super(Mul_Layer, self).__init__()
 
     def forward(self, *inputs):
-        return inputs[0] * inputs[1]
+        results = inputs[0]
+        for input in inputs[1:]:
+            results = results * input
+        return results
+        #return inputs[0] * inputs[1]
+        #return torch.prod(torch.stack(list(inputs)),dim=0)
+
 
 def createMul(name, *inputs):
     #: :noindex:
@@ -236,7 +242,12 @@ class Div_Layer(nn.Module):
         super(Div_Layer, self).__init__()
 
     def forward(self, *inputs):
-        return inputs[0] / inputs[1]
+        results = inputs[0]
+        for input in inputs[1:]:
+            results = results / input
+        return results
+        #return inputs[0] / inputs[1]
+        #return inputs[0] / torch.prod(torch.stack(list(inputs[1:])),dim=0)
 
 def createDiv(name, *inputs):
     #: :noindex:
@@ -285,7 +296,6 @@ setattr(Model, div_relation_name, createDiv)
 setattr(Model, pow_relation_name, createPow)
 
 setattr(Model, neg_relation_name, createNeg)
-# setattr(Model, square_relation_name, createSquare)
 
 setattr(Model, sum_relation_name, createSum)
 

@@ -739,6 +739,28 @@ class ModelyPredictTest(unittest.TestCase):
         self.TestAlmostEqual([[[58.9539756, 46.1638031, 554.231201171875, 4294967296.0]], [[67.3462829589843, 46.16380310058594, 554.231201171875, 4294967296.0]], [[ -41.75371170043945, 567.6907348632812, 1953220.375, 4294967296.0]]], results['out4'])
         self.TestAlmostEqual([4294967808.0, 4328522240.0,  4263366656.0], results['outtot'])
 
+    def test_check_modify_stream(self):
+        torch.manual_seed(1)
+        in1 = Input('in1').last()
+        par = Parameter('par', values=[[5]])
+        add1 = in1 + par # 1 + 5 = 6
+        add2 = add1 + 5.2 # 6 + 5.2 = 11.2
+        tot1 = add1 + add2 # 6 + 11.2 = 17.2
+        out1 = Output('out1', tot1) # = 17.2
+        tot2 = add1 + in1 # 6 + 1 = 7
+        out12 = Output('out12', tot1 + tot2) # = 24.2
+        out2 = Output('out2', tot2) #= 7
+        test = Modely(visualizer=None)
+        test.addModel('out',[out1,out12,out2])
+        test.neuralizeModel()
+
+        results = test({'in1': [1]})
+        self.assertEqual((1,), np.array(results['out1']).shape)
+        self.TestAlmostEqual([17.2], results['out1'] )
+        self.TestAlmostEqual([24.2], results['out12'])
+        self.TestAlmostEqual([7], results['out2'])
+
+
     def test_parameter_and_linear(self):
         input = Input('in').last()
         W15 = Parameter('W15', dimensions=(1, 5), values=[[[1,2,3,4,5]]])

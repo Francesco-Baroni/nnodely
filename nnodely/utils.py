@@ -67,6 +67,13 @@ def tensor_to_list(data):
         # Altri tipi di dati rimangono invariati
         return data
 
+# Codice per comprimere le relazioni
+        #print(self.json['Relations'])
+        # used_rel = {string for values in self.json['Relations'].values() for string in values[1]}
+        # if obj1.name not in used_rel and obj1.name in self.json['Relations'].keys() and self.json['Relations'][obj1.name][0] == add_relation_name:
+        #     self.json['Relations'][self.name] = [add_relation_name, self.json['Relations'][obj1.name][1]+[obj2.name]]
+        #     del self.json['Relations'][obj1.name]
+        # else:
 def merge(source, destination, main = True):
     if main:
         log.debug("Merge Source")
