@@ -166,7 +166,6 @@ class ParamFun(NeuObj):
                     n_new_constants_and_params)
             output_dimension = self.__infer_output_dimensions(self.json_stream[n_call_input], input_types,
                                                                   input_dimensions)
-            #self.json_stream[n_call_input]['Functions'][self.name]['out_dim'] = output_dimension
 
         else:
             input_dimensions = []

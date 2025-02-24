@@ -18,6 +18,8 @@ neg_relation_name = 'Neg'
 
 # Merge operator
 sum_relation_name = 'Sum'
+
+
 class Add(Stream, ToStream):
     """
         Implement the addition function between two tensors. 
