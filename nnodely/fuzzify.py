@@ -99,6 +99,7 @@ class Fuzzify(NeuObj):
             self.json['Functions'][self.name]['functions'] = code
             self.json['Functions'][self.name]['names'] = functions.__name__
 
+    @enforce_types
     def __call__(self, obj: Stream) -> Stream:
         stream_name = fuzzify_relation_name + str(Stream.count)
         check(type(obj) is Stream, TypeError,

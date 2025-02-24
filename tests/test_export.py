@@ -51,6 +51,7 @@ class ModelyExportTest(unittest.TestCase):
         w_5 = Parameter('w_5', dimensions=1, tw=5)
         t_5 = Parameter('t_5', dimensions=1, tw=5)
         c_5 = [[1], [2], [3], [4], [5], [6], [7], [8], [9], [10]]
+        c_5_2 = Constant('c_5_2', tw=5, values=c_5)
         parfun_x = ParamFun(myFun, parameters=[K_x], constants=[c_v])
         parfun_y = ParamFun(myFun, parameters=[K_y])
         parfun_z = ParamFun(myFun)
@@ -65,20 +66,24 @@ class ModelyExportTest(unittest.TestCase):
         fuzzy = Fuzzify(output_dimension=4, range=[0, 4], functions=fuzzyfun)(x.tw(1))
         fuzzyTriang = Fuzzify(centers=[1, 2, 3, 7])(x.tw(1))
 
-        out = Output('out', Fir(parfun_x(x.tw(1)) + parfun_y(y.tw(1), c_v)))
-        # out = Output('out', Fir(parfun_x(x.tw(1))+parfun_y(y.tw(1),c_v)+parfun_z(x.tw(5),t_5,c_5)))
+        out = Output('out', Fir(parfun_x(x.tw(1)) + parfun_y(y.tw(1),c_v)))
         out2 = Output('out2', Add(w, x.tw(1)) + Add(t, y.tw(1)) + Add(w, c))
         out3 = Output('out3', Add(fir_w, fir_t))
         out4 = Output('out4', Linear(output_dimension=1)(fuzzy+fuzzyTriang))
         out5 = Output('out5', Fir(time_part) + Fir(sample_select))
         out6 = Output('out6', LocalModel(output_function=Fir())(x.tw(1), fuzzy))
+        with self.assertRaises(TypeError):
+            parfun_z(x.tw(5), t_5, c_5)
+        out7 = Output('out', Fir(parfun_x(x.tw(1)) + parfun_y(y.tw(1), c_v)) + Fir(parfun_z(x.tw(5), t_5, c_5_2)))
 
         self.test.addModel('modelA', out)
         self.test.addModel('modelB', [out2, out3, out4])
         self.test.addModel('modelC', [out4, out5, out6])
+        self.test.addModel('modelD', [out7])
         self.test.addMinimize('error1', x.last(), out)
         self.test.addMinimize('error2', y.last(), out3, loss_function='rmse')
         self.test.addMinimize('error3', z.last(), out6, loss_function='rmse')
+        self.test.addMinimize('error4', z.last(), out7, loss_function='rmse')
 
     def test_export_pt(self):
         if os.path.exists(self.test.getWorkspace()):

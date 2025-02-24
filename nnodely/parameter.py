@@ -3,14 +3,14 @@ import numpy as np
 
 from collections.abc import Callable
 
-from nnodely.relation import NeuObj, Stream, ToStream
+from nnodely.relation import NeuObj, Relation
 from nnodely.utils import check, enforce_types, NP_DTYPE
 
 
 def is_numpy_float(var):
     return isinstance(var, (np.float16, np.float32, np.float64))
 
-class Constant(NeuObj, Stream):
+class Constant(NeuObj, Relation):
     """
     Represents a constant value in the neural network model.
 
@@ -67,9 +67,8 @@ class Constant(NeuObj, Stream):
         # deepcopy dimention information inside Parameters
         self.json['Constants'][self.name] = copy.deepcopy(self.dim)
         self.json['Constants'][self.name]['values'] = values
-        Stream.__init__(self, name, self.json, self.dim)
 
-class Parameter(NeuObj, Stream):
+class Parameter(NeuObj, Relation):
     """
     Represents a parameter in the neural network model.
 
@@ -140,6 +139,8 @@ class Parameter(NeuObj, Stream):
                 self.dim['tw'] = tw
             elif sw is not None:
                 self.dim['sw'] = sw
+            else:
+                self.dim['sw'] = 1
 
             # deepcopy dimention information inside Parameters
             self.json['Parameters'][self.name] = copy.deepcopy(self.dim)
@@ -178,9 +179,7 @@ class Parameter(NeuObj, Stream):
             if init_params is not None:
                 self.json['Parameters'][self.name]['init_fun']['params'] = init_params
 
-        Stream.__init__(self, name, self.json, self.dim)
-
-class SampleTime(NeuObj, Stream, ToStream):
+class SampleTime():
     """
     Represents a constant that value is equal to the sample time.
 
@@ -197,12 +196,10 @@ class SampleTime(NeuObj, Stream, ToStream):
     -------
         >>> dt = SampleTime()
     """
-    def __init__(self):
+    def __new__(cls):
         name = 'SampleTime'
-        NeuObj.__init__(self, '')
-
-        self.dim = {'dim': 1, 'sw': 1}
-        # deepcopy dimention information inside Parameters
-        self.json['Constants'][name] = copy.deepcopy(self.dim)
-        self.json['Constants'][name]['values'] = name
-        Stream.__init__(self, name, self.json, self.dim)
+        g = Constant(name, values=0)
+        g.dim = {'dim': 1, 'sw': 1}
+        g.json['Constants'][name] = copy.deepcopy(g.dim)
+        g.json['Constants'][name]['values'] = name
+        return g

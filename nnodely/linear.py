@@ -10,9 +10,10 @@ from nnodely.parameter import Parameter
 from nnodely.utils import check, merge, enforce_types
 
 from nnodely.logger import logging, nnLogger
-log = nnLogger(__name__, logging.CRITICAL)
+log = nnLogger(__name__, logging.WARNING)
 
 linear_relation_name = 'Linear'
+
 class Linear(NeuObj, AutoToStream):
     """
     Represents a Linear relation in the neural network model.
@@ -110,13 +111,14 @@ class Linear(NeuObj, AutoToStream):
         if W is None:
             self.output_dimension = 1 if output_dimension is None else output_dimension
             self.Wname = self.name + 'W'
+            self.json['Parameters'][self.Wname] = {}
         elif type(W) is str:
             self.output_dimension = 1 if output_dimension is None else output_dimension
             self.Wname = W
+            self.json['Parameters'][self.Wname] = {}
         else:
             check(type(W) is Parameter or type(W) is str, TypeError, 'The "W" must be of type Parameter or str.')
-            window = 'tw' if 'tw' in W.dim else ('sw' if 'sw' in W.dim else None)
-            check(window == None or W.dim['sw'] == 1, ValueError, 'The "W" must not have window dimension.')
+            check('sw' in W.dim and W.dim['sw'] == 1, ValueError, f'The "W" must have window dimension sw=1 but was {W.dim}.')
             check(len(W.dim['dim']) == 2, ValueError,'The "W" dimensions must be a list of 2.')
             self.output_dimension = W.dim['dim'][1]
             if output_dimension is not None:
@@ -135,22 +137,10 @@ class Linear(NeuObj, AutoToStream):
                 self.json['Parameters'][b.name] = copy.deepcopy(b.json['Parameters'][b.name])
             elif type(b) is str:
                 self.bname = b
-                self.json['Parameters'][self.bname] = { 'dim': self.output_dimension }
+                self.json['Parameters'][self.bname] = { 'dim': self.output_dimension, 'sw': 1}
             else:
                 self.bname = self.name + 'b'
-                self.json['Parameters'][self.bname] = { 'dim': self.output_dimension }
-
-    def __call__(self, obj:Stream) -> Stream:
-        stream_name = linear_relation_name + str(Stream.count)
-        check(type(obj) is Stream, TypeError,
-              f"The type of {obj} is {type(obj)} and is not supported for Linear operation.")
-        window = 'tw' if 'tw' in obj.dim else ('sw' if 'sw' in obj.dim else None)
-
-        if type(self.W) is Parameter:
-            check(self.W.dim['dim'][0] == obj.dim['dim'], ValueError,
-                  'the input dimension must be equal to the first dim of the parameter')
-        else:
-            self.json['Parameters'][self.Wname] = { 'dim': [obj.dim['dim'],self.output_dimension,] }
+                self.json['Parameters'][self.bname] = { 'dim': self.output_dimension, 'sw': 1}
 
         if self.W_init is not None:
             check('values' not in self.json['Parameters'][self.Wname], ValueError, f"The parameter {self.Wname} is already initialized.")
@@ -171,7 +161,32 @@ class Linear(NeuObj, AutoToStream):
             if self.b_init_params is not None:
                 self.json['Parameters'][self.bname]['init_fun']['params'] = self.b_init_params
 
-        stream_json = merge(self.json,obj.json)
+        self.json_stream = {}
+
+    @enforce_types
+    def __call__(self, obj:Stream) -> Stream:
+        stream_name = linear_relation_name + str(Stream.count)
+        check(type(obj) is Stream, TypeError,
+              f"The type of {obj} is {type(obj)} and is not supported for Linear operation.")
+        window = 'tw' if 'tw' in obj.dim else ('sw' if 'sw' in obj.dim else None)
+        assert(window is not None), f"Parameters {obj.name} with no window dimension"
+
+        json_stream_name = obj.dim['dim']
+        if obj.dim['dim'] not in self.json_stream:
+            if len(self.json_stream) > 0:
+                log.warning(
+                    f"The Linear {self.name} was called with inputs with different dimensions. If both Linear enter in the model an error will be raised.")
+            self.json_stream[json_stream_name] = copy.deepcopy(self.json)
+
+            if  type(self.W) is not Parameter:
+                self.json_stream[json_stream_name]['Parameters'][self.Wname]['dim'] = [obj.dim['dim'],self.output_dimension,]
+                self.json_stream[json_stream_name]['Parameters'][self.Wname]['sw'] = 1
+
+        if type(self.W) is Parameter:
+            check(self.json['Parameters'][self.Wname]['dim'][0] == obj.dim['dim'], ValueError,
+                  'the input dimension must be equal to the first dim of the parameter')
+
+        stream_json = merge(self.json_stream[json_stream_name],obj.json)
         stream_json['Relations'][stream_name] = [linear_relation_name, [obj.name], self.Wname, self.bname, self.dropout]
         return Stream(stream_name, stream_json,{'dim': self.output_dimension, window:obj.dim[window]})
 

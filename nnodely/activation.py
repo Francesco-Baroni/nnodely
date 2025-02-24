@@ -1,9 +1,10 @@
 import torch
 import torch.nn as nn
 
+from nnodely import Parameter, Constant
 from nnodely.relation import Stream, ToStream, toStream
 from nnodely.model import Model
-from nnodely.utils import check
+from nnodely.utils import check, enforce_types
 
 
 relu_relation_name = 'ReLU'
@@ -24,7 +25,8 @@ class Relu(Stream, ToStream):
         Example:
             >>> x = Relu(x)
     """
-    def __init__(self, obj:Stream) -> Stream:
+    @enforce_types
+    def __init__(self, obj:Stream|Parameter|Constant|float|int) -> Stream:
         obj = toStream(obj)
         check(type(obj) is Stream, TypeError,
               f"The type of {obj} is {type(obj)} and is not supported for Relu operation.")
@@ -45,7 +47,8 @@ class Tanh(Stream, ToStream):
         Example:
             >>> x = Tanh(x)
     """
-    def __init__(self, obj:Stream) -> Stream:
+    @enforce_types
+    def __init__(self, obj:Stream|Parameter|Constant|float|int) -> Stream:
         obj = toStream(obj)
         check(type(obj) is Stream,TypeError,
               f"The type of {obj} is {type(obj)} and is not supported for Tanh operation.")
@@ -66,7 +69,8 @@ class ELU(Stream, ToStream):
         Example:
             >>> x = ELU(x)
     """
-    def __init__(self, obj:Stream) -> Stream:
+    @enforce_types
+    def __init__(self, obj:Stream|Parameter|Constant|float|int) -> Stream:
         obj = toStream(obj)
         check(type(obj) is Stream,TypeError,
               f"The type of {obj} is {type(obj)} and is not supported for Tanh operation.")

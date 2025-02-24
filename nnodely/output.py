@@ -1,12 +1,11 @@
 from pprint import pformat
 
-from nnodely.relation import Stream
-from nnodely.utils import check
+from nnodely.relation import Stream, NeuObj
 
 from nnodely.logger import logging, nnLogger
 log = nnLogger(__name__, logging.CRITICAL)
 
-class Output(Stream):
+class Output(NeuObj):
     """
     Represents an output in the neural network model. This relation is what the network will give as output during inference.
 
@@ -26,7 +25,7 @@ class Output(Stream):
     dim : dict
         A dictionary containing the dimensions of the output.
     """
-    def __init__(self, name, relation):
+    def __init__(self, name:str, relation:Stream):
         """
         Initializes the Output object.
 
@@ -42,11 +41,3 @@ class Output(Stream):
         self.json['Outputs'][name] = {}
         self.json['Outputs'][name] = relation.name
         log.debug("\n"+pformat(self.json))
-
-    def closedLoop(self, obj):
-        check(False, TypeError,
-              f"The {self} must be a Stream and not a {type(self)}.")
-
-    def connect(self, obj):
-        check(False, TypeError,
-              f"The {self} must be a Stream and not a {type(self)}.")

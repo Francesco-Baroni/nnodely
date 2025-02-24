@@ -1,11 +1,11 @@
-from nnodely.relation import NeuObj, AutoToStream, Stream
+from nnodely.relation import Stream, ToStream
 from nnodely.utils import merge, enforce_types
 
 # Binary operators
 int_relation_name = 'Integrate'
 der_relation_name = 'Derivate'
 
-class Integrate(NeuObj, AutoToStream):
+class Integrate(Stream, ToStream):
     """
     This operation Integrate a Stream
 
@@ -14,22 +14,19 @@ class Integrate(NeuObj, AutoToStream):
     method : is the integration method
     """
     @enforce_types
-    def __init__(self, method:str = 'ForwardEuler'):
-        self.method = method
-        super().__init__(int_relation_name + str(NeuObj.count))
-
-    @enforce_types
-    def __call__(self, obj:Stream) -> Stream:
+    def __init__(self, obj:Stream, method:str = 'ForwardEuler') -> Stream:
         from nnodely.input import State, ClosedLoop
         from nnodely.parameter import SampleTime
-        s = State(self.name + "_last", dimensions=obj.dim['dim'])
-        if self.method == 'ForwardEuler':
+        s = State(obj.name + "_last", dimensions=obj.dim['dim'])
+        if method == 'ForwardEuler':
             DT = SampleTime()
             new_s = s.last()  + obj * DT
+        else:
+            raise ValueError(f"The method '{method}' is not supported yet")
         out_connect = ClosedLoop(new_s, s)
-        return Stream(new_s.name, merge(new_s.json, out_connect.json), new_s.dim, 1)
+        super().__init__(new_s.name, merge(new_s.json, out_connect.json), new_s.dim)
 
-class Derivate(NeuObj, AutoToStream):
+class Derivate(Stream, ToStream):
     """
     This operation Derivate a Stream
 
@@ -38,18 +35,14 @@ class Derivate(NeuObj, AutoToStream):
     method : is the derivative method
     """
     @enforce_types
-    def __init__(self, method:str = 'ForwardEuler'):
-        self.method = method
-        super().__init__(der_relation_name + str(NeuObj.count))
-
-    @enforce_types
-    def __call__(self, obj:Stream) -> Stream:
+    def __init__(self, obj:Stream, method:str = 'ForwardEuler') -> Stream:
         from nnodely.input import State, ClosedLoop
         from nnodely.parameter import SampleTime
-        s = State(self.name + "_last", dimensions=obj.dim['dim'])
-        if self.method == 'ForwardEuler':
+        s = State(obj.name + "_last", dimensions=obj.dim['dim'])
+        if method == 'ForwardEuler':
             DT = SampleTime()
             new_s = (obj - s.last()) / DT
+        else:
+            raise ValueError(f"The method '{method}' is not supported yet")
         out_connect = ClosedLoop(obj, s)
-        return Stream(new_s.name, merge(new_s.json, out_connect.json), new_s.dim, 1)
-
+        super().__init__(new_s.name,merge(new_s.json, out_connect.json), new_s.dim)
