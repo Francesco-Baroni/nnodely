@@ -85,11 +85,20 @@ def merge(source, destination, main = True):
                       f"The ParamFun {key} is present multiple times, with different number of inputs. "
                       f"The ParamFun {key} is called with {value['n_input']} parameters and with {source['Functions'][key]['n_input']} parameters.")
         for key, value in destination["Parameters"].items():
-            if key in source["Parameters"].keys() and ('dim' in value.keys() and 'dim' in source["Parameters"][key].keys()):
-                check(value['dim'] == source["Parameters"][key]['dim'],
+            if key in source["Parameters"].keys():
+                if 'dim' in value.keys() and 'dim' in source["Parameters"][key].keys():
+                    check(value['dim'] == source["Parameters"][key]['dim'],
+                          TypeError,
+                          f"The Parameter {key} is present multiple times, with different dimensions. "
+                          f"The Parameter {key} is called with {value['dim']} dimension and with {source['Parameters'][key]['dim']} dimension.")
+                window_dest = 'tw' if 'tw' in value else ('sw' if 'sw' in value else None)
+                assert (window_dest is not None), f"Parameters {key} with no window dimension"
+                window_source = 'tw' if 'tw' in source["Parameters"][key] else ('sw' if 'sw' in source["Parameters"][key] else None)
+                assert (window_source is not None), f"Parameters {key} with no window dimension"
+                check(window_dest == window_source and value[window_dest] == source["Parameters"][key][window_source] ,
                       TypeError,
-                      f"The Parameter {key} is present multiple times, with different dimensions. "
-                      f"The Parameter {key} is called with {value['dim']} dimension and with {source['Parameters'][key]['dim']} dimension.")
+                      f"The Parameter {key} is present multiple times, with different window. "
+                      f"The Parameter {key} is called with {window_dest}={value[window_dest]} dimension and with {window_source}={source['Parameters'][key][window_source]} dimension.")
 
         log.debug("Merge Source")
         log.debug("\n"+pformat(source))

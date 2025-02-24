@@ -10,6 +10,9 @@ from nnodely.model import Model
 from nnodely.parameter import Parameter
 from nnodely.input import Input
 
+from nnodely.logger import logging, nnLogger
+log = nnLogger(__name__, logging.WARNING)
+
 fir_relation_name = 'Fir'
 
 class Fir(NeuObj, AutoToStream):
@@ -145,30 +148,6 @@ class Fir(NeuObj, AutoToStream):
                 self.bname = self.name + 'b'
                 self.json['Parameters'][self.bname] = { 'dim': self.output_dimension }
 
-
-    def __call__(self, obj:Stream) -> Stream:
-        stream_name = fir_relation_name + str(Stream.count)
-        check(type(obj) is not Input, TypeError,
-              f"The type of {obj.name} is Input not a Stream create a Stream using the functions: tw, sw, z, last, next.")
-        check(type(obj) is Stream, TypeError,
-              f"The type of {obj} is {type(obj)} and is not supported for Fir operation.")
-        check('dim' in obj.dim and obj.dim['dim'] == 1, ValueError, f"Input dimension is {obj.dim['dim']} and not scalar")
-        window = 'tw' if 'tw' in obj.dim else ('sw' if 'sw' in obj.dim else None)
-        if window:
-            if type(self.parameter) is Parameter:
-                check(window in self.json['Parameters'][self.pname],
-                      KeyError,
-                      f"The window \'{window}\' of the input is not in the parameter")
-                check(self.json['Parameters'][self.pname][window] == obj.dim[window],
-                      ValueError,
-                      f"The window \'{window}\' of the input must be the same of the parameter")
-            else:
-                self.json['Parameters'][self.pname][window] = obj.dim[window]
-        else:
-            if type(self.parameter) is Parameter:
-                cond = 'sw' not in self.json['Parameters'][self.pname] and 'tw' not in self.json['Parameters'][self.nampe]
-                check(cond, KeyError,'The parameter have a time window and the input no')
-
         if self.parameter_init is not None:
             check('values' not in self.json['Parameters'][self.pname], ValueError, f"The parameter {self.pname} is already initialized.")
             check(inspect.isfunction(self.parameter_init), ValueError,
@@ -188,7 +167,41 @@ class Fir(NeuObj, AutoToStream):
             if self.bias_init_params is not None:
                 self.json['Parameters'][self.bname]['init_fun']['params'] = self.bias_init_params
 
-        stream_json = merge(self.json,obj.json)
+        self.json_stream = {}
+
+    def __call__(self, obj:Stream) -> Stream:
+        stream_name = fir_relation_name + str(Stream.count)
+        check(type(obj) is not Input, TypeError,
+              f"The type of {obj.name} is Input not a Stream create a Stream using the functions: tw, sw, z, last, next.")
+        check(type(obj) is Stream, TypeError,
+              f"The type of {obj} is {type(obj)} and is not supported for Fir operation.")
+        check('dim' in obj.dim and obj.dim['dim'] == 1, ValueError, f"Input dimension is {obj.dim['dim']} and not scalar")
+        window = 'tw' if 'tw' in obj.dim else ('sw' if 'sw' in obj.dim else None)
+
+        json_stream_name = window + str(obj.dim[window])
+        if json_stream_name not in self.json_stream:
+            if len(self.json_stream) > 0:
+                log.warning(
+                    f"The Fir {self.name} was called with inputs with different dimensions. If both Fir enter in the model an error will be raised.")
+
+            self.json_stream[json_stream_name] = copy.deepcopy(self.json)
+            if type(self.parameter) is not Parameter:
+                self.json_stream[json_stream_name]['Parameters'][self.pname][window] = obj.dim[window]
+
+        if window:
+            if type(self.parameter) is Parameter:
+                check(window in self.json['Parameters'][self.pname],
+                      KeyError,
+                      f"The window \'{window}\' of the input is not in the parameter")
+                check(self.json['Parameters'][self.pname][window] == obj.dim[window],
+                      ValueError,
+                      f"The window \'{window}\' of the input must be the same of the parameter")
+        else:
+            if type(self.parameter) is Parameter:
+                cond = 'sw' not in self.json_stream[json_stream_name]['Parameters'][self.pname] and 'tw' not in self.json_stream[json_stream_name]['Parameters'][self.nampe]
+                check(cond, KeyError,'The parameter have a time window and the input no')
+
+        stream_json = merge(self.json_stream[json_stream_name],obj.json)
         stream_json['Relations'][stream_name] = [fir_relation_name, [obj.name], self.pname, self.bname, self.dropout]
         return Stream(stream_name, stream_json,{'dim':self.output_dimension, 'sw': 1})
 
