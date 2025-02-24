@@ -242,5 +242,24 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         inference = test(inputs={'x':[1.5,2.5,3.5]})
         self.assertEqual(inference['out'],[2.5,6.5,12.5])
 
+    def test_softmax_and_sigmoid(self):
+        torch.manual_seed(1)
+        x = Input('x')
+        y = Input('y', dimensions=3)
+        softmax = Softmax(y.last())
+        sigmoid = Sigmoid(x.last())
+        out = Output('softmax',softmax)
+        out2 = Output('sigmoid',sigmoid)
+
+        test = Modely(visualizer=None)
+        test.addModel('model',[out,out2])
+        test.neuralizeModel(0.01)
+
+        inference = test(inputs={'x':[-1000.0, 0.0, 1000.0], 'y':[[-1.0,0.0,1.0],[-1000.0,0.0,1000.0],[1.0,2.0,3.0]]})
+        self.assertEqual(inference['sigmoid'],[0.0, 0.5, 1.0])
+        self.assertEqual(inference['softmax'],[[[0.09003057330846786, 0.2447284758090973, 0.6652409434318542]], 
+                                               [[0.0, 0.0, 1.0]], 
+                                               [[0.09003057330846786, 0.2447284758090973, 0.6652409434318542]]])
+
 if __name__ == '__main__':
     unittest.main()
