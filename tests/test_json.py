@@ -259,31 +259,31 @@ class ModelyJsonTest(unittest.TestCase):
         NeuObj.reset_count()
         out = ParamFun(fun_test)(input2.tw(0.01))
         self.assertEqual({'dim': 1, 'tw': 0.01}, out.dim)
-        self.assertEqual({'FParamFun0k': {'dim': 1},'FParamFun0y': {'dim': 1},'FParamFun0z': {'dim': 1}}, out.json['Parameters'])
+        self.assertEqual({'FParamFun0k': {'dim': 1,'sw': 1},'FParamFun0y': {'dim': 1,'sw': 1},'FParamFun0z': {'dim': 1,'sw': 1}}, out.json['Parameters'])
 
         NeuObj.reset_count()
         out = ParamFun(fun_test)(input2.tw(0.01),input2.tw(0.01))
         self.assertEqual({'dim': 1, 'tw': 0.01}, out.dim)
-        self.assertEqual({'FParamFun0k': {'dim': 1}, 'FParamFun0z': {'dim': 1}}, out.json['Parameters'])
+        self.assertEqual({'FParamFun0k': {'dim': 1,'sw': 1}, 'FParamFun0z': {'dim': 1,'sw': 1}}, out.json['Parameters'])
 
         NeuObj.reset_count()
         out = ParamFun(fun_test,parameters=['t'])(input2.tw(0.01),input2.tw(0.01))
         self.assertEqual({'dim': 1, 'tw': 0.01}, out.dim)
-        self.assertEqual({'FParamFun0k': {'dim': 1}, 't': {'dim': 1}}, out.json['Parameters'])
+        self.assertEqual({'FParamFun0k': {'dim': 1,'sw': 1}, 't': {'dim': 1,'sw': 1}}, out.json['Parameters'])
 
         out = ParamFun(fun_test,parameters=['t','r'])(input2.tw(0.01),input2.tw(0.01))
         self.assertEqual({'dim': 1, 'tw': 0.01}, out.dim)
-        self.assertEqual({'r': {'dim': 1}, 't': {'dim': 1}}, out.json['Parameters'])
+        self.assertEqual({'r': {'dim': 1,'sw': 1}, 't': {'dim': 1,'sw': 1}}, out.json['Parameters'])
 
         NeuObj.reset_count()
         out = ParamFun(fun_test,parameters={'k':'t'})(input2.tw(0.01),input2.tw(0.01))
         self.assertEqual({'dim': 1, 'tw': 0.01}, out.dim)
-        self.assertEqual({'FParamFun0z': {'dim': 1}, 't': {'dim': 1}}, out.json['Parameters'])
+        self.assertEqual({'FParamFun0z': {'dim': 1,'sw': 1}, 't': {'dim': 1,'sw': 1}}, out.json['Parameters'])
 
         NeuObj.reset_count()
         out = ParamFun(fun_test,parameters_dimensions={'k':(1,2)})(input2.tw(0.01),input2.tw(0.01))
         self.assertEqual({'dim': 2, 'tw': 0.01}, out.dim)
-        self.assertEqual({'FParamFun0k': {'dim': [1,2]}, 'FParamFun0z': {'dim': 1}}, out.json['Parameters'])
+        self.assertEqual({'FParamFun0k': {'dim': [1,2],'sw': 1}, 'FParamFun0z': {'dim': 1,'sw': 1}}, out.json['Parameters'])
 
         with self.assertRaises(ValueError):
             ParamFun(fun_test,parameters_dimensions={'k':(1,2)},parameters=['r'])(input2.tw(0.01),input2.tw(0.01))
@@ -295,7 +295,7 @@ class ModelyJsonTest(unittest.TestCase):
         NeuObj.reset_count()
         out = ParamFun(fun_test,parameters_dimensions={'k':(1,2)})(input2.tw(0.01),input2.tw(0.01),input2.tw(0.01))
         self.assertEqual({'dim': 2, 'tw': 0.01}, out.dim)
-        self.assertEqual({'FParamFun0k': {'dim': [1,2]}}, out.json['Parameters'])
+        self.assertEqual({'FParamFun0k': {'dim': [1,2],'sw': 1}}, out.json['Parameters'])
 
         with self.assertRaises(ValueError):
             ParamFun(fun_test,parameters_dimensions={'z':(1,2)})(input2.tw(0.01),input2.tw(0.01),input2.tw(0.01))
@@ -309,20 +309,20 @@ class ModelyJsonTest(unittest.TestCase):
         NeuObj.reset_count()
         out = ParamFun(fun_test,parameters=['pp'],constants=['el'])(input2.tw(0.01))
         self.assertEqual({'dim': 1, 'tw': 0.01}, out.dim)
-        self.assertEqual({'FParamFun0k': {'dim': 1}, 'pp': {'dim': 1}}, out.json['Parameters'])
-        self.assertEqual({'el': {'dim': 1}}, out.json['Constants'])
+        self.assertEqual({'FParamFun0k': {'dim': 1,'sw': 1}, 'pp': {'dim': 1,'sw': 1}}, out.json['Parameters'])
+        self.assertEqual({'el': {'dim': 1,'sw': 1}}, out.json['Constants'])
 
         NeuObj.reset_count()
         out = ParamFun(fun_test,parameters={'y':'pp'},constants={'k':'el'})(input2.tw(0.01))
         self.assertEqual({'dim': 1, 'tw': 0.01}, out.dim)
-        self.assertEqual({'FParamFun0z': {'dim': 1}, 'pp': {'dim': 1}}, out.json['Parameters'])
-        self.assertEqual({'el': {'dim': 1}}, out.json['Constants'])
+        self.assertEqual({'FParamFun0z': {'dim': 1,'sw': 1}, 'pp': {'dim': 1,'sw': 1}}, out.json['Parameters'])
+        self.assertEqual({'el': {'dim': 1,'sw': 1}}, out.json['Constants'])
 
         NeuObj.reset_count()
         out = ParamFun(fun_test,parameters=['pp','oo'],constants={'k':'el'})(input2.tw(0.01))
         self.assertEqual({'dim': 1, 'tw': 0.01}, out.dim)
-        self.assertEqual({'oo': {'dim': 1}, 'pp': {'dim': 1}}, out.json['Parameters'])
-        self.assertEqual({'el': {'dim': 1}}, out.json['Constants'])
+        self.assertEqual({'oo': {'dim': 1,'sw': 1}, 'pp': {'dim': 1,'sw': 1}}, out.json['Parameters'])
+        self.assertEqual({'el': {'dim': 1,'sw': 1}}, out.json['Constants'])
 
         with self.assertRaises(ValueError):
             ParamFun(fun_test,parameters=['pp','oo'],constants={'y':'el'})(input2.tw(0.01))
@@ -333,8 +333,8 @@ class ModelyJsonTest(unittest.TestCase):
         NeuObj.reset_count()
         out = ParamFun(fun_test,parameters=['pp'],constants=['ll','oo'])(input2.tw(0.01))
         self.assertEqual({'dim': 1, 'tw': 0.01}, out.dim)
-        self.assertEqual({'pp': {'dim': 1}}, out.json['Parameters'])
-        self.assertEqual({'oo': {'dim': 1}, 'll': {'dim': 1}}, out.json['Constants'])
+        self.assertEqual({'pp': {'dim': 1,'sw': 1}}, out.json['Parameters'])
+        self.assertEqual({'oo': {'dim': 1,'sw': 1}, 'll': {'dim': 1,'sw': 1}}, out.json['Constants'])
 
         NeuObj.reset_count()
         pp = Parameter('pp')
@@ -342,12 +342,12 @@ class ModelyJsonTest(unittest.TestCase):
         oo = Constant('oo', values=[[1]])
         out = ParamFun(fun_test,parameters=[pp],constants=[ll,oo])(input2.tw(0.01))
         self.assertEqual({'dim': 1, 'tw': 0.01}, out.dim)
-        self.assertEqual({'pp': {'dim': 1}}, out.json['Parameters'])
+        self.assertEqual({'pp': {'dim': 1,'sw': 1}}, out.json['Parameters'])
         self.assertEqual({'oo': {'dim': 1, 'sw': 1, 'values': [[1]]}, 'll': {'dim': 1, 'sw': 1, 'values': [[1]]}}, out.json['Constants'])
 
         out = ParamFun(fun_test,parameters={'z':pp},constants={'y':ll,'k':oo})(input2.tw(0.01))
         self.assertEqual({'dim': 1, 'tw': 0.01}, out.dim)
-        self.assertEqual({'pp': {'dim': 1}}, out.json['Parameters'])
+        self.assertEqual({'pp': {'dim': 1,'sw': 1}}, out.json['Parameters'])
         self.assertEqual(['ll', 'pp', 'oo'],out.json['Functions']['FParamFun4']['params_and_consts'])
         self.assertEqual({'oo': {'dim': 1, 'sw': 1, 'values': [[1]]}, 'll': {'dim': 1, 'sw': 1, 'values': [[1]]}}, out.json['Constants'])
 
@@ -358,7 +358,7 @@ class ModelyJsonTest(unittest.TestCase):
         oo = Constant('oo', values=[[1]])
         out = ParamFun(fun_test)(input2.tw(0.01),ll,oo,pp)
         self.assertEqual({'dim': 1, 'tw': 0.01}, out.dim)
-        self.assertEqual({'pp': {'dim': 1}}, out.json['Parameters'])
+        self.assertEqual({'pp': {'dim': 1,'sw': 1}}, out.json['Parameters'])
         self.assertEqual({'oo': {'dim': 1, 'sw': 1, 'values': [[1]]}, 'll': {'dim': 1, 'sw': 1, 'values': [[1]]}}, out.json['Constants'])
         self.assertEqual(['TimePart1', 'll', 'oo', 'pp'], out.json['Relations']['ParamFun2'][1])
 
@@ -420,7 +420,7 @@ class ModelyJsonTest(unittest.TestCase):
         out1 = Output('out1', l1out)
         out2 = Output('out2', l2out)
 
-        exampleA = Modely(seed=2)
+        exampleA = Modely(visualizer=None, seed=2)
         with self.assertRaises(TypeError):
             exampleA.addModel('model', [out1, out2])
         exampleA.addModel('model_A', [out1])
@@ -428,7 +428,7 @@ class ModelyJsonTest(unittest.TestCase):
             exampleA.addModel('model_B', [out2])
         exampleA.neuralizeModel(1)
 
-        exampleB = Modely(seed=2)
+        exampleB = Modely(visualizer=None, seed=2)
         exampleB.addModel('model_B', [out2])
         exampleB.neuralizeModel(1)
 
@@ -437,6 +437,37 @@ class ModelyJsonTest(unittest.TestCase):
 
         resultsB = exampleB({'f': [1, 3, 3, 1, 2, 1]})
         self.assertEqual([6.585615158081055, 4.480303764343262, 4.106618881225586, 3.18161678314209], resultsB['out2'])
+
+        log.setAllLevel(logging.CRITICAL)
+
+    def test_check_multiple_streams_compatibility_fir(self):
+        log.setAllLevel(logging.WARNING)
+        x = Input('x')
+
+        fir = Fir()
+        with self.assertRaises(TypeError):
+            fir(x.last()) + fir(x.tw(2.0)) + fir(x.sw(3))
+
+        out1 = Output('out1', fir(x.last()))
+        out2 = Output('out2', fir(x.tw(2.0)))
+
+        exampleA = Modely(visualizer=None, seed=2)
+        with self.assertRaises(TypeError):
+            exampleA.addModel('model', [out1, out2])
+        exampleA.addModel('model_A', [out1])
+        with self.assertRaises(TypeError):
+            exampleA.addModel('model_B', [out2])
+        exampleA.neuralizeModel(1)
+
+        exampleB = Modely(visualizer=None, seed=2)
+        exampleB.addModel('model_B', [out2])
+        exampleB.neuralizeModel(1)
+
+        resultsA = exampleA({'x': [1, 3]})
+        self.assertEqual([0.6146950721740723, 1.8440852165222168], resultsA['out1'])
+
+        resultsB = exampleB({'x': [1, 4, 5]})
+        self.assertEqual([2.138746500015259, 4.363844871520996], resultsB['out2'])
 
         log.setAllLevel(logging.CRITICAL)
 
