@@ -87,6 +87,42 @@ class ParamFun(NeuObj):
             'name' : param_fun.__name__,
         }
         self.json['Functions'][self.name]['params_and_consts'] = []
+
+        # Create the missing constants from list
+        if type(self.constants) is list:
+            for const in self.constants:
+                if type(const) is Constant:
+                    self.json['Functions'][self.name]['params_and_consts'].append(const.name)
+                    self.json['Constants'][const.name] = copy.deepcopy(const.json['Constants'][const.name])
+                elif type(const) is str:
+                    self.json['Functions'][self.name]['params_and_consts'].append(const)
+                    self.json['Constants'][const] = {'dim': 1}
+                else:
+                    check(type(const) is Constant or type(const) is str, TypeError,
+                          'The element inside the \"constants\" list must be a Constant or str')
+
+        # Create the missing parameters from list
+        if type(self.parameters) is list:
+            check(self.parameters_dimensions is None, ValueError,
+                  '\"parameters_dimensions\" must be None if \"parameters\" is set using list')
+            for param in self.parameters:
+                if type(param) is Parameter:
+                    self.json['Functions'][self.name]['params_and_consts'].append(param.name)
+                    self.json['Parameters'][param.name] = copy.deepcopy(param.json['Parameters'][param.name])
+                elif type(param) is str:
+                    self.json['Functions'][self.name]['params_and_consts'].append(param)
+                    self.json['Parameters'][param] = {'dim': 1}
+                else:
+                    check(type(param) is Parameter or type(param) is str, TypeError,
+                          'The element inside the \"parameters\" list must be a Parameter or str')
+        elif type(self.parameters_dimensions) is list:
+            funinfo = inspect.getfullargspec(self.param_fun)
+            for i, param_dim in enumerate(self.parameters_dimensions):
+                idx = i + len(funinfo.args) - len(self.parameters_dimensions)
+                param_name = self.name + str(idx)
+                self.json['Functions'][self.name]['params_and_consts'].append(param_name)
+                self.json['Parameters'][param_name] = {'dim': list(self.parameters_dimensions[i])}
+
         self.json_stream = {}
 
     def __call__(self, *obj):
@@ -103,7 +139,7 @@ class ParamFun(NeuObj):
 
             self.json_stream[n_call_input] = copy.deepcopy(self.json)
             self.json_stream[n_call_input]['Functions'][self.name]['n_input'] = n_call_input
-            self.__set_params_and_consts(self.json_stream[n_call_input], n_new_constants_and_params)
+            self.__create_missing_parameters(self.json_stream[n_call_input], n_new_constants_and_params)
 
             input_dimensions = []
             input_types = []
@@ -181,43 +217,8 @@ class ParamFun(NeuObj):
         else:
             return False
 
-    def __set_params_and_consts(self, stream_json, n_new_constants_and_params):
+    def __create_missing_parameters(self, stream_json, n_new_constants_and_params):
         funinfo = inspect.getfullargspec(self.param_fun)
-
-        # Create the missing constants from list
-        if type(self.constants) is list:
-            for const in self.constants:
-                if type(const) is Constant:
-                    stream_json['Functions'][self.name]['params_and_consts'].append(const.name)
-                    stream_json['Constants'][const.name] = copy.deepcopy(const.json['Constants'][const.name])
-                elif type(const) is str:
-                    stream_json['Functions'][self.name]['params_and_consts'].append(const)
-                    stream_json['Constants'][const] = {'dim': 1}
-                else:
-                    check(type(const) is Constant or type(const) is str, TypeError,
-                          'The element inside the \"constants\" list must be a Constant or str')
-
-        # Create the missing parameters from list
-        if type(self.parameters) is list:
-            check(self.parameters_dimensions is None, ValueError,
-                  '\"parameters_dimensions\" must be None if \"parameters\" is set using list')
-            for param in self.parameters:
-                if type(param) is Parameter:
-                    stream_json['Functions'][self.name]['params_and_consts'].append(param.name)
-                    stream_json['Parameters'][param.name] = copy.deepcopy(param.json['Parameters'][param.name])
-                elif type(param) is str:
-                    stream_json['Functions'][self.name]['params_and_consts'].append(param)
-                    stream_json['Parameters'][param] = {'dim': 1}
-                else:
-                    check(type(param) is Parameter or type(param) is str, TypeError,
-                          'The element inside the \"parameters\" list must be a Parameter or str')
-        elif type(self.parameters_dimensions) is list:
-            for i, param_dim in enumerate(self.parameters_dimensions):
-                idx = i + len(funinfo.args) - len(self.parameters_dimensions)
-                param_name = self.name + str(idx)
-                stream_json['Functions'][self.name]['params_and_consts'].append(param_name)
-                stream_json['Parameters'][param_name] = {'dim': list(self.parameters_dimensions[i])}
-
         # Create the missing parameters and constants from dict
         missing_params = n_new_constants_and_params - len(stream_json['Functions'][self.name]['params_and_consts'])
         if missing_params or type(self.constants) is dict or type(self.parameters) is dict or type(self.parameters_dimensions) is dict:
