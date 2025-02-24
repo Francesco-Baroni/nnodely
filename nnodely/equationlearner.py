@@ -11,8 +11,7 @@ from nnodely.parameter import Parameter, Constant
 from nnodely.utils import check, merge, enforce_types
 
 from nnodely.linear import Linear
-from nnodely.part import Select
-from nnodely.arithmetic import Concatenate
+from nnodely.part import Select, Concatenate
 from nnodely import *
 
 equationlearner_relation_name = 'EquationLearner'
@@ -83,7 +82,6 @@ class EquationLearner(NeuObj):
     """
     @enforce_types
     def __init__(self, functions:list, linear_in:Linear|None = None, linear_out:Linear|None = None) -> Stream:
-
         self.relation_name = equationlearner_relation_name
         self.linear_in = linear_in
         self.linear_out = linear_out
@@ -119,7 +117,14 @@ class EquationLearner(NeuObj):
         check(len(set([x.dim['sw'] if 'sw' in x.dim.keys() else x.dim['tw'] for x in inputs])) == 1, ValueError, 'All inputs must have the same time dimension')
         for input_idx, inp in enumerate(inputs):
             concatenated_input = inp if input_idx == 0 else Concatenate(concatenated_input, inp)
-        linear_layer = self.linear_in(concatenated_input) if self.linear_in else Linear(output_dimension=self.n_activations)(concatenated_input)
+        # if self.linear_in:
+        #     if self.linear_in.Wname in self.linear_in.json['Parameters'].keys():
+        #         dim = self.linear_in.json['Parameters'][self.linear_in.Wname]['dim'].copy()
+        #         check(dim == [concatenated_input.dim['dim'],self.n_activations], ValueError, 'The input dimensions do not match the dimensions of the linear layer')
+        #     linear_layer = self.linear_in(concatenated_input)
+        # else:
+        #     linear_layer = Linear(output_dimension=self.n_activations, b=True)(concatenated_input)
+        linear_layer = self.linear_in(concatenated_input) if self.linear_in else Linear(output_dimension=self.n_activations, b=True)(concatenated_input)
         idx = 0
         for func_idx, func in enumerate(self.functions):
             arguments = [Select(linear_layer,idx+arg_idx) for arg_idx in range(self.func_parameters[func_idx])]

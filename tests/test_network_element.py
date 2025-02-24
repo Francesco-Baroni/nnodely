@@ -339,34 +339,38 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         x = Input('x')
         F = Input('F')
 
-        def myFun(K1,K2,p1,p2):
-            return K1*p1+K2*p2
+        def myFun(p1,p2,k1,k2):
+            return k1*p1+k2*p2
 
         K1 = Parameter('k1', dimensions =  1, sw = 1,values=[[2.0]])
         K2 = Parameter('k2', dimensions =  1, sw = 1,values=[[3.0]])
-
-        parfun = ParamFun(myFun, parameters = [K1,K2])
+        parfun = ParamFun(myFun, parameters=[K1,K2])
+        parfun2 = ParamFun(myFun, parameters=[K1,K2])
+        parfun3 = ParamFun(myFun, parameters=[K1,K2])
         fuzzi = Fuzzify(centers=[0,1,2,3])
 
         linear_layer_in = Linear(output_dimension=3, W_init=init_constant, W_init_params={'value':0}, b_init=init_constant, b_init_params={'value':0}, b=False)
+        linear_layer_in_dim_2 = Linear(output_dimension=3, W_init=init_constant, W_init_params={'value':0}, b_init=init_constant, b_init_params={'value':0}, b=False)
         linear_layer_out = Linear(output_dimension=1, W_init=init_constant, W_init_params={'value':1}, b_init=init_constant, b_init_params={'value':0}, b=False)
 
         equation_learner = EquationLearner(functions=[Tan, Sin, Cos], linear_in=linear_layer_in)(x.last())
         equation_learner_out = EquationLearner(functions=[Tan, Sin, Cos], linear_in=linear_layer_in, linear_out=linear_layer_out)(x.last())
         equation_learner_tw = EquationLearner(functions=[Tan, Sin, Cos], linear_in=linear_layer_in)(x.sw(2))
-        equation_learner_multi_tw = EquationLearner(functions=[Tan, Sin, Cos], linear_in=linear_layer_in)((x.sw(2),F.sw(2)))
+        equation_learner_multi_tw = EquationLearner(functions=[Tan, Sin, Cos], linear_in=linear_layer_in_dim_2)((x.sw(2),F.sw(2)))
 
-        linear_layer_in_2 = Linear(output_dimension=5, W_init=init_constant, W_init_params={'value':1}, b_init=init_constant, b_init_params={'value':0}, b=False)
+        linear_layer_in_2 = Linear(output_dimension=5, W_init=init_constant, W_init_params={'value':1})
+        linear_layer_in_2_dim_2 = Linear(output_dimension=5, W_init=init_constant, W_init_params={'value':1})
 
         equation_learner_2 = EquationLearner(functions=[Add, Mul, Identity], linear_in=linear_layer_in_2)(x.last())
         equation_learner_2_tw = EquationLearner(functions=[Add, Mul, Identity], linear_in=linear_layer_in_2)(x.sw(2))
-        equation_learner_2_multi_tw = EquationLearner(functions=[Add, Mul, Identity], linear_in=linear_layer_in_2)((x.sw(2),F.sw(2)))
+        equation_learner_2_multi_tw = EquationLearner(functions=[Add, Mul, Identity], linear_in=linear_layer_in_2_dim_2)((x.sw(2),F.sw(2)))
 
         linear_layer_in_3 = Linear(output_dimension=5, W_init=init_constant, W_init_params={'value':1}, b_init=init_constant, b_init_params={'value':0}, b=False)
+        linear_layer_in_3_dim_2 = Linear(output_dimension=5, W_init=init_constant, W_init_params={'value':1}, b_init=init_constant, b_init_params={'value':0}, b=False)
 
         equation_learner_3 = EquationLearner(functions=[parfun, Add, fuzzi], linear_in=linear_layer_in_3)(x.last())
-        equation_learner_3_tw = EquationLearner(functions=[parfun, Add, fuzzi], linear_in=linear_layer_in_3)(x.sw(2))
-        equation_learner_3_multi_tw = EquationLearner(functions=[parfun, Add, fuzzi], linear_in=linear_layer_in_3)((x.sw(2),F.sw(2)))
+        equation_learner_3_tw = EquationLearner(functions=[parfun2, Add, fuzzi], linear_in=linear_layer_in_3)(x.sw(2))
+        equation_learner_3_multi_tw = EquationLearner(functions=[parfun3, Add, fuzzi], linear_in=linear_layer_in_3_dim_2)((x.sw(2),F.sw(2)))
 
         out = Output('el',equation_learner)
         out2 = Output('el_out',equation_learner_out)
@@ -381,7 +385,8 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         example = Modely(visualizer=None)
         example.addModel('model',[out,out2,out3,out4,out5,out6,out7,out8,out9,out10])
         example.neuralizeModel()
-        result = example({'x':[1.0,2.0], 'F':[3.0,4.0]})
+
+        result = example({'x':[[1.0],[2.0]], 'F':[[3.0],[4.0]]})
         self.assertEqual(result['el'], [[[0.0, 0.0, 1.0]]])
         self.assertEqual(result['el_out'], [1.0])
         self.assertEqual(result['el_tw'], [[[0.0, 0.0, 1.0], [0.0, 0.0, 1.0]]])

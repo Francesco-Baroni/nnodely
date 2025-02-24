@@ -25,11 +25,11 @@ from nnodely.output import Output
 from nnodely.activation import Relu, Tanh, ELU, Sigma, Identity
 from nnodely.fir import Fir
 from nnodely.linear import Linear
-from nnodely.arithmetic import Add, Sum, Sub, Mul, Pow, Neg, Concatenate
+from nnodely.arithmetic import Add, Sum, Sub, Mul, Pow, Neg
 from nnodely.trigonometric import Sin, Cos, Tan, Cosh, Sech
 from nnodely.parametricfunction import ParamFun
 from nnodely.fuzzify import Fuzzify
-from nnodely.part import TimePart, TimeSelect, SamplePart, SampleSelect, Part, Select, TimeConcatenate
+from nnodely.part import TimePart, TimeSelect, SamplePart, SampleSelect, Part, Select, Concatenate, TimeConcatenate
 from nnodely.localmodel import LocalModel
 from nnodely.equationlearner import EquationLearner
 from nnodely.interpolation import Interpolation

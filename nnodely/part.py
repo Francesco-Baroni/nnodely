@@ -13,6 +13,7 @@ timepart_relation_name = 'TimePart'
 timeselect_relation_name = 'TimeSelect'
 samplepart_relation_name = 'SamplePart'
 sampleselect_relation_name = 'SampleSelect'
+concatenate_relation_name = 'Concatenate'
 timeconcatenate_relation_name = 'TimeConcatenate'
 
 # class Part(Stream, ToStream):
@@ -468,6 +469,40 @@ class TimePart(Stream, ToStream):
             rel.append(offset)
         self.json['Relations'][self.name] = rel
 
+class Concatenate(Stream, ToStream):
+    """
+        Implement the concatenate function between two tensors. 
+
+        See also:
+            Official PyTorch Cat documentation: 
+            `torch.cat <https://pytorch.org/docs/main/generated/torch.cat.html>`_
+
+        :param input1: the first relation to concatenate
+        :type obj: Tensor
+        :param input2: the second relation to concatenate
+        :type obj: Tensor
+
+        Example:
+            >>> cat = Concatenate(relation1, relation2)
+    """
+    def __init__(self, obj1:Stream, obj2:Stream) -> Stream:
+        obj1,obj2 = toStream(obj1),toStream(obj2)
+        check(type(obj1) is Stream,TypeError,
+              f"The type of {obj1} is {type(obj1)} and is not supported for the Concatenate operation.")
+        check(type(obj2) is Stream,TypeError,
+              f"The type of {obj2} is {type(obj2)} and is not supported for the Concatenate operation.")
+        #check(obj1.dim == obj2.dim or obj1.dim == {'dim':1} or obj2.dim == {'dim':1}, ValueError,
+        #      f"For addition operators (+) the dimension of {obj1.name} = {obj1.dim} must be the same of {obj2.name} = {obj2.dim}.")
+        dim = copy.deepcopy(obj1.dim)
+        dim['dim'] = obj1.dim['dim']+obj2.dim['dim']
+        if 'tw' in obj1.dim.keys() and 'tw' in obj2.dim.keys():
+            check(obj1.dim['tw'] == obj2.dim['tw'], ValueError, 'The time window of the two inputs must be the same')
+        elif 'sw' in obj1.dim.keys() and 'sw' in obj2.dim.keys():
+            check(obj1.dim['sw'] == obj2.dim['sw'], ValueError, 'The sample window of the two inputs must be the same')
+        else:
+            raise(ValueError('The two inputs have different time or sample dimensions'))
+        super().__init__(concatenate_relation_name + str(Stream.count),merge(obj1.json,obj2.json),dim)
+        self.json['Relations'][self.name] = [concatenate_relation_name,[obj1.name,obj2.name]]
 
 class TimeConcatenate(Stream, ToStream):
     """
@@ -513,6 +548,19 @@ class TimeConcatenate_Layer(nn.Module):
 def createTimeConcatenate(name, *inputs):
     #: :noindex:
     return TimeConcatenate_Layer()
+
+class Concatenate_Layer(nn.Module):
+    #: :noindex:
+    def __init__(self):
+        super(Concatenate_Layer, self).__init__()
+
+    def forward(self, *inputs):
+        out = torch.cat((inputs[0], inputs[1]), dim=2)
+        return out
+
+def createConcatenate(name, *inputs):
+    #: :noindex:
+    return Concatenate_Layer()
 
 
 class TimePart_Layer(nn.Module):
@@ -566,4 +614,5 @@ setattr(Model, sampleselect_relation_name, createSampleSelect)
 
 setattr(Model, timepart_relation_name, createTimePart)
 
+setattr(Model, concatenate_relation_name, createConcatenate)
 setattr(Model, timeconcatenate_relation_name, createTimeConcatenate)
