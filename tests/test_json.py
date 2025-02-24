@@ -362,7 +362,8 @@ class ModelyJsonTest(unittest.TestCase):
         self.assertEqual({'oo': {'dim': 1, 'sw': 1, 'values': [[1]]}, 'll': {'dim': 1, 'sw': 1, 'values': [[1]]}}, out.json['Constants'])
         self.assertEqual(['TimePart1', 'll', 'oo', 'pp'], out.json['Relations']['ParamFun2'][1])
 
-    def test_check_multiple_streams_compatibility(self):
+    def test_check_multiple_streams_compatibility_paramfun(self):
+        log.setAllLevel(logging.WARNING)
         x = Input('x')
         F = Input('F')
 
@@ -384,14 +385,60 @@ class ModelyJsonTest(unittest.TestCase):
         out2 = Output('out2', rel2)
         out3 = Output('out2', rel3)
 
-        m = MPLVisualizer(5)
-        example = Modely(visualizer=m)
+        # m = MPLVisualizer(5)
+        # m.showFunctions(list(example.model_def['Functions'].keys()), xlim=[[-5, 5], [-1, 1]])
+        exampleA = Modely(seed=2)
         with self.assertRaises(TypeError):
-            example.addModel('model', [out1, out2, out3])
-        example.addModel('model', [out1, out2])
-        example.neuralizeModel(0.25)
-        #m.showFunctions(list(example.model_def['Functions'].keys()), xlim=[[-5, 5], [-1, 1]])
-        print(example({'x': [1, 3, 3, 1], 'F': [1, 2, 2, 1, 2, 1, 3]}))
+            exampleA.addModel('model', [out1, out2, out3])
+        exampleA.addModel('model_A', [out1, out2])
+        with self.assertRaises(TypeError):
+            exampleA.addModel('model_B', [out3])
+        exampleA.neuralizeModel(0.25)
+
+        exampleB = Modely(seed=2)
+        exampleB.addModel('model_B', [out3])
+        exampleB.neuralizeModel(1)
+
+        resultsA = exampleA({'x': [1, 3, 3]})
+        self.assertEqual([4.682941913604736, 3.2822399139404297, 3.2822399139404297], resultsA['out1'])
+
+        resultsB = exampleB({'F': [1, 3, 4]})
+        self.assertEqual([[1.814424991607666, 2.2605631351470947, 2.267522096633911]], resultsB['out2'])
+
+        log.setAllLevel(logging.CRITICAL)
+
+    def test_check_multiple_streams_compatibility_linear(self):
+        log.setAllLevel(logging.WARNING)
+        x = Input('x',dimensions=3)
+        f = Input('f')
+
+        lin = Linear()
+
+        l1out = lin(x.last()) + Fir(lin(x.tw(2.0))) + Fir(lin(x.sw(3)))
+        l2out = lin(f.last()) + Fir(lin(f.tw(2.0))) + Fir(lin(f.sw(3)))
+
+        out1 = Output('out1', l1out)
+        out2 = Output('out2', l2out)
+
+        exampleA = Modely(seed=2)
+        with self.assertRaises(TypeError):
+            exampleA.addModel('model', [out1, out2])
+        exampleA.addModel('model_A', [out1])
+        with self.assertRaises(TypeError):
+            exampleA.addModel('model_B', [out2])
+        exampleA.neuralizeModel(1)
+
+        exampleB = Modely(seed=2)
+        exampleB.addModel('model_B', [out2])
+        exampleB.neuralizeModel(1)
+
+        resultsA = exampleA({'x': [[1, 3, 3], [1, 2, 1], [2, 3, 4]]})
+        self.assertEqual([12.507442474365234], resultsA['out1'])
+
+        resultsB = exampleB({'f': [1, 3, 3, 1, 2, 1]})
+        self.assertEqual([6.585615158081055, 4.480303764343262, 4.106618881225586, 3.18161678314209], resultsB['out2'])
+
+        log.setAllLevel(logging.CRITICAL)
 
 if __name__ == '__main__':
     unittest.main()

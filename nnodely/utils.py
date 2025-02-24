@@ -84,6 +84,13 @@ def merge(source, destination, main = True):
                       TypeError,
                       f"The ParamFun {key} is present multiple times, with different number of inputs. "
                       f"The ParamFun {key} is called with {value['n_input']} parameters and with {source['Functions'][key]['n_input']} parameters.")
+        for key, value in destination["Parameters"].items():
+            if key in source["Parameters"].keys() and ('dim' in value.keys() and 'dim' in source["Parameters"][key].keys()):
+                check(value['dim'] == source["Parameters"][key]['dim'],
+                      TypeError,
+                      f"The Parameter {key} is present multiple times, with different dimensions. "
+                      f"The Parameter {key} is called with {value['dim']} dimension and with {source['Parameters'][key]['dim']} dimension.")
+
         log.debug("Merge Source")
         log.debug("\n"+pformat(source))
         log.debug("Merge Destination")

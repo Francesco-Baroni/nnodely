@@ -110,9 +110,11 @@ class Linear(NeuObj, AutoToStream):
         if W is None:
             self.output_dimension = 1 if output_dimension is None else output_dimension
             self.Wname = self.name + 'W'
+            self.json['Parameters'][self.Wname] = {}
         elif type(W) is str:
             self.output_dimension = 1 if output_dimension is None else output_dimension
             self.Wname = W
+            self.json['Parameters'][self.Wname] = {}
         else:
             check(type(W) is Parameter or type(W) is str, TypeError, 'The "W" must be of type Parameter or str.')
             window = 'tw' if 'tw' in W.dim else ('sw' if 'sw' in W.dim else None)
@@ -140,18 +142,6 @@ class Linear(NeuObj, AutoToStream):
                 self.bname = self.name + 'b'
                 self.json['Parameters'][self.bname] = { 'dim': self.output_dimension }
 
-    def __call__(self, obj:Stream) -> Stream:
-        stream_name = linear_relation_name + str(Stream.count)
-        check(type(obj) is Stream, TypeError,
-              f"The type of {obj} is {type(obj)} and is not supported for Linear operation.")
-        window = 'tw' if 'tw' in obj.dim else ('sw' if 'sw' in obj.dim else None)
-
-        if type(self.W) is Parameter:
-            check(self.W.dim['dim'][0] == obj.dim['dim'], ValueError,
-                  'the input dimension must be equal to the first dim of the parameter')
-        else:
-            self.json['Parameters'][self.Wname] = { 'dim': [obj.dim['dim'],self.output_dimension,] }
-
         if self.W_init is not None:
             check('values' not in self.json['Parameters'][self.Wname], ValueError, f"The parameter {self.Wname} is already initialized.")
             check(inspect.isfunction(self.W_init), ValueError,
@@ -171,7 +161,28 @@ class Linear(NeuObj, AutoToStream):
             if self.b_init_params is not None:
                 self.json['Parameters'][self.bname]['init_fun']['params'] = self.b_init_params
 
-        stream_json = merge(self.json,obj.json)
+        self.json_stream = {}
+
+    def __call__(self, obj:Stream) -> Stream:
+        stream_name = linear_relation_name + str(Stream.count)
+        check(type(obj) is Stream, TypeError,
+              f"The type of {obj} is {type(obj)} and is not supported for Linear operation.")
+        window = 'tw' if 'tw' in obj.dim else ('sw' if 'sw' in obj.dim else None)
+
+        if 'dim' in self.json['Parameters'][self.Wname]:
+            check(self.json['Parameters'][self.Wname]['dim'][0] == obj.dim['dim'], ValueError,
+                  'the input dimension must be equal to the first dim of the parameter')
+
+        if obj.dim['dim'] not in self.json_stream:
+            if len(self.json_stream) > 0:
+                log.warning(
+                    f"The Fir {self.name} was called with inputs with different dimensions. If both Linear enter in the model an error will be raised.")
+            self.json_stream[obj.dim['dim']] = copy.deepcopy(self.json)
+
+            if 'dim' not in self.json_stream[obj.dim['dim']]['Parameters'][self.Wname]:
+                self.json_stream[obj.dim['dim']]['Parameters'][self.Wname]['dim'] = [obj.dim['dim'],self.output_dimension,]
+
+        stream_json = merge(self.json_stream[obj.dim['dim']],obj.json)
         stream_json['Relations'][stream_name] = [linear_relation_name, [obj.name], self.Wname, self.bname, self.dropout]
         return Stream(stream_name, stream_json,{'dim': self.output_dimension, window:obj.dim[window]})
 
