@@ -209,7 +209,6 @@ class Stream(Relation):
                 o = Integrate(self, method = method)
         return o
 
-    @enforce_types
     def connect(self, obj) -> "Stream":
         """
         Connects the current stream to a given state object.
@@ -240,7 +239,6 @@ class Stream(Relation):
         self.json['States'][obj.name]['connect'] = self.name
         return Stream(self.name, self.json, self.dim,0 )
 
-    @enforce_types
     def closedLoop(self, obj) -> "Stream":
         """
         Creates a closed loop connection with a given state object.

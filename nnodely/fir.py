@@ -169,6 +169,7 @@ class Fir(NeuObj, AutoToStream):
 
         self.json_stream = {}
 
+    @enforce_types
     def __call__(self, obj:Stream) -> Stream:
         stream_name = fir_relation_name + str(Stream.count)
         check(type(obj) is not Input, TypeError,

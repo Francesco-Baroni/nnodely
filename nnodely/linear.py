@@ -163,6 +163,7 @@ class Linear(NeuObj, AutoToStream):
 
         self.json_stream = {}
 
+    @enforce_types
     def __call__(self, obj:Stream) -> Stream:
         stream_name = linear_relation_name + str(Stream.count)
         check(type(obj) is Stream, TypeError,

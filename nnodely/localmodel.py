@@ -2,7 +2,7 @@ import inspect
 
 from collections.abc import Callable
 
-from nnodely.relation import NeuObj
+from nnodely.relation import NeuObj, Stream
 from nnodely.part import Select
 from nnodely.utils import check, enforce_types
 
@@ -78,8 +78,8 @@ class LocalModel(NeuObj):
             check(callable(output_function), TypeError, 'The output_function must be callable')
         self.output_function = output_function
 
-
-    def __call__(self, inputs, activations):
+    @enforce_types
+    def __call__(self, inputs:Stream|tuple, activations:Stream|tuple= None):
         out_sum = []
         if type(activations) is not tuple:
             activations = (activations,)
@@ -124,7 +124,7 @@ class LocalModel(NeuObj):
             prod = out_in * act
 
             if self.output_function is not None:
-                if len(inspect.getfullargspec(self.output_function).args) == 0:
+                if len(inspect.signature(self.output_function).parameters) == 0:
                     out.append(self.output_function()(prod))
                 else:
                     if self.pass_indexes:

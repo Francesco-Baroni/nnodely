@@ -3,6 +3,7 @@ import inspect, copy, textwrap, torch, math
 import torch.nn as nn
 import numpy as np
 
+from typing import Union
 from collections.abc import Callable
 
 from nnodely.relation import NeuObj, Stream, toStream
@@ -125,7 +126,8 @@ class ParamFun(NeuObj):
 
         self.json_stream = {}
 
-    def __call__(self, *obj):
+    @enforce_types
+    def __call__(self, *obj:Union[Stream|Parameter|Constant]) -> Stream:
         stream_name = paramfun_relation_name + str(Stream.count)
 
         funinfo = inspect.getfullargspec(self.param_fun)
@@ -381,7 +383,6 @@ def return_function(json, fun_inputs):
     check(output.shape[2] == 1, ValueError, "The output window must be 1.")
     funinfo = inspect.getfullargspec(function_to_call)
     return output, funinfo.args
-
 
 class Parametric_Layer(nn.Module):
     def __init__(self, func, params_and_consts, map_over_batch):
