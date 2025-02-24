@@ -11,7 +11,7 @@ from nnodely.parameter import Parameter, Constant
 from nnodely.utils import check, merge, enforce_types
 
 from nnodely.logger import logging, nnLogger
-log = nnLogger(__name__, logging.CRITICAL)
+log = nnLogger(__name__, logging.WARNING)
 
 
 paramfun_relation_name = 'ParamFun'
@@ -96,7 +96,7 @@ class ParamFun(NeuObj):
                     self.json['Constants'][const.name] = copy.deepcopy(const.json['Constants'][const.name])
                 elif type(const) is str:
                     self.json['Functions'][self.name]['params_and_consts'].append(const)
-                    self.json['Constants'][const] = {'dim': 1}
+                    self.json['Constants'][const] = {'dim': 1, 'sw' : 1}
                 else:
                     check(type(const) is Constant or type(const) is str, TypeError,
                           'The element inside the \"constants\" list must be a Constant or str')
@@ -111,7 +111,7 @@ class ParamFun(NeuObj):
                     self.json['Parameters'][param.name] = copy.deepcopy(param.json['Parameters'][param.name])
                 elif type(param) is str:
                     self.json['Functions'][self.name]['params_and_consts'].append(param)
-                    self.json['Parameters'][param] = {'dim': 1}
+                    self.json['Parameters'][param] = {'dim': 1, 'sw' : 1}
                 else:
                     check(type(param) is Parameter or type(param) is str, TypeError,
                           'The element inside the \"parameters\" list must be a Parameter or str')
@@ -121,7 +121,7 @@ class ParamFun(NeuObj):
                 idx = i + len(funinfo.args) - len(self.parameters_dimensions)
                 param_name = self.name + str(idx)
                 self.json['Functions'][self.name]['params_and_consts'].append(param_name)
-                self.json['Parameters'][param_name] = {'dim': list(self.parameters_dimensions[i])}
+                self.json['Parameters'][param_name] = {'dim': list(self.parameters_dimensions[i]),'sw' : 1}
 
         self.json_stream = {}
 
@@ -238,7 +238,7 @@ class ParamFun(NeuObj):
                             stream_json['Parameters'][param.name] = copy.deepcopy(param.json['Parameters'][param.name])
                         elif type(self.parameters[key]) is str:
                             stream_json['Functions'][self.name]['params_and_consts'].append(param)
-                            stream_json['Parameters'][param] = {'dim': 1}
+                            stream_json['Parameters'][param] = {'dim' : 1,'sw' : 1}
                         else:
                             check(type(param) is Parameter or type(param) is str, TypeError,
                                   'The element inside the \"parameters\" dict must be a Parameter or str')
@@ -249,7 +249,7 @@ class ParamFun(NeuObj):
                         check(isinstance(dim,(list,tuple,int)), TypeError,
                               'The element inside the \"parameters_dimensions\" dict must be a tuple or int')
                         stream_json['Functions'][self.name]['params_and_consts'].append(param_name)
-                        stream_json['Parameters'][param_name] = {'dim': list(dim) if type(dim) is tuple else dim}
+                        stream_json['Parameters'][param_name] = {'dim': list(dim) if type(dim) is tuple else dim, 'sw' : 1}
                         n_elem_dict -= 1
                     elif type(self.constants) is dict and key in self.constants:
                         const = self.constants[key]
@@ -258,7 +258,7 @@ class ParamFun(NeuObj):
                             stream_json['Constants'][const.name] = copy.deepcopy(const.json['Constants'][const.name])
                         elif type(self.constants[key]) is str:
                             stream_json['Functions'][self.name]['params_and_consts'].append(const)
-                            stream_json['Constants'][const] = {'dim': 1}
+                            stream_json['Constants'][const] = {'dim': 1, 'sw' : 1}
                         else:
                             check(type(const) is Constant or type(const) is str, TypeError,
                                   'The element inside the \"constants\" dict must be a Constant or str')
@@ -266,7 +266,7 @@ class ParamFun(NeuObj):
                     else:
                         param_name = self.name + key
                         stream_json['Functions'][self.name]['params_and_consts'].append(param_name)
-                        stream_json['Parameters'][param_name] = {'dim': 1}
+                        stream_json['Parameters'][param_name] = {'dim': 1, 'sw' : 1}
             check(n_elem_dict == 0, ValueError, 'Some of the input parameters are not used in the function.')
 
     def __infer_output_dimensions(self, stream_json, input_types, input_dimensions):
