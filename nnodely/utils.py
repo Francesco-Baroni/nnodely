@@ -1,4 +1,6 @@
 import copy, torch, inspect
+from collections import OrderedDict
+
 import numpy as np
 
 from pprint import pformat
@@ -16,12 +18,30 @@ def enforce_types(func):
     def wrapper(*args, **kwargs):
         hints = get_type_hints(func)
         all_args = kwargs.copy()
-        all_args.update(dict(zip(inspect.signature(func).parameters, args)))
 
-        for arg, arg_type in hints.items():
-            if arg in all_args and not isinstance(all_args[arg], arg_type):
+        sig = OrderedDict(inspect.signature(func).parameters)
+        if len(sig) != len(args):
+            var_type = None
+            for ind, arg in enumerate(args):
+                if ind < len(list(sig.values())) and list(sig.values())[ind].kind == inspect.Parameter.VAR_POSITIONAL:
+                    var_name = list(sig.keys())[ind]
+                    var_type = sig.pop(var_name)
+                if var_type:
+                    sig[var_name+str(ind)] = var_type
+
+        all_args.update(dict(zip(sig, args)))
+        if 'self' in sig.keys():
+            sig.pop('self')
+
+        for arg_name, arg in all_args.items():
+            if (arg_name in hints.keys() or arg_name in sig.keys()) and not isinstance(arg,sig[arg_name].annotation):
                 raise TypeError(
-                    f"Expected argument '{arg}' to be of type {arg_type}, but got {type(all_args[arg]).__name__}")
+                    f"In Function or Class {func} Expected argument '{arg}' to be of type {sig[arg_name].annotation}, but got {type(arg)}")
+
+        # for arg, arg_type in hints.items():
+        #     if arg in all_args and not isinstance(all_args[arg], arg_type):
+        #         raise TypeError(
+        #             f"In Function or Class {func} Expected argument '{arg}' to be of type {arg_type}, but got {type(all_args[arg]).__name__}")
 
         return func(*args, **kwargs)
 
