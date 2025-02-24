@@ -385,7 +385,7 @@ class SampleSelect(Stream, ToStream):
         forward_idx = obj.dim['sw']
         check(i >= backward_idx and i < forward_idx, ValueError, 'i must be in the sample window of the input')
         dim = copy.deepcopy(obj.dim)
-        del dim['sw']
+        dim['sw'] = 1
         super().__init__(sampleselect_relation_name + str(Stream.count),obj.json,dim)
         self.json['Relations'][self.name] = [sampleselect_relation_name,[obj.name],obj.dim['sw'],i]
 
