@@ -446,7 +446,11 @@ class Modely:
             >>> out = Output('out', Fir(x.last()))
             >>> model.addModel('example_model', [out])
         """
-        self.model_def.addModel(name, stream_list)
+        try:
+            self.model_def.addModel(name, stream_list)
+        except Exception as e:
+            self.model_def.removeModel(name)
+            raise e
 
     def removeModel(self, name_list):
         """
