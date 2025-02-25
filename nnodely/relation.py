@@ -34,12 +34,19 @@ class NeuObj():
     count = 0
     names = []
     @classmethod
-    def clearNames(self, name=None):
-        if name is None:
+    @enforce_types
+    def clearNames(self, names:str|list|None=None):
+        if names is None:
             NeuObj.count = 0
             NeuObj.names = []
         else:
-            NeuObj.names.remove(name)
+            if type(names) is list:
+                for name in names:
+                    if name in NeuObj.names:
+                        NeuObj.names.remove(name)
+            else:
+                if names in NeuObj.names:
+                    NeuObj.names.remove(names)
     def __init__(self, name='', json={}, dim=0):
         NeuObj.count += 1
         if name == '':
