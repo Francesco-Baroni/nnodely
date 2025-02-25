@@ -1,12 +1,12 @@
 import unittest, sys, os, torch
 
 from nnodely import *
-from nnodely import relation
-relation.CHECK_NAMES = False
 
 import numpy as np
 
 from nnodely.logger import logging, nnLogger
+from nnodely.relation import NeuObj
+
 log = nnLogger(__name__, logging.CRITICAL)
 log.setAllLevel(logging.CRITICAL)
 
@@ -25,6 +25,7 @@ sys.path.append(os.getcwd())
 class ModelyNetworkBuildingTest(unittest.TestCase):
 
     def test_network_building_very_simple(self):
+        NeuObj.resetNames()
         input1 = Input('in1')
         rel1 = Fir(input1.last())
         fun = Output('out', rel1)
@@ -44,6 +45,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         self.assertEqual(1,test.model_def['Info']['ntot'])  # 5 samples
 
     def test_network_building_simple(self):
+        NeuObj.resetNames()
         input1 = Input('in1')
         rel1 = Fir(input1.tw(0.05))
         rel2 = Fir(input1.tw(0.01))
@@ -64,6 +66,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         self.assertEqual(5,test.model_def['Info']['ntot'])  # 5 samples
 
     def test_network_building_tw(self):
+        NeuObj.resetNames()
         input1 = Input('in1')
         input2 = Input('in2')
         rel1 = Fir(input1.tw(0.05))
@@ -91,6 +94,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         self.assertEqual(7,test.model_def['Info']['ntot'])  # 5 samples + 2 samples of the horizon
 
     def test_network_building_tw2(self):
+        NeuObj.resetNames()
         input2 = Input('in2')
         rel3 = Fir(input2.tw(0.05))
         rel4 = Fir(input2.tw([-0.02,0.02]))
@@ -114,6 +118,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         self.assertEqual(8,test.model_def['Info']['ntot'])  # 5 samples
 
     def test_network_building_tw3(self):
+        NeuObj.resetNames()
         input2 = Input('in2')
         rel3 = Fir(input2.tw(0.05))
         rel4 = Fir(input2.tw([-0.01,0.03]))
@@ -135,6 +140,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         self.assertEqual(8, test.model_def['Info']['ntot'])  # 5 samples
 
     def test_network_building_tw_with_offest(self):
+        NeuObj.resetNames()
         input2 = Input('in2')
         rel3 = Fir(input2.tw(0.05))
         rel4 = Fir(input2.tw([-0.04,0.02]))
@@ -158,6 +164,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         self.assertEqual(7,test.model_def['Info']['ntot'])  # 5 samples
 
     def test_network_building_tw_negative(self):
+        NeuObj.resetNames()
         input2 = Input('in2')
         rel1 = Fir(input2.tw([-0.05,-0.01]))
         rel2 = Fir(input2.tw([-0.06,-0.03]))
@@ -178,6 +185,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         self.assertEqual(5, test.model_def['Info']['ntot'])  # 5 samples
 
     def test_network_building_tw_negative_with_offset(self):
+        NeuObj.resetNames()
         input2 = Input('in2')
         rel1 = Fir(input2.tw([-0.05, -0.01], offset=-0.05))
         rel2 = Fir(input2.tw([-0.02, -0.01], offset=-0.02))
@@ -206,9 +214,10 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         self.assertEqual(5, test.model_def['Info']['ntot'])  # 5 samples
 
     def test_network_building_tw_positive(self):
+        NeuObj.resetNames()
         input1 = Input('in1')
         rel = Fir(input1.tw([0.03,0.04]))
-        fun = Output('out', rel)
+        fun = Output('out1', rel)
         test = Modely(visualizer=None)
         test.addModel('fun',fun)
         test.neuralizeModel(0.01)
@@ -216,7 +225,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         input2 = Input('in2')
         rel1 = Fir(input2.tw([0.01,0.04]))
         rel2 = Fir(input2.tw([0.03,0.07]))
-        fun = Output('out',rel1+rel2)
+        fun = Output('out2',rel1+rel2)
 
         test = Modely(visualizer=None)
         test.addModel('fun',fun)
@@ -233,6 +242,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         self.assertEqual(6, test.model_def['Info']['ntot'])  # 5 samples
 
     def test_network_building_tw_positive_with_offset(self):
+        NeuObj.resetNames()
         input2 = Input('in2')
         rel1 = Fir(input2.tw([0.01,0.04],offset=0.02))
         rel2 = Fir(input2.tw([0.03,0.07],offset=0.04))
@@ -260,6 +270,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         self.assertEqual(6, test.model_def['Info']['ntot'])  # 5 samples
 
     def test_network_building_sw(self):
+        NeuObj.resetNames()
         input1 = Input('in1')
         rel3 = Fir(input1.sw(2))
         rel4 = Fir(input1.sw([-2,2]))
@@ -283,6 +294,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         self.assertEqual(6,test.model_def['Info']['ntot'])  # 5 samples
 
     def test_network_building_sw_with_offset(self):
+        NeuObj.resetNames()
         input2 = Input('in2')
         rel3 = Fir(input2.sw(5))
         rel4 = Fir(input2.sw([-4,2]))
@@ -307,6 +319,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         self.assertEqual(7, test.model_def['Info']['ntot'])
 
     def test_network_building_sw_and_tw(self):
+        NeuObj.resetNames()
         input2 = Input('in2')
         with self.assertRaises(ValueError):
             input2.sw(5)+input2.tw(0.05)
@@ -328,8 +341,9 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         self.assertEqual(2,test.model_def['Info']['ns'][1])
         self.assertEqual(6,test.model_def['Info']['ntot'])
 
-    def test_example_rotto(self):
-        test = Modely(visualizer=None, seed=42)
+    def test_example_parametric_differnt_dim_input(self):
+        NeuObj.resetNames()
+        test = Modely(seed=42)
         x = Input('x')
         y = Input('y')
         z = Input('z')
@@ -367,7 +381,14 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         out4 = Output('out4', Linear(output_dimension=1)(fuzzy))
         out5 = Output('out5', Fir(time_part) + Fir(sample_select))
         out6 = Output('out6', LocalModel(output_function=Fir())(x.tw(1), fuzzy))
+        with self.assertRaises(TypeError):
+            parfun_z(x.tw(5), t_5, c_5)
         out7 = Output('out', Fir(parfun_x(x.tw(1)) + parfun_y(y.tw(1), c_v)) + Fir(parfun_z(x.tw(5), t_5, c_5_2)))
+
+        # parfun = ParamFun(myFun, map_over_batch=True)
+        # p = Constant('co', values=[[2]])
+        # with self.assertRaises(TypeError):
+        #     Output('out-12', parfun(p, x.sw(4)))
 
 
         test.addModel('modelA', out)
@@ -388,6 +409,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         # self.assertEqual(6,test.model_def['Info']['ntot'])
 
     def test_batch_size_and_step(self):
+        NeuObj.resetNames()
         test = Modely(visualizer=None, seed=42, log_internal=True)
         x = Input('x')
         y = State('y')

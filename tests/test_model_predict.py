@@ -1214,7 +1214,7 @@ class ModelyPredictTest(unittest.TestCase):
         def fun_test(x, y, z, k):
             return (x + y) * (z - k)
 
-        NeuObj.reset_count()
+        NeuObj.resetNames()
         out = Output('out',ParamFun(fun_test,parameters=[pp],constants=[ll,oo])(input2.tw(0.03)))
         test = Modely(visualizer=None)
         test.addModel('out',[out])
@@ -1223,7 +1223,7 @@ class ModelyPredictTest(unittest.TestCase):
         self.assertEqual((1, 3), np.array(results['out']).shape)
         self.assertEqual([[-72.0, -84.0, -96.0]], results['out'])
 
-        NeuObj.reset_count()
+        NeuObj.resetNames()
         out = Output('out',ParamFun(fun_test,parameters={'z':pp},constants={'y':ll,'k':oo})(input2.tw(0.03)))
         test = Modely(visualizer=None)
         test.addModel('out',[out])
@@ -1232,7 +1232,7 @@ class ModelyPredictTest(unittest.TestCase):
         self.assertEqual((1, 3), np.array(results['out']).shape)
         self.assertEqual([[72.0, 84.0, 96.0]], results['out'])
 
-        NeuObj.reset_count()
+        NeuObj.resetNames()
         parfun = ParamFun(fun_test)
         out1 = Output('out1', parfun(input2.tw(0.03), ll, pp, oo))
         out2 = Output('out2', parfun(input2.tw(0.03), ll, oo, pp))
@@ -1260,7 +1260,7 @@ class ModelyPredictTest(unittest.TestCase):
         pp_map = ParamFun(fun_test,parameters=[pp], constants=[ll,oo], map_over_batch=True)
         pp = ParamFun(fun_test, parameters=[pp], constants=[ll, oo])
 
-        NeuObj.reset_count()
+        NeuObj.resetNames()
         out1 = Output('out1',pp_map(input2.tw(0.03)))
         out2 = Output('out2', pp(input2.tw(0.03)))
         test = Modely(visualizer=None)

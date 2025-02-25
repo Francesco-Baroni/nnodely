@@ -54,7 +54,7 @@ def myFun(K1,K2,p1,p2):
     import torch
     return p1*K1+p2*torch.sin(K2)
 parfun = ParamFun(myFun) # definisco una funzione scalare basata su myFun
-out = Output('out',parfun(x.tw(2),F.tw(2)))
+out = Output('out-3',parfun(x.tw(2),F.tw(2)))
 example = Modely()
 example.addModel('out',out)
 example.neuralizeModel(1)
@@ -75,7 +75,7 @@ def myFun(K1,K2,p1):
     import torch
     return torch.stack([K1,2*K1,3*K1,4*K1],dim=2).squeeze(-1)*p1+K2
 parfun = ParamFun(myFun, parameters_dimensions = {'p1':(1,4)})
-out = Output('out',parfun(x.last(),F.last()))
+out = Output('out-4',parfun(x.last(),F.last()))
 example = Modely()
 example.addModel('out',out)
 example.neuralizeModel()
@@ -92,7 +92,7 @@ def myFun(K1,p1):
     return K1*p1
 K = Parameter('k', dimensions =  1, sw = 1,values=[[2.0]])
 parfun = ParamFun(myFun, parameters = [K] )
-out = Output('out',parfun(x.sw(1)))
+out = Output('out-5',parfun(x.sw(1)))
 example = Modely(visualizer=MPLVisualizer())
 example.addModel('out',out)
 example.neuralizeModel(0.25)
@@ -106,7 +106,7 @@ P1 = 7.0
 def myFun(K1,p1):
     return K1*p1
 parfun = ParamFun(myFun)
-out = Output('out',parfun(x.sw(1),P1))
+out = Output('out-6',parfun(x.sw(1),Constant('const',values=P1)))
 example = Modely(visualizer=MPLVisualizer())
 example.addModel('out',out)
 example.neuralizeModel(1)
@@ -121,7 +121,7 @@ def myFun(K1,p1):
 K = Parameter('k1', dimensions =  1, tw = 1, values=[[2.0],[3.0],[4.0],[5.0]])
 R = Parameter('r1', dimensions =  1, tw = 1, values=[[5.0],[4.0],[3.0],[2.0]])
 parfun = ParamFun(myFun)
-out = Output('out',parfun(x.tw(1),K)+parfun(x.tw(1),R))
+out = Output('out-7',parfun(x.tw(1),K)+parfun(x.tw(1),R))
 example = Modely()
 example.addModel('out',out)
 example.neuralizeModel(0.25)
@@ -134,7 +134,7 @@ P1 = [[5.0],[4.0],[3.0],[2.0]]
 def myFun(K1,p1):
     return K1*p1
 parfun = ParamFun(myFun)
-out = Output('out',parfun(x.sw(4),P1))
+out = Output('out-8',parfun(x.sw(4),Constant('ccc',values=P1)))
 example = Modely()
 example.addModel('out',out)
 example.neuralizeModel(0.25)
@@ -147,7 +147,7 @@ P1 = 7.0
 def myFun(K1,p1):
     return K1*p1
 parfun = ParamFun(myFun,constants=[Constant('r',values=P1)])
-out = Output('out',parfun(x.sw(4)))
+out = Output('out-9',parfun(x.sw(4)))
 example = Modely()
 example.addModel('out',out)
 example.neuralizeModel(0.25)
@@ -160,7 +160,7 @@ P1 = 12.0
 def myFun(K1,p1):
     return K1*p1
 parfun = ParamFun(myFun,constants=[Constant('rr',values=P1)])
-out = Output('out',parfun(x.sw(4)))
+out = Output('out-10',parfun(x.sw(4)))
 example = Modely()
 example.addModel('out',out)
 example.neuralizeModel(0.25)
@@ -174,7 +174,7 @@ def myFun(inin, p1):
     print(f'p1:{p1.shape}')
     return inin * p1
 parfun = ParamFun(myFun, map_over_batch=True)
-out = Output('out',parfun(x.sw(4)))
+out = Output('out-11',parfun(x.sw(4)))
 example = Modely()
 example.addModel('out',out)
 example.neuralizeModel(0.25)
@@ -189,7 +189,7 @@ def myFun(inin, p1):
     return inin * p1
 parfun = ParamFun(myFun, map_over_batch=True)
 p = Constant('co',values=[[2]])
-out = Output('out',parfun(p,x.sw(4)))
+out = Output('out-12',parfun(p,x.sw(4)))
 example = Modely()
 example.addModel('out',out)
 example.neuralizeModel(0.25)

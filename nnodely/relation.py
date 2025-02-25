@@ -19,7 +19,6 @@ MAIN_JSON = {
             }
 
 CHECK_NAMES = True
-NeuObj_names = []
 
 def toStream(obj):
     from nnodely.parameter import Parameter, Constant
@@ -33,16 +32,18 @@ def toStream(obj):
 
 class NeuObj():
     count = 0
+    names = []
     @classmethod
-    def reset_count(self):
+    def resetNames(self):
         NeuObj.count = 0
+        NeuObj.names = []
     def __init__(self, name='', json={}, dim=0):
         NeuObj.count += 1
         if name == '':
             name = 'Auto'+str(NeuObj.count)
         if CHECK_NAMES == True:
-            check(name not in NeuObj_names, NameError, f"The name {name} is already used change the name of NeuObj.")
-            NeuObj_names.append(name)
+            check(name not in NeuObj.names, NameError, f"The name {name} is already used change the name of NeuObj.")
+            NeuObj.names.append(name)
         self.name = name
         self.dim = dim
         if json:
@@ -78,7 +79,7 @@ class Relation():
 class Stream(Relation):
     count = 0
     @classmethod
-    def reset_count(self):
+    def resetCount(self):
         Stream.count = 0
 
     def __init__(self, name, json, dim, count = 1):

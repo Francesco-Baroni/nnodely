@@ -109,7 +109,7 @@ class ModelyTrainingTest(unittest.TestCase):
                          list(np.mean(np.array(test.internals['inout_6_2']['XY']['y']), axis=1)))
 
     def test_training_values_fir_connect_linear(self):
-        NeuObj.reset_count()
+        NeuObj.resetNames()
         input1 = Input('in1')
         target = Input('out1')
         a = Parameter('a', values=[[1]])
@@ -179,7 +179,7 @@ class ModelyTrainingTest(unittest.TestCase):
         self.assertListEqual([[-51.0]], test.model.all_parameters['a'].data.numpy().tolist())
 
     def test_training_values_fir_train_connect_linear(self):
-        NeuObj.reset_count()
+        NeuObj.resetNames()
         input1 = Input('in1')
         target = Input('out1')
         a = Parameter('a', values=[[1]])
@@ -248,7 +248,7 @@ class ModelyTrainingTest(unittest.TestCase):
         self.assertListEqual([[-51.0]], test.model.all_parameters['a'].data.numpy().tolist())
 
     def test_training_values_fir_connect_linear_only_model(self):
-        NeuObj.reset_count()
+        NeuObj.resetNames()
         input1 = Input('in1')
         target = Input('out1')
         a = Parameter('a', values=[[1]])
@@ -300,7 +300,7 @@ class ModelyTrainingTest(unittest.TestCase):
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
 
     def test_training_values_fir_train_connect_linear_only_model(self):
-        NeuObj.reset_count()
+        NeuObj.resetNames()
         input1 = Input('in1')
         target = Input('out1')
         a = Parameter('a', values=[[1]])
@@ -352,7 +352,7 @@ class ModelyTrainingTest(unittest.TestCase):
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
 
     def test_training_values_fir_connect_linear_more_prediction(self):
-        NeuObj.reset_count()
+        NeuObj.resetNames()
         input1 = Input('in1')
         target = Input('out1')
         a = Parameter('a', values=[[1]])
@@ -413,7 +413,7 @@ class ModelyTrainingTest(unittest.TestCase):
         self.assertListEqual([[-162.75]], test.model.all_parameters['a'].data.numpy().tolist())
 
     def test_training_values_fir_train_connect_linear_more_prediction(self):
-        NeuObj.reset_count()
+        NeuObj.resetNames()
         input1 = Input('in1')
         target = Input('out1')
         a = Parameter('a', values=[[1]])
@@ -488,7 +488,7 @@ class ModelyTrainingTest(unittest.TestCase):
         self.assertListEqual([[-162.75]], test.model.all_parameters['a'].data.numpy().tolist())
 
     def test_training_values_fir_connect_linear_more_window(self):
-        NeuObj.reset_count()
+        NeuObj.resetNames()
         input1 = Input('in1', dimensions=2)
         W = Parameter('W', values=[[[-1], [-5]]])
         b = Parameter('b', values=[[1]])
@@ -740,7 +740,7 @@ class ModelyTrainingTest(unittest.TestCase):
         #                        test.internals['inout_1_2']['state'])
 
     def test_training_values_fir_connect_train_linear_more_window(self):
-        NeuObj.reset_count()
+        NeuObj.resetNames()
         input1 = Input('in1', dimensions=2)
         W = Parameter('W', values=[[[-1], [-5]]])
         b = Parameter('b', values=[[1]])
@@ -991,7 +991,7 @@ class ModelyTrainingTest(unittest.TestCase):
         #                        test.internals['inout_1_2']['connect'])
 
     def test_training_values_fir_and_liner_closed_loop(self):
-        NeuObj.reset_count()
+        NeuObj.resetNames()
         input1 = State('in1')
         target_out1 = Input('out1')
         a = Parameter('a', values=[[1]])
@@ -1068,7 +1068,7 @@ class ModelyTrainingTest(unittest.TestCase):
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
 
     def test_training_values_fir_and_liner_train_closed_loop(self):
-        NeuObj.reset_count()
+        NeuObj.resetNames()
         input1 = Input('in1')
         target_out1 = Input('out1')
         a = Parameter('a', values=[[1]])
@@ -1142,7 +1142,7 @@ class ModelyTrainingTest(unittest.TestCase):
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
 
     def test_training_values_fir_and_linear_closed_loop_more_prediction(self):
-        NeuObj.reset_count()
+        NeuObj.resetNames()
         input1 = State('in1')
         target_out1 = Input('out1')
         a = Parameter('a', values=[[1]])
@@ -1208,7 +1208,7 @@ class ModelyTrainingTest(unittest.TestCase):
         # self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
 
     def test_training_values_fir_and_linear_train_closed_loop_more_prediction(self):
-        NeuObj.reset_count()
+        NeuObj.resetNames()
         input1 = Input('in1')
         target_out1 = Input('out1')
         a = Parameter('a', values=[[1]])
@@ -1264,7 +1264,7 @@ class ModelyTrainingTest(unittest.TestCase):
         # self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
 
     def test_training_values_fir_and_liner_closed_loop_bigger_window(self):
-        NeuObj.reset_count()
+        NeuObj.resetNames()
         input1 = State('in1',dimensions=2)
         W = Parameter('W', values=[[[-1],[-5]]])
         b = Parameter('b', values=[[1]])
@@ -1359,7 +1359,7 @@ class ModelyTrainingTest(unittest.TestCase):
         # self.assertListEqual([[252.75, 1172.5], [420.5, 1998.25], [-228.5, 627.5], [-626.75, 3036.5]], test.model.all_parameters['a'].data.numpy().tolist())
 
     def test_training_values_fir_and_liner_train_closed_loop_bigger_window(self):
-        NeuObj.reset_count()
+        NeuObj.resetNames()
         input1 = Input('in1',dimensions=2)
         W = Parameter('W', values=[[[-1],[-5]]])
         b = Parameter('b', values=[[1]])

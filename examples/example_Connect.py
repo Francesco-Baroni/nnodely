@@ -16,7 +16,7 @@ data_d_t = linear_function(data_c, 5, 1)
 
 dataset = {'a': data_a, 'b_t': data_b_t, 'c':data_c, 'b_in': data_b_in, 'd_t':data_d_t }
 
-example = 1
+example = 2
 
 if example == 1:
     print("-----------------------------------EXAMPLE 1------------------------------------")
@@ -49,7 +49,8 @@ if example == 1:
 
     ## training dei parametri di tutti i modelli
     model.trainModel(splits=[100,0,0], training_params=params, prediction_samples=4, connect={'b_in':'b'})
-    print('connect variables: ', model.model.connect_variables)
+    print('connect variables: ', model.model.connect_update)
+    print('closed loop variables: ', model.model.closed_loop_update)
 
 elif example == 2:
     print("-----------------------------------EXAMPLE 2------------------------------------")
@@ -83,5 +84,5 @@ elif example == 2:
 
     ## training dei parametri di tutti i modelli
     model.trainModel(splits=[100,0,0], training_params=params, prediction_samples=4)
-    print('connect variables: ', model.model.connect_variables)
-    print('states variables: ', model.model.states)
+    print('connect variables: ', model.model.connect_update)
+    print('closed loop variables: ', model.model.closed_loop_update)

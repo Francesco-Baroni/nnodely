@@ -41,7 +41,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
             self.assertEqual(list_of_dimensions[ind],list(value.weights.shape))
       
     def test_network_building_simple(self):
-        Stream.reset_count()
+        Stream.resetCount()
         input1 = Input('in1')
         rel1 = Fir(input1.tw(0.05))
         rel2 = Fir(input1.tw(0.01))
@@ -56,7 +56,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
             self.assertEqual(list_of_dimensions[key],list(value.weights.shape))
 
     def test_network_building_tw(self):
-        Stream.reset_count()
+        Stream.resetCount()
         input1 = Input('in1')
         input2 = Input('in2')
         rel1 = Fir(input1.tw(0.05))
@@ -74,7 +74,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
             self.assertEqual(list_of_dimensions[key],list(value.weights.shape))
     
     def test_network_building_tw2(self):
-        Stream.reset_count()
+        Stream.resetCount()
         input2 = Input('in2')
         rel3 = Fir(input2.tw(0.05))
         rel4 = Fir(input2.tw([-0.02,0.02]))
@@ -110,7 +110,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
             self.assertEqual(list_of_dimensions[ind],list(value.weights.shape))
 
     def test_network_building_tw_with_offest(self):
-        Stream.reset_count()
+        Stream.resetCount()
         input2 = Input('in2')
         rel3 = Fir(input2.tw(0.05))
         rel4 = Fir(input2.tw([-0.04,0.02]))
@@ -156,7 +156,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
             self.assertEqual(list_of_dimensions[ind],list(value.weights.shape))
 
     def test_network_building_sw_with_offset(self):
-        Stream.reset_count()
+        Stream.resetCount()
         input2 = Input('in2')
         rel3 = Fir(input2.sw(5))
         rel4 = Fir(input2.sw([-4,2]))
@@ -422,6 +422,17 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         self.assertEqual(result['el3_tw'], [[[5.0, 2.0, 0.0, 1.0, 0.0, 0.0], [10.0, 4.0, 0.0, 0.0, 1.0, 0.0]]])
         self.assertEqual(result['el3_multi_tw'], [[[20.0, 8.0, 0.0, 0.0, 0.0, 1.0], [30.0, 12.0, 0.0, 0.0, 0.0, 1.0]]])
 
+    def test_localmodel(self):
+        x = Input('x')
+        activationA = Fuzzify(2, [0, 1], functions='Triangular')(x.last())
+        loc = LocalModel(input_function=Fir())(x.tw(1), activationA)
+        out = Output('out', loc)
+        example = Modely(visualizer=None,seed=5)
+        example.addModel('out', out)
+        example.neuralizeModel(0.25)
+        # The output is 2 samples
+        self.assertEqual({'out': [1.7170718908309937, 1.9410502910614014]}, example({'x': [-1, 0, 1, 2, 0]}))
+        self.assertEqual({'out': [1.7170718908309937, 1.9410502910614014]}, example({'x': [[-1, 0, 1, 2], [0, 1, 2, 0]]}, sampled=True))
 
 if __name__ == '__main__':
     unittest.main()

@@ -540,8 +540,8 @@ class ModelyExportTest(unittest.TestCase):
             shutil.rmtree(vehicle.getWorkspace())
 
     def test_export_sw_on_stream_sw_complex(self):
-        NeuObj.reset_count()
-        Stream.reset_count()
+        NeuObj.resetNames()
+        Stream.resetCount()
         # Create nnodely structure
         result_path = 'results'
         network_name = 'swnet'
