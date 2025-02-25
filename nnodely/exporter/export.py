@@ -69,9 +69,10 @@ def export_python_model(model_def, model, model_path):
         file.write("import torch\n\n")
 
         ## write the connect wrap function
-        file.write(f"def {package_name}_model_connect(data_in, rel, shift: int):\n")
-        file.write("    virtual = torch.cat((data_in[:, shift:, :], data_in[:, :shift, :]), dim=1)\n")
-        file.write("    virtual[:, -shift:, :] = rel\n")
+        file.write(f"def {package_name}_model_connect(data_in, rel):\n")
+        file.write("    virtual = torch.cat((data_in[:, 1:, :], data_in[:, :1, :]), dim=1)\n")
+        file.write("    max_dim = min(rel.size(1), data_in.size(1))\n")
+        file.write("    virtual[:, -max_dim:, :] = rel[:, -max_dim:, :]\n")
         file.write("    return virtual\n\n")
 
         for name in model_def['Functions'].keys():
@@ -230,7 +231,7 @@ def export_python_model(model_def, model, model_path):
             file.write("                results[key].append(out[key])\n")
             file.write("            for key, val in closed_loop.items():\n")
             file.write("                shift = val.size(1)\n")
-            file.write("                self.states[key] = nnodely_model_connect(self.states[key], val, shift)\n")
+            file.write("                self.states[key] = nnodely_model_connect(self.states[key], val)\n")
             file.write("            for key, value in connect.items():\n") 
             file.write("                self.states[key] = value\n")
             file.write("        return results\n")
@@ -325,7 +326,7 @@ def export_pythononnx_model(model_def, input_order, outputs_order, model_path, m
             #    file.write(f"            results_{outputs_order[0]}.append(out)\n")
             for idx, key in enumerate(closed_loop_states):
                 file.write(f"            shift = closed_loop[{idx}].size(1)\n")
-                file.write(f"            {key} = nnodely_model_connect({key}, closed_loop[{idx}], shift)\n")
+                file.write(f"            {key} = nnodely_model_connect({key}, closed_loop[{idx}])\n")
             for idx, key in enumerate(connect_states):
                 file.write(f"            {key} = connect[{idx}]\n")
             for idx, key in enumerate(outputs_order):

@@ -1,16 +1,20 @@
 import torch
 import torch.nn as nn
 
+from nnodely import Parameter, Constant
 from nnodely.relation import Stream, ToStream, toStream
 from nnodely.model import Model
-from nnodely.utils import check
+from nnodely.utils import check, enforce_types
 
 
 relu_relation_name = 'Relu'
-tanh_relation_name = 'Tanh'
 elu_relation_name = 'ELU'
+sigmoid_relation_name = 'Sigmoid'
+
 identity_relation_name = 'Identity'
-sigma_relation_name = 'Sigma'
+
+softmax_relation_name = 'Softmax'
+
 
 class Relu(Stream, ToStream):
     """
@@ -26,33 +30,13 @@ class Relu(Stream, ToStream):
         Example:
             >>> x = Relu(x)
     """
-    def __init__(self, obj:Stream) -> Stream:
+    @enforce_types
+    def __init__(self, obj:Stream|Parameter|Constant|float|int) -> Stream:
         obj = toStream(obj)
         check(type(obj) is Stream, TypeError,
               f"The type of {obj} is {type(obj)} and is not supported for Relu operation.")
         super().__init__(relu_relation_name + str(Stream.count),obj.json,obj.dim)
         self.json['Relations'][self.name] = [relu_relation_name,[obj.name]]
-
-class Tanh(Stream, ToStream):
-    """
-        Implement the Hyperbolic Tangent (Tanh) relation function.
-
-        See also:
-            Official PyTorch tanh documentation: 
-            `torch.nn.Tanh <https://pytorch.org/docs/stable/generated/torch.nn.Tanh.html>`_
-
-        :param obj: The relation stream.
-        :type obj: Stream 
-
-        Example:
-            >>> x = Tanh(x)
-    """
-    def __init__(self, obj:Stream) -> Stream:
-        obj = toStream(obj)
-        check(type(obj) is Stream,TypeError,
-              f"The type of {obj} is {type(obj)} and is not supported for Tanh operation.")
-        super().__init__(tanh_relation_name + str(Stream.count),obj.json,obj.dim)
-        self.json['Relations'][self.name] = [tanh_relation_name,[obj.name]]
 
 class ELU(Stream, ToStream):
     """
@@ -68,7 +52,8 @@ class ELU(Stream, ToStream):
         Example:
             >>> x = ELU(x)
     """
-    def __init__(self, obj:Stream) -> Stream:
+    @enforce_types
+    def __init__(self, obj:Stream|Parameter|Constant|float|int) -> Stream:
         obj = toStream(obj)
         check(type(obj) is Stream,TypeError,
               f"The type of {obj} is {type(obj)} and is not supported for Tanh operation.")
@@ -89,48 +74,58 @@ class Identity(Stream, ToStream):
     Example:
         >>> x = Identity(x)
     """
-    def __init__(self, obj: Stream) -> Stream:
+    @enforce_types
+    def __init__(self, obj: Stream|Parameter|Constant|float|int) -> Stream:
         obj = toStream(obj)
         check(type(obj) is Stream, TypeError,
               f"The type of {obj} is {type(obj)} and is not supported for Identity operation.")
         super().__init__(identity_relation_name + str(Stream.count), obj.json, obj.dim)
         self.json['Relations'][self.name] = [identity_relation_name, [obj.name]]
 
-class Sigma(Stream, ToStream):
+
+class Softmax(Stream, ToStream):
     """
-    Applies the Sigmoid function element-wise.
+        Implement the Softmax relation function.
 
-    See also:
-        Official PyTorch Sigmoid documentation: 
-        `torch.nn.Sigmoid <https://pytorch.org/docs/stable/generated/torch.nn.Sigmoid.html>`_
+        See also:
+            Official PyTorch Softmax documentation: 
+            `torch.nn.Softmax <https://pytorch.org/docs/stable/generated/torch.nn.Softmax.html>`_
 
-    :param obj: The relation stream.
-    :type obj: Stream 
+        :param obj: The relation stream.
+        :type obj: Stream 
 
-    Example:
-        >>> x = Sigma(x)
+        Example:
+            >>> x = Softmax(x)
     """
-    def __init__(self, obj: Stream) -> Stream:
+    @enforce_types
+    def __init__(self, obj:Stream|Parameter|Constant|float|int) -> Stream:
         obj = toStream(obj)
         check(type(obj) is Stream, TypeError,
-              f"The type of {obj} is {type(obj)} and is not supported for Sigma operation.")
-        super().__init__(sigma_relation_name + str(Stream.count), obj.json, obj.dim)
-        self.json['Relations'][self.name] = [sigma_relation_name, [obj.name]]
+              f"The type of {obj} is {type(obj)} and is not supported for Softmax operation.")
+        super().__init__(softmax_relation_name + str(Stream.count), obj.json, obj.dim)
+        self.json['Relations'][self.name] = [softmax_relation_name, [obj.name]]
 
-class Tanh_Layer(nn.Module):
+class Sigmoid(Stream, ToStream):
     """
-     :noindex:
-    """
-    def __init__(self,):
-        super(Tanh_Layer, self).__init__()
-    def forward(self, x):
-        return torch.tanh(x)
+        Implement the Sigmoid relation function.
+        The Sigmoid function is defined as:
+        
+        .. math::
+            \sigma(x) = \frac{1}{1 + e^{-x}}
 
-def createTanh(self, *input):
+        :param obj: The relation stream.
+        :type obj: Stream 
+
+        Example:
+            >>> x = Sigmoid(x)
     """
-     :noindex:
-    """
-    return Tanh_Layer()
+    @enforce_types
+    def __init__(self, obj:Stream|Parameter|Constant|float|int) -> Stream:
+        obj = toStream(obj)
+        check(type(obj) is Stream, TypeError,
+              f"The type of {obj} is {type(obj)} and is not supported for {sigmoid_relation_name} operation.")
+        super().__init__(sigmoid_relation_name + str(Stream.count), obj.json, obj.dim)
+        self.json['Relations'][self.name] = [sigmoid_relation_name, [obj.name]]
 
 class Relu_Layer(nn.Module):
     """
@@ -170,24 +165,33 @@ def createIdentity(self, *input):
     """
     return Identity_Layer()
 
-class Sigma_Layer(nn.Module):
-    """
-     :noindex:
-    """
-    def __init__(self, *args):
-        super(Sigma_Layer, self).__init__()
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return 1 / (1 + torch.exp(-x))
-    
-def createSigma(self, *input):
+class Sigmoid_Layer(nn.Module):
     """
      :noindex:
     """
-    return Sigma_Layer()
+    def __init__(self,):
+        super(Sigmoid_Layer, self).__init__()
+    def forward(self, x):
+        return 1/(1+torch.exp(-x))
+    
+def createSigmoid(self, *input):
+    """
+     :noindex:
+    """
+    return Sigmoid_Layer()
+
+def createSoftmax(self, *input):
+    """
+     :noindex:
+    """
+    return nn.Softmax(dim=-1)
+
 
 setattr(Model, relu_relation_name, createRelu)
-setattr(Model, tanh_relation_name, createTanh)
 setattr(Model, elu_relation_name, createELU)
+setattr(Model, sigmoid_relation_name, createSigmoid)
+
 setattr(Model, identity_relation_name, createIdentity)
-setattr(Model, sigma_relation_name, createSigma)
+
+setattr(Model, softmax_relation_name, createSoftmax)

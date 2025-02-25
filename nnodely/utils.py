@@ -1,4 +1,6 @@
 import copy, torch, inspect
+from collections import OrderedDict
+
 import numpy as np
 
 from pprint import pformat
@@ -16,16 +18,35 @@ def enforce_types(func):
     def wrapper(*args, **kwargs):
         hints = get_type_hints(func)
         all_args = kwargs.copy()
-        all_args.update(dict(zip(inspect.signature(func).parameters, args)))
 
-        for arg, arg_type in hints.items():
-            if arg in all_args and not isinstance(all_args[arg], arg_type):
+        sig = OrderedDict(inspect.signature(func).parameters)
+        if len(sig) != len(args):
+            var_type = None
+            for ind, arg in enumerate(args):
+                if ind < len(list(sig.values())) and list(sig.values())[ind].kind == inspect.Parameter.VAR_POSITIONAL:
+                    var_name = list(sig.keys())[ind]
+                    var_type = sig.pop(var_name)
+                if var_type:
+                    sig[var_name+str(ind)] = var_type
+
+        all_args.update(dict(zip(sig, args)))
+        if 'self' in sig.keys():
+            sig.pop('self')
+
+        for arg_name, arg in all_args.items():
+            if (arg_name in hints.keys() or arg_name in sig.keys()) and not isinstance(arg,sig[arg_name].annotation):
                 raise TypeError(
-                    f"Expected argument '{arg}' to be of type {arg_type.__name__}, but got {type(all_args[arg]).__name__}")
+                    f"In Function or Class {func} Expected argument '{arg}' to be of type {sig[arg_name].annotation}, but got {type(arg)}")
+
+        # for arg, arg_type in hints.items():
+        #     if arg in all_args and not isinstance(all_args[arg], arg_type):
+        #         raise TypeError(
+        #             f"In Function or Class {func} Expected argument '{arg}' to be of type {arg_type}, but got {type(all_args[arg]).__name__}")
 
         return func(*args, **kwargs)
 
     return wrapper
+
 
 # Linear interpolation function, operating on batches of input data and returning batches of output data
 def linear_interp(x,x_data,y_data):
@@ -66,8 +87,39 @@ def tensor_to_list(data):
         # Altri tipi di dati rimangono invariati
         return data
 
+# Codice per comprimere le relazioni
+        #print(self.json['Relations'])
+        # used_rel = {string for values in self.json['Relations'].values() for string in values[1]}
+        # if obj1.name not in used_rel and obj1.name in self.json['Relations'].keys() and self.json['Relations'][obj1.name][0] == add_relation_name:
+        #     self.json['Relations'][self.name] = [add_relation_name, self.json['Relations'][obj1.name][1]+[obj2.name]]
+        #     del self.json['Relations'][obj1.name]
+        # else:
+        # Devo aggiungere un operazione che rimuove un operazione di Add,Sub,Mul,Div se può essere unita ad un'altra operazione dello stesso tipo
+        #
 def merge(source, destination, main = True):
     if main:
+        for key, value in destination["Functions"].items():
+            if key in source["Functions"].keys() and 'n_input' in value.keys() and 'n_input' in source["Functions"][key].keys():
+                check(value == {} or source["Functions"][key] == {} or value['n_input'] == source["Functions"][key]['n_input'],
+                      TypeError,
+                      f"The ParamFun {key} is present multiple times, with different number of inputs. "
+                      f"The ParamFun {key} is called with {value['n_input']} parameters and with {source['Functions'][key]['n_input']} parameters.")
+        for key, value in destination["Parameters"].items():
+            if key in source["Parameters"].keys():
+                if 'dim' in value.keys() and 'dim' in source["Parameters"][key].keys():
+                    check(value['dim'] == source["Parameters"][key]['dim'],
+                          TypeError,
+                          f"The Parameter {key} is present multiple times, with different dimensions. "
+                          f"The Parameter {key} is called with {value['dim']} dimension and with {source['Parameters'][key]['dim']} dimension.")
+                window_dest = 'tw' if 'tw' in value else ('sw' if 'sw' in value else None)
+                assert (window_dest is not None), f"Parameters {key} with no window dimension"
+                window_source = 'tw' if 'tw' in source["Parameters"][key] else ('sw' if 'sw' in source["Parameters"][key] else None)
+                assert (window_source is not None), f"Parameters {key} with no window dimension"
+                check(window_dest == window_source and value[window_dest] == source["Parameters"][key][window_source] ,
+                      TypeError,
+                      f"The Parameter {key} is present multiple times, with different window. "
+                      f"The Parameter {key} is called with {window_dest}={value[window_dest]} dimension and with {window_source}={source['Parameters'][key][window_source]} dimension.")
+
         log.debug("Merge Source")
         log.debug("\n"+pformat(source))
         log.debug("Merge Destination")

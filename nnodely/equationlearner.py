@@ -11,12 +11,11 @@ from nnodely.parameter import Parameter, Constant
 from nnodely.utils import check, merge, enforce_types
 
 from nnodely.linear import Linear
-from nnodely.part import Select
-from nnodely.arithmetic import Concatenate
+from nnodely.part import Select, Concatenate
 from nnodely import *
 
 equationlearner_relation_name = 'EquationLearner'
-Available_functions = [Sin, Cos, Tan, Cosh, Sech, Add, Mul, Sub, Neg, Pow, Sum, Concatenate, Relu, Tanh, ELU, Identity, Sigma]
+Available_functions = [Sin, Cos, Tan, Cosh, Sech, Add, Mul, Sub, Neg, Pow, Sum, Concatenate, Relu, Tanh, ELU, Identity, Sigmoid]
 Initialized_functions = [ParamFun, Fuzzify]
 
 class EquationLearner(NeuObj):

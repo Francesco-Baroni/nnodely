@@ -7,6 +7,65 @@ Modely
    :show-inheritance:
    :exclude-members: resultAnalysis, getWorkspace
 
+Model structured NN Inputs Outputs and Parameters
+=================================================
+
+input module
+------------
+
+.. automodule:: nnodely.input
+    :no-undoc-members:
+    :no-inherited-members:
+
+    .. autoclass:: nnodely.input.Input
+        :undoc-members:
+        :inherited-members:
+        :exclude-members: count, reset_count
+
+    .. autoclass:: nnodely.input.State
+        :undoc-members:
+        :inherited-members:
+        :exclude-members: count, reset_count
+
+output module
+-------------
+
+.. automodule:: nnodely.output
+    :no-undoc-members:
+    :no-inherited-members:
+
+    .. autoclass:: nnodely.output.Output
+        :undoc-members:
+        :inherited-members:
+        :exclude-members: count, reset_count, closedLoop, connect, tw, sw, z
+
+parameter module
+----------------
+
+.. automodule:: nnodely.parameter
+    :undoc-members:
+    :no-inherited-members:
+
+    .. autoclass:: nnodely.parameter.Constant
+        :undoc-members:
+        :no-inherited-members:
+
+    .. autoclass:: nnodely.parameter.Parameter
+        :undoc-members:
+        :no-inherited-members:
+
+initializer module
+^^^^^^^^^^^^^^^^^^
+
+.. automodule:: nnodely.initializer
+    :undoc-members:
+    :no-inherited-members:
+
+    .. autofunction:: nnodely.initializer.init_constant
+    .. autofunction:: nnodely.initializer.init_negexp
+    .. autofunction:: nnodely.initializer.init_exp
+    .. autofunction:: nnodely.initializer.init_lin
+
 Model structured NN building blocks
 ===================================
 
@@ -60,18 +119,6 @@ arithmetic module
         :undoc-members:
         :no-inherited-members:
 
-earlystopping module
---------------------
-
-.. automodule:: nnodely.earlystopping
-    :undoc-members:
-    :no-inherited-members:
-
-    .. autofunction:: nnodely.earlystopping.early_stop_patience
-    .. autofunction:: nnodely.earlystopping.select_best_model
-    .. autofunction:: nnodely.earlystopping.mean_stopping
-    .. autofunction:: nnodely.earlystopping.standard_early_stopping
-
 fir module
 ----------
 
@@ -94,35 +141,16 @@ fuzzify module
         :undoc-members:
         :no-inherited-members:
 
-initializer module
-------------------
+equationlearner module
+----------------------
 
-.. automodule:: nnodely.initializer
+.. automodule:: nnodely.equationlearner
     :undoc-members:
     :no-inherited-members:
 
-    .. autofunction:: nnodely.initializer.init_constant
-    .. autofunction:: nnodely.initializer.init_negexp
-    .. autofunction:: nnodely.initializer.init_exp
-    .. autofunction:: nnodely.initializer.init_lin
-
-input module
-------------
-
-.. automodule:: nnodely.input
-    :no-undoc-members:
-    :no-inherited-members:
-
-    .. autoclass:: nnodely.input.Input
+    .. autoclass:: nnodely.localmodel.EquationLearner
         :undoc-members:
-        :inherited-members:
-        :exclude-members: count, reset_count
-
-    .. autoclass:: nnodely.input.State
-        :undoc-members:
-        :inherited-members:
-        :exclude-members: count, reset_count
-
+        :no-inherited-members:
 
 linear module
 -------------
@@ -144,62 +172,6 @@ localmodel module
     :no-inherited-members:
 
     .. autoclass:: nnodely.localmodel.LocalModel
-        :undoc-members:
-        :no-inherited-members:
-
-
-equationlearner module
-----------------------
-
-.. automodule:: nnodely.equationlearner
-    :undoc-members:
-    :no-inherited-members:
-
-    .. autoclass:: nnodely.localmodel.EquationLearner
-        :undoc-members:
-        :no-inherited-members:
-
-optimizer module
-----------------
-
-.. automodule:: nnodely.optimizer
-    :no-undoc-members:
-    :no-inherited-members:
-
-    .. autoclass:: nnodely.optimizer.SGD
-        :undoc-members:
-        :inherited-members:
-        :exclude-members: add_option_to_params, replace_key_with_params, get_torch_optimizer
-
-    .. autoclass:: nnodely.optimizer.Adam
-        :undoc-members:
-        :inherited-members:
-        :exclude-members: add_option_to_params, replace_key_with_params, get_torch_optimizer
-
-output module
--------------
-
-.. automodule:: nnodely.output
-    :no-undoc-members:
-    :no-inherited-members:
-
-    .. autoclass:: nnodely.output.Output
-        :undoc-members:
-        :inherited-members:
-        :exclude-members: count, reset_count, closedLoop, connect, tw, sw, z
-
-parameter module
-----------------
-
-.. automodule:: nnodely.parameter
-    :undoc-members:
-    :no-inherited-members:
-
-    .. autoclass:: nnodely.parameter.Constant
-        :undoc-members:
-        :no-inherited-members:
-
-    .. autoclass:: nnodely.parameter.Parameter
         :undoc-members:
         :no-inherited-members:
 
@@ -265,6 +237,38 @@ parametricfunction module
    :members:
    :undoc-members:
    :show-inheritance:
+
+Training
+========
+
+optimizer module
+----------------
+
+.. automodule:: nnodely.optimizer
+    :no-undoc-members:
+    :no-inherited-members:
+
+    .. autoclass:: nnodely.optimizer.SGD
+        :undoc-members:
+        :inherited-members:
+        :exclude-members: add_option_to_params, replace_key_with_params, get_torch_optimizer
+
+    .. autoclass:: nnodely.optimizer.Adam
+        :undoc-members:
+        :inherited-members:
+        :exclude-members: add_option_to_params, replace_key_with_params, get_torch_optimizer
+
+earlystopping module
+--------------------
+
+.. automodule:: nnodely.earlystopping
+    :undoc-members:
+    :no-inherited-members:
+
+    .. autofunction:: nnodely.earlystopping.early_stop_patience
+    .. autofunction:: nnodely.earlystopping.select_best_model
+    .. autofunction:: nnodely.earlystopping.mean_stopping
+    .. autofunction:: nnodely.earlystopping.standard_early_stopping
 
 Additional information
 ======================

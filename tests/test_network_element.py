@@ -1,9 +1,9 @@
 import unittest, sys, os, torch
-import numpy as np
 
 from nnodely import *
 from nnodely.relation import Stream
 from nnodely import relation
+import numpy as np
 relation.CHECK_NAMES = False
 
 from nnodely.logger import logging, nnLogger
@@ -12,7 +12,7 @@ log.setAllLevel(logging.CRITICAL)
 
 sys.path.append(os.getcwd())
 
-# 16 Tests
+# 11 Tests
 # This file tests the dimensions and the of the element created in the pytorch environment
 
 class ModelyNetworkBuildingTest(unittest.TestCase):
@@ -42,7 +42,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         test.addModel('fun',fun)
         test.neuralizeModel(0.01)
         
-        list_of_dimensions = {'Fir3':[5,1],'Fir6':[1,1]}
+        list_of_dimensions = {'Fir2':[5,1],'Fir5':[1,1]}
         for key, value in {k:v for k,v in test.model.relation_forward.items() if 'Fir' in k}.items():
             self.assertEqual(list_of_dimensions[key],list(value.weights.shape))
 
@@ -60,7 +60,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         test.addModel('fun',fun)
         test.neuralizeModel(0.01)
         
-        list_of_dimensions = {'Fir4':[5,1], 'Fir7':[1,1], 'Fir10':[5,1], 'Fir13':[4,1]}
+        list_of_dimensions = {'Fir2':[5,1], 'Fir5':[1,1], 'Fir8':[5,1], 'Fir11':[4,1]}
         for key, value in {k:v for k,v in test.model.relation_forward.items() if 'Fir' in k}.items():
             self.assertEqual(list_of_dimensions[key],list(value.weights.shape))
     
@@ -81,7 +81,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         self.assertEqual(test.max_n_samples, 8) # 5 samples + 3 samples of the horizon
         self.assertEqual({'in2': 8} , test.input_n_samples)
         
-        list_of_dimensions = {'Fir3':[5,1], 'Fir6':[4,1], 'Fir9':[6,1], 'Fir12':[3,1], 'Fir15':[3,1]}
+        list_of_dimensions = {'Fir2':[5,1], 'Fir5':[4,1], 'Fir8':[6,1], 'Fir11':[3,1], 'Fir14':[3,1]}
         for  key, value in {k:v for k,v in test.model.relation_forward.items() if 'Fir' in k}.items():
             self.assertEqual(list_of_dimensions[key],list(value.weights.shape))
 
@@ -113,7 +113,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         test.addModel('fun',fun)
         test.neuralizeModel(0.01)
 
-        list_of_dimensions = {'Fir3':[5,1], 'Fir6':[6,1], 'Fir9':[6,1], 'Fir12':[6,1]}
+        list_of_dimensions = {'Fir2':[5,1], 'Fir5':[6,1], 'Fir8':[6,1], 'Fir11':[6,1]}
         for key, value in {k:v for k,v in test.model.relation_forward.items() if 'Fir' in k}.items():
             self.assertEqual(list_of_dimensions[key],list(value.weights.shape))
 
@@ -158,7 +158,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         test.addModel('fun',fun)
         test.neuralizeModel(0.01)
 
-        list_of_dimensions = {'Fir3':[5,1], 'Fir6':[6,1], 'Fir9':[6,1], 'Fir12':[6,1]}
+        list_of_dimensions = {'Fir2':[5,1], 'Fir5':[6,1], 'Fir8':[6,1], 'Fir11':[6,1]}
         for key, value in {k:v for k,v in test.model.relation_forward.items() if 'Fir' in k}.items():
             self.assertEqual(list_of_dimensions[key],list(value.weights.shape))
 
@@ -200,6 +200,23 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         for ind, (key, value) in enumerate({k:v for k,v in test.model.relation_forward.items() if 'Linear' in k}.items()):
             self.assertEqual(list_of_dimensions[ind],list(value.weights.shape))
 
+    def test_network_linear_interpolation_train(self):
+        torch.manual_seed(1)
+        x = Input('x')
+        param = Parameter(name='a', sw=1)
+        rel1 = Fir(parameter=param)(Interpolation(x_points=[1.0, 2.0, 3.0, 4.0],y_points=[2.0, 4.0, 6.0, 8.0], mode='linear')(x.last()))
+        out = Output('out',rel1)
+
+        test = Modely(visualizer=None)
+        test.addModel('fun',[out])
+        test.addMinimize('error', out, x.last())
+        test.neuralizeModel(0.01)
+
+        dataset = {'x':np.random.uniform(1,4,100)}
+        test.loadData(name='dataset', source=dataset)
+        test.trainModel(num_of_epochs=100, train_batch_size=10)
+        self.assertAlmostEqual(test.model.all_parameters['a'].item(), 0.5, places=2)
+
     def test_network_linear_interpolation(self):
         torch.manual_seed(1)
         x = Input('x')
@@ -225,27 +242,24 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         inference = test(inputs={'x':[1.5,2.5,3.5]})
         self.assertEqual(inference['out'],[2.5,6.5,12.5])
 
-    def test_sigmoid_function(self):
+    def test_softmax_and_sigmoid(self):
         torch.manual_seed(1)
-        input = Input('in')
-        sigma_rel = Sigma(input.last())
-        sigma_rel_2 = Sigma(input.sw(2))
-
-        input5 = Input('in5', dimensions=5)
-        sigma_rel_5 = Sigma(input5.last())
-
-        out1 = Output('out1', sigma_rel)
-        out2 = Output('out2', sigma_rel_5)
-        out3 = Output('out3', sigma_rel_2)
+        x = Input('x')
+        y = Input('y', dimensions=3)
+        softmax = Softmax(y.last())
+        sigmoid = Sigmoid(x.last())
+        out = Output('softmax',softmax)
+        out2 = Output('sigmoid',sigmoid)
 
         test = Modely(visualizer=None)
-        test.addModel('model',[out1,out2,out3])
+        test.addModel('model',[out,out2])
         test.neuralizeModel(0.01)
 
-        result = test(inputs={'in':[[3.0],[-2.0]], 'in5':[[4.0,1.0,0.0,-6.0,2.0]]})
-        self.assertEqual([0.11920291930437088], result['out1'])
-        self.assertEqual([[[0.9820137619972229, 0.7310585975646973, 0.5, 0.0024726230185478926, 0.8807970285415649]]], result['out2'])
-        self.assertEqual([[0.9525741338729858, 0.11920291930437088]], result['out3'])
+        inference = test(inputs={'x':[-1000.0, 0.0, 1000.0], 'y':[[-1.0,0.0,1.0],[-1000.0,0.0,1000.0],[1.0,2.0,3.0]]})
+        self.assertEqual(inference['sigmoid'],[0.0, 0.5, 1.0])
+        self.assertEqual(inference['softmax'],[[[0.09003057330846786, 0.2447284758090973, 0.6652409434318542]],
+                                               [[0.0, 0.0, 1.0]],
+                                               [[0.09003057330846786, 0.2447284758090973, 0.6652409434318542]]])
 
     def test_sech_cosh_function(self):
         torch.manual_seed(1)
@@ -392,6 +406,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         self.assertEqual(result['el3'], [[[10.0, 4.0, 0.0, 0.0, 1.0, 0.0]]])
         self.assertEqual(result['el3_tw'], [[[5.0, 2.0, 0.0, 1.0, 0.0, 0.0], [10.0, 4.0, 0.0, 0.0, 1.0, 0.0]]])
         self.assertEqual(result['el3_multi_tw'], [[[20.0, 8.0, 0.0, 0.0, 0.0, 1.0], [30.0, 12.0, 0.0, 0.0, 0.0, 1.0]]])
+
 
 if __name__ == '__main__':
     unittest.main()

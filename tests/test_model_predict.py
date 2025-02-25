@@ -581,7 +581,7 @@ class ModelyPredictTest(unittest.TestCase):
         self.TestAlmostEqual(results['out'], [[[0.22182656824588776, -0.11421152949333191, 0.5385046601295471]], [[0.22182656824588776, -0.11421152949333191,  0.5385046601295471]]])
 
         parfun = ParamFun(myfun2)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             Output('out', parfun(Fir(3)(parfun(in1.tw(0.4), in2.tw(0.4)))))
 
         parfun = ParamFun(myfun2)
@@ -670,7 +670,7 @@ class ModelyPredictTest(unittest.TestCase):
                                               [[0.3850506544113159, 0.3850506544113159, 0.3850506544113159]]])
 
         parfun = ParamFun(myfun2)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             Output('out', parfun(Fir(3)(parfun(in1.tw(0.4), in2.tw(0.4)))))
 
         parfun = ParamFun(myfun2)
@@ -738,6 +738,28 @@ class ModelyPredictTest(unittest.TestCase):
         self.TestAlmostEqual([34.8819529, 33554496.0,  -33554480.0], results['out1'] )
         self.TestAlmostEqual([[[58.9539756, 46.1638031, 554.231201171875, 4294967296.0]], [[67.3462829589843, 46.16380310058594, 554.231201171875, 4294967296.0]], [[ -41.75371170043945, 567.6907348632812, 1953220.375, 4294967296.0]]], results['out4'])
         self.TestAlmostEqual([4294967808.0, 4328522240.0,  4263366656.0], results['outtot'])
+
+    def test_check_modify_stream(self):
+        torch.manual_seed(1)
+        in1 = Input('in1').last()
+        par = Parameter('par', values=[[5]])
+        add1 = in1 + par # 1 + 5 = 6
+        add2 = add1 + 5.2 # 6 + 5.2 = 11.2
+        tot1 = add1 + add2 # 6 + 11.2 = 17.2
+        out1 = Output('out1', tot1) # = 17.2
+        tot2 = add1 + in1 # 6 + 1 = 7
+        out12 = Output('out12', tot1 + tot2) # = 24.2
+        out2 = Output('out2', tot2) #= 7
+        test = Modely(visualizer=None)
+        test.addModel('out',[out1,out12,out2])
+        test.neuralizeModel()
+
+        results = test({'in1': [1]})
+        self.assertEqual((1,), np.array(results['out1']).shape)
+        self.TestAlmostEqual([17.2], results['out1'] )
+        self.TestAlmostEqual([24.2], results['out12'])
+        self.TestAlmostEqual([7], results['out2'])
+
 
     def test_parameter_and_linear(self):
         input = Input('in').last()
@@ -1226,6 +1248,30 @@ class ModelyPredictTest(unittest.TestCase):
         self.assertEqual([[-72.0, -84.0, -96.0]], results['out2'])
         self.assertEqual([[-96.0, -120.0, -144.0]], results['out3'])
 
+    def test_predict_paramfun_map_over_batch(self):
+        input2 = Input('in2')
+        pp = Parameter('pp', values=[[7],[8],[9]])
+        ll = Constant('ll', values=[[12],[13],[14]])
+        oo = Constant('oo', values=[[1],[2],[3]])
+        pp, oo, input2.tw(0.03), ll
+        def fun_test(x, y, z, k):
+            return (x + y) * (z - k)
+
+        pp_map = ParamFun(fun_test,parameters=[pp], constants=[ll,oo], map_over_batch=True)
+        pp = ParamFun(fun_test, parameters=[pp], constants=[ll, oo])
+
+        NeuObj.reset_count()
+        out1 = Output('out1',pp_map(input2.tw(0.03)))
+        out2 = Output('out2', pp(input2.tw(0.03)))
+        test = Modely(visualizer=None)
+        test.addModel('out',[out1,out2])
+        test.neuralizeModel(0.01)
+        results = test({'in2': [0, 1, 2]})
+        self.assertEqual((1, 3), np.array(results['out1']).shape)
+        self.assertEqual([[-72.0, -84.0, -96.0]], results['out1'])
+        self.assertEqual((1, 3), np.array(results['out2']).shape)
+        self.assertEqual([[-72.0, -84.0, -96.0]], results['out2'])
+
     def test_predict_fuzzify(self):
         input = Input('in')
         fuzzi = Fuzzify(6, range=[0, 5], functions='Rectangular')(input.last())
@@ -1237,6 +1283,442 @@ class ModelyPredictTest(unittest.TestCase):
         self.assertEqual((3, 1, 6), np.array(results['out']).shape)
         self.assertEqual([[[1.0, 0.0, 0.0, 0.0, 0.0, 0.0]],[[0.0, 1.0, 0.0, 0.0, 0.0, 0.0]],[[0.0, 0.0, 1.0, 0.0, 0.0, 0.0]]], results['out'])
 
+    def test_sw_on_stream_sw_by_heand(self):
+        input = Input('in')
+        sw_from_input = input.sw(7)
+
+        state = State('state')
+        sw_from_output = Connect(sw_from_input, state)
+        out_aux = Output('out_aux', sw_from_output)
+        out1 = Output('out1', state.sw(3))
+
+        test = Modely(visualizer=None)
+        test.addModel('out_A',  [out_aux,out1])
+        test.neuralizeModel()
+        results = test({'in': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]})
+        self.assertEqual((4, 3), np.array(results['out1']).shape)
+        self.assertEqual([[4.0, 5.0, 6.0], [5.0, 6.0, 7.0], [6.0, 7.0, 8.0], [7.0, 8.0, 9.0]], results['out1'])
+
+        state = Input('state')
+        out_aux = Output('out_aux', sw_from_input)
+        out1 = Output('out1', state.sw(3))
+
+        test = Modely(visualizer=None)
+        test.addModel('out_A',  [out_aux,out1])
+        test.neuralizeModel()
+        results = test({'in': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]}, connect={'state': 'out_aux'})
+        self.assertEqual((4, 3), np.array(results['out1']).shape)
+        self.assertEqual([[4.0, 5.0, 6.0], [5.0, 6.0, 7.0], [6.0, 7.0, 8.0], [7.0, 8.0, 9.0]], results['out1'])
+
+    def test_sw_on_stream_sw(self):
+        input = Input('in')
+        sw_from_input = input.sw(7)
+
+        out1 = Output('out1', sw_from_input.sw(3))
+
+        test = Modely(visualizer=None)
+        test.addModel('out_A',  out1)
+        test.neuralizeModel()
+        results = test({'in': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]})
+        self.assertEqual((4, 3), np.array(results['out1']).shape)
+        self.assertEqual([[4.0, 5.0, 6.0], [5.0, 6.0, 7.0], [6.0, 7.0, 8.0], [7.0, 8.0, 9.0]], results['out1'])
+
+        out1 = Output('out1', sw_from_input.sw(3))
+        out2 = Output('out2', sw_from_input.sw(8))
+        with self.assertRaises(ValueError):
+            Output('out3', sw_from_input.sw(-1))
+
+        test = Modely(visualizer=None)
+        test.addModel('out_A', [out1,out2])
+        test.neuralizeModel()
+        results = test({'in': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]})
+        self.assertEqual((4, 3), np.array(results['out1']).shape)
+        self.assertEqual([[4.0, 5.0, 6.0], [5.0, 6.0, 7.0], [6.0, 7.0, 8.0], [7.0, 8.0, 9.0]], results['out1'])
+        self.assertEqual((4, 8), np.array(results['out2']).shape)
+        self.assertEqual([[0.0, 14.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+                          [14.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0],
+                          [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0],
+                          [2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]], results['out2'])
+
+    def test_tw_on_stream_tw(self):
+        input = Input('in')
+        tw_from_input = input.tw(3.5)
+
+        out1 = Output('out1', tw_from_input.tw(1.5))
+
+        test = Modely(visualizer=None)
+        test.addModel('out_A',  out1)
+        test.neuralizeModel(0.5)
+        results = test({'in': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]})
+        self.assertEqual((4, 3), np.array(results['out1']).shape)
+        self.assertEqual([[4.0, 5.0, 6.0], [5.0, 6.0, 7.0], [6.0, 7.0, 8.0], [7.0, 8.0, 9.0]], results['out1'])
+
+        out1 = Output('out1', tw_from_input.tw(1.5))
+        out2 = Output('out2', tw_from_input.tw(4))
+        with self.assertRaises(ValueError):
+            Output('out3', tw_from_input.tw(-1))
+
+        test = Modely(visualizer=None)
+        test.addModel('out_A', [out1,out2])
+        test.neuralizeModel(0.5)
+        results = test({'in': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]})
+        self.assertEqual((4, 3), np.array(results['out1']).shape)
+        self.assertEqual([[4.0, 5.0, 6.0], [5.0, 6.0, 7.0], [6.0, 7.0, 8.0], [7.0, 8.0, 9.0]], results['out1'])
+        self.assertEqual((4, 8), np.array(results['out2']).shape)
+        self.assertEqual([[0.0, 14.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+                          [14.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0],
+                          [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0],
+                          [2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]], results['out2'])
+
+    def test_sw_on_stream_sw_complex(self):
+        input = Input('in1')
+        state = State('state')
+
+        sw_3 = input.sw(3)
+        sw_7 = input.sw(7)
+
+        state4 = state.sw(4)
+        state8 = state.sw(8)
+
+        out21 = Output('out21', sw_3.sw(2))
+        out61 = Output('out61', sw_7.sw(6))
+        out22 = Output('out22', SamplePart(sw_3,1,3))
+        out62 = Output('out62', SamplePart(sw_7,1,7))
+        test = Modely(visualizer=None)
+        test.addModel('out_A', [out21,out61,out22,out62])
+        test.neuralizeModel()
+        results = test({'in1': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]})
+        self.assertEqual(results['out21'], results['out22'])
+        self.assertEqual(results['out61'], results['out62'])
+
+        out31 = Output('out31', sw_3)
+        out71 = Output('out71', sw_7)
+        out32 = Output('out32', SamplePart(state4,1,4))
+        out72 = Output('out72', SamplePart(state8,1,8))
+        out33 = Output('out33', sw_3.sw(3))
+        out73 = Output('out73', sw_7.sw(7))
+        test = Modely(visualizer=None)
+        test.addModel('out_B', [out31,out71,out32,out72,out33,out73])
+        test.addConnect(sw_7, state)
+        test.neuralizeModel()
+        results = test({'in1': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]})
+        self.assertEqual(results['out31'], results['out32'])
+        self.assertEqual(results['out32'], results['out33'])
+        self.assertEqual(results['out71'], results['out72'])
+        self.assertEqual(results['out72'], results['out73'])
+
+        out41 = Output('out41', state4)
+        out42 = Output('out42', sw_3.sw(4))
+        test = Modely(visualizer=None)
+        test.addModel('out_C', [out41,out42])
+        test.addConnect(sw_3, state)
+        test.neuralizeModel()
+        results = test({'in1': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]})
+        self.assertEqual(results['out41'], results['out42'])
+
+    def test_sw_on_stream_tw_and_opposite(self):
+        input = Input('in1')
+
+        sw_3 = input.sw(3)
+        tw_4 = input.tw(1)
+
+        out3tw1 = Output('out3tw1', sw_3.tw(0.2))
+        out3tw10 = Output('out3tw10', sw_3.tw(2))
+        out4sw2 = Output('out4sw2', tw_4.sw(2))
+        out4sw6 = Output('out4sw6', tw_4.sw(6))
+        test = Modely(visualizer=None)
+        test.addModel('out_A', [out3tw1, out3tw10, out4sw2, out4sw6])
+        test.neuralizeModel(0.2)
+
+        results = test({'in1': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9, -3]})
+        self.assertEqual(results['out3tw1'], [4, 5, 6, 7, 8, 9, -3])
+        self.assertEqual(results['out3tw10'], [[0, 0, 0, 0, 0, 0, 0, 2, 3, 4],
+                                               [0, 0, 0, 0, 0,0, 2, 3, 4, 5],
+                                               [0, 0, 0, 0, 0, 2, 3, 4 ,5, 6],
+                                               [0, 0, 0, 0, 2, 3, 4, 5, 6, 7],
+                                                [0, 0, 0, 2, 3, 4, 5, 6, 7, 8],
+                                                [0, 0, 2, 3, 4, 5, 6, 7, 8, 9],
+                                                [0, 2, 3, 4, 5, 6, 7, 8, 9, -3]])
+        self.assertEqual(results['out4sw2'], [[3, 4],[4,5],[5,6],[6,7],[7,8],[8,9], [9,-3]])
+        self.assertEqual(results['out4sw6'], [[0, 14, 1, 2, 3, 4],
+                                               [14, 1, 2, 3, 4, 5],
+                                               [1, 2, 3, 4 ,5, 6],
+                                               [2, 3, 4, 5, 6, 7],
+                                                [3, 4, 5, 6, 7, 8],
+                                                [4, 5, 6, 7, 8, 9],
+                                                [5, 6, 7, 8, 9, -3]])
+
+    def test_sw_on_stream_sw_delay(self):
+        input = Input('in1')
+
+        sw_3 = input.sw(3)
+
+        out21 = Output('out21', sw_3.sw(2))
+        out41 = Output('out41', sw_3.sw(4))
+        out22 = Output('out22', sw_3.sw([-2,0]))
+        out42 = Output('out42', sw_3.sw([-4,0]))
+
+        out231 = Output('out231', sw_3.sw([-3,-1]))
+        out451 = Output('out451', sw_3.sw([-5,-1]))
+
+        out242 = Output('out242', sw_3.sw([-4,-2]))
+        out462 = Output('out462', sw_3.sw([-6,-2]))
+
+        test = Modely(visualizer=None)
+        test.addModel('out_A', [out21,out41,out22,out42,out231,out451,out242,out462])
+        test.neuralizeModel()
+        results = test({'in1': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]})
+        self.assertEqual(results['out21'], results['out22'])
+        self.assertEqual(results['out21'], [[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9]])
+
+        self.assertEqual(results['out41'], results['out42'])
+        self.assertEqual(results['out41'], [[0, 14, 1, 2], [14, 1, 2, 3], [1, 2, 3, 4], [2, 3, 4, 5], [3, 4, 5, 6], [4, 5, 6, 7], [5, 6, 7, 8], [6, 7, 8, 9]])
+
+        self.assertEqual(results['out231'], [[14,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8]])
+        self.assertEqual(results['out451'], [[0, 0, 14, 1], [0, 14, 1, 2], [14, 1, 2, 3], [1, 2, 3, 4], [2, 3, 4, 5], [3, 4, 5, 6], [4, 5, 6, 7], [5, 6, 7, 8]])
+
+        self.assertEqual(results['out242'], [[0,14],[14,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7]])
+        self.assertEqual(results['out462'], [[0, 0, 0, 14], [0, 0, 14, 1], [0, 14, 1, 2], [14, 1, 2, 3], [1, 2, 3, 4], [2, 3, 4, 5], [3, 4, 5, 6], [4, 5, 6, 7]])
+
+    def test_tw_on_stream_tw_delay(self):
+        input = Input('in1')
+
+        tw_3 = input.tw(1.5)
+
+        out21 = Output('out21', tw_3.tw(1))
+        out41 = Output('out41', tw_3.tw(2))
+        out22 = Output('out22', tw_3.tw([-1,0]))
+        out42 = Output('out42', tw_3.tw([-2,0]))
+
+        out231 = Output('out231', tw_3.tw([-1.5,-0.5]))
+        out451 = Output('out451', tw_3.tw([-2.5,-0.5]))
+
+        out242 = Output('out242', tw_3.tw([-2,-1]))
+        out462 = Output('out462', tw_3.tw([-3,-1]))
+
+        test = Modely(visualizer=None)
+        test.addModel('out_A', [out21,out41,out22,out42,out231,out451,out242,out462])
+        test.neuralizeModel(0.5)
+        results = test({'in1': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]})
+        self.assertEqual(results['out21'], results['out22'])
+        self.assertEqual(results['out21'], [[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9]])
+
+        self.assertEqual(results['out41'], results['out42'])
+        self.assertEqual(results['out41'], [[0, 14, 1, 2], [14, 1, 2, 3], [1, 2, 3, 4], [2, 3, 4, 5], [3, 4, 5, 6], [4, 5, 6, 7], [5, 6, 7, 8], [6, 7, 8, 9]])
+
+        self.assertEqual(results['out231'], [[14,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8]])
+        self.assertEqual(results['out451'], [[0, 0, 14, 1], [0, 14, 1, 2], [14, 1, 2, 3], [1, 2, 3, 4], [2, 3, 4, 5], [3, 4, 5, 6], [4, 5, 6, 7], [5, 6, 7, 8]])
+
+        self.assertEqual(results['out242'], [[0,14],[14,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7]])
+        self.assertEqual(results['out462'], [[0, 0, 0, 14], [0, 0, 14, 1], [0, 14, 1, 2], [14, 1, 2, 3], [1, 2, 3, 4], [2, 3, 4, 5], [3, 4, 5, 6], [4, 5, 6, 7]])
+
+    def test_z_on_stream_sw(self):
+        input = Input('inin')
+        sw_from_input = input.sw(5)
+
+        out2 = Output('out2', sw_from_input.z(1))
+        with self.assertRaises(ValueError):
+            Output('out3', sw_from_input.z(-1))
+        with self.assertRaises(TypeError):
+            Output('out3', sw_from_input.delay(1))
+
+        test = Modely(visualizer=None)
+        test.addModel('out_A', [out2])
+        test.neuralizeModel(0.5)
+        results = test({'inin': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]})
+        self.assertEqual((6, 5), np.array(results['out2']).shape)
+        self.assertEqual( [[0.0, 14.0, 1.0, 2.0, 3.0],
+                                 [14.0, 1.0, 2.0, 3.0, 4.0],
+                                 [1.0, 2.0, 3.0, 4.0, 5.0],
+                                 [2.0, 3.0, 4.0, 5.0, 6.0],
+                                 [3.0, 4.0, 5.0, 6.0, 7.0],
+                                 [4.0, 5.0, 6.0, 7.0, 8.0]], results['out2'])
+
+    def test_delay_on_stream_tw(self):
+        input = Input('inin')
+        tw_from_input = input.tw(3.5)
+
+        out1 = Output('out1', tw_from_input.delay(1))
+        with self.assertRaises(ValueError):
+            Output('out3', tw_from_input.delay(-1))
+        with self.assertRaises(TypeError):
+            Output('out3', tw_from_input.z(1))
+
+        test = Modely(visualizer=None)
+        test.addModel('out_A', [out1])
+        test.neuralizeModel(0.5)
+        results = test({'inin': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]})
+        self.assertEqual((4,7), np.array(results['out1']).shape)
+        self.assertEqual([[0.0, 0.0, 14.0, 1.0, 2.0, 3.0, 4.0],
+                                 [0.0, 14.0, 1.0, 2.0, 3.0, 4.0, 5.0],
+                                 [14.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+                                 [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]],  results['out1'])
+
+    def test_localmodel(self):
+
+        x = Input('x')
+        F = Input('F')
+        activationA = Fuzzify(2, [0, 1], functions='Triangular')(x.tw(1))
+        activationB = Fuzzify(2, [0, 1], functions='Triangular')(F.tw(1))
+
+        def myFun(in1, p1, p2):
+            return p1 * in1 + p2
+
+        p1_0 = Parameter('p1_0', values=[[1]])
+        p1_1 = Parameter('p1_1', values=[[2]])
+        p2_0 = Parameter('p2_0', values=[[2]])
+        p2_1 = Parameter('p2_1', values=[[3]])
+
+        def input_function_gen(idx_list):
+            if idx_list == [0, 0]:
+                p1, p2 = p1_0, p2_0
+            if idx_list == [0, 1]:
+                p1, p2 = p1_0, p2_1
+            if idx_list == [1, 0]:
+                p1, p2 = p1_1, p2_0
+            if idx_list == [1, 1]:
+                p1, p2 = p1_1, p2_1
+            return ParamFun(myFun, parameters=[p1, p2])
+
+        def output_function_gen(idx_list):
+            pfir = Parameter('pfir_' + str(idx_list), tw=1, dimensions=2,
+                             values=[[1 + idx_list[0], 2 + idx_list[1]], [3 + idx_list[0], 4 + idx_list[1]]])
+            return Fir(2, parameter=pfir)
+
+        loc = LocalModel(input_function=input_function_gen, output_function=output_function_gen, pass_indexes=True)(x.tw(1), (activationA, activationB))
+        # Example of the structure of the local model
+        pfir00 = Parameter('N_pfir_[0, 0]', tw=1, dimensions=2, values=[[1, 2], [3, 4]])
+        pfir01 = Parameter('N_pfir_[0, 1]', tw=1, dimensions=2, values=[[1, 3], [3, 5]])
+        pfir10 = Parameter('N_pfir_[1, 0]', tw=1, dimensions=2, values=[[2, 2], [4, 4]])
+        pfir11 = Parameter('N_pfir_[1, 1]', tw=1, dimensions=2, values=[[2, 3], [4, 5]])
+        parfun_00 = ParamFun(myFun, parameters=[p1_0, p2_0])(x.tw(1))
+        parfun_01 = ParamFun(myFun, parameters=[p1_0, p2_1])(x.tw(1))
+        parfun_10 = ParamFun(myFun, parameters=[p1_1, p2_0])(x.tw(1))
+        parfun_11 = ParamFun(myFun, parameters=[p1_1, p2_1])(x.tw(1))
+        out_in_00 = Output('parfun00', parfun_00)
+        out_in_01 = Output('parfun01', parfun_01)
+        out_in_10 = Output('parfun10', parfun_10)
+        out_in_11 = Output('parfun11', parfun_11)
+        actA = Output('fuzzyA', activationA)
+        actB = Output('fuzzyB', activationB)
+        act_selA0 = Select(activationA, 0)
+        act_selA1 = Select(activationA, 1)
+        act_selB0 = Select(activationB, 0)
+        act_selB1 = Select(activationB, 1)
+        out_act_selA0 = Output('fuzzy_selA0', act_selA0)
+        out_act_selA1 = Output('fuzzy_selA1', act_selA1)
+        out_act_selB0 = Output('fuzzy_selB0', act_selB0)
+        out_act_selB1 = Output('fuzzy_selB1', act_selB1)
+        mul00 = parfun_00 * act_selA0 * act_selB0
+        mul01 = parfun_01 * act_selA0 * act_selB1
+        mul10 = parfun_10 * act_selA1 * act_selB0
+        mul11 = parfun_11 * act_selA1 * act_selB1
+        out_mul00 = Output('mul00', mul00)
+        out_mul01 = Output('mul01', mul01)
+        out_mul10 = Output('mul10', mul10)
+        out_mul11 = Output('mul11', mul11)
+        fir00 = Fir(2, parameter=pfir00)(mul00)
+        fir01 = Fir(2, parameter=pfir01)(mul01)
+        fir10 = Fir(2, parameter=pfir10)(mul10)
+        fir11 = Fir(2, parameter=pfir11)(mul11)
+        out_fir00 = Output('fir00', fir00)
+        out_fir01 = Output('fir01', fir01)
+        out_fir10 = Output('fir10', fir10)
+        out_fir11 = Output('fir11', fir11)
+        sum = fir00 + fir01 + fir10 + fir11
+        out_sum = Output('out_sum', sum)
+        out = Output('out', loc)
+        test = Modely(visualizer=None)
+        test.addModel('all_out', [out_in_00, out_in_01, out_in_10, out_in_11,
+                                     out_act_selA0, out_act_selA1, out_act_selB0, out_act_selB1,
+                                     out_mul00, out_mul01, out_mul10, out_mul11,
+                                     out_fir00, out_fir01, out_fir10, out_fir11,
+                                     out_sum])
+        test.addModel('out', out)
+        test.neuralizeModel(0.5)
+        # Three semples with a dimensions 2
+        result = test({'x': [0, 1, -2, 3], 'F': [-2, 2, 1, 5]})
+        self.assertEqual(result['out_sum'],result['out'])
+
+    def test_integrate_derivate(self):
+        input = Input('in1')
+
+        in1_s = Output('in1_s', input.s(1))
+        in1_s2 = Output('in1_s2', input.s(2))
+        in1_s2_2 = Output('in1_s2_2', Derivate(input.s(1)))
+        in1_s2_3 = Output('in1_s2_3', input.s(1).s(1))
+        in1_s_2 = Output('in1_s_2', input.s(2).s(-1))
+
+        in1_sm = Output('in1_sm', input.s(-1))
+        in1_sm2 = Output('in1_sm2', input.s(-2))
+        in1_sm2_2 = Output('in1_sm2_2', Integrate(input.s(-1)))
+        in1_sm2_3 = Output('in1_sm2_3', input.s(-1).s(-1))
+        in1_sm_2 = Output('in1_sm_2', input.s(-2).s(1))
+
+        in1_1 = Output('in1_1', Integrate(input.s(1)))
+        in1_2 = Output('in1_2', Integrate(Integrate(input.s(2))))
+        in1_3 = Output('in1_3', Integrate(Integrate(Derivate(input.s(1)))))
+
+        in1_1_2 = Output('in1_1_2', Derivate(input.s(-1)))
+        in1_2_2 = Output('in1_2_2', Derivate(Derivate(input.s(-2))))
+        in1_3_2 = Output('in1_3_2', Derivate(Derivate(Integrate(input.s(-1)))))
+
+        test = Modely(visualizer=None)
+        test.addModel('out_A', [in1_s, in1_s2, in1_s2_2, in1_s2_3, in1_s_2, in1_sm, in1_sm2, in1_sm2_2, in1_sm2_3, in1_sm_2, in1_1, in1_2, in1_3, in1_1_2, in1_2_2, in1_3_2])
+        test.neuralizeModel(1)
+        inin = {'in1': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]}
+        results = test(inin)
+        self.assertEqual(results['in1_1'], inin['in1'])
+        self.assertEqual(results['in1_2'], inin['in1'])
+        self.assertEqual(results['in1_3'], inin['in1'])
+        self.assertEqual(results['in1_1_2'], inin['in1'])
+        self.assertEqual(results['in1_2_2'], inin['in1'])
+        self.assertEqual(results['in1_3_2'], inin['in1'])
+
+        inin_s = [14, -13, 1, 1, 1, 1, 1, 1, 1, 1]
+        inin_s2 = [14, -27, 14, 0, 0, 0, 0, 0, 0, 0]
+        self.assertEqual(results['in1_s'], inin_s)
+        self.assertEqual(results['in1_s_2'], inin_s)
+        self.assertEqual(results['in1_s2'], inin_s2)
+        self.assertEqual(results['in1_s2_2'], inin_s2)
+        self.assertEqual(results['in1_s2_3'], inin_s2)
+
+        inin_sm = [14, 15, 17, 20, 24, 29, 35, 42, 50, 59]
+        inin_sm2 = [14, 29, 46, 66, 90, 119, 154, 196, 246, 305]
+        self.assertEqual(results['in1_sm'], inin_sm)
+        self.assertEqual(results['in1_sm_2'], inin_sm)
+        self.assertEqual(results['in1_sm2'], inin_sm2)
+        self.assertEqual(results['in1_sm2_2'], inin_sm2)
+        self.assertEqual(results['in1_sm2_3'], inin_sm2)
+
+        test = Modely(visualizer=None)
+        test.addModel('out_A',
+                      [in1_s, in1_s2, in1_s2_2, in1_s2_3, in1_s_2, in1_sm, in1_sm2, in1_sm2_2, in1_sm2_3, in1_sm_2, in1_1, in1_2, in1_3, in1_1_2, in1_2_2, in1_3_2])
+        test.neuralizeModel(0.01)
+        inin = {'in1': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]}
+        results = test(inin)
+        self.TestAlmostEqual(results['in1_1'], inin['in1'])
+        self.TestAlmostEqual(results['in1_2'], inin['in1'])
+        self.TestAlmostEqual(results['in1_3'], inin['in1'])
+        self.TestAlmostEqual(results['in1_1_2'], inin['in1'])
+        self.TestAlmostEqual(results['in1_2_2'], inin['in1'])
+        self.TestAlmostEqual(results['in1_3_2'], inin['in1'])
+
+        inin_s = [1400, -1300, 100, 100, 100, 100, 100, 100, 100, 100]
+        inin_s2 = [140000, -270000, 140000, 0, 0, 0, 0, 0, 0, 0]
+        self.TestAlmostEqual(results['in1_s'], inin_s)
+        self.TestAlmostEqual(results['in1_s_2'], inin_s)
+        self.TestAlmostEqual(results['in1_s2'], inin_s2)
+        self.TestAlmostEqual(results['in1_s2_2'], inin_s2)
+        self.TestAlmostEqual(results['in1_s2_3'], inin_s2)
+
+        inin_sm = [0.14, 0.15, 0.17, 0.20, 0.24, 0.29, 0.35, 0.42, 0.50, 0.59]
+        inin_sm2 = [0.0014, 0.0029, 0.0046, 0.0066, 0.0090, 0.0119, 0.0154, 0.0196, 0.0246, 0.0305]
+        self.TestAlmostEqual(results['in1_sm'], inin_sm)
+        self.TestAlmostEqual(results['in1_sm_2'], inin_sm)
+        self.TestAlmostEqual(results['in1_sm2'], inin_sm2)
+        self.TestAlmostEqual(results['in1_sm2_2'], inin_sm2)
+        self.TestAlmostEqual(results['in1_sm2_3'], inin_sm2)
 
 if __name__ == '__main__':
     unittest.main()

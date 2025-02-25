@@ -446,7 +446,11 @@ class Modely:
             >>> out = Output('out', Fir(x.last()))
             >>> model.addModel('example_model', [out])
         """
-        self.model_def.addModel(name, stream_list)
+        try:
+            self.model_def.addModel(name, stream_list)
+        except Exception as e:
+            self.model_def.removeModel(name)
+            raise e
 
     def removeModel(self, name_list):
         """
@@ -551,6 +555,9 @@ class Modely:
                 self.model_def.update()
             else:
                 self.model_def.updateParameters(self.model)
+
+        for key, state in self.model_def['States'].items():
+            check("connect" in state.keys() or  'closedLoop' in state.keys(), KeyError, f'The connect or closed loop missing for state "{key}"')
 
         self.model_def.setBuildWindow(sample_time)
         self.model = Model(self.model_def.json)

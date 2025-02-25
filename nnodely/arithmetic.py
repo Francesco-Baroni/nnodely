@@ -3,8 +3,8 @@ import torch
 
 from nnodely.relation import ToStream, Stream, toStream
 from nnodely.model import Model
-from nnodely.utils import check, merge
-
+from nnodely.utils import check, merge, enforce_types
+from nnodely.parameter import Parameter, Constant
 
 # Binary operators
 add_relation_name = 'Add'
@@ -12,14 +12,14 @@ sub_relation_name = 'Sub'
 mul_relation_name = 'Mul'
 div_relation_name = 'Div'
 pow_relation_name = 'Pow'
-concatenate_relation_name = 'Concatenate'
 
 # Unary operators
 neg_relation_name = 'Neg'
-# square_relation_name = 'Square'
 
 # Merge operator
 sum_relation_name = 'Sum'
+
+
 class Add(Stream, ToStream):
     """
         Implement the addition function between two tensors. 
@@ -39,7 +39,8 @@ class Add(Stream, ToStream):
             or
             >>> add = relation1 + relation2
     """
-    def __init__(self, obj1:Stream, obj2:Stream) -> Stream:
+    @enforce_types
+    def __init__(self, obj1:Stream|Parameter|Constant, obj2:Stream|Parameter|Constant|int|float) -> Stream:
         obj1,obj2 = toStream(obj1),toStream(obj2)
         check(type(obj1) is Stream,TypeError,
               f"The type of {obj1} is {type(obj1)} and is not supported for add operation.")
@@ -66,7 +67,8 @@ class Sub(Stream, ToStream):
             or
             >>> sub = relation1 - relation2
     """
-    def __init__(self, obj1:Stream, obj2:Stream) -> Stream:
+    @enforce_types
+    def __init__(self, obj1:Stream|Parameter|Constant, obj2:Stream|Parameter|Constant|int|float) -> Stream:
         obj1, obj2 = toStream(obj1), toStream(obj2)
         check(type(obj1) is Stream,TypeError,
               f"The type of {obj1} is {type(obj1)} and is not supported for sub operation.")
@@ -92,7 +94,8 @@ class Mul(Stream, ToStream):
             or
             >>> mul = relation1 * relation2
     """
-    def __init__(self, obj1:Stream, obj2:Stream) -> Stream:
+    @enforce_types
+    def __init__(self, obj1:Stream|Parameter|Constant, obj2:Stream|Parameter|Constant|int|float) -> Stream:
         obj1, obj2 = toStream(obj1), toStream(obj2)
         check(type(obj1) is Stream, TypeError,
               f"The type of {obj1} is {type(obj1)} and is not supported for mul operation.")
@@ -118,7 +121,8 @@ class Div(Stream, ToStream):
             or
             >>> div = relation1 / relation2
     """
-    def __init__(self, obj1:Stream, obj2:Stream) -> Stream:
+    @enforce_types
+    def __init__(self, obj1:Stream|Parameter|Constant, obj2:Stream|Parameter|Constant|int|float) -> Stream:
         obj1, obj2 = toStream(obj1), toStream(obj2)
         check(type(obj1) is Stream, TypeError,
               f"The type of {obj1} is {type(obj1)} and is not supported for div operation.")
@@ -148,7 +152,8 @@ class Pow(Stream, ToStream):
             or
             >>> pow = relation1 ** relation2
     """
-    def __init__(self, obj1:Stream, obj2:Stream) -> Stream:
+    @enforce_types
+    def __init__(self, obj1:Stream|Parameter|Constant, obj2:Stream|Parameter|Constant|int|float) -> Stream:
         obj1, obj2 = toStream(obj1), toStream(obj2)
         check(type(obj1) is Stream, TypeError,
               f"The type of {obj1} is {type(obj1)} and is not supported for exp operation.")
@@ -169,54 +174,23 @@ class Neg(Stream, ToStream):
         Example:
             >>> x = Neg(x)
     """
-    def __init__(self, obj:Stream) -> Stream:
+    @enforce_types
+    def __init__(self, obj:Stream|Parameter|Constant) -> Stream:
         obj = toStream(obj)
         check(type(obj) is Stream, TypeError,
               f"The type of {obj} is {type(obj)} and is not supported for neg operation.")
         super().__init__(neg_relation_name+str(Stream.count), obj.json, obj.dim)
         self.json['Relations'][self.name] = [neg_relation_name,[obj.name]]
 
-# class Square(Stream, ToStream):
-#     def __init__(self, obj:Stream) -> Stream:
-#         check(type(obj) is Stream, TypeError,
-#               f"The type of {obj.name} is {type(obj)} and is not supported for neg operation.")
-#         super().__init__(square_relation_name+str(Stream.count), obj.json, obj.dim)
-#         self.json['Relations'][self.name] = [square_relation_name,[obj.name]]
-
 class Sum(Stream, ToStream):
-    def __init__(self, obj:Stream) -> Stream:
+    @enforce_types
+    def __init__(self, obj:Stream|Parameter|Constant) -> Stream:
         obj = toStream(obj)
         check(type(obj) is Stream, TypeError,
               f"The type of {obj} is {type(obj)} and is not supported for sum operation.")
         super().__init__(sum_relation_name + str(Stream.count),obj.json,obj.dim)
         self.json['Relations'][self.name] = [sum_relation_name,[obj.name]]
 
-class Concatenate(Stream, ToStream):
-    """
-        Implement the concatenate function between two tensors. 
-
-        See also:
-            Official PyTorch Cat documentation: 
-            `torch.cat <https://pytorch.org/docs/main/generated/torch.cat.html>`_
-
-        :param input1: the first relation to concatenate
-        :type obj: Tensor
-        :param input2: the second relation to concatenate
-        :type obj: Tensor
-
-        Example:
-            >>> cat = Concatenate(relation1, relation2)
-    """
-    def __init__(self, obj1:Stream, obj2:Stream) -> Stream:
-        obj1,obj2 = toStream(obj1),toStream(obj2)
-        check(type(obj1) is Stream,TypeError,
-              f"The type of {obj1} is {type(obj1)} and is not supported for the Concatenate operation.")
-        check(type(obj2) is Stream,TypeError,
-              f"The type of {obj2} is {type(obj2)} and is not supported for the Concatenate operation.")
-        #check(obj1.dim == obj2.dim or obj1.dim == {'dim':1} or obj2.dim == {'dim':1}, ValueError,
-        #      f"For addition operators (+) the dimension of {obj1.name} = {obj1.dim} must be the same of {obj2.name} = {obj2.dim}.")
-        super().__init__(concatenate_relation_name + str(Stream.count),merge(obj1.json,obj2.json),obj1.dim)
-        self.json['Relations'][self.name] = [concatenate_relation_name,[obj1.name,obj2.name]]
 
 class Add_Layer(nn.Module):
     #: :noindex:
@@ -224,7 +198,12 @@ class Add_Layer(nn.Module):
         super(Add_Layer, self).__init__()
 
     def forward(self, *inputs):
-        return torch.add(inputs[0], inputs[1])
+        results = inputs[0]
+        for input in inputs[1:]:
+            results = results + input
+        return results
+        #return torch.add(inputs[0],inputs[1]))
+        #return torch.sum(torch.stack(list(inputs)),dim=0)
 
 def createAdd(name, *inputs):
     #: :noindex:
@@ -237,7 +216,12 @@ class Sub_Layer(nn.Module):
 
     def forward(self, *inputs):
         # Perform element-wise subtraction
-        return torch.add(inputs[0],-inputs[1])
+        results = inputs[0]
+        for input in inputs[1:]:
+            results = results - input
+        return results
+        #return torch.add(inputs[0], -inputs[1])
+        #return torch.add(inputs[0],-torch.sum(torch.stack(list(inputs[1:])),dim=0))
 
 def createSub(self, *inputs):
     #: :noindex:
@@ -250,7 +234,13 @@ class Mul_Layer(nn.Module):
         super(Mul_Layer, self).__init__()
 
     def forward(self, *inputs):
-        return inputs[0] * inputs[1]
+        results = inputs[0]
+        for input in inputs[1:]:
+            results = results * input
+        return results
+        #return inputs[0] * inputs[1]
+        #return torch.prod(torch.stack(list(inputs)),dim=0)
+
 
 def createMul(name, *inputs):
     #: :noindex:
@@ -262,7 +252,12 @@ class Div_Layer(nn.Module):
         super(Div_Layer, self).__init__()
 
     def forward(self, *inputs):
-        return inputs[0] / inputs[1]
+        results = inputs[0]
+        for input in inputs[1:]:
+            results = results / input
+        return results
+        #return inputs[0] / inputs[1]
+        #return inputs[0] / torch.prod(torch.stack(list(inputs[1:])),dim=0)
 
 def createDiv(name, *inputs):
     #: :noindex:
@@ -304,27 +299,16 @@ def createSum(name, *inputs):
     #: :noindex:
     return Sum_Layer()
 
-class Concatenate_Layer(nn.Module):
-    #: :noindex:
-    def __init__(self):
-        super(Concatenate_Layer, self).__init__()
 
-    def forward(self, *inputs):
-        return torch.cat((inputs[0], inputs[1]), dim=2)
-
-def createConcatenate(name, *inputs):
-    #: :noindex:
-    return Concatenate_Layer()
 
 setattr(Model, add_relation_name, createAdd)
 setattr(Model, sub_relation_name, createSub)
 setattr(Model, mul_relation_name, createMul)
 setattr(Model, div_relation_name, createDiv)
 setattr(Model, pow_relation_name, createPow)
-setattr(Model, concatenate_relation_name, createConcatenate)
+setattr(Model, pow_relation_name, createPow)
 
 setattr(Model, neg_relation_name, createNeg)
-# setattr(Model, square_relation_name, createSquare)
 
 setattr(Model, sum_relation_name, createSum)
 
