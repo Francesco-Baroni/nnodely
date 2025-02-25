@@ -190,7 +190,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
 
     def test_network_linear(self):
         torch.manual_seed(1)
-        input = Input('in')
+        input = Input('in1')
         rel1 = Linear(input.sw([-4,2]))
         rel2 = Linear(5)(input.sw([-1, 2]))
         fun1 = Output('out1',rel1)
