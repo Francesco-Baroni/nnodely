@@ -843,8 +843,17 @@ class ModelyPredictTest(unittest.TestCase):
         ofpar = Output('outfpar', Fir(output_dimension=3,parameter_init=init_constant)(input.sw(2)))
         ofpar2 = Output('outfpar2', Fir(output_dimension=3,parameter_init=init_constant,parameter_init_params={'value':2})(input.sw(2)))
 
+        outnegexp = Output('outnegexp', Fir(output_dimension=3,parameter_init=init_negexp)(input.sw(2)))
+        outnegexp2 = Output('outnegexp2', Fir(output_dimension=3,parameter_init=init_negexp,parameter_init_params={'size_index':1, 'first_value':3, 'lambda':1})(input.sw(2)))
+
+        outexp = Output('outexp', Fir(output_dimension=3,parameter_init=init_exp)(input.sw(2)))
+        outexp2 = Output('outexp2', Fir(output_dimension=3,parameter_init=init_exp,parameter_init_params={'size_index':1, 'max_value':2, 'lambda':2, 'monotonicity':'increasing'})(input.sw(2)))
+
+        outlin = Output('outlin', Fir(output_dimension=3,parameter_init=init_lin)(input.sw(2)))
+        outlin2 = Output('outlin2', Fir(output_dimension=3,parameter_init=init_lin,parameter_init_params={'size_index':1, 'first_value':4, 'last_value':5})(input.sw(2)))
+
         n = Modely(visualizer=None)
-        n.addModel('model',[o,o52,opar,opar2,ol,ol52,ofpar,ofpar2])
+        n.addModel('model',[o,o52,opar,opar2,ol,ol52,ofpar,ofpar2,outnegexp,outnegexp2,outexp,outexp2,outlin,outlin2])
         n.neuralizeModel()
         results = n({'in1': [1, 1, 2]})
         self.assertEqual((2,), np.array(results['out']).shape)
@@ -866,6 +875,21 @@ class ModelyPredictTest(unittest.TestCase):
         self.TestAlmostEqual([[[2,2,2]],[[3,3,3]]], results['outfpar'])
         self.assertEqual((2,1,3), np.array(results['outfpar2']).shape)
         self.TestAlmostEqual([[[4,4,4]],[[6,6,6]]], results['outfpar2'])
+
+        self.assertEqual((2,1,3), np.array(results['outnegexp']).shape)
+        self.TestAlmostEqual([[[1.0497870445251465,1.0497870445251465,1.0497870445251465]],[[2.0497870445251465,2.0497870445251465,2.0497870445251465]]], results['outnegexp'])
+        self.assertEqual((2,1,3), np.array(results['outnegexp2']).shape)
+        self.TestAlmostEqual([[[2.2072765827178955,3.63918399810791,6.0]],[[3.310914993286133,5.458775997161865,9.0]]], results['outnegexp2'])
+
+        self.assertEqual((2,1,3), np.array(results['outexp']).shape)
+        self.TestAlmostEqual([[[1.0497870445251465,1.0497870445251465,1.0497870445251465]],[[1.099574089050293,1.099574089050293,1.099574089050293]]], results['outexp'])
+        self.assertEqual((2,1,3), np.array(results['outexp2']).shape)
+        self.TestAlmostEqual([[[0.5413411259651184,1.47151780128479,4]],[[0.81201171875,2.2072768211364746,6]]], results['outexp2'])
+
+        self.assertEqual((2,1,3), np.array(results['outlin']).shape)
+        self.TestAlmostEqual([[[1,1,1]],[[1,1,1]]], results['outlin'])
+        self.assertEqual((2,1,3), np.array(results['outlin2']).shape)
+        self.TestAlmostEqual([[[8,9,10]],[[12,13.5,15.0]]], results['outlin2'])
 
     def test_sample_part_and_select(self):
         in1 = Input('in1')

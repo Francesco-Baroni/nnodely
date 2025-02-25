@@ -42,4 +42,4 @@ from nnodely.optimizer import Optimizer, SGD, Adam
 from nnodely.exporter import Exporter, StandardExporter
 
 # Support functions
-from nnodely.initializer import init_negexp, init_lin, init_constant
+from nnodely.initializer import init_negexp, init_lin, init_constant, init_exp
