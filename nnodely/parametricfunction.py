@@ -135,6 +135,21 @@ class ParamFun(NeuObj):
         n_call_input = len(obj)
         n_new_constants_and_params = n_function_input - n_call_input
 
+        input_dimensions = []
+        input_types = []
+        for ind, o in enumerate(obj):
+            if type(o) in (int, float, list):
+                obj_type = Constant
+            else:
+                obj_type = type(o)
+            o = toStream(o)
+            check(type(o) is Stream, TypeError,
+                  f"The type of {o} is {type(o)} and is not supported for ParamFun operation.")
+            input_types.append(obj_type)
+            input_dimensions.append(o.dim)
+
+        #TODO Check input type must be all stream in case of map_over_batch
+
         if n_call_input not in self.json_stream:
             if len(self.json_stream) > 0:
                 log.warning(f"The function {self.name} was called with a different number of inputs. If both functions enter in the model an error will be raised.")
@@ -143,43 +158,15 @@ class ParamFun(NeuObj):
             self.json_stream[n_call_input]['Functions'][self.name]['n_input'] = n_call_input
             self.__create_missing_parameters(self.json_stream[n_call_input], n_new_constants_and_params)
 
-            input_dimensions = []
-            input_types = []
-            for ind, o in enumerate(obj):
-                if type(o) in (int, float, list):
-                    obj_type = Constant
-                else:
-                    obj_type = type(o)
-                o = toStream(o)
-                check(type(o) is Stream, TypeError,
-                      f"The type of {o} is {type(o)} and is not supported for ParamFun operation.")
-                input_types.append(obj_type)
-                input_dimensions.append(o.dim)
-
             # Create the missing parameters
             missing_params = n_new_constants_and_params - len(self.json_stream[n_call_input]['Functions'][self.name]['params_and_consts'])
             check(missing_params == 0, ValueError, f"The function is called with different number of inputs.")
 
             self.json_stream[n_call_input]['Functions'][self.name]['in_dim'] = copy.deepcopy(input_dimensions)
-            self.json_stream[n_call_input]['Functions'][self.name]['map_over_dim'] = self.__map_over_batch(
-                    n_call_input,
-                    n_new_constants_and_params)
+            self.json_stream[n_call_input]['Functions'][self.name]['map_over_dim'] = self.__map_over_batch(n_call_input,n_new_constants_and_params)
             output_dimension = self.__infer_output_dimensions(self.json_stream[n_call_input], input_types,
                                                                   input_dimensions)
-
         else:
-            input_dimensions = []
-            input_types = []
-            for ind, o in enumerate(obj):
-                if type(o) in (int, float, list):
-                    obj_type = Constant
-                else:
-                    obj_type = type(o)
-                o = toStream(o)
-                check(type(o) is Stream, TypeError,
-                      f"The type of {o} is {type(o)} and is not supported for ParamFun operation.")
-                input_types.append(obj_type)
-                input_dimensions.append(o.dim)
             output_dimension = self.__infer_output_dimensions(self.json_stream[n_call_input], input_types, input_dimensions)
 
             # Save the all the input dimension used for call the parametric function

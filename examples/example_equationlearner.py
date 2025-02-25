@@ -30,7 +30,7 @@ example.neuralizeModel()
 print(example({'x':[1]}))
 
 print("------------------------EXAMPLE 2------------------------")
-NeuObj.resetNames()
+NeuObj.clearNames()
 ## Create an equation learner block similar to Example 1 but using EquationLearner function
 equation_learner = EquationLearner(functions=[Tan, Sin, Cos])
 equation_learner_2 = EquationLearner(functions=[Tan, Sin, Cos])
@@ -42,7 +42,7 @@ example.neuralizeModel()
 print(example({'x':[1], 'F':[2]}))
 
 print("------------------------EXAMPLE 3------------------------")
-NeuObj.resetNames()
+NeuObj.clearNames()
 ## Create an equation learner block similar to Example 1 but using EquationLearner function and passing a the linear layer as input
 linear_layer_1 = Linear(output_dimension=3, W_init=init_constant, W_init_params={'value':0}, b_init=init_constant, b_init_params={'value':0}, b=False)
 linear_layer_2 = Linear(output_dimension=3, W_init=init_constant, W_init_params={'value':0}, b_init=init_constant, b_init_params={'value':0}, b=False)
@@ -56,7 +56,7 @@ example.neuralizeModel()
 print(example({'x':[1], 'F':[2]}))
 
 print("------------------------EXAMPLE 4------------------------")
-NeuObj.resetNames()
+NeuObj.clearNames()
 ## Create an equation learner block similar to Example 1 but using EquationLearner function and passing a the linear layer as input and a linear layer as output
 linear_layer_in = Linear(output_dimension=3, W_init=init_constant, W_init_params={'value':0}, b_init=init_constant, b_init_params={'value':0}, b=False)
 linear_layer_out = Linear(output_dimension=1, W_init=init_constant, W_init_params={'value':1}, b_init=init_constant, b_init_params={'value':0}, b=False)
@@ -68,7 +68,7 @@ example.neuralizeModel()
 print(example({'x':[1]}))
 
 print("------------------------EXAMPLE 5------------------------")
-NeuObj.resetNames()
+NeuObj.clearNames()
 ## Create an equation learner block with functions that take 2 parameters (add, sub, mul ...) without layer initialization
 equation_learner = EquationLearner(functions=[Tan, Add, Sin, Mul])
 equation_learner_2 = EquationLearner(functions=[Tan, Add, Sin, Mul, Identity])
@@ -80,7 +80,7 @@ example.neuralizeModel()
 print(example({'x':[1], 'F':[2]}))
 
 print("------------------------EXAMPLE 6------------------------")
-NeuObj.resetNames()
+NeuObj.clearNames()
 ## Create an equation learner block with functions that take 2 parameters (add, sub, mul ...) with layer initialization
 linear_layer_in_1 = Linear(output_dimension=7, W_init=init_constant, W_init_params={'value':1}, b_init=init_constant, b_init_params={'value':0}, b=False) # output dim = 1+2+1+2+1
 linear_layer_in_2 = Linear(output_dimension=7, W_init=init_constant, W_init_params={'value':1}, b_init=init_constant, b_init_params={'value':0}, b=False)
@@ -94,7 +94,7 @@ example.neuralizeModel()
 print(example({'x':[1], 'F':[2]}))
 
 print("------------------------EXAMPLE 7------------------------")
-NeuObj.resetNames()
+NeuObj.clearNames()
 ## Create an equation learner block with simple parametric functions
 def func1(K1):
     return torch.sin(K1)
@@ -113,7 +113,7 @@ example.neuralizeModel()
 print(example({'x':[1],'F':[1]}))
 
 print("------------------------EXAMPLE 8------------------------")
-NeuObj.resetNames()
+NeuObj.clearNames()
 ## Create an equation learner block with parametric functions that takes parameters
 def myFun(K1,p1):
     return K1*p1
@@ -130,7 +130,7 @@ print(example({'x':[1],'F':[1]}))
 print(example({'x':[1,2],'F':[1,2]}))
 
 print("------------------------EXAMPLE 9------------------------")
-NeuObj.resetNames()
+NeuObj.clearNames()
 ## Create an equation learner block with parametric functions that takes parameters and other functions
 def myFun(K1,K2,p1,p2):
     return K1*p1+K2*p2
@@ -148,7 +148,7 @@ print(example({'x':[1],'F':[1]}))
 print(example({'x':[1,2],'F':[1,2]}))
 
 print("------------------------EXAMPLE 10------------------------")
-NeuObj.resetNames()
+NeuObj.clearNames()
 ## Create an equation learner block with parametric functions and fuzzy
 def myFun(K1,p1):
     return K1*p1
@@ -166,7 +166,7 @@ print(example({'x':[1],'F':[1]}))
 print(example({'x':[1,2],'F':[1,2]}))
 
 print("------------------------EXAMPLE 11------------------------")
-NeuObj.resetNames()
+NeuObj.clearNames()
 ## Create an equation learner block with parametric functions that takes parameters and other functions with temporal windows
 def myFun(K1,K2,p1,p2):
     return K1*p1+K2*p2

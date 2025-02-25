@@ -27,7 +27,7 @@ print(example({'x':[[-1,0,1,2],[0,1,2,0]]}, sampled=True))
 #
 
 print("------------------------EXAMPLE 2------------------------")
-NeuObj.resetNames()
+NeuObj.clearNames('out')
 # Example 2
 # Single activation function and only one input
 # The input function is a single Fir with the shared weight
@@ -42,7 +42,7 @@ print(example({'x':[[-1,0,1,2],[0,1,2,0]]}, sampled=True))
 #
 
 print("------------------------EXAMPLE 3------------------------")
-NeuObj.resetNames()
+NeuObj.clearNames('out')
 # Example 3
 # Two activation functions so 2*2 = 4 input functions, use tuple to join the activation functions
 # There are 4 Fir filters
@@ -56,7 +56,7 @@ print(example({'x':[-1,0,1,2],'F':[-1,0,1]}))
 #
 
 print("------------------------EXAMPLE 4------------------------")
-NeuObj.resetNames()
+NeuObj.clearNames('out')
 # Example 4
 # Single activation function with ParamFun for output
 # The learning parameters are two
@@ -72,7 +72,7 @@ print(example({'x':[2,3]}))
 #
 
 print("------------------------EXAMPLE 5------------------------")
-NeuObj.resetNames()
+NeuObj.clearNames('out')
 # Example 5
 # Single activation function with ParamFun for input and Fir for output
 # There are 2 parameters for each ParamFun and a parameter for the Fir
@@ -90,7 +90,7 @@ print(example({'x':[2,3]}))
 #
 
 print("------------------------EXAMPLE 6------------------------")
-NeuObj.resetNames()
+NeuObj.clearNames('out')
 # Example 6
 # New activation function with a time window of 1 sec
 # Two activation functions with ParamFun for input and Fir for output
@@ -113,7 +113,7 @@ print(example({'x':[2,3]}))
 #
 
 print("------------------------EXAMPLE 7------------------------")
-NeuObj.resetNames()
+NeuObj.clearNames('out')
 # Example 7
 # Two activation functions with input_function_gen for input and output_fun_gen for output
 # It is set pass_indexes to True means the input and output functions are call with the first parametrer is a vector of indexes

@@ -22,7 +22,7 @@ print(example({'x':[2]}))
 #
 
 print("------------------------EXAMPLE 2------------------------")
-NeuObj.resetNames()
+NeuObj.clearNames('out')
 # Example 2
 # Here a fuzzify function is created with 5 membership functions in a range [1,5] of the input variable
 # and triangular activation function
@@ -37,7 +37,7 @@ print(example({'x':[3]})) ## should give [0, 0, 1, 0, 0]
 #
 
 print("------------------------EXAMPLE 3------------------------")
-NeuObj.resetNames()
+NeuObj.clearNames('out')
 # Example 3
 # Create 6 membership functions by dividing the range from 1, 6 with rectangular functions
 # centers are in [1,2,3,4,5,6] functions are 1 wide except the first and last
@@ -53,7 +53,7 @@ print(example({'x':[3]})) ## should give [0, 0, 1, 0, 0, 0]
 #
 
 print("------------------------EXAMPLE 4------------------------")
-NeuObj.resetNames()
+NeuObj.clearNames('out')
 # Example 4
 # Create 10 membership functions by dividing the range from -5, 5 with custom function fun
 # the centers are in [-5,-4,-3,-2,-1,0,1,2,3,4,5]
@@ -71,7 +71,7 @@ example.visualizer.showFunctions(list(example.model_def['Functions'].keys()))
 #
 
 print("------------------------EXAMPLE 5------------------------")
-NeuObj.resetNames()
+NeuObj.clearNames('out')
 # Example 5
 # Create 2 custom membership functions that are positioned at -1 and 5
 def fun1(x):
@@ -94,7 +94,7 @@ example.visualizer.showFunctions(list(example.model_def['Functions'].keys()))
 #
 
 print("------------------------EXAMPLE 6------------------------")
-NeuObj.resetNames()
+NeuObj.clearNames('out')
 # Example 6
 # Create 4 custom membership functions that are positioned at [-1,0,3,5]
 import torch
@@ -114,7 +114,7 @@ example.visualizer.showFunctions(list(example.model_def['Functions'].keys()))
 #
 
 print("------------------------EXAMPLE 7------------------------")
-NeuObj.resetNames()
+NeuObj.clearNames('out')
 # Example 7
 ## In this example we create two custom functions with 4 centers,
 # the first and third center will use the first activation function
@@ -133,7 +133,7 @@ print(example({'x':[-9,-3.0,3.0,9.0]}))
 #
 
 print("------------------------EXAMPLE 8------------------------")
-NeuObj.resetNames()
+NeuObj.clearNames('out')
 # Example 8
 ## In this example we create one custom tangent function with 4 centers,
 def fun(x):
@@ -149,7 +149,7 @@ print(example({'x':[-9,-3.0,3.0,9.0]}))
 #
 
 print("------------------------EXAMPLE 9------------------------")
-NeuObj.resetNames()
+NeuObj.clearNames('out')
 # Example 3
 # Create 6 membership functions by dividing the range from 1, 6 with rectangular functions
 # centers are in [1,2,3,4,5,6] functions are 1 wide except the first and last

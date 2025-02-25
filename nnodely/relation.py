@@ -34,9 +34,12 @@ class NeuObj():
     count = 0
     names = []
     @classmethod
-    def resetNames(self):
-        NeuObj.count = 0
-        NeuObj.names = []
+    def clearNames(self, name=None):
+        if name is None:
+            NeuObj.count = 0
+            NeuObj.names = []
+        else:
+            NeuObj.names.remove(name)
     def __init__(self, name='', json={}, dim=0):
         NeuObj.count += 1
         if name == '':

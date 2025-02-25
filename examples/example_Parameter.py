@@ -10,7 +10,6 @@ x = Input('x')
 F = Input('F')
 
 print("------------------------EXAMPLE 1------------------------")
-NeuObj.resetNames()
 # Example 1
 # Create a parameter k of dimension 3 and use this parameter in a Fir Layer.
 # The two Fir have shared parameter
@@ -25,7 +24,7 @@ print(example({'x':[1,2,3,4],'F':[1,2,3,4]}))
 #
 
 print("------------------------EXAMPLE 2------------------------")
-NeuObj.resetNames()
+NeuObj.clearNames('out')
 # Example 2
 # Create a parameter with sample window equal to 5 and dimension equal to 3.
 # The parameter is used inside a Fir
@@ -39,7 +38,7 @@ print(example({'x':[1,2,3,4,6]}))
 #
 
 print("------------------------EXAMPLE 3------------------------")
-NeuObj.resetNames()
+NeuObj.clearNames('out')
 # Example 3
 # Create two parameters and use them inside a parametric function the parameters are inizialized
 g = Parameter('gg', dimensions=3, values=[[4,5,6]])
@@ -56,7 +55,7 @@ print(example({'x':[1,6,0]}))
 #
 
 print("------------------------EXAMPLE 4------------------------")
-NeuObj.resetNames()
+NeuObj.clearNames('out')
 # Example 4
 # Create two parameters fo initializa a Fir and a Linear the two parameters are initialized.
 g = Parameter('ggg', dimensions=(4,1),values=[[[1],[2],[3],[4]]])
@@ -72,7 +71,7 @@ print('result: ', example({'xx':[[1,2,4,4],[1,2,4,4],[1,2,4,4]],'y':[1,2,4,2]}))
 #
 
 print("------------------------EXAMPLE 5------------------------")
-NeuObj.resetNames()
+NeuObj.clearNames('out')
 # Example 5
 # Sum Parameter to constant
 g = Parameter('p14', values=[[1,2,3,4]])
@@ -86,7 +85,7 @@ print('result: ', example({'xxx':[[1,2,4,4],[0,0,0,0],[-1,-1,-1,-1]]}))
 #
 
 print("------------------------EXAMPLE 6------------------------")
-NeuObj.resetNames()
+NeuObj.clearNames('out')
 # Example 6
 # Create a constant equal to the sample time
 g = SampleTime()

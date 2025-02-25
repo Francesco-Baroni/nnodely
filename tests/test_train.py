@@ -50,7 +50,7 @@ class ModelyTrainingTest(unittest.TestCase):
         self.assertListEqual([[1.0]],test.model.all_parameters['a'].data.numpy().tolist())
 
     def test_training_values_linear(self):
-        NeuObj.resetNames()
+        NeuObj.clearNames()
         input1 = Input('in1')
         target = Input('out1')
         W = Parameter('W', values=[[[1]]])
@@ -75,7 +75,7 @@ class ModelyTrainingTest(unittest.TestCase):
         self.assertListEqual([[-3.0]], test.model.all_parameters['b'].data.numpy().tolist())
 
     def test_training_clear_model(self):
-        NeuObj.resetNames()
+        NeuObj.clearNames()
         input1 = Input('in1')
         target = Input('int1')
         a = Parameter('a', values=[[1]])

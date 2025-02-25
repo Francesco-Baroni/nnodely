@@ -189,6 +189,7 @@ def myFun(inin, p1):
     return inin * p1
 parfun = ParamFun(myFun, map_over_batch=True)
 p = Constant('co',values=[[2]])
+#out = Output('out-12',parfun(x.sw(4),p))
 out = Output('out-12',parfun(p,x.sw(4)))
 example = Modely()
 example.addModel('out',out)

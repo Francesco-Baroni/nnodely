@@ -719,7 +719,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         self.assertEqual(test.states['x_state'].numpy().tolist(), [[[3.],[6.],[11.]]])
 
     def test_predict_values_linear_and_fir_2models_same_window_connect(self):
-        NeuObj.resetNames()
+        NeuObj.clearNames()
         input1 = Input('in1',dimensions=2)
         W = Parameter('W', values=[[[-1],[-5]]])
         b = Parameter('b', values=[[1]])
@@ -740,7 +740,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         self.assertEqual({'out1': [[-10.0,-16.0]], 'out2': [-120.0], 'out3':[-120.0]}, test({'in1': [[1.0,2.0],[2.0,3.0]]}))
 
     def test_predict_values_linear_and_fir_2models_same_window_connect_predict(self):
-        NeuObj.resetNames()
+        NeuObj.clearNames()
         input1 = Input('in1',dimensions=2)
         W = Parameter('W', values=[[[-1],[-5]]])
         b = Parameter('b', values=[[1]])
@@ -762,7 +762,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
                          test({'in1': [[1.0, 2.0], [2.0, 3.0]],'inout':[-30,-30]}, connect={'inout': 'out1'}))
 
     def test_predict_values_linear_and_fir_2models_more_window_connect(self):
-        NeuObj.resetNames()
+        NeuObj.clearNames()
         input1 = Input('in1',dimensions=2)
         W = Parameter('W', values=[[[-1],[-5]]])
         b = Parameter('b', values=[[1]])
@@ -797,7 +797,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
                          test({'in1': [[1.0, 2.0], [2.0, 3.0], [1.0,2.0]]}))
 
     def test_predict_values_linear_and_fir_2models_more_window_connect_predict(self):
-        NeuObj.resetNames()
+        NeuObj.clearNames()
         input1 = Input('in1',dimensions=2)
         W = Parameter('W', values=[[[-1],[-5]]])
         b = Parameter('b', values=[[1]])
@@ -843,7 +843,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
                               connect={'inout': 'out1'}))
 
     def test_predict_values_linear_and_fir_2models_more_window_closed_loop(self):
-        NeuObj.resetNames()
+        NeuObj.clearNames()
         input1 = State('in1',dimensions=2)
         W = Parameter('W', values=[[[-1],[-5]]])
         b = Parameter('b', values=[[1]])
@@ -873,7 +873,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
                          test({'in1': [[1.0, 2.0], [2.0, 3.0]], 'in2': [-10, -16, -5, 2, 3]}, prediction_samples=2, num_of_samples=3))
 
     def test_predict_values_linear_and_fir_2models_more_window_closed_loop_predict(self):
-        NeuObj.resetNames()
+        NeuObj.clearNames()
         input1 = Input('in1',dimensions=2)
         W = Parameter('W', values=[[[-1],[-5]]])
         b = Parameter('b', values=[[1]])
@@ -932,7 +932,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
                               prediction_samples=2, closed_loop={'in1': 'out2', 'in2': 'out1'}))
 
     def test_predict_parameters(self):
-        NeuObj.resetNames()
+        NeuObj.clearNames()
         input1 = Input('in1')
         cl1 = State('cl1')
         co1 = State('co1')
@@ -1081,7 +1081,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         #   test(dataset, prediction_sample=N, num_of_samples=M, aligned_input=True)
 
     def test_parameters_predict_closed_loop_perdict(self):
-        NeuObj.resetNames()
+        NeuObj.clearNames()
         input1 = Input('in1')
         W = Parameter('W', values=[[1], [2], [3]])
         out = Output('out',Fir(parameter=W)(input1.sw(3)))
@@ -1147,7 +1147,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         self.assertEqual([14.0,3*14+2*3+2*1,50*3+14*2+3*1,181*3+50*2+14*1,0*3+0*2+5*1], result['out'])
 
     def test_parameters_predict_closed_loop(self):
-        NeuObj.resetNames()
+        NeuObj.clearNames()
         input1 = State('in1')
         W = Parameter('W', values=[[1], [2], [3]])
         out = Output('out',Fir(parameter=W)(input1.sw(3)))
