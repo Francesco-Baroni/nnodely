@@ -12,7 +12,7 @@ log.setAllLevel(logging.CRITICAL)
 
 sys.path.append(os.getcwd())
 
-# 4 Tests
+# 5 Tests
 # This file tests the value of the training parameters
 
 data_folder = os.path.join(os.path.dirname(__file__), 'data/')
@@ -120,6 +120,22 @@ class ModelyTrainingTest(unittest.TestCase):
         self.assertListEqual([[-15.0]], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[-51.0]], test.model.all_parameters['a'].data.numpy().tolist())
 
+    def test_network_linear_interpolation_train(self):
+        x = Input('x')
+        param = Parameter(name='a', sw=1)
+        rel1 = Fir(parameter=param)(Interpolation(x_points=[1.0, 2.0, 3.0, 4.0],y_points=[2.0, 4.0, 6.0, 8.0], mode='linear')(x.last()))
+        out = Output('out',rel1)
+
+        test = Modely(visualizer=None, seed=1)
+        test.addModel('fun',[out])
+        test.addMinimize('error', out, x.last())
+        test.neuralizeModel(0.01)
+
+        dataset = {'x':np.random.uniform(1,4,100)}
+        test.loadData(name='dataset', source=dataset)
+        test.trainModel(num_of_epochs=100, train_batch_size=10)
+        self.assertAlmostEqual(test.model.all_parameters['a'].item(), 0.5, places=2)
+
     def test_multimodel_with_loss_gain_and_lr_gain(self):
         ## Model1
         input1 = Input('in1')
@@ -221,6 +237,38 @@ class ModelyTrainingTest(unittest.TestCase):
         self.assertListEqual(test.model.all_parameters['b2'].data.numpy().tolist(), [[-11],[-11],[-11],[-11],[-11]])
         self.assertListEqual(test.model.all_parameters['a3'].data.numpy().tolist(), [[-5],[-5],[-5],[-5],[-5]])
         self.assertListEqual(test.model.all_parameters['b3'].data.numpy().tolist(), [[-5],[-5],[-5],[-5],[-5]])
+
+    def test_train_equation_learner(self):
+        def func(x):
+            return np.cos(x) + np.sin(x)
+        
+        data_x = np.random.uniform(0, 2*np.pi, 200)
+        data_y = func(data_x)
+        dataset = {'x': data_x, 'y': data_y}
+
+        x = Input('x')
+        y = Input('y')
+
+        linear_in = Linear(output_dimension=5)
+        linear_in_2 = Linear(output_dimension=5)
+        linear_out = Linear(output_dimension=1, W_init=init_constant, W_init_params={'value':1})
+
+        equation_learner = EquationLearner(functions=[Sin, Identity, Add, Cos], linear_in=linear_in)  ## W=1*5 , b=1, activation_out=4
+        equation_learner2 = EquationLearner(functions=[Add, Identity, Mul],linear_in=linear_in_2, linear_out=linear_out) ## INGRESSO W=4*5, b=5, activation_out=3   USCITA W=3*1, b=1
+
+        eq1 = equation_learner(x.last())
+        eq2 = equation_learner2(eq1)
+        out = Output('eq2', eq2)
+
+        example = Modely(visualizer=TextVisualizer())
+        example.addModel('model',[out])
+        example.addMinimize('error', out, y.last())
+        example.neuralizeModel()
+        example.loadData(name='dataset', source=dataset)
+
+        ## Print the initial weights
+        optimizer_defaults = {'weight_decay': 0.3,}
+        example.trainModel(train_dataset='dataset', lr=0.01, num_of_epochs=2, optimizer_defaults=optimizer_defaults)
 
 if __name__ == '__main__':
     unittest.main()

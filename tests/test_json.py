@@ -108,8 +108,6 @@ class ModelyJsonTest(unittest.TestCase):
             out = Select(inpart,-1)
         with self.assertRaises(KeyError):
             out = TimePart(inpart,-1,0)
-        with self.assertRaises(KeyError):
-            out = TimeSelect(inpart,-1)
 
     def test_scalar_input_tw_dimensions(self):
         input = Input('in')
@@ -146,10 +144,10 @@ class ModelyJsonTest(unittest.TestCase):
             out = Select(inpart,-1)
         out = TimePart(inpart, 0,1)
         self.assertEqual({'dim': 5, 'tw': 1}, out.dim)
-        out = TimeSelect(inpart,0)
-        self.assertEqual({'dim': 5}, out.dim)
-        with self.assertRaises(ValueError):
-            out = TimeSelect(inpart,-3)
+        #out = TimeSelect(inpart,0)
+        #self.assertEqual({'dim': 5}, out.dim)
+        #with self.assertRaises(ValueError):
+        #   out = TimeSelect(inpart,-3)
         twinput = input.tw([-2,4])
         out = TimePart(twinput, 0, 1)
         self.assertEqual({'dim': 1, 'tw': 1}, out.dim)

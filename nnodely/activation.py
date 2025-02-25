@@ -7,11 +7,14 @@ from nnodely.model import Model
 from nnodely.utils import check, enforce_types
 
 
-relu_relation_name = 'ReLU'
-tanh_relation_name = 'Tanh'
+relu_relation_name = 'Relu'
 elu_relation_name = 'ELU'
 sigmoid_relation_name = 'Sigmoid'
+
+identity_relation_name = 'Identity'
+
 softmax_relation_name = 'Softmax'
+
 
 class Relu(Stream, ToStream):
     """
@@ -35,28 +38,6 @@ class Relu(Stream, ToStream):
         super().__init__(relu_relation_name + str(Stream.count),obj.json,obj.dim)
         self.json['Relations'][self.name] = [relu_relation_name,[obj.name]]
 
-class Tanh(Stream, ToStream):
-    """
-        Implement the Hyperbolic Tangent (Tanh) relation function.
-
-        See also:
-            Official PyTorch tanh documentation: 
-            `torch.nn.Tanh <https://pytorch.org/docs/stable/generated/torch.nn.Tanh.html>`_
-
-        :param obj: The relation stream.
-        :type obj: Stream 
-
-        Example:
-            >>> x = Tanh(x)
-    """
-    @enforce_types
-    def __init__(self, obj:Stream|Parameter|Constant|float|int) -> Stream:
-        obj = toStream(obj)
-        check(type(obj) is Stream,TypeError,
-              f"The type of {obj} is {type(obj)} and is not supported for Tanh operation.")
-        super().__init__(tanh_relation_name + str(Stream.count),obj.json,obj.dim)
-        self.json['Relations'][self.name] = [tanh_relation_name,[obj.name]]
-
 class ELU(Stream, ToStream):
     """
         Implement the Exponential-Linear Unit (ELU) relation function.
@@ -79,6 +60,29 @@ class ELU(Stream, ToStream):
         super().__init__(elu_relation_name + str(Stream.count),obj.json,obj.dim)
         self.json['Relations'][self.name] = [elu_relation_name,[obj.name]]
 
+class Identity(Stream, ToStream):
+    """
+    Implement the Identity relation function that simply returns the input vector x.
+
+    See also:
+        Official PyTorch Identity documentation: 
+        `torch.nn.Identity <https://pytorch.org/docs/stable/generated/torch.nn.Identity.html>`_
+
+    :param obj: The relation stream.
+    :type obj: Stream 
+
+    Example:
+        >>> x = Identity(x)
+    """
+    @enforce_types
+    def __init__(self, obj: Stream|Parameter|Constant|float|int) -> Stream:
+        obj = toStream(obj)
+        check(type(obj) is Stream, TypeError,
+              f"The type of {obj} is {type(obj)} and is not supported for Identity operation.")
+        super().__init__(identity_relation_name + str(Stream.count), obj.json, obj.dim)
+        self.json['Relations'][self.name] = [identity_relation_name, [obj.name]]
+
+
 class Softmax(Stream, ToStream):
     """
         Implement the Softmax relation function.
@@ -93,7 +97,8 @@ class Softmax(Stream, ToStream):
         Example:
             >>> x = Softmax(x)
     """
-    def __init__(self, obj:Stream) -> Stream:
+    @enforce_types
+    def __init__(self, obj:Stream|Parameter|Constant|float|int) -> Stream:
         obj = toStream(obj)
         check(type(obj) is Stream, TypeError,
               f"The type of {obj} is {type(obj)} and is not supported for Softmax operation.")
@@ -114,34 +119,20 @@ class Sigmoid(Stream, ToStream):
         Example:
             >>> x = Sigmoid(x)
     """
-    def __init__(self, obj:Stream) -> Stream:
+    @enforce_types
+    def __init__(self, obj:Stream|Parameter|Constant|float|int) -> Stream:
         obj = toStream(obj)
         check(type(obj) is Stream, TypeError,
               f"The type of {obj} is {type(obj)} and is not supported for {sigmoid_relation_name} operation.")
         super().__init__(sigmoid_relation_name + str(Stream.count), obj.json, obj.dim)
         self.json['Relations'][self.name] = [sigmoid_relation_name, [obj.name]]
 
-class Tanh_Layer(nn.Module):
+class Relu_Layer(nn.Module):
     """
      :noindex:
     """
     def __init__(self,):
-        super(Tanh_Layer, self).__init__()
-    def forward(self, x):
-        return torch.tanh(x)
-
-def createTanh(self, *input):
-    """
-     :noindex:
-    """
-    return Tanh_Layer()
-
-class ReLU_Layer(nn.Module):
-    """
-     :noindex:
-    """
-    def __init__(self,):
-        super(ReLU_Layer, self).__init__()
+        super(Relu_Layer, self).__init__()
     def forward(self, x):
         return torch.relu(x)
     
@@ -149,7 +140,7 @@ def createRelu(self, *input):
     """
      :noindex:
     """
-    return ReLU_Layer()
+    return Relu_Layer()
     
 
 def createELU(self, *input):
@@ -157,6 +148,23 @@ def createELU(self, *input):
      :noindex:
     """
     return nn.ELU()
+
+class Identity_Layer(nn.Module):
+    """
+     :noindex:
+    """
+    def __init__(self, *args):
+        super(Identity_Layer, self).__init__()
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return x
+    
+def createIdentity(self, *input):
+    """
+     :noindex:
+    """
+    return Identity_Layer()
+
 
 class Sigmoid_Layer(nn.Module):
     """
@@ -179,8 +187,11 @@ def createSoftmax(self, *input):
     """
     return nn.Softmax(dim=-1)
 
+
 setattr(Model, relu_relation_name, createRelu)
-setattr(Model, tanh_relation_name, createTanh)
 setattr(Model, elu_relation_name, createELU)
 setattr(Model, sigmoid_relation_name, createSigmoid)
+
+setattr(Model, identity_relation_name, createIdentity)
+
 setattr(Model, softmax_relation_name, createSoftmax)

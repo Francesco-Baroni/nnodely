@@ -1,5 +1,5 @@
 
-__version__ = '1.1.1'
+__version__ = '1.2.1'
 
 import sys
 major, minor = sys.version_info.major, sys.version_info.minor
@@ -22,15 +22,16 @@ from nnodely.parameter import Parameter, Constant, SampleTime
 from nnodely.output import Output
 
 # Network elements
-from nnodely.activation import Relu, Tanh, ELU, Softmax, Sigmoid
+from nnodely.activation import Relu, ELU, Softmax, Sigmoid, Identity
 from nnodely.fir import Fir
 from nnodely.linear import Linear
 from nnodely.arithmetic import Add, Sum, Sub, Mul, Pow, Neg
-from nnodely.trigonometric import Sin, Cos, Tan
+from nnodely.trigonometric import Sin, Cos, Tan, Cosh, Tanh, Sech
 from nnodely.parametricfunction import ParamFun
 from nnodely.fuzzify import Fuzzify
-from nnodely.part import TimePart, TimeSelect, SamplePart, SampleSelect, Part, Select
+from nnodely.part import  Part, Select, Concatenate, SamplePart, SampleSelect, TimePart, TimeConcatenate
 from nnodely.localmodel import LocalModel
+from nnodely.equationlearner import EquationLearner
 from nnodely.timeoperation import Integrate, Derivate
 from nnodely.interpolation import Interpolation
 

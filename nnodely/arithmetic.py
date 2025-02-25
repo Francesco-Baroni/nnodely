@@ -298,6 +298,7 @@ def createSum(name, *inputs):
     #: :noindex:
     return Sum_Layer()
 
+
 setattr(Model, add_relation_name, createAdd)
 setattr(Model, sub_relation_name, createSub)
 setattr(Model, mul_relation_name, createMul)
