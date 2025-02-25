@@ -843,8 +843,17 @@ class ModelyPredictTest(unittest.TestCase):
         ofpar = Output('outfpar', Fir(output_dimension=3,parameter_init=init_constant)(input.sw(2)))
         ofpar2 = Output('outfpar2', Fir(output_dimension=3,parameter_init=init_constant,parameter_init_params={'value':2})(input.sw(2)))
 
+        outnegexp = Output('outnegexp', Fir(output_dimension=3,parameter_init=init_negexp)(input.sw(2)))
+        outnegexp2 = Output('outnegexp2', Fir(output_dimension=3,parameter_init=init_negexp,parameter_init_params={'size_index':1, 'first_value':3, 'lambda':1})(input.sw(2)))
+
+        outexp = Output('outexp', Fir(output_dimension=3,parameter_init=init_exp)(input.sw(2)))
+        outexp2 = Output('outexp2', Fir(output_dimension=3,parameter_init=init_exp,parameter_init_params={'size_index':1, 'max_value':2, 'lambda':2, 'monotonicity':'increasing'})(input.sw(2)))
+
+        outlin = Output('outlin', Fir(output_dimension=3,parameter_init=init_lin)(input.sw(2)))
+        outlin2 = Output('outlin2', Fir(output_dimension=3,parameter_init=init_lin,parameter_init_params={'size_index':1, 'first_value':4, 'last_value':5})(input.sw(2)))
+
         n = Modely(visualizer=None)
-        n.addModel('model',[o,o52,opar,opar2,ol,ol52,ofpar,ofpar2])
+        n.addModel('model',[o,o52,opar,opar2,ol,ol52,ofpar,ofpar2,outnegexp,outnegexp2,outexp,outexp2,outlin,outlin2])
         n.neuralizeModel()
         results = n({'in1': [1, 1, 2]})
         self.assertEqual((2,), np.array(results['out']).shape)
@@ -866,6 +875,21 @@ class ModelyPredictTest(unittest.TestCase):
         self.TestAlmostEqual([[[2,2,2]],[[3,3,3]]], results['outfpar'])
         self.assertEqual((2,1,3), np.array(results['outfpar2']).shape)
         self.TestAlmostEqual([[[4,4,4]],[[6,6,6]]], results['outfpar2'])
+
+        self.assertEqual((2,1,3), np.array(results['outnegexp']).shape)
+        self.TestAlmostEqual([[[1.0497870445251465,1.0497870445251465,1.0497870445251465]],[[2.0497870445251465,2.0497870445251465,2.0497870445251465]]], results['outnegexp'])
+        self.assertEqual((2,1,3), np.array(results['outnegexp2']).shape)
+        self.TestAlmostEqual([[[2.2072765827178955,3.63918399810791,6.0]],[[3.310914993286133,5.458775997161865,9.0]]], results['outnegexp2'])
+
+        self.assertEqual((2,1,3), np.array(results['outexp']).shape)
+        self.TestAlmostEqual([[[1.0497870445251465,1.0497870445251465,1.0497870445251465]],[[1.099574089050293,1.099574089050293,1.099574089050293]]], results['outexp'])
+        self.assertEqual((2,1,3), np.array(results['outexp2']).shape)
+        self.TestAlmostEqual([[[0.5413411259651184,1.47151780128479,4]],[[0.81201171875,2.2072768211364746,6]]], results['outexp2'])
+
+        self.assertEqual((2,1,3), np.array(results['outlin']).shape)
+        self.TestAlmostEqual([[[1,1,1]],[[1,1,1]]], results['outlin'])
+        self.assertEqual((2,1,3), np.array(results['outlin2']).shape)
+        self.TestAlmostEqual([[[8,9,10]],[[12,13.5,15.0]]], results['outlin2'])
 
     def test_sample_part_and_select(self):
         in1 = Input('in1')
@@ -1249,20 +1273,22 @@ class ModelyPredictTest(unittest.TestCase):
         self.assertEqual([[-96.0, -120.0, -144.0]], results['out3'])
 
     def test_predict_paramfun_map_over_batch(self):
+        NeuObj.clearNames()
         input2 = Input('in2')
         pp = Parameter('pp', values=[[7],[8],[9]])
         ll = Constant('ll', values=[[12],[13],[14]])
         oo = Constant('oo', values=[[1],[2],[3]])
-        pp, oo, input2.tw(0.03), ll
+
         def fun_test(x, y, z, k):
+            print(x, y, z, k)
             return (x + y) * (z - k)
 
-        pp_map = ParamFun(fun_test,parameters=[pp], constants=[ll,oo], map_over_batch=True)
-        pp = ParamFun(fun_test, parameters=[pp], constants=[ll, oo])
+        fun_map = ParamFun(fun_test,parameters=[pp], constants=[ll,oo], map_over_batch=True)
+        fun = ParamFun(fun_test, parameters=[pp], constants=[ll, oo])
+        fun_map_2 = ParamFun(fun_test, map_over_batch=True)
 
-        NeuObj.clearNames()
-        out1 = Output('out1',pp_map(input2.tw(0.03)))
-        out2 = Output('out2', pp(input2.tw(0.03)))
+        out1 = Output('out1',fun_map(input2.tw(0.03)))
+        out2 = Output('out2', fun(input2.tw(0.03)))
         test = Modely(visualizer=None)
         test.addModel('out',[out1,out2])
         test.neuralizeModel(0.01)
@@ -1271,6 +1297,22 @@ class ModelyPredictTest(unittest.TestCase):
         self.assertEqual([[-72.0, -84.0, -96.0]], results['out1'])
         self.assertEqual((1, 3), np.array(results['out2']).shape)
         self.assertEqual([[-72.0, -84.0, -96.0]], results['out2'])
+
+        out3 = Output('out3', fun_map_2(input2.tw(0.03), 4.0, pp, ll))
+        out4 = Output('out4', fun_map_2(input2.tw(0.01), 2.0, pp, oo))
+        with self.assertRaises(ValueError):
+            fun_map_2(4.0, 1, pp, ll)
+        test.addModel('out-new', [out3,out4])
+        with self.assertRaises(ValueError):
+            test.addModel('out',[out1,out2])
+        test.neuralizeModel(0.01)
+
+        results = test({'in2': [0, 1, 2]})
+        self.assertEqual((1, 3), np.array(results['out3']).shape)
+        self.assertEqual((1, 3), np.array(results['out4']).shape)
+        # ([0,1,2]+4)*([7,8,9]-[12,13,14]) -> [4,5,6]*[-5,-5,-5]
+        self.assertEqual([[-20.0, -25.0, -30.0]], results['out3'])
+        self.assertEqual([[24.0, 24.0, 24.0]], results['out4'])
 
     def test_predict_fuzzify(self):
         input = Input('in1')

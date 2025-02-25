@@ -17,7 +17,7 @@ def myFun(K1,K2,p1,p2):
     return p1*K1+p2*torch.sin(K2)
 
 parfun = ParamFun(myFun)
-out = Output('fun',parfun(x.last(),F.last()))
+out = Output('out',parfun(x.last(),F.last()))
 example = Modely(visualizer=MPLVisualizer())
 example.addModel('out',out)
 example.neuralizeModel()
@@ -36,7 +36,7 @@ def myFun(K1,K2,p1,p2):
     import torch
     return torch.tensor([p1,p1,p1,p1])*K1+p2*torch.sin(K2)
 parfun = ParamFun(myFun) # definisco una funzione scalare basata su myFun
-out = Output('out',parfun(x.last(),F.last()))
+out = Output('out-2',parfun(x.last(),F.last()))
 example = Modely()
 example.addModel('out',out)
 example.neuralizeModel()
@@ -189,7 +189,7 @@ def myFun(inin, p1):
     return inin * p1
 parfun = ParamFun(myFun, map_over_batch=True)
 p = Constant('co',values=[[2]])
-#out = Output('out-12',parfun(x.sw(4),p))
+#out = Output('out-121',parfun(x.sw(4),p))
 out = Output('out-12',parfun(p,x.sw(4)))
 example = Modely()
 example.addModel('out',out)

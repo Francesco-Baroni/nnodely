@@ -127,7 +127,7 @@ class ParamFun(NeuObj):
         self.json_stream = {}
 
     @enforce_types
-    def __call__(self, *obj:Union[Stream|Parameter|Constant]) -> Stream:
+    def __call__(self, *obj:Union[Stream|Parameter|Constant|float|int]) -> Stream:
         stream_name = paramfun_relation_name + str(Stream.count)
 
         funinfo = inspect.getfullargspec(self.param_fun)
@@ -148,8 +148,6 @@ class ParamFun(NeuObj):
             input_types.append(obj_type)
             input_dimensions.append(o.dim)
 
-        #TODO Check input type must be all stream in case of map_over_batch
-
         if n_call_input not in self.json_stream:
             if len(self.json_stream) > 0:
                 log.warning(f"The function {self.name} was called with a different number of inputs. If both functions enter in the model an error will be raised.")
@@ -163,10 +161,12 @@ class ParamFun(NeuObj):
             check(missing_params == 0, ValueError, f"The function is called with different number of inputs.")
 
             self.json_stream[n_call_input]['Functions'][self.name]['in_dim'] = copy.deepcopy(input_dimensions)
-            self.json_stream[n_call_input]['Functions'][self.name]['map_over_dim'] = self.__map_over_batch(n_call_input,n_new_constants_and_params)
+            self.json_stream[n_call_input]['Functions'][self.name]['map_over_dim'] = self.__infer_map_over_batch(input_types, n_new_constants_and_params)
             output_dimension = self.__infer_output_dimensions(self.json_stream[n_call_input], input_types,
                                                                   input_dimensions)
         else:
+            map_over_batch = self.__infer_map_over_batch(input_types, n_new_constants_and_params)
+            check(map_over_batch == self.json_stream[n_call_input]['Functions'][self.name]['map_over_dim'], ValueError, f"The function {self.name} was called with different type of input using map_over_batch=True.")
             output_dimension = self.__infer_output_dimensions(self.json_stream[n_call_input], input_types, input_dimensions)
 
             # Save the all the input dimension used for call the parametric function
@@ -192,11 +192,15 @@ class ParamFun(NeuObj):
         stream_json['Relations'][stream_name] = [paramfun_relation_name, input_names, self.name]
         return Stream(stream_name, stream_json, output_dimension)
 
-    def __map_over_batch(self, n_call_input, n_constants_and_params):
+    def __infer_map_over_batch(self, input_types, n_constants_and_params):
         input_map_dim = ()
 
-        for i in range(n_call_input):
-            input_map_dim += (0,)
+        for elem in input_types:
+            if elem in (Parameter, Constant):
+                input_map_dim += (None,)
+            else:
+                input_map_dim += (0,)
+
         for i in range(n_constants_and_params):
             input_map_dim += (None,)
 

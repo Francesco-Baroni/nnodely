@@ -40,7 +40,7 @@ class MPLNotebookVisualizer(TextVisualizer):
                     plots.plot_fuzzy(ax, fun, x, activ_fun, value['centers'])
                     plt.show()
                 elif 'code':
-                    function_inputs = return_standard_inputs(value, self.n4m.model_def_values, xlim, num_points)
+                    function_inputs = return_standard_inputs(value, self.n4m.model_def, xlim, num_points)
                     function_output, function_input_list = return_function(value, function_inputs)
                     if value['n_input'] == 2:
                         x0 = function_inputs[0].reshape(num_points, num_points).tolist()

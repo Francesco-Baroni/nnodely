@@ -1,5 +1,5 @@
 
-__version__ = '1.2.2'
+__version__ = '1.2.3'
 
 import sys
 major, minor = sys.version_info.major, sys.version_info.minor
@@ -42,4 +42,4 @@ from nnodely.optimizer import Optimizer, SGD, Adam
 from nnodely.exporter import Exporter, StandardExporter
 
 # Support functions
-from nnodely.initializer import init_negexp, init_lin, init_constant
+from nnodely.initializer import init_negexp, init_lin, init_constant, init_exp
