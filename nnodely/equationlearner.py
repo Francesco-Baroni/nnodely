@@ -112,10 +112,11 @@ class EquationLearner(NeuObj):
         if type(inputs) is not tuple:
             inputs = (inputs,)
         check(len(set([x.dim['sw'] if 'sw' in x.dim.keys() else x.dim['tw'] for x in inputs])) == 1, ValueError, 'All inputs must have the same time dimension')
-        for input_idx, inp in enumerate(inputs):
-            concatenated_input = inp if input_idx == 0 else Concatenate(concatenated_input, inp)
+        concatenated_input = inputs[0]
+        for inp in inputs[1:]:
+            concatenated_input = Concatenate(concatenated_input, inp)
         linear_layer = self.linear_in(concatenated_input) if self.linear_in else Linear(output_dimension=self.n_activations, b=True)(concatenated_input)
-        idx = 0
+        idx, out = 0, None
         for func_idx, func in enumerate(self.functions):
             arguments = [Select(linear_layer,idx+arg_idx) for arg_idx in range(self.func_parameters[func_idx])]
             idx += self.func_parameters[func_idx]
