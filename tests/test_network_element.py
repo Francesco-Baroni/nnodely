@@ -17,6 +17,15 @@ sys.path.append(os.getcwd())
 
 class ModelyNetworkBuildingTest(unittest.TestCase):
 
+    def TestAlmostEqual(self, data1, data2, precision=4):
+        assert np.asarray(data1, dtype=np.float32).ndim == np.asarray(data2, dtype=np.float32).ndim, f'Inputs must have the same dimension! Received {type(data1)} and {type(data2)}'
+        if type(data1) == type(data2) == list:
+            self.assertEqual(len(data1),len(data2))
+            for pred, label in zip(data1, data2):
+                self.TestAlmostEqual(pred, label, precision=precision)
+        else:
+            self.assertAlmostEqual(data1, data2, places=precision)
+
     def test_network_building_very_simple(self):
 
         input1 = Input('in1').last()
@@ -286,12 +295,12 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         test.neuralizeModel(0.01)
 
         result = test(inputs={'in':[[3.0],[-2.0]], 'in5':[[4.0,1.0,0.0,-6.0,2.0]]})
-        self.assertAlmostEqual([0.2658022344112396], result['sech_out_1'], places=5)
-        self.assertAlmostEqual([[0.0993279218673706, 0.2658022344112396]], result['sech_out_2'], places=5)
-        self.assertAlmostEqual([[[0.03661899268627167, 0.6480542421340942, 1.0, 0.004957473836839199, 0.2658022344112396]]], result['sech_out_3'], places=5)
-        self.assertAlmostEqual([3.762195587158203], result['cosh_out_1'], places=5)
-        self.assertAlmostEqual([[10.067662239074707, 3.762195587158203]], result['cosh_out_2'], places=5)
-        self.assertAlmostEqual([[[27.3082332611084, 1.5430806875228882, 1.0, 201.71563720703125, 3.762195587158203]]], result['cosh_out_3'], places=5)
+        self.TestAlmostEqual([0.2658022344112396], result['sech_out_1'])
+        self.TestAlmostEqual([[0.0993279218673706, 0.2658022344112396]], result['sech_out_2'])
+        self.TestAlmostEqual([[[0.03661899268627167, 0.6480542421340942, 1.0, 0.004957473836839199, 0.2658022344112396]]], result['sech_out_3'])
+        self.TestAlmostEqual([3.762195587158203], result['cosh_out_1'])
+        self.TestAlmostEqual([[10.067662239074707, 3.762195587158203]], result['cosh_out_2'])
+        self.TestAlmostEqual([[[27.3082332611084, 1.5430806875228882, 1.0, 201.71563720703125, 3.762195587158203]]], result['cosh_out_3'])
 
     def test_concatenate_time_concatenate(self):
         torch.manual_seed(1)
