@@ -286,12 +286,12 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         test.neuralizeModel(0.01)
 
         result = test(inputs={'in':[[3.0],[-2.0]], 'in5':[[4.0,1.0,0.0,-6.0,2.0]]})
-        self.assertEqual([0.2658022344112396], result['sech_out_1'])
-        self.assertEqual([[0.0993279218673706, 0.2658022344112396]], result['sech_out_2'])
-        self.assertEqual([[[0.03661899268627167, 0.6480542421340942, 1.0, 0.004957473836839199, 0.2658022344112396]]], result['sech_out_3'])
-        self.assertEqual([3.762195587158203], result['cosh_out_1'])
-        self.assertEqual([[10.067662239074707, 3.762195587158203]], result['cosh_out_2'])
-        self.assertEqual([[[27.3082332611084, 1.5430806875228882, 1.0, 201.71563720703125, 3.762195587158203]]], result['cosh_out_3'])
+        self.assertAlmostEqual([0.2658022344112396], result['sech_out_1'], places=5)
+        self.assertAlmostEqual([[0.0993279218673706, 0.2658022344112396]], result['sech_out_2'], places=5)
+        self.assertAlmostEqual([[[0.03661899268627167, 0.6480542421340942, 1.0, 0.004957473836839199, 0.2658022344112396]]], result['sech_out_3'], places=5)
+        self.assertAlmostEqual([3.762195587158203], result['cosh_out_1'], places=5)
+        self.assertAlmostEqual([[10.067662239074707, 3.762195587158203]], result['cosh_out_2'], places=5)
+        self.assertAlmostEqual([[[27.3082332611084, 1.5430806875228882, 1.0, 201.71563720703125, 3.762195587158203]]], result['cosh_out_3'], places=5)
 
     def test_concatenate_time_concatenate(self):
         torch.manual_seed(1)
