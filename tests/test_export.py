@@ -307,9 +307,9 @@ class ModelyExportTest(unittest.TestCase):
 
         self.test.neuralizeModel(0.5, clear_model=True)
         # Export the all models in onnx format
-        self.test.exportONNX(['x', 'y'], ['out', 'out2', 'out3', 'out4', 'out5', 'out6'])  # Export the onnx model
+        self.test.exportONNX(inputs_order=['x', 'y'], outputs_order=['out', 'out2', 'out3', 'out4', 'out5', 'out6'])  # Export the onnx model
         # Export only the modelB in onnx format
-        self.test.exportONNX(['x', 'y'], ['out3', 'out4', 'out2'], ['modelB'])  # Export the onnx model
+        self.test.exportONNX(inputs_order=['x', 'y'], outputs_order=['out3', 'out4', 'out2'], models=['modelB'])  # Export the onnx model
         self.assertTrue(os.path.exists(os.path.join(self.test.getWorkspace(), 'onnx', 'net.onnx')))
         self.assertTrue(os.path.exists(os.path.join(self.test.getWorkspace(), 'onnx', 'net_modelB.onnx')))
 

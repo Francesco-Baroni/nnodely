@@ -236,27 +236,30 @@ def export_python_model(model_def, model, model_path):
             file.write("                self.states[key] = value\n")
             file.write("        return results\n")
 
-def export_pythononnx_model(model_def, input_order, outputs_order, model_path, model_onnx_path):
+def export_pythononnx_model(model_def, model_path, model_onnx_path, input_order=None, outputs_order=None):
     closed_loop_states, connect_states = [], []
     for key, value in model_def['States'].items():
         if 'closedLoop' in value.keys():
             closed_loop_states.append(key)
         if 'connect' in value.keys():
             connect_states.append(key)
-    inputs = [key for key in input_order if key not in model_def['States'].keys()]
+    
+    model_inputs = input_order if input_order else list(model_def['Inputs'].keys() | model_def['States'].keys())
+    model_outputs = outputs_order if outputs_order else list(model_def['Outputs'].keys())
+    inputs = [key for key in model_inputs if key not in model_def['States'].keys()]
 
     # Define the mapping dictionary input
     trace_mapping_input = {}
     forward = 'def forward(self,'
-    for i, key in enumerate(input_order):
+    for i, key in enumerate(model_inputs):
         value = f'kwargs[\'{key}\']'
         trace_mapping_input[value] = key
-        forward = forward + f' {key}' + (',' if i < len(input_order) - 1 else '')
+        forward = forward + f' {key}' + (',' if i < len(model_inputs) - 1 else '')
     forward = forward + '):'
     # Define the mapping dictionary output
     outputs = '        return ('
-    for i, key in enumerate(outputs_order):
-        outputs += f'outputs[0][\'{key}\']' + (',' if i < len(outputs_order) - 1 else ',)')
+    for i, key in enumerate(model_outputs):
+        outputs += f'outputs[0][\'{key}\']' + (',' if i < len(model_outputs) - 1 else ',)')
     outputs += ', ('
     for key in closed_loop_states:
         outputs += f'outputs[2][\'{key}\'], '
@@ -301,26 +304,26 @@ def export_pythononnx_model(model_def, input_order, outputs_order, model_path, m
             file.write("        self.Cell = TracerModel()\n")
 
             forward_str = "    def forward(self, "
-            for key in input_order:
+            for key in model_inputs:
                 forward_str += f"{key}, "
             forward_str += "):\n"
             file.write(forward_str)
 
-            if input_order:
+            if model_inputs:
                 file.write("        n_samples = min([" + ", ".join([f"{key}.size(0)" for key in inputs]) + "])\n")
             else:
                 file.write("        n_samples = 1\n")
             
-            for key in outputs_order:
+            for key in model_outputs:
                 file.write(f"        results_{key} = []\n")
             file.write("        for idx in range(n_samples):\n")
             call_str = "            out, closed_loop, connect = self.Cell("
-            for key in input_order:
+            for key in model_inputs:
                 call_str += f"{key}[idx], " if key in inputs else f"{key}, "
             call_str += ")\n"
             file.write(call_str)
             #if len(outputs_order) > 1:
-            for idx, key in enumerate(outputs_order):
+            for idx, key in enumerate(model_outputs):
                 file.write(f"            results_{key}.append(out[{idx}])\n")
             #else:
             #    file.write(f"            results_{outputs_order[0]}.append(out)\n")
@@ -329,11 +332,11 @@ def export_pythononnx_model(model_def, input_order, outputs_order, model_path, m
                 file.write(f"            {key} = nnodely_model_connect({key}, closed_loop[{idx}])\n")
             for idx, key in enumerate(connect_states):
                 file.write(f"            {key} = connect[{idx}]\n")
-            for idx, key in enumerate(outputs_order):
+            for idx, key in enumerate(model_outputs):
                 file.write(f"        results_{key} = torch.stack(results_{key}, dim=0)\n")
             #file.write("        results = torch.cat(results, dim=0)\n")
             return_str = "        return "
-            for key in outputs_order:
+            for key in model_outputs:
                 return_str += f"results_{key}, "
             file.write(return_str)
 
@@ -348,7 +351,7 @@ def import_python_model(name, model_folder):
         module = importlib.import_module(module_name)
     return module.TracerModel()
 
-def export_onnx_model(model_def, model, input_order, output_order, model_path, name='net_onnx'):
+def export_onnx_model(model_def, model, model_path, input_order=None, output_order=None, name='net_onnx'):
     sys.path.insert(0, model_path)
     module_name = os.path.basename(name)
     if module_name in sys.modules:
@@ -362,7 +365,8 @@ def export_onnx_model(model_def, model, input_order, output_order, model_path, n
     dummy_inputs = []
     input_names = []
     dynamic_axes = {}
-    for key in input_order:
+    onnx_inputs = input_order if input_order else list(model_def['Inputs'].keys() | model_def['States'].keys())
+    for key in onnx_inputs:
         input_names.append(key)
         window_size = model_def['Inputs'][key]['ntot'] if key in model_def['Inputs'].keys() else model_def['States'][key]['ntot']
         dim = model_def['Inputs'][key]['dim'] if key in model_def['Inputs'].keys() else model_def['States'][key]['dim']
@@ -376,7 +380,7 @@ def export_onnx_model(model_def, model, input_order, output_order, model_path, n
         else:
             dummy_inputs.append(torch.randn(size=(1, window_size, dim)))
             dynamic_axes[key] = {0: 'batch_size'}
-    output_names = output_order
+    output_names = output_order if output_order else list(model_def['Outputs'].keys())
     dummy_inputs = tuple(dummy_inputs)
 
     torch.onnx.export(

@@ -22,7 +22,7 @@ test_folder = os.path.join(os.path.dirname(__file__), 'test_data/')
 class ModelyCreateDatasetTest(unittest.TestCase):
     
     def test_build_dataset_simple(self):
-        input = Input('in')
+        input = Input('in1')
         output = Input('out')
         relation = Fir(input.tw(0.05))
 
@@ -30,17 +30,17 @@ class ModelyCreateDatasetTest(unittest.TestCase):
         test.addMinimize('out', output.z(-1), relation)
         test.neuralizeModel(0.01)
 
-        data_struct = ['x1','y1','x2','y2','','A1x','A1y','B1x','B1y','','A2x','A2y','B2x','out','','x3','in','theta','time']
+        data_struct = ['x1','y1','x2','y2','','A1x','A1y','B1x','B1y','','A2x','A2y','B2x','out','','x3','in1','theta','time']
         test.loadData(name='dataset_1', source=train_folder, format=data_struct, skiplines=4, delimiter='\t', header=None)
-        self.assertEqual((10,5,1),test.data['dataset_1']['in'].shape)
-        self.assertEqual([[0.984],[0.983],[0.982],[0.98],[0.977]] , test.data['dataset_1']['in'][0].tolist())
+        self.assertEqual((10,5,1),test.data['dataset_1']['in1'].shape)
+        self.assertEqual([[0.984],[0.983],[0.982],[0.98],[0.977]] , test.data['dataset_1']['in1'][0].tolist())
 
         self.assertEqual((10,1,1),test.data['dataset_1']['out'].shape)
         self.assertEqual([[1.225]], test.data['dataset_1']['out'][0].tolist())
         self.assertEqual([[[1.225]], [[1.224]], [[1.222]], [[1.22]], [[1.217]], [[1.214]], [[1.211]], [[1.207]], [[1.204]], [[1.2]]], test.data['dataset_1']['out'].tolist())
 
     def test_build_multi_dataset_simple(self):
-        input = Input('in')
+        input = Input('in1')
         output = Input('out')
         relation = Fir(input.tw(0.05))
 
@@ -48,7 +48,7 @@ class ModelyCreateDatasetTest(unittest.TestCase):
         test.addMinimize('out', output.z(-1), relation)
         test.neuralizeModel(0.01)
 
-        data_struct = ['x1','y1','x2','y2','','A1x','A1y','B1x','B1y','','A2x','A2y','B2x','out','','x3','in','theta','time']
+        data_struct = ['x1','y1','x2','y2','','A1x','A1y','B1x','B1y','','A2x','A2y','B2x','out','','x3','in1','theta','time']
 
         test.loadData(name='train_dataset', source=train_folder, format=data_struct, skiplines=4, delimiter='\t', header=None)
         test.loadData(name='validation_dataset', source=val_folder, format=data_struct, skiplines=4, delimiter='\t', header=None)
@@ -56,12 +56,12 @@ class ModelyCreateDatasetTest(unittest.TestCase):
 
         self.assertEqual(3, test.n_datasets)
 
-        self.assertEqual((10,5,1),test.data['train_dataset']['in'].shape)
-        self.assertEqual([[0.984],[0.983],[0.982],[0.98],[0.977]] , test.data['train_dataset']['in'][0].tolist())
-        self.assertEqual((6,5,1),test.data['validation_dataset']['in'].shape)
-        self.assertEqual([[0.884],[0.883],[0.882],[0.88],[0.877]] , test.data['validation_dataset']['in'][0].tolist())
-        self.assertEqual((8,5,1),test.data['test_dataset']['in'].shape)
-        self.assertEqual([[0.784],[0.783],[0.782],[0.78],[0.777]] , test.data['test_dataset']['in'][0].tolist())
+        self.assertEqual((10,5,1),test.data['train_dataset']['in1'].shape)
+        self.assertEqual([[0.984],[0.983],[0.982],[0.98],[0.977]] , test.data['train_dataset']['in1'][0].tolist())
+        self.assertEqual((6,5,1),test.data['validation_dataset']['in1'].shape)
+        self.assertEqual([[0.884],[0.883],[0.882],[0.88],[0.877]] , test.data['validation_dataset']['in1'][0].tolist())
+        self.assertEqual((8,5,1),test.data['test_dataset']['in1'].shape)
+        self.assertEqual([[0.784],[0.783],[0.782],[0.78],[0.777]] , test.data['test_dataset']['in1'][0].tolist())
 
         self.assertEqual((10,1,1),test.data['train_dataset']['out'].shape)
         self.assertEqual([[1.225]], test.data['train_dataset']['out'][0].tolist())
@@ -74,7 +74,7 @@ class ModelyCreateDatasetTest(unittest.TestCase):
         self.assertEqual([[[3.225]], [[3.224]], [[3.222]], [[3.22]], [[3.217]], [[3.214]], [[3.211]], [[3.207]]], test.data['test_dataset']['out'].tolist())
     
     def test_build_dataset_medium1(self):
-        input = Input('in')
+        input = Input('in1')
         output = Input('out')
         rel1 = Fir(input.tw(0.05))
         rel2 = Fir(input.tw(0.01))
@@ -83,16 +83,16 @@ class ModelyCreateDatasetTest(unittest.TestCase):
         test.addMinimize('out', output.z(-1), rel1 + rel2)
         test.neuralizeModel(0.01)
 
-        data_struct = ['x1','y1','x2','y2','','A1x','A1y','B1x','B1y','','A2x','A2y','B2x','out','','x3','in','theta','time']
+        data_struct = ['x1','y1','x2','y2','','A1x','A1y','B1x','B1y','','A2x','A2y','B2x','out','','x3','in1','theta','time']
         test.loadData(name='dataset', source=train_folder, format=data_struct, skiplines=4, delimiter='\t', header=None)
-        self.assertEqual((10,5,1),test.data['dataset']['in'].shape)
-        self.assertEqual([[0.984],[0.983],[0.982],[0.98],[0.977]],test.data['dataset']['in'][0].tolist())
+        self.assertEqual((10,5,1),test.data['dataset']['in1'].shape)
+        self.assertEqual([[0.984],[0.983],[0.982],[0.98],[0.977]],test.data['dataset']['in1'][0].tolist())
 
         self.assertEqual((10,1,1),test.data['dataset']['out'].shape)
         self.assertEqual([[[1.225]], [[1.224]], [[1.222]], [[1.22]], [[1.217]], [[1.214]], [[1.211]], [[1.207]], [[1.204]], [[1.2]]],test.data['dataset']['out'].tolist())
     
     def test_build_multi_dataset_medium1(self):
-        input = Input('in')
+        input = Input('in1')
         output = Input('out')
         rel1 = Fir(input.tw(0.05))
         rel2 = Fir(input.tw(0.01))
@@ -101,7 +101,7 @@ class ModelyCreateDatasetTest(unittest.TestCase):
         test.addMinimize('out', output.z(-1), rel1 + rel2)
         test.neuralizeModel(0.01)
 
-        data_struct = ['x1','y1','x2','y2','','A1x','A1y','B1x','B1y','','A2x','A2y','B2x','out','','x3','in','theta','time']
+        data_struct = ['x1','y1','x2','y2','','A1x','A1y','B1x','B1y','','A2x','A2y','B2x','out','','x3','in1','theta','time']
 
         test.loadData(name='train_dataset', source=train_folder, format=data_struct, skiplines=4, delimiter='\t', header=None)
         test.loadData(name='validation_dataset', source=val_folder, format=data_struct, skiplines=4, delimiter='\t', header=None)
@@ -109,12 +109,12 @@ class ModelyCreateDatasetTest(unittest.TestCase):
 
         self.assertEqual(3, test.n_datasets)
 
-        self.assertEqual((10,5,1),test.data['train_dataset']['in'].shape)
-        self.assertEqual([[0.984],[0.983],[0.982],[0.98],[0.977]],test.data['train_dataset']['in'][0].tolist())
-        self.assertEqual((6,5,1),test.data['validation_dataset']['in'].shape)
-        self.assertEqual([[0.884],[0.883],[0.882],[0.88],[0.877]],test.data['validation_dataset']['in'][0].tolist())
-        self.assertEqual((8,5,1),test.data['test_dataset']['in'].shape)
-        self.assertEqual([[0.784],[0.783],[0.782],[0.78],[0.777]],test.data['test_dataset']['in'][0].tolist())
+        self.assertEqual((10,5,1),test.data['train_dataset']['in1'].shape)
+        self.assertEqual([[0.984],[0.983],[0.982],[0.98],[0.977]],test.data['train_dataset']['in1'][0].tolist())
+        self.assertEqual((6,5,1),test.data['validation_dataset']['in1'].shape)
+        self.assertEqual([[0.884],[0.883],[0.882],[0.88],[0.877]],test.data['validation_dataset']['in1'][0].tolist())
+        self.assertEqual((8,5,1),test.data['test_dataset']['in1'].shape)
+        self.assertEqual([[0.784],[0.783],[0.782],[0.78],[0.777]],test.data['test_dataset']['in1'][0].tolist())
 
         self.assertEqual((10,1,1),test.data['train_dataset']['out'].shape)
         self.assertEqual([[[1.225]], [[1.224]], [[1.222]], [[1.22]], [[1.217]], [[1.214]], [[1.211]], [[1.207]], [[1.204]], [[1.2]]],test.data['train_dataset']['out'].tolist())

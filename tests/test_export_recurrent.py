@@ -519,7 +519,7 @@ class ModelyExportTest(unittest.TestCase):
         vehicle.loadData(name='dataset', source=data_folder, format=data_struct, skiplines=1)
 
         ## Export the Onnx Model
-        vehicle.exportONNX(inputs_order=['gear','trq','alt','brk','vel'],outputs_order=['accelleration'],name=network_name)
+        vehicle.exportONNX(name=network_name)
 
         model_sample = vehicle.getSamples('dataset', window=1)
         model_inference = vehicle(model_sample, sampled=True, prediction_samples=1)
@@ -540,8 +540,8 @@ class ModelyExportTest(unittest.TestCase):
             shutil.rmtree(vehicle.getWorkspace())
 
     def test_export_sw_on_stream_sw_complex(self):
-        NeuObj.reset_count()
-        Stream.reset_count()
+        NeuObj.clearNames()
+        Stream.resetCount()
         # Create nnodely structure
         result_path = 'results'
         network_name = 'swnet'

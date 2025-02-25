@@ -20,12 +20,12 @@ input module
     .. autoclass:: nnodely.input.Input
         :undoc-members:
         :inherited-members:
-        :exclude-members: count, reset_count
+        :exclude-members: count, resetCount
 
     .. autoclass:: nnodely.input.State
         :undoc-members:
         :inherited-members:
-        :exclude-members: count, reset_count
+        :exclude-members: count, resetCount
 
 output module
 -------------
@@ -37,7 +37,7 @@ output module
     .. autoclass:: nnodely.output.Output
         :undoc-members:
         :inherited-members:
-        :exclude-members: count, reset_count, closedLoop, connect, tw, sw, z
+        :exclude-members: count, resetCount, closedLoop, connect, tw, sw, z
 
 parameter module
 ----------------

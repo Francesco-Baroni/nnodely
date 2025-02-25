@@ -97,7 +97,7 @@ class LocalModel(NeuObj):
                 self.___activations_matrix(activations, inputs, out, idx+1, idx_list+[i])
         else:
             if self.input_function is not None:
-                if len(inspect.getfullargspec(self.input_function).args) == 0:
+                if len(inspect.signature(self.input_function).parameters) == 0:
                     if type(inputs) is tuple:
                         out_in = self.input_function()(*inputs)
                     else:

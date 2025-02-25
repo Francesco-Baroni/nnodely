@@ -1,11 +1,12 @@
 import sys, os
+
+from nnodely.relation import NeuObj
+
 # append a new directory to sys.path
 sys.path.append(os.getcwd())
 
 import torch
 from nnodely import *
-
-example = 11
 
 x = Input('x')
 F = Input('F')
@@ -29,6 +30,7 @@ example.neuralizeModel()
 print(example({'x':[1]}))
 
 print("------------------------EXAMPLE 2------------------------")
+NeuObj.clearNames()
 ## Create an equation learner block similar to Example 1 but using EquationLearner function
 equation_learner = EquationLearner(functions=[Tan, Sin, Cos])
 equation_learner_2 = EquationLearner(functions=[Tan, Sin, Cos])
@@ -40,10 +42,12 @@ example.neuralizeModel()
 print(example({'x':[1], 'F':[2]}))
 
 print("------------------------EXAMPLE 3------------------------")
+NeuObj.clearNames()
 ## Create an equation learner block similar to Example 1 but using EquationLearner function and passing a the linear layer as input
-linear_layer = Linear(output_dimension=3, W_init=init_constant, W_init_params={'value':0}, b_init=init_constant, b_init_params={'value':0}, b=False)
-equation_learner = EquationLearner(functions=[Tan, Sin, Cos], linear_in=linear_layer)
-equation_learner_2 = EquationLearner(functions=[Tan, Sin, Cos], linear_in=linear_layer)
+linear_layer_1 = Linear(output_dimension=3, W_init=init_constant, W_init_params={'value':0}, b_init=init_constant, b_init_params={'value':0}, b=False)
+linear_layer_2 = Linear(output_dimension=3, W_init=init_constant, W_init_params={'value':0}, b_init=init_constant, b_init_params={'value':0}, b=False)
+equation_learner = EquationLearner(functions=[Tan, Sin, Cos], linear_in=linear_layer_1)
+equation_learner_2 = EquationLearner(functions=[Tan, Sin, Cos], linear_in=linear_layer_2)
 out = Output('out',equation_learner(x.last()))
 out2 = Output('out2',equation_learner_2(inputs=(x.last(),F.last())))
 example = Modely(visualizer=None)
@@ -52,6 +56,7 @@ example.neuralizeModel()
 print(example({'x':[1], 'F':[2]}))
 
 print("------------------------EXAMPLE 4------------------------")
+NeuObj.clearNames()
 ## Create an equation learner block similar to Example 1 but using EquationLearner function and passing a the linear layer as input and a linear layer as output
 linear_layer_in = Linear(output_dimension=3, W_init=init_constant, W_init_params={'value':0}, b_init=init_constant, b_init_params={'value':0}, b=False)
 linear_layer_out = Linear(output_dimension=1, W_init=init_constant, W_init_params={'value':1}, b_init=init_constant, b_init_params={'value':0}, b=False)
@@ -63,6 +68,7 @@ example.neuralizeModel()
 print(example({'x':[1]}))
 
 print("------------------------EXAMPLE 5------------------------")
+NeuObj.clearNames()
 ## Create an equation learner block with functions that take 2 parameters (add, sub, mul ...) without layer initialization
 equation_learner = EquationLearner(functions=[Tan, Add, Sin, Mul])
 equation_learner_2 = EquationLearner(functions=[Tan, Add, Sin, Mul, Identity])
@@ -74,11 +80,13 @@ example.neuralizeModel()
 print(example({'x':[1], 'F':[2]}))
 
 print("------------------------EXAMPLE 6------------------------")
+NeuObj.clearNames()
 ## Create an equation learner block with functions that take 2 parameters (add, sub, mul ...) with layer initialization
-linear_layer_in = Linear(output_dimension=7, W_init=init_constant, W_init_params={'value':1}, b_init=init_constant, b_init_params={'value':0}, b=False) # output dim = 1+2+1+2+1
-equation_learner = EquationLearner(functions=[Tan, Add, Sin, Mul, Identity], linear_in=linear_layer_in)
-equation_learner_2 = EquationLearner(functions=[Tan, Add, Sin, Mul, Identity], linear_in=linear_layer_in)
-out = Output('out',equation_learner(x.last()))
+linear_layer_in_1 = Linear(output_dimension=7, W_init=init_constant, W_init_params={'value':1}, b_init=init_constant, b_init_params={'value':0}, b=False) # output dim = 1+2+1+2+1
+linear_layer_in_2 = Linear(output_dimension=7, W_init=init_constant, W_init_params={'value':1}, b_init=init_constant, b_init_params={'value':0}, b=False)
+equation_learner_1 = EquationLearner(functions=[Tan, Add, Sin, Mul, Identity], linear_in=linear_layer_in_1)
+equation_learner_2 = EquationLearner(functions=[Tan, Add, Sin, Mul, Identity], linear_in=linear_layer_in_2)
+out = Output('out',equation_learner_1(x.last()))
 out2 = Output('out2',equation_learner_2(inputs=(x.last(),F.last())))
 example = Modely(visualizer=None)
 example.addModel('model',[out,out2])
@@ -86,6 +94,7 @@ example.neuralizeModel()
 print(example({'x':[1], 'F':[2]}))
 
 print("------------------------EXAMPLE 7------------------------")
+NeuObj.clearNames()
 ## Create an equation learner block with simple parametric functions
 def func1(K1):
     return torch.sin(K1)
@@ -104,6 +113,7 @@ example.neuralizeModel()
 print(example({'x':[1],'F':[1]}))
 
 print("------------------------EXAMPLE 8------------------------")
+NeuObj.clearNames()
 ## Create an equation learner block with parametric functions that takes parameters
 def myFun(K1,p1):
     return K1*p1
@@ -120,6 +130,7 @@ print(example({'x':[1],'F':[1]}))
 print(example({'x':[1,2],'F':[1,2]}))
 
 print("------------------------EXAMPLE 9------------------------")
+NeuObj.clearNames()
 ## Create an equation learner block with parametric functions that takes parameters and other functions
 def myFun(K1,K2,p1,p2):
     return K1*p1+K2*p2
@@ -137,6 +148,7 @@ print(example({'x':[1],'F':[1]}))
 print(example({'x':[1,2],'F':[1,2]}))
 
 print("------------------------EXAMPLE 10------------------------")
+NeuObj.clearNames()
 ## Create an equation learner block with parametric functions and fuzzy
 def myFun(K1,p1):
     return K1*p1
@@ -154,6 +166,7 @@ print(example({'x':[1],'F':[1]}))
 print(example({'x':[1,2],'F':[1,2]}))
 
 print("------------------------EXAMPLE 11------------------------")
+NeuObj.clearNames()
 ## Create an equation learner block with parametric functions that takes parameters and other functions with temporal windows
 def myFun(K1,K2,p1,p2):
     return K1*p1+K2*p2
@@ -163,7 +176,7 @@ parfun = ParamFun(myFun, parameters = [K1,K2] )
 
 equation_learner = EquationLearner([parfun, Sin, Add])
 
-out = Output('out',equation_learner((x.sw(2),F.sw(1))))
+out = Output('out',equation_learner((x.sw(1),F.sw(1))))
 example = Modely(visualizer=None)
 example.addModel('eqlearner',out)
 example.neuralizeModel()
