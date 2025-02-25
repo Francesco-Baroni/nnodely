@@ -35,9 +35,9 @@ class ModelyTestVisualizer(unittest.TestCase):
         w_5 = Parameter('w_5', dimensions=1, tw=5)
         t_5 = Parameter('t_5', dimensions=1, tw=5)
         c_5 = [[1], [2], [3], [4], [5], [6], [7], [8], [9], [10]]
+        c_5_2 = Constant('c_5_2', tw=5, values=c_5)
         parfun_x = ParamFun(myFun, parameters=[K_x], constants=[c_v])
         parfun_y = ParamFun(myFun, parameters=[K_y])
-        #parfun_z = ParamFun(myFun)
         parfun_zz = ParamFun(myFun)
         fir_w = Fir(parameter=w_5)(x.tw(5))
         fir_t = Fir(parameter=t_5)(y.tw(5))
@@ -51,13 +51,13 @@ class ModelyTestVisualizer(unittest.TestCase):
         fuzzyTriang = Fuzzify(centers=[1, 2, 3, 7])(x.tw(1))
 
         self.out = Output('out', Fir(parfun_x(x.tw(1)) + parfun_y(y.tw(1), c_v)))
-        # out = Output('out', Fir(parfun_x(x.tw(1))+parfun_y(y.tw(1),c_v)+parfun_z(x.tw(5),t_5,c_5)))
         self.out2 = Output('out2', Add(w, x.tw(1)) + Add(t, y.tw(1)) + Add(w, c))
         self.out3 = Output('out3', Add(fir_w, fir_t))
         self.out4 = Output('out4', Linear(output_dimension=1)(fuzzy+fuzzyTriang))
         self.out5 = Output('out5', Fir(time_part) + Fir(sample_select))
         self.out6 = Output('out6', LocalModel(output_function=Fir())(x.tw(1), fuzzy))
         self.out7 = Output('out7', parfun_zz(z.last()))
+        self.out8 = Output('out8', Fir(parfun_x(x.tw(1)) + parfun_y(y.tw(1), c_v)) + Fir(parfun_zz(x.tw(5), t_5, c_5_2)))
 
     def test_export_textvisualizer(self):
         test = Modely(visualizer=TextVisualizer(5), seed=42)
@@ -146,8 +146,8 @@ class ModelyTestVisualizer(unittest.TestCase):
     #     params = {'num_of_epochs': 1, 'lr': 0.01}
     #     test.loadData(name='dataset', source=dataset)  # Create the dataset
     #     test.trainModel(optimizer='SGD', training_params=params)  # Train the traced model
-    #     test.trainModel(optimizer='SGD', training_params=params)
-
+    #     m.showFunctions(list(test.model_def['Functions'].keys()), xlim=[[-5, 5], [-1, 1]])
+    #     m.closeFunctions()
 
 if __name__ == '__main__':
     unittest.main()

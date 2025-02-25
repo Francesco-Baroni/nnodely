@@ -387,12 +387,16 @@ class ModelyJsonTest(unittest.TestCase):
         rel1 = parfun(x.last(), F.last())
         rel2 = parfun(Tanh(F.sw(2)+F.sw([-2,-0])+F.sw([-3,-1])+F.sw([-4,-2])), Tanh(F.sw([0,2])))
         rel3 = parfun(Tanh(F.sw([-2,1])))
+        rel4 = parfun(Tanh(F.sw([-2,1])), K1)
+        rel5 = parfun(K1, Tanh(F.sw(1)))
         with self.assertRaises(TypeError):
             parfun(Fir(3)(parfun(x.tw(0.4), x.tw(0.4))))
 
         out1 = Output('out1', rel1)
         out2 = Output('out2', rel2)
-        out3 = Output('out2', rel3)
+        out3 = Output('out3', rel3)
+        out4 = Output('out4', rel4)
+        out5 = Output('out5', rel5)
 
         # m = MPLVisualizer(5)
         # m.showFunctions(list(example.model_def['Functions'].keys()), xlim=[[-5, 5], [-1, 1]])
@@ -402,6 +406,7 @@ class ModelyJsonTest(unittest.TestCase):
         exampleA.addModel('model_A', [out1, out2])
         with self.assertRaises(TypeError):
             exampleA.addModel('model_B', [out3])
+        exampleA.addModel('model_A2', [out1, out2, out4, out5])
         exampleA.neuralizeModel(0.25)
 
         exampleB = Modely(seed=2)
@@ -410,9 +415,14 @@ class ModelyJsonTest(unittest.TestCase):
 
         resultsA = exampleA({'x': [1, 3, 3]})
         self.TestAlmostEqual([4.682941913604736, 3.2822399139404297, 3.2822399139404297], resultsA['out1'])
+        self.TestAlmostEqual([[3.0, 3.0],[3.0 , 3.0],[3.0 , 3.0]], resultsA['out2'])
+        self.TestAlmostEqual([[-1.2484405040740967, -1.2484405040740967, -1.2484405040740967],
+                             [-1.2484405040740967, -1.2484405040740967, -1.2484405040740967],
+                             [-1.2484405040740967, -1.2484405040740967, -1.2484405040740967]], resultsA['out4'])
+        self.TestAlmostEqual([4.818594932556152, 4.818594932556152, 4.818594932556152], resultsA['out5'])
 
         resultsB = exampleB({'F': [1, 3, 4]})
-        self.TestAlmostEqual([[1.814424991607666, 2.2605631351470947, 2.267522096633911]], resultsB['out2'])
+        self.TestAlmostEqual([[1.814424991607666, 2.2605631351470947, 2.267522096633911]], resultsB['out3'])
 
         log.setAllLevel(logging.CRITICAL)
 
