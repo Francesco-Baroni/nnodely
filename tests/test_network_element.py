@@ -273,7 +273,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
 
     def test_sech_cosh_function(self):
         torch.manual_seed(1)
-        input = Input('in')
+        input = Input('in1')
         sech_rel = Sech(input.last())
         sech_rel_2 = Sech(input.sw(2))
         cosh_rel = Cosh(input.last())
@@ -294,7 +294,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         test.addModel('model',[out1,out2,out3,out4,out5,out6])
         test.neuralizeModel(0.01)
 
-        result = test(inputs={'in':[[3.0],[-2.0]], 'in5':[[4.0,1.0,0.0,-6.0,2.0]]})
+        result = test(inputs={'in1':[[3.0],[-2.0]], 'in5':[[4.0,1.0,0.0,-6.0,2.0]]})
         self.TestAlmostEqual([0.2658022344112396], result['sech_out_1'])
         self.TestAlmostEqual([[0.0993279218673706, 0.2658022344112396]], result['sech_out_2'])
         self.TestAlmostEqual([[[0.03661899268627167, 0.6480542421340942, 1.0, 0.004957473836839199, 0.2658022344112396]]], result['sech_out_3'])
@@ -304,7 +304,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
 
     def test_concatenate_time_concatenate(self):
         torch.manual_seed(1)
-        input = Input('in')
+        input = Input('in1')
         input2 = Input('in2')
         concatenate_rel = Concatenate(input.last(),input2.last())
         timeconcatenate_rel = TimeConcatenate(input.last(),input2.last())
@@ -332,7 +332,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         test.addModel('model',[out1,out2,out3,out4,out5,out6,out7,out8])
         test.neuralizeModel(1)
 
-        result = test(inputs={'in':[[1.0],[2.0],[3.0]], 'in2':[[4.0],[5.0],[6.0]],
+        result = test(inputs={'in1':[[1.0],[2.0],[3.0]], 'in2':[[4.0],[5.0],[6.0]],
                               'in3':[[7.0,8.0,9.0,10.0,11.0],[12.0,13.0,14.0,15.0,16.0],[17.0,18.0,19.0,20.0,21.0]],
                               'in4':[[22.0,23.0,24.0,25.0,26.0],[27.0,28.0,29.0,30.0,31.0],[32.0,33.0,34.0,35.0,36.0]]})
         self.assertEqual((1,1,2), np.array(result['concatenate']).shape)
