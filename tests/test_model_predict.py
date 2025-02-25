@@ -1284,7 +1284,7 @@ class ModelyPredictTest(unittest.TestCase):
         self.assertEqual([[[1.0, 0.0, 0.0, 0.0, 0.0, 0.0]],[[0.0, 1.0, 0.0, 0.0, 0.0, 0.0]],[[0.0, 0.0, 1.0, 0.0, 0.0, 0.0]]], results['out'])
 
     def test_sw_on_stream_sw_by_heand(self):
-        input = Input('in')
+        input = Input('in1')
         sw_from_input = input.sw(7)
 
         state = State('state')
@@ -1295,7 +1295,7 @@ class ModelyPredictTest(unittest.TestCase):
         test = Modely(visualizer=None)
         test.addModel('out_A',  [out_aux,out1])
         test.neuralizeModel()
-        results = test({'in': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]})
+        results = test({'in1': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]})
         self.assertEqual((4, 3), np.array(results['out1']).shape)
         self.assertEqual([[4.0, 5.0, 6.0], [5.0, 6.0, 7.0], [6.0, 7.0, 8.0], [7.0, 8.0, 9.0]], results['out1'])
 
@@ -1306,12 +1306,12 @@ class ModelyPredictTest(unittest.TestCase):
         test = Modely(visualizer=None)
         test.addModel('out_A',  [out_aux,out1])
         test.neuralizeModel()
-        results = test({'in': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]}, connect={'state': 'out_aux'})
+        results = test({'in1': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]}, connect={'state': 'out_aux'})
         self.assertEqual((4, 3), np.array(results['out1']).shape)
         self.assertEqual([[4.0, 5.0, 6.0], [5.0, 6.0, 7.0], [6.0, 7.0, 8.0], [7.0, 8.0, 9.0]], results['out1'])
 
     def test_sw_on_stream_sw(self):
-        input = Input('in')
+        input = Input('in1')
         sw_from_input = input.sw(7)
 
         out1 = Output('out1', sw_from_input.sw(3))
@@ -1319,7 +1319,7 @@ class ModelyPredictTest(unittest.TestCase):
         test = Modely(visualizer=None)
         test.addModel('out_A',  out1)
         test.neuralizeModel()
-        results = test({'in': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]})
+        results = test({'in1': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]})
         self.assertEqual((4, 3), np.array(results['out1']).shape)
         self.assertEqual([[4.0, 5.0, 6.0], [5.0, 6.0, 7.0], [6.0, 7.0, 8.0], [7.0, 8.0, 9.0]], results['out1'])
 
@@ -1331,7 +1331,7 @@ class ModelyPredictTest(unittest.TestCase):
         test = Modely(visualizer=None)
         test.addModel('out_A', [out1,out2])
         test.neuralizeModel()
-        results = test({'in': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]})
+        results = test({'in1': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]})
         self.assertEqual((4, 3), np.array(results['out1']).shape)
         self.assertEqual([[4.0, 5.0, 6.0], [5.0, 6.0, 7.0], [6.0, 7.0, 8.0], [7.0, 8.0, 9.0]], results['out1'])
         self.assertEqual((4, 8), np.array(results['out2']).shape)
@@ -1341,7 +1341,7 @@ class ModelyPredictTest(unittest.TestCase):
                           [2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]], results['out2'])
 
     def test_tw_on_stream_tw(self):
-        input = Input('in')
+        input = Input('in1')
         tw_from_input = input.tw(3.5)
 
         out1 = Output('out1', tw_from_input.tw(1.5))
@@ -1349,7 +1349,7 @@ class ModelyPredictTest(unittest.TestCase):
         test = Modely(visualizer=None)
         test.addModel('out_A',  out1)
         test.neuralizeModel(0.5)
-        results = test({'in': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]})
+        results = test({'in1': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]})
         self.assertEqual((4, 3), np.array(results['out1']).shape)
         self.assertEqual([[4.0, 5.0, 6.0], [5.0, 6.0, 7.0], [6.0, 7.0, 8.0], [7.0, 8.0, 9.0]], results['out1'])
 
@@ -1361,7 +1361,7 @@ class ModelyPredictTest(unittest.TestCase):
         test = Modely(visualizer=None)
         test.addModel('out_A', [out1,out2])
         test.neuralizeModel(0.5)
-        results = test({'in': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]})
+        results = test({'in1': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]})
         self.assertEqual((4, 3), np.array(results['out1']).shape)
         self.assertEqual([[4.0, 5.0, 6.0], [5.0, 6.0, 7.0], [6.0, 7.0, 8.0], [7.0, 8.0, 9.0]], results['out1'])
         self.assertEqual((4, 8), np.array(results['out2']).shape)
