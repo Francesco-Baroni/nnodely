@@ -191,7 +191,6 @@ class Sum(Stream, ToStream):
         super().__init__(sum_relation_name + str(Stream.count),obj.json,obj.dim)
         self.json['Relations'][self.name] = [sum_relation_name,[obj.name]]
 
-
 class Add_Layer(nn.Module):
     #: :noindex:
     def __init__(self):
@@ -300,12 +299,10 @@ def createSum(name, *inputs):
     return Sum_Layer()
 
 
-
 setattr(Model, add_relation_name, createAdd)
 setattr(Model, sub_relation_name, createSub)
 setattr(Model, mul_relation_name, createMul)
 setattr(Model, div_relation_name, createDiv)
-setattr(Model, pow_relation_name, createPow)
 setattr(Model, pow_relation_name, createPow)
 
 setattr(Model, neg_relation_name, createNeg)

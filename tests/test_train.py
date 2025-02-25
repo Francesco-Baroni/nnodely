@@ -238,5 +238,37 @@ class ModelyTrainingTest(unittest.TestCase):
         self.assertListEqual(test.model.all_parameters['a3'].data.numpy().tolist(), [[-5],[-5],[-5],[-5],[-5]])
         self.assertListEqual(test.model.all_parameters['b3'].data.numpy().tolist(), [[-5],[-5],[-5],[-5],[-5]])
 
+    def test_train_equation_learner(self):
+        def func(x):
+            return np.cos(x) + np.sin(x)
+        
+        data_x = np.random.uniform(0, 2*np.pi, 200)
+        data_y = func(data_x)
+        dataset = {'x': data_x, 'y': data_y}
+
+        x = Input('x')
+        y = Input('y')
+
+        linear_in = Linear(output_dimension=5)
+        linear_in_2 = Linear(output_dimension=5)
+        linear_out = Linear(output_dimension=1, W_init=init_constant, W_init_params={'value':1})
+
+        equation_learner = EquationLearner(functions=[Sin, Identity, Add, Cos], linear_in=linear_in)  ## W=1*5 , b=1, activation_out=4
+        equation_learner2 = EquationLearner(functions=[Add, Identity, Mul],linear_in=linear_in_2, linear_out=linear_out) ## INGRESSO W=4*5, b=5, activation_out=3   USCITA W=3*1, b=1
+
+        eq1 = equation_learner(x.last())
+        eq2 = equation_learner2(eq1)
+        out = Output('eq2', eq2)
+
+        example = Modely(visualizer=TextVisualizer())
+        example.addModel('model',[out])
+        example.addMinimize('error', out, y.last())
+        example.neuralizeModel()
+        example.loadData(name='dataset', source=dataset)
+
+        ## Print the initial weights
+        optimizer_defaults = {'weight_decay': 0.3,}
+        example.trainModel(train_dataset='dataset', lr=0.01, num_of_epochs=2, optimizer_defaults=optimizer_defaults)
+
 if __name__ == '__main__':
     unittest.main()

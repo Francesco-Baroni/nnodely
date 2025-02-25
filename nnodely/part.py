@@ -141,7 +141,15 @@ class Concatenate(Stream, ToStream):
               f"The type of {obj2} is {type(obj2)} and is not supported for the Concatenate operation.")
         #check(obj1.dim == obj2.dim or obj1.dim == {'dim':1} or obj2.dim == {'dim':1}, ValueError,
         #      f"For addition operators (+) the dimension of {obj1.name} = {obj1.dim} must be the same of {obj2.name} = {obj2.dim}.")
-        super().__init__(concatenate_relation_name + str(Stream.count),merge(obj1.json,obj2.json),obj1.dim)
+        dim = copy.deepcopy(obj1.dim)
+        dim['dim'] = obj1.dim['dim']+obj2.dim['dim']
+        if 'tw' in obj1.dim.keys() and 'tw' in obj2.dim.keys():
+            check(obj1.dim['tw'] == obj2.dim['tw'], ValueError, 'The time window of the two inputs must be the same')
+        elif 'sw' in obj1.dim.keys() and 'sw' in obj2.dim.keys():
+            check(obj1.dim['sw'] == obj2.dim['sw'], ValueError, 'The sample window of the two inputs must be the same')
+        else:
+            raise(ValueError('The two inputs have different time or sample dimensions'))
+        super().__init__(concatenate_relation_name + str(Stream.count),merge(obj1.json,obj2.json),dim)
         self.json['Relations'][self.name] = [concatenate_relation_name,[obj1.name,obj2.name]]
 
 class SamplePart(Stream, ToStream):
@@ -489,6 +497,12 @@ class TimePart_Layer(nn.Module):
         result = torch.einsum('bij,ki->bkj', x, self.W)
         return result
 
+def createTimePart(self, *inputs):
+    if len(inputs) > 2: ## offset
+        return TimePart_Layer(dim=inputs[0], part=inputs[1], offset=inputs[2])
+    else:
+        return TimePart_Layer(dim=inputs[0], part=inputs[1], offset=None)
+
 class TimeConcatenate_Layer(nn.Module):
     #: :noindex:
     def __init__(self):
@@ -501,11 +515,7 @@ def createTimeConcatenate(name, *inputs):
     #: :noindex:
     return TimeConcatenate_Layer()
 
-def createTimePart(self, *inputs):
-    if len(inputs) > 2: ## offset
-        return TimePart_Layer(dim=inputs[0], part=inputs[1], offset=inputs[2])
-    else:
-        return TimePart_Layer(dim=inputs[0], part=inputs[1], offset=None)
+
 
 setattr(Model, part_relation_name, createPart)
 setattr(Model, select_relation_name, createSelect)
@@ -515,5 +525,4 @@ setattr(Model, samplepart_relation_name, createSamplePart)
 setattr(Model, sampleselect_relation_name, createSampleSelect)
 
 setattr(Model, timepart_relation_name, createTimePart)
-
 setattr(Model, timeconcatenate_relation_name, createTimeConcatenate)
