@@ -182,7 +182,7 @@ class Stream(Relation):
         return self.tw([-self.dim['tw']-delay,-delay])
 
     @enforce_types
-    def s(self, order:int,  method:str|None = None) -> "Stream":
+    def s(self, order:int, method:str = 'ForwardEuler') -> "Stream":
         """
         Considering the Laplace transform notation. The function is used to operate an integral or derivate operation on a Stream.
         The order of the integral or the derivative operation is indicated by the order parameter.
@@ -209,7 +209,6 @@ class Stream(Relation):
                 o = Integrate(self, method = method)
         return o
 
-    @enforce_types
     def connect(self, obj) -> "Stream":
         """
         Connects the current stream to a given state object.
@@ -240,7 +239,6 @@ class Stream(Relation):
         self.json['States'][obj.name]['connect'] = self.name
         return Stream(self.name, self.json, self.dim,0 )
 
-    @enforce_types
     def closedLoop(self, obj) -> "Stream":
         """
         Creates a closed loop connection with a given state object.
@@ -282,6 +280,7 @@ class AutoToStream():
     def __new__(cls, *args,  **kwargs):
         if len(args) > 0 and (issubclass(type(args[0]),NeuObj) or type(args[0]) is Stream):
             instance = super().__new__(cls)
+            #instance.__init__(**kwargs)
             instance.__init__()
             return instance(args[0])
         instance = super().__new__(cls)

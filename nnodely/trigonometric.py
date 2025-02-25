@@ -3,7 +3,8 @@ import torch.nn as nn
 
 from nnodely.relation import ToStream, Stream, toStream
 from nnodely.model import Model
-from nnodely.utils import check
+from nnodely.utils import check, enforce_types
+from nnodely.parameter import Parameter, Constant
 
 sin_relation_name = 'Sin'
 cos_relation_name = 'Cos'
@@ -23,7 +24,8 @@ class Sin(Stream, ToStream):
     Example:
         >>> sin = Sin(relation)
     """
-    def __init__(self, obj:Stream) -> Stream:
+    @enforce_types
+    def __init__(self, obj:Stream|Parameter|Constant|int|float) -> Stream:
         obj = toStream(obj)
         check(type(obj) is Stream, TypeError,
               f"The type of {obj} is {type(obj)} and is not supported for Sin operation.")
@@ -44,7 +46,8 @@ class Cos(Stream, ToStream):
     Example:
         >>> cos = Cos(relation)
     """
-    def __init__(self, obj:Stream) -> Stream:
+    @enforce_types
+    def __init__(self, obj:Stream|Parameter|Constant|int|float) -> Stream:
         obj = toStream(obj)
         check(type(obj) is Stream, TypeError,
               f"The type of {obj} is {type(obj)} and is not supported for Cos operation.")
@@ -65,7 +68,8 @@ class Tan(Stream, ToStream):
     Example:
         >>> tan = Tan(relation)
     """
-    def __init__(self, obj:Stream) -> Stream:
+    @enforce_types
+    def __init__(self, obj:Stream|Parameter|Constant|int|float) -> Stream:
         obj = toStream(obj)
         check(type(obj) is Stream, TypeError,
               f"The type of {obj} is {type(obj)} and is not supported for Tan operation.")

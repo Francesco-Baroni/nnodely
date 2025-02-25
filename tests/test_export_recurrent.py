@@ -558,8 +558,8 @@ class ModelyExportTest(unittest.TestCase):
         results = test({'inin':sample})
 
         onnx_model_path = os.path.join(result_path, 'onnx', network_name+'.onnx')
-        test.exportONNX(inputs_order=['inin','SamplePart2_state'],outputs_order=['out61','out62'],name=network_name)
-        outputs = Modely().onnxInference({'inin':np.array([[[[14],[1],[2],[3],[4],[5],[6]]]]).astype(np.float32),'SamplePart2_state':np.array([[[0],[0],[0],[0],[0],[0]]]).astype(np.float32)}, onnx_model_path)
+        test.exportONNX(inputs_order=['inin','SamplePart1_state'],outputs_order=['out61','out62'],name=network_name)
+        outputs = Modely().onnxInference({'inin':np.array([[[[14],[1],[2],[3],[4],[5],[6]]]]).astype(np.float32),'SamplePart1_state':np.array([[[0],[0],[0],[0],[0],[0]]]).astype(np.float32)}, onnx_model_path)
         self.assertEqual(outputs[0].squeeze().tolist(), results['out61'][0])
         self.assertEqual(outputs[1].squeeze().tolist(), results['out62'][0])
         self.assertEqual(results['out61'][0], results['out62'][0])

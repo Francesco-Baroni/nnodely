@@ -581,7 +581,7 @@ class ModelyPredictTest(unittest.TestCase):
         self.TestAlmostEqual(results['out'], [[[0.22182656824588776, -0.11421152949333191, 0.5385046601295471]], [[0.22182656824588776, -0.11421152949333191,  0.5385046601295471]]])
 
         parfun = ParamFun(myfun2)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             Output('out', parfun(Fir(3)(parfun(in1.tw(0.4), in2.tw(0.4)))))
 
         parfun = ParamFun(myfun2)
@@ -670,7 +670,7 @@ class ModelyPredictTest(unittest.TestCase):
                                               [[0.3850506544113159, 0.3850506544113159, 0.3850506544113159]]])
 
         parfun = ParamFun(myfun2)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             Output('out', parfun(Fir(3)(parfun(in1.tw(0.4), in2.tw(0.4)))))
 
         parfun = ParamFun(myfun2)
@@ -738,6 +738,28 @@ class ModelyPredictTest(unittest.TestCase):
         self.TestAlmostEqual([34.8819529, 33554496.0,  -33554480.0], results['out1'] )
         self.TestAlmostEqual([[[58.9539756, 46.1638031, 554.231201171875, 4294967296.0]], [[67.3462829589843, 46.16380310058594, 554.231201171875, 4294967296.0]], [[ -41.75371170043945, 567.6907348632812, 1953220.375, 4294967296.0]]], results['out4'])
         self.TestAlmostEqual([4294967808.0, 4328522240.0,  4263366656.0], results['outtot'])
+
+    def test_check_modify_stream(self):
+        torch.manual_seed(1)
+        in1 = Input('in1').last()
+        par = Parameter('par', values=[[5]])
+        add1 = in1 + par # 1 + 5 = 6
+        add2 = add1 + 5.2 # 6 + 5.2 = 11.2
+        tot1 = add1 + add2 # 6 + 11.2 = 17.2
+        out1 = Output('out1', tot1) # = 17.2
+        tot2 = add1 + in1 # 6 + 1 = 7
+        out12 = Output('out12', tot1 + tot2) # = 24.2
+        out2 = Output('out2', tot2) #= 7
+        test = Modely(visualizer=None)
+        test.addModel('out',[out1,out12,out2])
+        test.neuralizeModel()
+
+        results = test({'in1': [1]})
+        self.assertEqual((1,), np.array(results['out1']).shape)
+        self.TestAlmostEqual([17.2], results['out1'] )
+        self.TestAlmostEqual([24.2], results['out12'])
+        self.TestAlmostEqual([7], results['out2'])
+
 
     def test_parameter_and_linear(self):
         input = Input('in').last()
@@ -1226,6 +1248,30 @@ class ModelyPredictTest(unittest.TestCase):
         self.assertEqual([[-72.0, -84.0, -96.0]], results['out2'])
         self.assertEqual([[-96.0, -120.0, -144.0]], results['out3'])
 
+    def test_predict_paramfun_map_over_batch(self):
+        input2 = Input('in2')
+        pp = Parameter('pp', values=[[7],[8],[9]])
+        ll = Constant('ll', values=[[12],[13],[14]])
+        oo = Constant('oo', values=[[1],[2],[3]])
+        pp, oo, input2.tw(0.03), ll
+        def fun_test(x, y, z, k):
+            return (x + y) * (z - k)
+
+        pp_map = ParamFun(fun_test,parameters=[pp], constants=[ll,oo], map_over_batch=True)
+        pp = ParamFun(fun_test, parameters=[pp], constants=[ll, oo])
+
+        NeuObj.reset_count()
+        out1 = Output('out1',pp_map(input2.tw(0.03)))
+        out2 = Output('out2', pp(input2.tw(0.03)))
+        test = Modely(visualizer=None)
+        test.addModel('out',[out1,out2])
+        test.neuralizeModel(0.01)
+        results = test({'in2': [0, 1, 2]})
+        self.assertEqual((1, 3), np.array(results['out1']).shape)
+        self.assertEqual([[-72.0, -84.0, -96.0]], results['out1'])
+        self.assertEqual((1, 3), np.array(results['out2']).shape)
+        self.assertEqual([[-72.0, -84.0, -96.0]], results['out2'])
+
     def test_predict_fuzzify(self):
         input = Input('in')
         fuzzi = Fuzzify(6, range=[0, 5], functions='Rectangular')(input.last())
@@ -1507,6 +1553,92 @@ class ModelyPredictTest(unittest.TestCase):
                                  [0.0, 14.0, 1.0, 2.0, 3.0, 4.0, 5.0],
                                  [14.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
                                  [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]],  results['out1'])
+
+    def test_localmodel(self):
+
+        x = Input('x')
+        F = Input('F')
+        activationA = Fuzzify(2, [0, 1], functions='Triangular')(x.tw(1))
+        activationB = Fuzzify(2, [0, 1], functions='Triangular')(F.tw(1))
+
+        def myFun(in1, p1, p2):
+            return p1 * in1 + p2
+
+        p1_0 = Parameter('p1_0', values=[[1]])
+        p1_1 = Parameter('p1_1', values=[[2]])
+        p2_0 = Parameter('p2_0', values=[[2]])
+        p2_1 = Parameter('p2_1', values=[[3]])
+
+        def input_function_gen(idx_list):
+            if idx_list == [0, 0]:
+                p1, p2 = p1_0, p2_0
+            if idx_list == [0, 1]:
+                p1, p2 = p1_0, p2_1
+            if idx_list == [1, 0]:
+                p1, p2 = p1_1, p2_0
+            if idx_list == [1, 1]:
+                p1, p2 = p1_1, p2_1
+            return ParamFun(myFun, parameters=[p1, p2])
+
+        def output_function_gen(idx_list):
+            pfir = Parameter('pfir_' + str(idx_list), tw=1, dimensions=2,
+                             values=[[1 + idx_list[0], 2 + idx_list[1]], [3 + idx_list[0], 4 + idx_list[1]]])
+            return Fir(2, parameter=pfir)
+
+        loc = LocalModel(input_function=input_function_gen, output_function=output_function_gen, pass_indexes=True)(x.tw(1), (activationA, activationB))
+        # Example of the structure of the local model
+        pfir00 = Parameter('N_pfir_[0, 0]', tw=1, dimensions=2, values=[[1, 2], [3, 4]])
+        pfir01 = Parameter('N_pfir_[0, 1]', tw=1, dimensions=2, values=[[1, 3], [3, 5]])
+        pfir10 = Parameter('N_pfir_[1, 0]', tw=1, dimensions=2, values=[[2, 2], [4, 4]])
+        pfir11 = Parameter('N_pfir_[1, 1]', tw=1, dimensions=2, values=[[2, 3], [4, 5]])
+        parfun_00 = ParamFun(myFun, parameters=[p1_0, p2_0])(x.tw(1))
+        parfun_01 = ParamFun(myFun, parameters=[p1_0, p2_1])(x.tw(1))
+        parfun_10 = ParamFun(myFun, parameters=[p1_1, p2_0])(x.tw(1))
+        parfun_11 = ParamFun(myFun, parameters=[p1_1, p2_1])(x.tw(1))
+        out_in_00 = Output('parfun00', parfun_00)
+        out_in_01 = Output('parfun01', parfun_01)
+        out_in_10 = Output('parfun10', parfun_10)
+        out_in_11 = Output('parfun11', parfun_11)
+        actA = Output('fuzzyA', activationA)
+        actB = Output('fuzzyB', activationB)
+        act_selA0 = Select(activationA, 0)
+        act_selA1 = Select(activationA, 1)
+        act_selB0 = Select(activationB, 0)
+        act_selB1 = Select(activationB, 1)
+        out_act_selA0 = Output('fuzzy_selA0', act_selA0)
+        out_act_selA1 = Output('fuzzy_selA1', act_selA1)
+        out_act_selB0 = Output('fuzzy_selB0', act_selB0)
+        out_act_selB1 = Output('fuzzy_selB1', act_selB1)
+        mul00 = parfun_00 * act_selA0 * act_selB0
+        mul01 = parfun_01 * act_selA0 * act_selB1
+        mul10 = parfun_10 * act_selA1 * act_selB0
+        mul11 = parfun_11 * act_selA1 * act_selB1
+        out_mul00 = Output('mul00', mul00)
+        out_mul01 = Output('mul01', mul01)
+        out_mul10 = Output('mul10', mul10)
+        out_mul11 = Output('mul11', mul11)
+        fir00 = Fir(2, parameter=pfir00)(mul00)
+        fir01 = Fir(2, parameter=pfir01)(mul01)
+        fir10 = Fir(2, parameter=pfir10)(mul10)
+        fir11 = Fir(2, parameter=pfir11)(mul11)
+        out_fir00 = Output('fir00', fir00)
+        out_fir01 = Output('fir01', fir01)
+        out_fir10 = Output('fir10', fir10)
+        out_fir11 = Output('fir11', fir11)
+        sum = fir00 + fir01 + fir10 + fir11
+        out_sum = Output('out_sum', sum)
+        out = Output('out', loc)
+        test = Modely(visualizer=None)
+        test.addModel('all_out', [out_in_00, out_in_01, out_in_10, out_in_11,
+                                     out_act_selA0, out_act_selA1, out_act_selB0, out_act_selB1,
+                                     out_mul00, out_mul01, out_mul10, out_mul11,
+                                     out_fir00, out_fir01, out_fir10, out_fir11,
+                                     out_sum])
+        test.addModel('out', out)
+        test.neuralizeModel(0.5)
+        # Three semples with a dimensions 2
+        result = test({'x': [0, 1, -2, 3], 'F': [-2, 2, 1, 5]})
+        self.assertEqual(result['out_sum'],result['out'])
 
     def test_integrate_derivate(self):
         input = Input('in1')

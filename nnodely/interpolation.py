@@ -57,6 +57,7 @@ class Interpolation(NeuObj):
         check(len(torch.tensor(x_points).shape) == 1, ValueError, 'The x_points must be a 1D tensor.')
         check(len(torch.tensor(y_points).shape) == 1, ValueError, 'The y_points must be a 1D tensor.')
 
+    @enforce_types
     def __call__(self, obj:Stream) -> Stream:
         stream_name = interpolation_relation_name + str(Stream.count)
         check(type(obj) is Stream, TypeError, f"The type of {obj} is {type(obj)} and is not supported for Interpolation operation.")

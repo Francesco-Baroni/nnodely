@@ -5,7 +5,7 @@ from nnodely.utils import check, merge, enforce_types
 from nnodely.part import SamplePart, TimePart
 from nnodely.timeoperation import Derivate, Integrate
 
-class InputState(NeuObj, Stream):
+class InputState(NeuObj):
     """
     Represents an Input or State in the neural network model.
 
@@ -47,7 +47,6 @@ class InputState(NeuObj, Stream):
         self.json_name = json_name
         self.json[self.json_name][self.name] = {'dim': dimensions, 'tw': [0, 0], 'sw': [0,0] }
         self.dim = {'dim': dimensions}
-        Stream.__init__(self, name, self.json, self.dim)
 
     @enforce_types
     def tw(self, tw:int|float|list, offset:int|float|None = None) -> Stream:
@@ -199,7 +198,7 @@ class InputState(NeuObj, Stream):
         return self.z(-1)
 
     @enforce_types
-    def s(self, order:int,  method:str|None = None) -> Stream:
+    def s(self, order:int,  method:str = 'ForwardEuler') -> Stream:
         """
         Considering the Laplace transform notation. The function is used to operate an integral or derivate operation on the input.
         The order of the integral or the derivative operation is indicated by the order parameter.
@@ -228,11 +227,13 @@ class InputState(NeuObj, Stream):
         return o
 
 class Input(InputState):
-    def __init__(self, name, dimensions:int = 1):
+    @enforce_types
+    def __init__(self, name:str, dimensions:int = 1):
         InputState.__init__(self, 'Inputs', name, dimensions)
 
 class State(InputState):
-    def __init__(self, name, dimensions:int = 1):
+    @enforce_types
+    def __init__(self, name:str, dimensions:int = 1):
         InputState.__init__(self, 'States', name, dimensions)
 
 
@@ -241,6 +242,7 @@ connect_name = 'connect'
 closedloop_name = 'closedLoop'
 
 class Connect(Stream, ToStream):
+    @enforce_types
     def __init__(self, obj1:Stream, obj2:State) -> Stream:
         check(type(obj1) is Stream, TypeError,
               f"The {obj1} must be a Stream and not a {type(obj1)}.")
@@ -252,6 +254,7 @@ class Connect(Stream, ToStream):
         self.json['States'][obj2.name][connect_name] = obj1.name
 
 class ClosedLoop(Stream, ToStream):
+    @enforce_types
     def __init__(self, obj1:Stream, obj2: State) -> Stream:
         check(type(obj1) is Stream, TypeError,
               f"The {obj1} must be a Stream and not a {type(obj1)}.")
