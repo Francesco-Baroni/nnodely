@@ -22,7 +22,7 @@ from nnodely.parameter import Parameter, Constant, SampleTime
 from nnodely.output import Output
 
 # Network elements
-from nnodely.activation import Relu, Tanh, ELU
+from nnodely.activation import Relu, Tanh, ELU, Softmax, Sigmoid
 from nnodely.fir import Fir
 from nnodely.linear import Linear
 from nnodely.arithmetic import Add, Sum, Sub, Mul, Pow, Neg
