@@ -114,6 +114,7 @@ class ModelDef():
         if isinstance(stream_list, (Output,Stream)):
             stream_list = [stream_list]
         if type(stream_list) is list:
+            check(name not in self.model_dict.keys(),ValueError,f"The name '{name}' of the model is already used")
             self.model_dict[name] = copy.deepcopy(stream_list)
         else:
             raise TypeError(f'stream_list is type {type(stream_list)} but must be an Output or Stream or a list of them')
