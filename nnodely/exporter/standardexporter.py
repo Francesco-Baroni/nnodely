@@ -67,11 +67,15 @@ class StandardExporter(Exporter):
             check(False, RuntimeError, f"The module {name} it is not found in the folder {model_folder}.\nError: {e}")
         return model
 
-    def exportONNX(self, model_def, model, inputs_order, outputs_order, name = 'net', model_folder = None):
-        check(set(inputs_order) == set(model_def['Inputs'].keys() | model_def['States'].keys()), ValueError,
-              f'The inputs are not the same as the model inputs ({model_def["Inputs"].keys() | model_def["States"].keys()}).')
-        check(set(outputs_order) == set(model_def['Outputs'].keys()), ValueError,
-              f'The outputs are not the same as the model outputs ({model_def["Outputs"].keys()}).')
+    def exportONNX(self, model_def, model, inputs_order=None, outputs_order=None, name = 'net', model_folder = None):
+        # check(set(inputs_order) == set(model_def['Inputs'].keys() | model_def['States'].keys()), ValueError,
+        #       f'The inputs are not the same as the model inputs ({model_def["Inputs"].keys() | model_def["States"].keys()}).')
+        # check(set(outputs_order) == set(model_def['Outputs'].keys()), ValueError,
+        #       f'The outputs are not the same as the model outputs ({model_def["Outputs"].keys()}).')
+        if inputs_order is None:
+            log.warning(f"The inputs order for the export is not specified, the order will be inferred from the model definition.")
+        if outputs_order is None:
+            log.warning(f"The outputs order for the export is not specified, the order will be inferred from the model definition.")
         file_name = name + ".py"
         model_folder = self.workspace_folder if model_folder is None else model_folder
         model_folder = os.path.join(model_folder, 'onnx')
@@ -82,11 +86,11 @@ class StandardExporter(Exporter):
         ## Export to python file (onnx compatible)
         export_python_model(model_def, model, model_path)
         self.visualizer.exportModel('Python Torch Model', model_path)
-        export_pythononnx_model(model_def, inputs_order, outputs_order, model_path, onnx_python_model_path)
+        export_pythononnx_model(model_def, model_path, onnx_python_model_path, inputs_order, outputs_order)
         self.visualizer.exportModel('Python Onnx Torch Model', onnx_python_model_path)
         ## Export to onnx file (onnx compatible)
         model = import_python_model(file_name.replace('.py', '_onnx'), model_folder)
-        export_onnx_model(model_def, model, inputs_order, outputs_order,  onnx_model_path, name=name+'_onnx')
+        export_onnx_model(model_def, model, onnx_model_path, inputs_order, outputs_order, name=name+'_onnx')
         self.visualizer.exportModel('Onnx Model', onnx_model_path)
 
     def importONNX(self, name = 'net', model_folder = None):

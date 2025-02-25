@@ -1,5 +1,7 @@
 import sys, os, unittest
 
+import numpy as np
+
 from nnodely import *
 from nnodely.relation import NeuObj, Stream
 from nnodely import relation
@@ -28,9 +30,18 @@ def myFun_out5(K1,p1):
 NeuObj.count = 0
 
 class ModelyJsonTest(unittest.TestCase):
+    def TestAlmostEqual(self, data1, data2, precision=4):
+        assert np.asarray(data1, dtype=np.float32).ndim == np.asarray(data2, dtype=np.float32).ndim, f'Inputs must have the same dimension! Received {type(data1)} and {type(data2)}'
+        if type(data1) == type(data2) == list:
+            self.assertEqual(len(data1),len(data2))
+            for pred, label in zip(data1, data2):
+                self.TestAlmostEqual(pred, label, precision=precision)
+        else:
+            self.assertAlmostEqual(data1, data2, places=precision)
+
     def test_input(self):
-        input = Input('in')
-        self.assertEqual({'Info':{},'Constants': {},'Inputs': {'in': {'dim': 1, 'tw': [0,0], 'sw': [0, 0]}}, 'Functions' : {}, 'Parameters' : {}, 'Outputs': {}, 'Relations': {},'States': {}},input.json)
+        input = Input('in1')
+        self.assertEqual({'Info':{},'Constants': {},'Inputs': {'in1': {'dim': 1, 'tw': [0,0], 'sw': [0, 0]}}, 'Functions' : {}, 'Parameters' : {}, 'Outputs': {}, 'Relations': {},'States': {}},input.json)
 
         #Discrete input removed
         #input = Input('in', values=[2,3,4])
@@ -39,43 +50,43 @@ class ModelyJsonTest(unittest.TestCase):
     def test_aritmetic(self):
         Stream.resetCount()
         NeuObj.resetNames()
-        input = Input('in')
+        input = Input('in1')
         inlast = input.last()
         out = inlast+inlast
-        self.assertEqual({'Info':{},'Constants': {},'Inputs': {'in': {'dim': 1, 'tw': [0,0], 'sw': [-1, 0]}},'Functions' : {}, 'Parameters' : {}, 'Outputs': {},'States': {}, 'Relations': {'Add2': ['Add', ['SamplePart1', 'SamplePart1']],
-               'SamplePart1': ['SamplePart', ['in'], -1, [-1, 0]]}},out.json)
+        self.assertEqual({'Info':{},'Constants': {},'Inputs': {'in1': {'dim': 1, 'tw': [0,0], 'sw': [-1, 0]}},'Functions' : {}, 'Parameters' : {}, 'Outputs': {},'States': {}, 'Relations': {'Add2': ['Add', ['SamplePart1', 'SamplePart1']],
+               'SamplePart1': ['SamplePart', ['in1'], -1, [-1, 0]]}},out.json)
         out = input.tw(1) + input.tw(1)
-        self.assertEqual({'Info':{},'Constants': {},'Inputs': {'in': {'dim': 1, 'tw': [-1,0], 'sw': [0, 0]}},'Functions' : {}, 'Parameters' : {}, 'Outputs': {},'States': {}, 'Relations': {'Add7': ['Add', ['TimePart4', 'TimePart6']],
-               'TimePart4': ['TimePart', ['in'], -1, [-1, 0]],
-               'TimePart6': ['TimePart', ['in'], -1, [-1, 0]]}},out.json)
+        self.assertEqual({'Info':{},'Constants': {},'Inputs': {'in1': {'dim': 1, 'tw': [-1,0], 'sw': [0, 0]}},'Functions' : {}, 'Parameters' : {}, 'Outputs': {},'States': {}, 'Relations': {'Add7': ['Add', ['TimePart4', 'TimePart6']],
+               'TimePart4': ['TimePart', ['in1'], -1, [-1, 0]],
+               'TimePart6': ['TimePart', ['in1'], -1, [-1, 0]]}},out.json)
         out = input.tw(1) * input.tw(1)
-        self.assertEqual({'Info':{},'Constants': {},'Inputs': {'in': {'dim': 1, 'tw': [-1,0], 'sw': [0, 0]}},'Functions' : {}, 'Parameters' : {}, 'Outputs': {}, 'States': {}, 'Relations': {'Mul12': ['Mul', ['TimePart9', 'TimePart11']],
-               'TimePart9': ['TimePart', ['in'], -1, [-1, 0]],
-               'TimePart11': ['TimePart', ['in'], -1, [-1, 0]]}},out.json)
+        self.assertEqual({'Info':{},'Constants': {},'Inputs': {'in1': {'dim': 1, 'tw': [-1,0], 'sw': [0, 0]}},'Functions' : {}, 'Parameters' : {}, 'Outputs': {}, 'States': {}, 'Relations': {'Mul12': ['Mul', ['TimePart9', 'TimePart11']],
+               'TimePart9': ['TimePart', ['in1'], -1, [-1, 0]],
+               'TimePart11': ['TimePart', ['in1'], -1, [-1, 0]]}},out.json)
         out = input.tw(1) - input.tw(1)
-        self.assertEqual({'Info':{},'Constants': {},'Inputs': {'in': {'dim': 1, 'tw': [-1,0], 'sw': [0, 0]}},'Functions' : {}, 'Parameters' : {}, 'Outputs': {}, 'States': {}, 'Relations': {'Sub17': ['Sub', ['TimePart14', 'TimePart16']],
-               'TimePart14': ['TimePart', ['in'], -1, [-1, 0]],
-               'TimePart16': ['TimePart', ['in'], -1, [-1, 0]]}},out.json)
-        input = Input('in', dimensions = 5)
+        self.assertEqual({'Info':{},'Constants': {},'Inputs': {'in1': {'dim': 1, 'tw': [-1,0], 'sw': [0, 0]}},'Functions' : {}, 'Parameters' : {}, 'Outputs': {}, 'States': {}, 'Relations': {'Sub17': ['Sub', ['TimePart14', 'TimePart16']],
+               'TimePart14': ['TimePart', ['in1'], -1, [-1, 0]],
+               'TimePart16': ['TimePart', ['in1'], -1, [-1, 0]]}},out.json)
+        input = Input('in1', dimensions = 5)
         inlast = input.last()
         out = inlast + inlast
-        self.assertEqual({'Info':{},'Constants': {},'Inputs': {'in': {'dim': 5, 'tw': [0,0], 'sw': [-1, 0]}},'Functions' : {}, 'Parameters' : {}, 'Outputs': {}, 'States': {}, 'Relations': {'Add20': ['Add', ['SamplePart19', 'SamplePart19']],
-               'SamplePart19': ['SamplePart', ['in'], -1, [-1, 0]]}},out.json)
+        self.assertEqual({'Info':{},'Constants': {},'Inputs': {'in1': {'dim': 5, 'tw': [0,0], 'sw': [-1, 0]}},'Functions' : {}, 'Parameters' : {}, 'Outputs': {}, 'States': {}, 'Relations': {'Add20': ['Add', ['SamplePart19', 'SamplePart19']],
+               'SamplePart19': ['SamplePart', ['in1'], -1, [-1, 0]]}},out.json)
         out = input.tw(1) + input.tw(1)
-        self.assertEqual({'Info':{},'Constants': {},'Inputs': {'in': {'dim': 5, 'tw': [-1, 0], 'sw': [0, 0]}}, 'Functions': {}, 'Parameters': {},'Outputs': {}, 'States': {}, 'Relations': {'Add25': ['Add', ['TimePart22', 'TimePart24']],
-               'TimePart22': ['TimePart', ['in'], -1, [-1, 0]],
-               'TimePart24': ['TimePart', ['in'], -1, [-1, 0]]}}, out.json)
+        self.assertEqual({'Info':{},'Constants': {},'Inputs': {'in1': {'dim': 5, 'tw': [-1, 0], 'sw': [0, 0]}}, 'Functions': {}, 'Parameters': {},'Outputs': {}, 'States': {}, 'Relations': {'Add25': ['Add', ['TimePart22', 'TimePart24']],
+               'TimePart22': ['TimePart', ['in1'], -1, [-1, 0]],
+               'TimePart24': ['TimePart', ['in1'], -1, [-1, 0]]}}, out.json)
         out = input.tw([2,5]) + input.tw([3,6])
-        self.assertEqual({'Info':{},'Constants': {},'Inputs': {'in': {'dim': 5, 'tw': [2, 6], 'sw': [0, 0]}}, 'Functions': {}, 'Parameters': {},'Outputs': {}, 'States': {}, 'Relations': {'Add30': ['Add', ['TimePart27', 'TimePart29']],
-               'TimePart27': ['TimePart', ['in'], -1, [2, 5]],
-               'TimePart29': ['TimePart', ['in'], -1, [3, 6]]}}, out.json)
+        self.assertEqual({'Info':{},'Constants': {},'Inputs': {'in1': {'dim': 5, 'tw': [2, 6], 'sw': [0, 0]}}, 'Functions': {}, 'Parameters': {},'Outputs': {}, 'States': {}, 'Relations': {'Add30': ['Add', ['TimePart27', 'TimePart29']],
+               'TimePart27': ['TimePart', ['in1'], -1, [2, 5]],
+               'TimePart29': ['TimePart', ['in1'], -1, [3, 6]]}}, out.json)
         out = input.tw([-5,-2]) + input.tw([-6,-3])
-        self.assertEqual({'Info':{},'Constants': {},'Inputs': {'in': {'dim': 5, 'tw': [-6, -2], 'sw': [0, 0]}}, 'Functions': {}, 'Parameters': {},'Outputs': {}, 'States': {}, 'Relations': {'Add35': ['Add', ['TimePart32', 'TimePart34']],
-               'TimePart32': ['TimePart', ['in'], -1, [-5, -2]],
-               'TimePart34': ['TimePart', ['in'], -1, [-6, -3]]}}, out.json)
+        self.assertEqual({'Info':{},'Constants': {},'Inputs': {'in1': {'dim': 5, 'tw': [-6, -2], 'sw': [0, 0]}}, 'Functions': {}, 'Parameters': {},'Outputs': {}, 'States': {}, 'Relations': {'Add35': ['Add', ['TimePart32', 'TimePart34']],
+               'TimePart32': ['TimePart', ['in1'], -1, [-5, -2]],
+               'TimePart34': ['TimePart', ['in1'], -1, [-6, -3]]}}, out.json)
 
     def test_scalar_input_dimensions(self):
-        input = Input('in').last()
+        input = Input('in1').last()
         out = input+input
         self.assertEqual({'dim': 1,'sw': 1}, out.dim)
         out = Fir(input)
@@ -110,7 +121,7 @@ class ModelyJsonTest(unittest.TestCase):
             out = TimePart(inpart,-1,0)
 
     def test_scalar_input_tw_dimensions(self):
-        input = Input('in')
+        input = Input('in1')
         out = input.tw(1) + input.tw(1)
         self.assertEqual({'dim': 1, 'tw': 1}, out.dim)
         out = Fir(input.tw(1))
@@ -153,7 +164,7 @@ class ModelyJsonTest(unittest.TestCase):
         self.assertEqual({'dim': 1, 'tw': 1}, out.dim)
 
     def test_scalar_input_tw2_dimensions(self):
-        input = Input('in')
+        input = Input('in1')
         out = input.tw([-1,1])+input.tw([-2,0])
         self.assertEqual({'dim': 1, 'tw': 2}, out.dim)
         out = input.tw(1)+input.tw([-1,0])
@@ -168,7 +179,7 @@ class ModelyJsonTest(unittest.TestCase):
              out = input.tw([-2,0])+input.tw([-1,0])
 
     def test_scalar_input_sw_dimensions(self):
-        input = Input('in')
+        input = Input('in1')
         out = input.sw([-1,1])+input.sw([-2,0])
         self.assertEqual({'dim': 1, 'sw': 2}, out.dim)
         out = input.sw(1)+input.sw([-1,0])
@@ -189,7 +200,7 @@ class ModelyJsonTest(unittest.TestCase):
             out = input.sw([-1.2,0.05])
 
     def test_vector_input_dimensions(self):
-        input = Input('in', dimensions = 5)
+        input = Input('in1', dimensions = 5)
         self.assertEqual({'dim': 5}, input.dim)
         self.assertEqual({'dim': 5, 'tw' : 2}, input.tw(2).dim)
         out = input.tw(1) + input.tw(1)
@@ -208,7 +219,7 @@ class ModelyJsonTest(unittest.TestCase):
         self.assertEqual({'dim': 5, 'tw': 2}, out.dim)
 
     def test_parameter_and_linear(self):
-        input = Input('in').last()
+        input = Input('in1').last()
         W15 = Parameter('W15', dimensions=(1, 5))
         b15 = Parameter('b15', dimensions=5)
         input4 = Input('in4',dimensions=4).last()
@@ -224,7 +235,7 @@ class ModelyJsonTest(unittest.TestCase):
         self.assertEqual({'dim': 5, 'sw': 1}, outW.dim)
         self.assertEqual({'dim': 5, 'sw': 1}, outWb.dim)
 
-        input2 = Input('in').sw([-1,1])
+        input2 = Input('in1').sw([-1,1])
         W15 = Parameter('W15', dimensions=(1, 5))
         b15 = Parameter('b15', dimensions=5)
         input42 = Input('in4', dimensions=4).sw([-1,1])
@@ -398,10 +409,10 @@ class ModelyJsonTest(unittest.TestCase):
         exampleB.neuralizeModel(1)
 
         resultsA = exampleA({'x': [1, 3, 3]})
-        self.assertEqual([4.682941913604736, 3.2822399139404297, 3.2822399139404297], resultsA['out1'])
+        self.TestAlmostEqual([4.682941913604736, 3.2822399139404297, 3.2822399139404297], resultsA['out1'])
 
         resultsB = exampleB({'F': [1, 3, 4]})
-        self.assertEqual([[1.814424991607666, 2.2605631351470947, 2.267522096633911]], resultsB['out2'])
+        self.TestAlmostEqual([[1.814424991607666, 2.2605631351470947, 2.267522096633911]], resultsB['out2'])
 
         log.setAllLevel(logging.CRITICAL)
 
@@ -431,10 +442,10 @@ class ModelyJsonTest(unittest.TestCase):
         exampleB.neuralizeModel(1)
 
         resultsA = exampleA({'x': [[1, 3, 3], [1, 2, 1], [2, 3, 4]]})
-        self.assertEqual([12.507442474365234], resultsA['out1'])
+        self.TestAlmostEqual([12.507442474365234], resultsA['out1'])
 
         resultsB = exampleB({'f': [1, 3, 3, 1, 2, 1]})
-        self.assertEqual([6.585615158081055, 4.480303764343262, 4.106618881225586, 3.18161678314209], resultsB['out2'])
+        self.TestAlmostEqual([6.585615158081055, 4.480303764343262, 4.106618881225586, 3.18161678314209], resultsB['out2'])
 
         log.setAllLevel(logging.CRITICAL)
 
@@ -462,10 +473,10 @@ class ModelyJsonTest(unittest.TestCase):
         exampleB.neuralizeModel(1)
 
         resultsA = exampleA({'x': [1, 3]})
-        self.assertEqual([0.6146950721740723, 1.8440852165222168], resultsA['out1'])
+        self.TestAlmostEqual([0.6146950721740723, 1.8440852165222168], resultsA['out1'])
 
         resultsB = exampleB({'x': [1, 4, 5]})
-        self.assertEqual([2.138746500015259, 4.363844871520996], resultsB['out2'])
+        self.TestAlmostEqual([2.138746500015259, 4.363844871520996], resultsB['out2'])
 
         log.setAllLevel(logging.CRITICAL)
 
