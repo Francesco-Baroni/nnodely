@@ -39,9 +39,9 @@ class TextVisualizer(Visualizer):
 
     def showMinimize(self,variable_name):
         if self.verbose >= 2:
-            self.__title(f" Minimize Error of {variable_name} with {self.n4m.model_def['Minimizers'][variable_name]['loss']} ")
-            self.__paramjson(f"Model {self.n4m.model_def['Minimizers'][variable_name]['A'].name}", self.n4m.model_def['Minimizers'][variable_name]['A'].json)
-            self.__paramjson(f"Model {self.n4m.model_def['Minimizers'][variable_name]['B'].name}", self.n4m.model_def['Minimizers'][variable_name]['B'].json)
+            self.__title(f" Minimize Error of {variable_name} between"
+                         f" {self.n4m.model_def['Minimizers'][variable_name]['A']} and"
+                         f" {self.n4m.model_def['Minimizers'][variable_name]['B']} with {self.n4m.model_def['Minimizers'][variable_name]['loss']} ")
             self.__line()
 
     def showModelInputWindow(self):

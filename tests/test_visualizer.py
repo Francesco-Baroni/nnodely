@@ -60,7 +60,8 @@ class ModelyTestVisualizer(unittest.TestCase):
         self.out8 = Output('out8', Fir(parfun_x(x.tw(1)) + parfun_y(y.tw(1), c_v)) + Fir(parfun_zz(x.tw(5), t_5, c_5_2)))
 
     def test_export_textvisualizer(self):
-        test = Modely(visualizer=TextVisualizer(5), seed=42)
+        t = TextVisualizer(5)
+        test = Modely(visualizer=t, seed=42, workspace='./results')
         test.addModel('modelA', self.out)
         test.addModel('modelB', [self.out2, self.out3, self.out4])
         test.addModel('modelC', [self.out4, self.out5, self.out6])
@@ -71,13 +72,26 @@ class ModelyTestVisualizer(unittest.TestCase):
 
         test.neuralizeModel(0.5)
 
-        data_x = np.arange(0.0, 1, 0.1)
-        data_y = np.arange(0.0, 1, 0.1)
+        data_x = np.arange(0.0, 5, 0.1)
+        data_y = np.arange(0.0, 5, 0.1)
         a, b = -1.0, 2.0
         dataset = {'x': data_x, 'y': data_y, 'z': a * data_x + b * data_y}
         params = {'num_of_epochs': 10, 'lr': 0.01}
         test.loadData(name='dataset', source=dataset)  # Create the datastest.trainModel(optimizer='SGD', training_params=params)  # Train the traced model
+        t.showMinimize('error1')
+        t.showMinimize('error2')
+        t.showMinimize('error3')
         test.trainModel(optimizer='SGD', training_params=params)
+        t.showWeights()
+        test.trainModel(optimizer='SGD', training_params=params, validation_dataset=params)
+        test.trainModel(optimizer='SGD', training_params=params, validation_dataset=params, closed_loop={'x':'out'}, prediction_samples=1)
+        test.saveModel()
+        test.loadModel()
+
+        test.neuralizeModel(0.5)
+        test.exportPythonModel()
+        test.importPythonModel()
+        test.exportReport()
 
     def test_export_mplvisualizer(self):
         m = MPLVisualizer(5)
