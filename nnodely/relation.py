@@ -52,7 +52,7 @@ class NeuObj():
         if name == '':
             name = 'Auto'+str(NeuObj.count)
         if CHECK_NAMES == True:
-            check(name not in NeuObj.names, NameError, f"The name {name} is already used change the name of NeuObj.")
+            check(name not in NeuObj.names, NameError, f"The name '{name}' is already used change the name of NeuObj.")
             check(name not in ForbiddenTags, NameError, f"The name '{name}' is a forbidden tag.")
             NeuObj.names.append(name)
         self.name = name
@@ -156,7 +156,7 @@ class Stream(Relation):
         from nnodely.input import State, Connect
         if type(tw) is list:
             check(0 >= tw[1] > tw[0] and tw[0] < 0, ValueError, "The dimension of the sample window must be in the past.")
-        s = State(self.name+"_state",dimensions=self.dim['dim'])
+        s = State(self.name+"_tw"+str(NeuObj.count),dimensions=self.dim['dim'])
         out_connect = Connect(self, s)
         win_state = s.tw(tw, offset)
         return Stream(win_state.name, merge(win_state.json, out_connect.json), win_state.dim,0 )
@@ -183,7 +183,7 @@ class Stream(Relation):
         from nnodely.input import State, Connect
         if type(sw) is list:
             check(0 >= sw[1] > sw[0] and sw[0] < 0, ValueError, "The dimension of the sample window must be in the past.")
-        s = State(self.name+"_state",dimensions=self.dim['dim'])
+        s = State(self.name+"_sw"+str(NeuObj.count),dimensions=self.dim['dim'])
         out_connect = Connect(self, s)
         win_state = s.sw(sw, offset)
         return Stream(win_state.name, merge(win_state.json, out_connect.json), win_state.dim,0 )
