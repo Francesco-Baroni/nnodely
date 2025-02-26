@@ -1,16 +1,10 @@
-import sys, os, unittest, torch, shutil
+import  os, unittest, torch, shutil
 import numpy as np
 
 from nnodely import *
-from nnodely import relation
-relation.CHECK_NAMES = False
-
-import torch.onnx
-import onnx
-import onnxruntime as ort
-import importlib
-
+from nnodely.relation import NeuObj
 from nnodely.logger import logging, nnLogger
+
 log = nnLogger(__name__, logging.CRITICAL)
 log.setAllLevel(logging.CRITICAL)
 
@@ -30,6 +24,7 @@ class ModelyExportTest(unittest.TestCase):
 
     def __init__(self, *args, **kwargs):
         super(ModelyExportTest, self).__init__(*args, **kwargs)
+        NeuObj.clearNames()
 
         self.result_path = './results'
         self.test = Modely(visualizer=None, seed=42, workspace=self.result_path)
@@ -74,7 +69,7 @@ class ModelyExportTest(unittest.TestCase):
         out6 = Output('out6', LocalModel(output_function=Fir())(x.tw(1), fuzzy))
         with self.assertRaises(TypeError):
             parfun_z(x.tw(5), t_5, c_5)
-        out7 = Output('out', Fir(parfun_x(x.tw(1)) + parfun_y(y.tw(1), c_v)) + Fir(parfun_z(x.tw(5), t_5, c_5_2)))
+        out7 = Output('out7', Fir(parfun_x(x.tw(1)) + parfun_y(y.tw(1), c_v)) + Fir(parfun_z(x.tw(5), t_5, c_5_2)))
 
         self.test.addModel('modelA', out)
         self.test.addModel('modelB', [out2, out3, out4])

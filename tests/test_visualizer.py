@@ -2,10 +2,9 @@ import sys, os, unittest, torch, shutil
 import numpy as np
 
 from nnodely import *
-from nnodely import relation
-relation.CHECK_NAMES = False
-
+from nnodely.relation import NeuObj
 from nnodely.logger import logging, nnLogger
+
 log = nnLogger(__name__, logging.CRITICAL)
 log.setAllLevel(logging.CRITICAL)
 
@@ -16,6 +15,7 @@ sys.path.append(os.getcwd())
 
 class ModelyTestVisualizer(unittest.TestCase):
     def __init__(self, *args, **kwargs):
+        NeuObj.clearNames()
         super(ModelyTestVisualizer, self).__init__(*args, **kwargs)
 
         self.x = x = Input('x')

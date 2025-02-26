@@ -2,10 +2,9 @@ import unittest, os, sys
 import numpy as np
 
 from nnodely import *
-from nnodely import relation
-relation.CHECK_NAMES = False
-
+from nnodely.relation import NeuObj
 from nnodely.logger import logging, nnLogger
+
 log = nnLogger(__name__, logging.CRITICAL)
 log.setAllLevel(logging.CRITICAL)
 
@@ -36,6 +35,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
             self.assertAlmostEqual(data1, data2, places=precision)
 
     def test_network_mass_spring_damper(self):
+        NeuObj.clearNames()
         x = Input('x')  # Position
         F = Input('F')  # Force
 
@@ -68,6 +68,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         self.assertEqual(0.001,test.run_training_params['optimizer_defaults']['lr'])
 
     def test_build_dataset_batch_connect(self):
+        NeuObj.clearNames()
         data_x = np.random.rand(500) * 20 - 10
         data_a = 2
         data_b = -3
@@ -116,6 +117,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         self.assertEqual(1, test.run_training_params['unused_samples'])
 
     def test_recurrent_train_closed_loop(self):
+        NeuObj.clearNames()
         data_x = np.random.rand(500) * 20 - 10
         data_a = 2
         data_b = -3
@@ -164,6 +166,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         self.assertEqual(n_samples - list_of_batch_indexes[-1] - batch_size - prediction_samples, test.run_training_params['unused_samples'])
 
     def test_recurrent_train_single_close_loop(self):
+        NeuObj.clearNames()
         data_x = np.array(list(range(1, 101, 1)), dtype=np.float32)
         dataset = {'x': data_x, 'y': 2 * data_x}
 
@@ -304,6 +307,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         self.assertEqual(n_samples - list_of_batch_indexes[-1] - batch_size, test.run_training_params['unused_samples'])
 
     def test_build_dataset_batch2(self):
+        NeuObj.clearNames()
         input1 = Input('in1')
         output = Input('out')
         rel1 = Fir(input1.tw(0.05))
@@ -347,6 +351,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         self.assertEqual(n_samples - list_of_batch_indexes[-1] - batch_size, test.run_training_params['unused_samples'])
 
     def test_build_dataset_batch3(self):
+        NeuObj.clearNames()
         input1 = Input('in1')
         output = Input('out')
         rel1 = Fir(input1.tw(0.05))
@@ -393,6 +398,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         self.assertEqual(n_samples - list_of_batch_indexes[-1] - batch_size, test.run_training_params['unused_samples'])
 
     def test_build_dataset_batch4(self):
+        NeuObj.clearNames()
         input1 = Input('in1')
         output = Input('out')
         rel1 = Fir(input1.tw(0.05))
@@ -439,6 +445,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         self.assertEqual(n_samples - list_of_batch_indexes[-1] - batch_size, test.run_training_params['unused_samples'])
 
     def test_build_dataset_from_code(self):
+        NeuObj.clearNames()
         input1 = Input('in1')
         output = Input('out')
         rel1 = Fir(input1.tw(0.05))
@@ -490,6 +497,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         self.assertEqual(n_samples - list_of_batch_indexes[-1] - batch_size, test.run_training_params['unused_samples'])
 
     def test_network_multi_dataset(self):
+        NeuObj.clearNames()
         train_folder = os.path.join(os.path.dirname(__file__), 'data/')
         val_folder = os.path.join(os.path.dirname(__file__), 'val_data/')
         test_folder = os.path.join(os.path.dirname(__file__), 'test_data/')
@@ -546,6 +554,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         self.assertEqual(n_samples - list_of_batch_indexes[-1] - batch_size, test.run_training_params['unused_samples'])
 
     def test_train_vector_input(self):
+        NeuObj.clearNames()
         x = Input('x', dimensions=4)
         y = Input('y', dimensions=3)
         k = Input('k', dimensions=2)
@@ -609,6 +618,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         self.assertEqual(n_samples - list_of_batch_indexes[-1] - batch_size, test.run_training_params['unused_samples'])
 
     def test_optimizer_configuration(self):
+        NeuObj.clearNames()
         ## Model1
         input1 = Input('in1')
         a = Parameter('a', dimensions=1, tw=0.05, values=[[1], [1], [1], [1], [1]])

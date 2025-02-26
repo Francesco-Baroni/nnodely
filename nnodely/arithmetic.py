@@ -40,7 +40,7 @@ class Add(Stream, ToStream):
             >>> add = relation1 + relation2
     """
     @enforce_types
-    def __init__(self, obj1:Stream|Parameter|Constant, obj2:Stream|Parameter|Constant|int|float) -> Stream:
+    def __init__(self, obj1:Stream|Parameter|Constant|int|float, obj2:Stream|Parameter|Constant|int|float) -> Stream:
         obj1,obj2 = toStream(obj1),toStream(obj2)
         check(type(obj1) is Stream,TypeError,
               f"The type of {obj1} is {type(obj1)} and is not supported for add operation.")
@@ -68,7 +68,7 @@ class Sub(Stream, ToStream):
             >>> sub = relation1 - relation2
     """
     @enforce_types
-    def __init__(self, obj1:Stream|Parameter|Constant, obj2:Stream|Parameter|Constant|int|float) -> Stream:
+    def __init__(self, obj1:Stream|Parameter|Constant|int|float, obj2:Stream|Parameter|Constant|int|float) -> Stream:
         obj1, obj2 = toStream(obj1), toStream(obj2)
         check(type(obj1) is Stream,TypeError,
               f"The type of {obj1} is {type(obj1)} and is not supported for sub operation.")
@@ -95,7 +95,7 @@ class Mul(Stream, ToStream):
             >>> mul = relation1 * relation2
     """
     @enforce_types
-    def __init__(self, obj1:Stream|Parameter|Constant, obj2:Stream|Parameter|Constant|int|float) -> Stream:
+    def __init__(self, obj1:Stream|Parameter|Constant|int|float, obj2:Stream|Parameter|Constant|int|float) -> Stream:
         obj1, obj2 = toStream(obj1), toStream(obj2)
         check(type(obj1) is Stream, TypeError,
               f"The type of {obj1} is {type(obj1)} and is not supported for mul operation.")
@@ -122,7 +122,7 @@ class Div(Stream, ToStream):
             >>> div = relation1 / relation2
     """
     @enforce_types
-    def __init__(self, obj1:Stream|Parameter|Constant, obj2:Stream|Parameter|Constant|int|float) -> Stream:
+    def __init__(self, obj1:Stream|Parameter|Constant|int|float, obj2:Stream|Parameter|Constant|int|float) -> Stream:
         obj1, obj2 = toStream(obj1), toStream(obj2)
         check(type(obj1) is Stream, TypeError,
               f"The type of {obj1} is {type(obj1)} and is not supported for div operation.")
@@ -153,7 +153,7 @@ class Pow(Stream, ToStream):
             >>> pow = relation1 ** relation2
     """
     @enforce_types
-    def __init__(self, obj1:Stream|Parameter|Constant, obj2:Stream|Parameter|Constant|int|float) -> Stream:
+    def __init__(self, obj1:Stream|Parameter|Constant|int|float, obj2:Stream|Parameter|Constant|int|float) -> Stream:
         obj1, obj2 = toStream(obj1), toStream(obj2)
         check(type(obj1) is Stream, TypeError,
               f"The type of {obj1} is {type(obj1)} and is not supported for exp operation.")

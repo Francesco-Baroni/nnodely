@@ -3,10 +3,8 @@ import numpy as np
 
 from nnodely import *
 from nnodely.relation import NeuObj
-from nnodely import relation
-relation.CHECK_NAMES = False
-
 from nnodely.logger import logging, nnLogger
+
 log = nnLogger(__name__, logging.CRITICAL)
 log.setAllLevel(logging.CRITICAL)
 
@@ -55,6 +53,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
             self.assertAlmostEqual(data1, data2, places=precision)
 
     def test_predict_and_states_values_fir_simple_closed_loop(self):
+        NeuObj.clearNames()
         x = Input('x')
         x_state = State('x_state')
         p = Parameter('p', dimensions=1, sw=1, values=[[1.0]])
@@ -79,6 +78,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         self.assertEqual({'out': [0.0]}, result)
 
     def test_predict_values_fir_simple_closed_loop_predict(self):
+        NeuObj.clearNames()
         x = Input('x')
         x_in = Input('x_in')
         p = Parameter('p', dimensions=1, sw=1, values=[[1.0]])
@@ -97,6 +97,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         self.assertEqual({'out': [0.0]}, result)
 
     def test_predict_values_fir_closed_loop(self):
+        NeuObj.clearNames()
         ## the memory is not shared between different calls
         x = Input('x')
         F = State('F')
@@ -134,6 +135,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         self.assertEqual(result['out'], [16.0])
 
     def test_predict_values_fir_closed_loop_predict(self):
+        NeuObj.clearNames()
         ## the memory is not shared between different calls
         x = Input('x') 
         F = Input('F')
@@ -164,6 +166,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         self.assertEqual(result['out'], [16.0])
 
     def test_predict_values_2fir_closed_loop(self):
+        NeuObj.clearNames()
         ## the memory is not shared between different calls
         x = State('x')
         y = State('y')
@@ -206,6 +209,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         self.assertEqual(result['out_neg'], [-15.0, -20.0, -25.0])
 
     def test_predict_values_2fir_closed_loop_predict(self):
+        NeuObj.clearNames()
         ## the memory is not shared between different calls
         x = Input('x') 
         y = Input('y')
@@ -251,6 +255,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         self.assertEqual(result['out_neg'], [-15.0, 1.0, 2.0])
 
     def test_predict_values_3states_closed_loop(self):
+        NeuObj.clearNames()
         ## the state is saved inside the model so the memory is shared between different calls
         x = Input('x') 
         F_state = State('F')
@@ -299,6 +304,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         #self.assertEqual(result['out'], [3.0, 6.0, 12.0, 20.0])
 
     def test_predict_values_3states_closed_loop_predict(self):
+        NeuObj.clearNames()
         ## the state is saved inside the model so the memory is shared between different calls
         x = Input('x')
         F_state = Input('F')
@@ -339,6 +345,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         self.assertEqual(result['out'], [3.0,9.0,27.0,8.0])
 
     def test_predict_values_and_states_3states_more_window_closed_loop(self):
+        NeuObj.clearNames()
         ## the state is saved inside the model so the memory is shared between different calls
         x = Input('x') 
         y_state = State('y')
@@ -395,6 +402,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         self.assertEqual(test.states['z'].numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [0.0]]])
 
     def test_predict_values_and_states_3states_more_window_closed_loop_predict(self):
+        NeuObj.clearNames()
         ## the state is saved inside the model so the memory is shared between different calls
         x = Input('x')
         y_state = Input('y')
@@ -435,6 +443,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         self.assertEqual(result['out_z'], [45.0, 60.0, 234.0, 927.0, 3696.0])
 
     def test_predict_values_and_states_2states_more_window_connect(self):
+        NeuObj.clearNames()
         ## the state is saved inside the model so the memory is shared between different calls
         x = Input('x') 
         y_state = State('y')
@@ -513,6 +522,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         self.assertEqual(test.states['z'].numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [0.0]]])
 
     def test_predict_values_and_states_2states_more_window_connect_predict(self):
+        NeuObj.clearNames()
         ## the state is saved inside the model so the memory is shared between different calls
         x = Input('x')
         y_state = Input('y')
@@ -562,6 +572,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         self.assertEqual(result['out'], [sum(x) for x in zip(result['out_x'],result['out_y'],result['out_z'])])
 
     def test_predict_values_and_connect_variables_2models_more_window_connect(self):
+        NeuObj.clearNames()
         ## Model1
         input1 = Input('in1')
         a = Parameter('a', dimensions=1, tw=0.05, values=[[1],[1],[1],[1],[1]])
@@ -634,6 +645,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         # self.assertEqual(test.model.states['in3'].detach().numpy().tolist(), [[[5.], [30.], [4.]]])
 
     def test_predict_values_and_connect_variables_2models_more_window_connect_predict(self):
+        NeuObj.clearNames()
         ## Model1
         input1 = Input('in1')
         a = Parameter('a', dimensions=1, tw=0.05, values=[[1],[1],[1],[1],[1]])
@@ -703,6 +715,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         # self.assertEqual(test.model.connect_variables['in3'].detach().numpy().tolist(), [[[5.], [30.], [4.]]])
 
     def test_predict_values_and_states_only_state_variables_more_window_closed_loop(self):
+        NeuObj.clearNames()
         x_state = State('x_state')
         p = Parameter('p', dimensions=1, tw=0.03, values=[[1.0], [1.0], [1.0]])
         rel_x = Fir(parameter=p)(x_state.tw(0.03))

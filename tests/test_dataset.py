@@ -2,10 +2,9 @@ import sys, os, unittest
 import numpy as np
 
 from nnodely import *
-from nnodely import relation
-relation.CHECK_NAMES = False
-
+from nnodely.relation import NeuObj
 from nnodely.logger import logging, nnLogger
+
 log = nnLogger(__name__, logging.CRITICAL)
 log.setAllLevel(logging.CRITICAL)
 
@@ -22,6 +21,7 @@ test_folder = os.path.join(os.path.dirname(__file__), 'test_data/')
 class ModelyCreateDatasetTest(unittest.TestCase):
     
     def test_build_dataset_simple(self):
+        NeuObj.clearNames()
         input = Input('in1')
         output = Input('out')
         relation = Fir(input.tw(0.05))
@@ -40,6 +40,7 @@ class ModelyCreateDatasetTest(unittest.TestCase):
         self.assertEqual([[[1.225]], [[1.224]], [[1.222]], [[1.22]], [[1.217]], [[1.214]], [[1.211]], [[1.207]], [[1.204]], [[1.2]]], test.data['dataset_1']['out'].tolist())
 
     def test_build_multi_dataset_simple(self):
+        NeuObj.clearNames()
         input = Input('in1')
         output = Input('out')
         relation = Fir(input.tw(0.05))
@@ -74,6 +75,7 @@ class ModelyCreateDatasetTest(unittest.TestCase):
         self.assertEqual([[[3.225]], [[3.224]], [[3.222]], [[3.22]], [[3.217]], [[3.214]], [[3.211]], [[3.207]]], test.data['test_dataset']['out'].tolist())
     
     def test_build_dataset_medium1(self):
+        NeuObj.clearNames()
         input = Input('in1')
         output = Input('out')
         rel1 = Fir(input.tw(0.05))
@@ -92,6 +94,7 @@ class ModelyCreateDatasetTest(unittest.TestCase):
         self.assertEqual([[[1.225]], [[1.224]], [[1.222]], [[1.22]], [[1.217]], [[1.214]], [[1.211]], [[1.207]], [[1.204]], [[1.2]]],test.data['dataset']['out'].tolist())
     
     def test_build_multi_dataset_medium1(self):
+        NeuObj.clearNames()
         input = Input('in1')
         output = Input('out')
         rel1 = Fir(input.tw(0.05))
@@ -124,6 +127,7 @@ class ModelyCreateDatasetTest(unittest.TestCase):
         self.assertEqual([[[3.225]], [[3.224]], [[3.222]], [[3.22]], [[3.217]], [[3.214]], [[3.211]], [[3.207]]],test.data['test_dataset']['out'].tolist())
     
     def test_build_dataset_medium2(self):
+        NeuObj.clearNames()
         input1 = Input('in1')
         input2 = Input('in2')
         output = Input('out')
@@ -147,6 +151,7 @@ class ModelyCreateDatasetTest(unittest.TestCase):
         self.assertEqual([[[1.225]], [[1.224]], [[1.222]], [[1.22]], [[1.217]], [[1.214]], [[1.211]], [[1.207]], [[1.204]], [[1.2]]],test.data['dataset']['out'].tolist())
     
     def test_build_dataset_complex1(self):
+        NeuObj.clearNames()
         input1 = Input('in1')
         output = Input('out')
         rel1 = Fir(input1.tw(0.05))
@@ -165,6 +170,7 @@ class ModelyCreateDatasetTest(unittest.TestCase):
         self.assertEqual([[[1.225]], [[1.224]], [[1.222]], [[1.22]], [[1.217]], [[1.214]], [[1.211]], [[1.207]], [[1.204]]],test.data['dataset']['out'].tolist())
 
     def test_build_multi_dataset_complex1(self):
+        NeuObj.clearNames()
         input1 = Input('in1')
         output = Input('out')
         rel1 = Fir(input1.tw(0.05))
@@ -197,6 +203,7 @@ class ModelyCreateDatasetTest(unittest.TestCase):
         self.assertEqual([[[3.225]], [[3.224]], [[3.222]], [[3.22]], [[3.217]], [[3.214]], [[3.211]]],test.data['test_dataset']['out'].tolist())
     
     def test_build_dataset_complex2(self):
+        NeuObj.clearNames()
         input1 = Input('in1')
         output = Input('out')
         rel1 = Fir(input1.tw(0.05))
@@ -215,6 +222,7 @@ class ModelyCreateDatasetTest(unittest.TestCase):
         self.assertEqual([[[1.225]], [[1.224]], [[1.222]], [[1.22]], [[1.217]], [[1.214]], [[1.211]], [[1.207]], [[1.204]], [[1.2]]],test.data['dataset']['out'].tolist())
     
     def test_build_dataset_complex3(self):
+        NeuObj.clearNames()
         input1 = Input('in1')
         input2 = Input('in2')
         output = Input('out')
@@ -222,7 +230,7 @@ class ModelyCreateDatasetTest(unittest.TestCase):
         rel2 = Fir(input2.tw(0.02))
         rel3 = Fir(input1.tw([-0.01,0.01]))
         rel4 = Fir(input2.last())
-        fun = Output('out',rel1+rel2+rel3+rel4)
+        fun = Output('out-net',rel1+rel2+rel3+rel4)
 
         test = Modely(visualizer=None)
         test.addModel('fun', fun)
@@ -241,6 +249,7 @@ class ModelyCreateDatasetTest(unittest.TestCase):
         self.assertEqual([[[1.225]], [[1.224]], [[1.222]], [[1.22]], [[1.217]], [[1.214]], [[1.211]], [[1.207]], [[1.204]], [[1.2]]],test.data['dataset']['out'].tolist())
 
     def test_build_multi_dataset_complex3(self):
+        NeuObj.clearNames()
         input1 = Input('in1')
         input2 = Input('in2')
         output = Input('out')
@@ -248,7 +257,7 @@ class ModelyCreateDatasetTest(unittest.TestCase):
         rel2 = Fir(input2.tw(0.02))
         rel3 = Fir(input1.tw([-0.01,0.01]))
         rel4 = Fir(input2.last())
-        fun = Output('out',rel1+rel2+rel3+rel4)
+        fun = Output('out-net',rel1+rel2+rel3+rel4)
 
         test = Modely(visualizer=None)
         test.addModel('fun',fun)
@@ -284,12 +293,13 @@ class ModelyCreateDatasetTest(unittest.TestCase):
         self.assertEqual([[[3.225]], [[3.224]], [[3.222]], [[3.22]], [[3.217]], [[3.214]], [[3.211]], [[3.207]]],test.data['test_dataset']['out'].tolist())
     
     def test_build_dataset_complex5(self):
+        NeuObj.clearNames()
         input1 = Input('in1')
         output = Input('out')
         rel1 = Fir(input1.tw(0.05))
         rel2 = Fir(input1.tw([-0.01,0.01]))
         rel3 = Fir(input1.tw([-0.02,0.02]))
-        fun = Output('out',rel1+rel2+rel3)
+        fun = Output('out-net',rel1+rel2+rel3)
 
         test = Modely(visualizer=None)
         test.addModel('fun', fun)
@@ -305,12 +315,13 @@ class ModelyCreateDatasetTest(unittest.TestCase):
         self.assertEqual([[[1.225]], [[1.224]], [[1.222]], [[1.22]], [[1.217]], [[1.214]], [[1.211]], [[1.207]], [[1.204]]],test.data['dataset']['out'].tolist())
     
     def test_build_dataset_complex6(self):
+        NeuObj.clearNames()
         input1 = Input('in1')
         output = Input('out')
         rel1 = Fir(input1.tw(0.05))
         rel2 = Fir(input1.tw([-0.01,0.02]))
         rel3 = Fir(input1.tw([-0.05,0.01]))
-        fun = Output('out',rel1+rel2+rel3)
+        fun = Output('out-net',rel1+rel2+rel3)
 
         test = Modely(visualizer=None)
         test.addModel('fun',fun)
@@ -326,12 +337,13 @@ class ModelyCreateDatasetTest(unittest.TestCase):
         self.assertEqual([[[1.225]], [[1.224]], [[1.222]], [[1.22]], [[1.217]], [[1.214]], [[1.211]], [[1.207]], [[1.204]]],test.data['dataset']['out'].tolist())
 
     def test_build_dataset_custom(self):
+        NeuObj.clearNames()
         input1 = Input('in1')
         output = Input('out')
         rel1 = Fir(input1.tw(0.05))
         rel2 = Fir(input1.tw([-0.01,0.02]))
         rel3 = Fir(input1.tw([-0.05,0.01]))
-        fun = Output('out',rel1+rel2+rel3)
+        fun = Output('out-net',rel1+rel2+rel3)
 
         test = Modely(visualizer=None)
         test.addModel('fun',fun)
@@ -355,12 +367,13 @@ class ModelyCreateDatasetTest(unittest.TestCase):
         self.assertEqual([[[7]],[[9]],[[11]],[[13]]],test.data['dataset']['out'].tolist())
 
     def test_build_multi_dataset_custom(self):
+        NeuObj.clearNames()
         input1 = Input('in1')
         output = Input('out')
         rel1 = Fir(input1.tw(0.05))
         rel2 = Fir(input1.tw([-0.01, 0.02]))
         rel3 = Fir(input1.tw([-0.05, 0.01]))
-        fun = Output('out', rel1 + rel2 + rel3)
+        fun = Output('out-net', rel1 + rel2 + rel3)
 
         test = Modely(visualizer=None)
         test.addModel('fun',fun)
@@ -409,6 +422,7 @@ class ModelyCreateDatasetTest(unittest.TestCase):
         self.assertEqual([[[47]], [[49]], [[51]], [[53]]], test.data['test_dataset']['out'].tolist())
 
     def test_vector_input_dataset(self):
+        NeuObj.clearNames()
         x = Input('x', dimensions=4)
         y = Input('y', dimensions=3)
         k = Input('k', dimensions=2)
@@ -482,6 +496,7 @@ class ModelyCreateDatasetTest(unittest.TestCase):
                          test.data['dataset']['w'][-2].tolist())
 
     def test_vector_input_dataset_files(self):
+        NeuObj.clearNames()
         x = Input('x', dimensions=4)
         y = Input('y', dimensions=3)
         k = Input('k', dimensions=2)
@@ -545,6 +560,7 @@ class ModelyCreateDatasetTest(unittest.TestCase):
         #                 training_params={'num_of_epochs': 100, 'train_batch_size': 4, 'test_batch_size': 4})
     
     def test_multifiles(self):
+        NeuObj.clearNames()
         x = State('x')
         relation = Fir()(x.tw(0.05))
         output = Output('out', relation)
@@ -564,6 +580,7 @@ class ModelyCreateDatasetTest(unittest.TestCase):
         self.assertListEqual(test.multifile['dataset'], [5, 20, 45])
 
     def test_multifiles_2(self):
+        NeuObj.clearNames()
         x = State('x')
         y = Input('y')
         relation = Fir()(x.tw(0.05))+Fir(y.sw([-2,2]))

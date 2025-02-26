@@ -1,17 +1,10 @@
-import sys, os, unittest, torch, shutil
+import sys, os, unittest, torch, shutil, torch.onnx, importlib
 import numpy as np
 
 from nnodely import *
-from nnodely import relation
-relation.CHECK_NAMES = False
-
-import torch.onnx
-import onnx
-import onnxruntime as ort
-import importlib
-
-from nnodely.logger import logging, nnLogger
 from nnodely.relation import NeuObj, Stream
+from nnodely.logger import logging, nnLogger
+
 log = nnLogger(__name__, logging.CRITICAL)
 log.setAllLevel(logging.CRITICAL)
 
@@ -31,6 +24,7 @@ class ModelyExportTest(unittest.TestCase):
 
 
     def test_export_and_import_train_python_module(self):
+        NeuObj.clearNames()
         result_path = 'results'
         network_name = 'net'
         test = Modely(visualizer=None, seed=42, workspace=result_path)
@@ -74,6 +68,7 @@ class ModelyExportTest(unittest.TestCase):
             shutil.rmtree(test.getWorkspace())
 
     def test_export_and_import_python_module(self):
+        NeuObj.clearNames()
         result_path = 'results'
         network_name = 'exported_model'
         test = Modely(visualizer=None, seed=42, workspace=result_path)
@@ -117,6 +112,7 @@ class ModelyExportTest(unittest.TestCase):
             shutil.rmtree(test.getWorkspace())
 
     def test_export_and_import_onnx_module(self):
+        NeuObj.clearNames()
         result_path = 'results'
         test = Modely(visualizer=None, seed=42, workspace=result_path)
         x = Input('x')
@@ -155,6 +151,7 @@ class ModelyExportTest(unittest.TestCase):
             shutil.rmtree(test.getWorkspace())
 
     def test_export_and_import_onnx_module_easy(self):
+        NeuObj.clearNames()
         result_path = 'results'
         test = Modely(visualizer=None, seed=42, workspace=result_path)
         num_cycle = Input('num_cycle')
@@ -234,6 +231,7 @@ class ModelyExportTest(unittest.TestCase):
             shutil.rmtree(vehicle.getWorkspace())
 
     def test_export_python_module_recurrent(self):
+        NeuObj.clearNames()
         result_path = 'results'
         network_name = 'net'
         test = Modely(visualizer=None, seed=42, workspace=result_path)
@@ -252,12 +250,12 @@ class ModelyExportTest(unittest.TestCase):
 
         out1 = Output('out1', rel_1)
         out2 = Output('out2', rel_2)
-        out3 = Output('input1', input1.last())
-        out4 = Output('input2', input2.last())
-        out5 = Output('input3', input3.sw(4))
-        out6 = Output('input4', input4.sw(4))
-        out7 = Output('state1', state1.last())
-        out8 = Output('state2', state2.last())
+        out3 = Output('input1-out', input1.last())
+        out4 = Output('input2-out', input2.last())
+        out5 = Output('input3-out', input3.sw(4))
+        out6 = Output('input4-out', input4.sw(4))
+        out7 = Output('state1-out', state1.last())
+        out8 = Output('state2-out', state2.last())
 
         test.addModel('model', [out1, out2, out3, out4, out5, out6, out7, out8])
         test.neuralizeModel()
@@ -280,12 +278,12 @@ class ModelyExportTest(unittest.TestCase):
         recurrent_sample['state2'] = torch.rand(size=(1,1,3), dtype=torch.float32)
         self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['out1']).shape), [1,1,1,1])
         self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['out2']).shape), [1,1,1,3])
-        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['input1']).shape), [1,1,1,1])
-        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['input2']).shape), [1,1,1,3])
-        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['input3']).shape), [1,1,4,1])
-        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['input4']).shape), [1,1,4,3])
-        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['state1']).shape), [1,1,1,1])
-        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['state2']).shape), [1,1,1,3])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['input1-out']).shape), [1,1,1,1])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['input2-out']).shape), [1,1,1,3])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['input3-out']).shape), [1,1,4,1])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['input4-out']).shape), [1,1,4,3])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['state1-out']).shape), [1,1,1,1])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['state2-out']).shape), [1,1,1,3])
 
         ## With Horizon and without batch
         recurrent_sample = {'input1': torch.rand(size=(5,1,1,1), dtype=torch.float32),
@@ -296,12 +294,12 @@ class ModelyExportTest(unittest.TestCase):
         recurrent_sample['state2'] = torch.rand(size=(1,1,3), dtype=torch.float32)
         self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['out1']).shape), [5,1,1,1])
         self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['out2']).shape), [5,1,1,3])
-        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['input1']).shape), [5,1,1,1])
-        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['input2']).shape), [5,1,1,3])
-        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['input3']).shape), [5,1,4,1])
-        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['input4']).shape), [5,1,4,3])
-        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['state1']).shape), [5,1,1,1])
-        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['state2']).shape), [5,1,1,3])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['input1-out']).shape), [5,1,1,1])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['input2-out']).shape), [5,1,1,3])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['input3-out']).shape), [5,1,4,1])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['input4-out']).shape), [5,1,4,3])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['state1-out']).shape), [5,1,1,1])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['state2-out']).shape), [5,1,1,3])
 
         ## With Horizon and with batch
         recurrent_sample = {'input1': torch.rand(size=(5,2,1,1), dtype=torch.float32),
@@ -312,12 +310,12 @@ class ModelyExportTest(unittest.TestCase):
         recurrent_sample['state2'] = torch.rand(size=(2,1,3), dtype=torch.float32)
         self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['out1']).shape), [5,2,1,1])
         self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['out2']).shape), [5,2,1,3])
-        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['input1']).shape), [5,2,1,1])
-        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['input2']).shape), [5,2,1,3])
-        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['input3']).shape), [5,2,4,1])
-        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['input4']).shape), [5,2,4,3])
-        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['state1']).shape), [5,2,1,1])
-        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['state2']).shape), [5,2,1,3])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['input1-out']).shape), [5,2,1,1])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['input2-out']).shape), [5,2,1,3])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['input3-out']).shape), [5,2,4,1])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['input4-out']).shape), [5,2,4,3])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['state1-out']).shape), [5,2,1,1])
+        self.assertListEqual(list(torch.stack(recurrent_model(recurrent_sample)['state2-out']).shape), [5,2,1,3])
 
         if os.path.exists(test.getWorkspace()):
             shutil.rmtree(test.getWorkspace())
@@ -408,6 +406,7 @@ class ModelyExportTest(unittest.TestCase):
             shutil.rmtree(test.getWorkspace())
 
     def test_export_and_import_python_module_complex_recurrent(self):
+        NeuObj.clearNames()
         # Create nnodely structure
         result_path = 'results'
         network_name = 'vehicle'
@@ -477,6 +476,7 @@ class ModelyExportTest(unittest.TestCase):
             shutil.rmtree(vehicle.getWorkspace())
 
     def test_export_and_import_onnx_module_complex_recurrent(self):
+        NeuObj.clearNames()
         # Create nnodely structure
         result_path = 'results'
         network_name = 'vehicle'
@@ -551,15 +551,15 @@ class ModelyExportTest(unittest.TestCase):
 
         out61 = Output('out61', sw_7.sw(6))
         out62 = Output('out62', SamplePart(sw_7,1,7))
-        test = Modely(visualizer=None, workspace=result_path)
+        test = Modely(workspace=result_path)
         test.addModel('out', [out61,out62])
         test.neuralizeModel()
         sample = [14, 1, 2, 3, 4, 5, 6]
         results = test({'inin':sample})
 
         onnx_model_path = os.path.join(result_path, 'onnx', network_name+'.onnx')
-        test.exportONNX(inputs_order=['inin','SamplePart1_state'],outputs_order=['out61','out62'],name=network_name)
-        outputs = Modely().onnxInference({'inin':np.array([[[[14],[1],[2],[3],[4],[5],[6]]]]).astype(np.float32),'SamplePart1_state':np.array([[[0],[0],[0],[0],[0],[0]]]).astype(np.float32)}, onnx_model_path)
+        test.exportONNX(inputs_order=['inin','SamplePart1_sw1'],outputs_order=['out61','out62'],name=network_name)
+        outputs = Modely().onnxInference({'inin':np.array([[[[14],[1],[2],[3],[4],[5],[6]]]]).astype(np.float32),'SamplePart1_sw1':np.array([[[0],[0],[0],[0],[0],[0]]]).astype(np.float32)}, onnx_model_path)
         self.assertEqual(outputs[0].squeeze().tolist(), results['out61'][0])
         self.assertEqual(outputs[1].squeeze().tolist(), results['out62'][0])
         self.assertEqual(results['out61'][0], results['out62'][0])

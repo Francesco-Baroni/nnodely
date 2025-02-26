@@ -1,4 +1,4 @@
-from nnodely.relation import Stream, ToStream
+from nnodely.relation import Stream, NeuObj, ToStream
 from nnodely.utils import merge, enforce_types
 
 # Binary operators
@@ -17,10 +17,9 @@ class Integrate(Stream, ToStream):
     def __init__(self, obj:Stream, method:str = 'ForwardEuler') -> Stream:
         from nnodely.input import State, ClosedLoop
         from nnodely.parameter import SampleTime
-        s = State(obj.name + "_last", dimensions=obj.dim['dim'])
+        s = State(obj.name + "_int" + str(NeuObj.count), dimensions=obj.dim['dim'])
         if method == 'ForwardEuler':
-            DT = SampleTime()
-            new_s = s.last()  + obj * DT
+            new_s = s.last()  + obj * SampleTime()
         else:
             raise ValueError(f"The method '{method}' is not supported yet")
         out_connect = ClosedLoop(new_s, s)
@@ -38,10 +37,9 @@ class Derivate(Stream, ToStream):
     def __init__(self, obj:Stream, method:str = 'ForwardEuler') -> Stream:
         from nnodely.input import State, ClosedLoop
         from nnodely.parameter import SampleTime
-        s = State(obj.name + "_last", dimensions=obj.dim['dim'])
+        s = State(obj.name + "_der" + str(NeuObj.count), dimensions=obj.dim['dim'])
         if method == 'ForwardEuler':
-            DT = SampleTime()
-            new_s = (obj - s.last()) / DT
+            new_s = (obj - s.last()) / SampleTime()
         else:
             raise ValueError(f"The method '{method}' is not supported yet")
         out_connect = ClosedLoop(obj, s)
