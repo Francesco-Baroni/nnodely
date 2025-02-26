@@ -711,6 +711,13 @@ class ModelyPredictTest(unittest.TestCase):
         tanh1 = Tanh(par) + Tanh(5.2)
         tot1 = add + sub + mul + div + pow + sin1 + cos1 + tan1 + relu1 + tanh1
 
+        add = 5.2 + in1 + (3 + par)
+        sub = - 5.2 - par + (3 - in1)
+        mul = 5.2 * in1 * (2 * par)
+        div = 5.2 / in1 / (3 / par)
+        pow = (0.2 ** in1) + (2 ** par)
+        tot11 = add + sub + mul + div + pow
+
         add4 = in4 + par4 + 5.2
         sub4 = in4 - par4 - 5.2
         mul4 = in4 * par4 * 5.2
@@ -722,12 +729,23 @@ class ModelyPredictTest(unittest.TestCase):
         relu4 = Relu(par4) + Relu(5.2)
         tanh4 = Tanh(par4) + Tanh(5.2)
         tot4 = add4 + sub4 + mul4 + div4 + pow4 + sin4 + cos4 + tan4 + relu4 + tanh4
+
+        add4 = 5.2 + in4 + (3 + par4)
+        sub4 = - 5.2 - par4 + (3 - in4)
+        mul4 = 5.2 * in4 * (2 * par4)
+        div4 = 5.2 / in4 / (3 / par4)
+        pow4 = (0.2 ** in4) + (2 ** par4)
+        tot41 = add4 + sub4 + mul4 + div4 + pow4
+
         out1 = Output('out1', tot1)
+        out11 = Output('out11', tot11)
         out4 = Output('out4', tot4)
+        out41 = Output('out41', tot41)
+
         linW = Parameter('linW',dimensions=(4,1),values=[[[1],[1],[1],[1]]])
         outtot = Output('outtot', tot1 + Linear(W=linW)(tot4))
         test = Modely(visualizer=None)
-        test.addModel('out',[out1,out4,outtot])
+        test.addModel('out',[out1,out4,outtot,out11,out41])
         test.neuralizeModel()
 
         results = test({'in1': [1, 2, -2],'in4': [[6, 2, 2, 4], [7, 2, 2, 4], [-6, -5, 5, 4]]})
@@ -738,6 +756,14 @@ class ModelyPredictTest(unittest.TestCase):
         self.TestAlmostEqual([34.8819529, 33554496.0,  -33554480.0], results['out1'] )
         self.TestAlmostEqual([[[58.9539756, 46.1638031, 554.231201171875, 4294967296.0]], [[67.3462829589843, 46.16380310058594, 554.231201171875, 4294967296.0]], [[ -41.75371170043945, 567.6907348632812, 1953220.375, 4294967296.0]]], results['out4'])
         self.TestAlmostEqual([4294967808.0, 4328522240.0,  4263366656.0], results['outtot'])
+
+        self.assertEqual((3,), np.array(results['out11']).shape)
+        self.assertEqual((3,1,4), np.array(results['out41']).shape)
+
+        self.TestAlmostEqual([98.86666667, 146.37333333, -45.33333333], results['out11'])
+        self.TestAlmostEqual([[[   70.68895289,    53.37333333,    79.04      ,   190.13493333]],
+                                   [[   81.04763185,    53.37333333,    79.04      ,   190.13493333]],
+                                   [[15570.31111111,  3030.30666667,   171.04032   ,   190.13493333]]], results['out41'],precision=2)
 
     def test_check_modify_stream(self):
         torch.manual_seed(1)
