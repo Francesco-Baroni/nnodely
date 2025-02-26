@@ -36,7 +36,32 @@ class Constant(NeuObj, Relation):
 
     Example
     -------
+    Example - passing a custom scalar value -> g.dim = {'dim': 1}:
+
         >>> g = Constant('gravity',values=9.81)
+
+    Example - passing a custom vector value -> n.dim = {'dim': 4}:
+
+        >>> n = Constant('numbers', values=[1,2,3,4])
+
+    Example - passing a custom vector value with single sample window -> n.dim = {'dim': 4, 'sw': 1}:
+
+        >>> n = Constant('numbers', values=[[1,2,3,4]])
+
+    Example - passing a custom vector value with double sample window -> n.dim = {'dim': 4, 'sw': 2}:
+
+        >>> n = Constant('numbers', values=[[2,3,4],[1,2,3]])
+
+    Example - passing a custom vector value with double sample window -> n.dim = {'dim': 4, 'sw': 2}.
+    If the value of the sw is differnt from the dimension of shape[0] an error will be raised.
+
+        >>> n = Constant('numbers', sw = 2, values=[[2,3,4],[1,2,3]])
+
+    Example - passing a custom vector value with time window -> n.dim = {'dim': 4, 'tw': 4}.
+    In this case the samplingtime must be 0.5 otherwise an error will be raised. If the Constant have a time dimension,
+    the input must have a len(shape) == 2.
+
+        >>> n = Constant('numbers', tw = 4, values=[[2,3,4],[1,2,3]])
     """
     @enforce_types
     def __init__(self, name:str,
@@ -196,10 +221,10 @@ class SampleTime():
     -------
         >>> dt = SampleTime()
     """
+    name = 'SampleTime'
+    g = Constant(name, values=0)
     def __new__(cls):
-        name = 'SampleTime'
-        g = Constant(name, values=0)
-        g.dim = {'dim': 1, 'sw': 1}
-        g.json['Constants'][name] = copy.deepcopy(g.dim)
-        g.json['Constants'][name]['values'] = name
-        return g
+        SampleTime.g.dim = {'dim': 1, 'sw': 1}
+        SampleTime.g.json['Constants'][SampleTime.name] = copy.deepcopy(SampleTime.g.dim)
+        SampleTime.g.json['Constants'][SampleTime.name]['values'] = SampleTime.name
+        return SampleTime.g
