@@ -25,7 +25,7 @@ from nnodely.output import Output
 from nnodely.activation import Relu, ELU, Softmax, Sigmoid, Identity
 from nnodely.fir import Fir
 from nnodely.linear import Linear
-from nnodely.arithmetic import Add, Sum, Sub, Mul, Pow, Neg
+from nnodely.arithmetic import Add, Sum, Sub, Mul, Div, Pow, Neg
 from nnodely.trigonometric import Sin, Cos, Tan, Cosh, Tanh, Sech
 from nnodely.parametricfunction import ParamFun
 from nnodely.fuzzify import Fuzzify
