@@ -1,9 +1,7 @@
 import unittest, sys, os, torch
-
-from nnodely import *
-
 import numpy as np
 
+from nnodely import *
 from nnodely.logger import logging, nnLogger
 from nnodely.relation import NeuObj
 
@@ -383,7 +381,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         out6 = Output('out6', LocalModel(output_function=Fir())(x.tw(1), fuzzy))
         with self.assertRaises(TypeError):
             parfun_z(x.tw(5), t_5, c_5)
-        out7 = Output('out', Fir(parfun_x(x.tw(1)) + parfun_y(y.tw(1), c_v)) + Fir(parfun_z(x.tw(5), t_5, c_5_2)))
+        out7 = Output('out7', Fir(parfun_x(x.tw(1)) + parfun_y(y.tw(1), c_v)) + Fir(parfun_z(x.tw(5), t_5, c_5_2)))
 
         # parfun = ParamFun(myFun, map_over_batch=True)
         # p = Constant('co', values=[[2]])

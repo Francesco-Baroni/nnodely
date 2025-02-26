@@ -1,12 +1,11 @@
 import unittest, sys, os, torch
 
-from nnodely import *
-from nnodely.relation import Stream
-from nnodely import relation
 import numpy as np
-relation.CHECK_NAMES = False
 
+from nnodely import *
+from nnodely.relation import NeuObj, Stream
 from nnodely.logger import logging, nnLogger
+
 log = nnLogger(__name__, logging.CRITICAL)
 log.setAllLevel(logging.CRITICAL)
 
@@ -27,7 +26,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
             self.assertAlmostEqual(data1, data2, places=precision)
 
     def test_network_building_very_simple(self):
-
+        NeuObj.clearNames()
         input1 = Input('in1').last()
         rel1 = Fir(input1)
         fun = Output('out', rel1)
@@ -41,6 +40,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
             self.assertEqual(list_of_dimensions[ind],list(value.weights.shape))
       
     def test_network_building_simple(self):
+        NeuObj.clearNames()
         Stream.resetCount()
         input1 = Input('in1')
         rel1 = Fir(input1.tw(0.05))
@@ -56,6 +56,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
             self.assertEqual(list_of_dimensions[key],list(value.weights.shape))
 
     def test_network_building_tw(self):
+        NeuObj.clearNames()
         Stream.resetCount()
         input1 = Input('in1')
         input2 = Input('in2')
@@ -75,6 +76,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
     
     def test_network_building_tw2(self):
         Stream.resetCount()
+        NeuObj.clearNames()
         input2 = Input('in2')
         rel3 = Fir(input2.tw(0.05))
         rel4 = Fir(input2.tw([-0.02,0.02]))
@@ -95,6 +97,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
             self.assertEqual(list_of_dimensions[key],list(value.weights.shape))
 
     def test_network_building_tw3(self):
+        NeuObj.clearNames()
         input2 = Input('in2')
         rel3 = Fir(input2.tw(0.05))
         rel4 = Fir(input2.tw([-0.01,0.03]))
@@ -110,6 +113,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
             self.assertEqual(list_of_dimensions[ind],list(value.weights.shape))
 
     def test_network_building_tw_with_offest(self):
+        NeuObj.clearNames()
         Stream.resetCount()
         input2 = Input('in2')
         rel3 = Fir(input2.tw(0.05))
@@ -128,6 +132,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
             self.assertEqual(list_of_dimensions[key],list(value.weights.shape))
 
     def test_network_building_tw_negative(self):
+        NeuObj.clearNames()
         input2 = Input('in2')
         rel1 = Fir(input2.tw([-0.04,-0.01]))
         rel2 = Fir(input2.tw([-0.06,-0.03]))
@@ -142,6 +147,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
             self.assertEqual(list_of_dimensions[ind],list(value.weights.shape))
 
     def test_network_building_tw_positive(self):
+        NeuObj.clearNames()
         input2 = Input('in2')
         rel1 = Fir(input2.tw([0.01,0.04]))
         rel2 = Fir(input2.tw([0.03,0.06]))
@@ -157,6 +163,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
 
     def test_network_building_sw_with_offset(self):
         Stream.resetCount()
+        NeuObj.clearNames()
         input2 = Input('in2')
         rel3 = Fir(input2.sw(5))
         rel4 = Fir(input2.sw([-4,2]))
@@ -173,6 +180,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
             self.assertEqual(list_of_dimensions[key],list(value.weights.shape))
 
     def test_network_building_sw_and_tw(self):
+        NeuObj.clearNames()
         input2 = Input('in2')
         with self.assertRaises(ValueError):
             input2.sw(5)+input2.tw(0.05)
@@ -189,7 +197,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
             self.assertEqual(list_of_dimensions[ind],list(value.weights.shape))
 
     def test_network_linear(self):
-        torch.manual_seed(1)
+        NeuObj.clearNames()
         input = Input('in1')
         rel1 = Linear(input.sw([-4,2]))
         rel2 = Linear(5)(input.sw([-1, 2]))
@@ -202,7 +210,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         fun15 = Output('out51',rel15)
         fun25 = Output('out52', rel25)
 
-        test = Modely(visualizer=None)
+        test = Modely(seed =1, visualizer=None)
         test.addModel('fun',[fun1,fun2,fun15,fun25])
         test.neuralizeModel(0.01)
 
@@ -211,13 +219,13 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
             self.assertEqual(list_of_dimensions[ind],list(value.weights.shape))
 
     def test_network_linear_interpolation_train(self):
-        torch.manual_seed(1)
+        NeuObj.clearNames()
         x = Input('x')
         param = Parameter(name='a', sw=1)
         rel1 = Fir(parameter=param)(Interpolation(x_points=[1.0, 2.0, 3.0, 4.0],y_points=[2.0, 4.0, 6.0, 8.0], mode='linear')(x.last()))
         out = Output('out',rel1)
 
-        test = Modely(visualizer=None)
+        test = Modely(seed = 1, visualizer=None)
         test.addModel('fun',[out])
         test.addMinimize('error', out, x.last())
         test.neuralizeModel(0.01)
@@ -228,32 +236,32 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         self.assertAlmostEqual(test.model.all_parameters['a'].item(), 0.5, places=2)
 
     def test_network_linear_interpolation(self):
-        torch.manual_seed(1)
+        NeuObj.clearNames()
+
         x = Input('x')
         rel1 = Interpolation(x_points=[1.0, 2.0, 3.0, 4.0],y_points=[1.0, 4.0, 9.0, 16.0], mode='linear')(x.last())
         out = Output('out',rel1)
 
-        test = Modely(visualizer=None)
+        test = Modely(seed=1,visualizer=None)
         test.addModel('fun',[out])
         test.neuralizeModel(0.01)
 
         inference = test(inputs={'x':[1.5,2.5,3.5]})
         self.assertEqual(inference['out'],[2.5,6.5,12.5])
 
-        torch.manual_seed(1)
-        x = Input('x')
-        rel1 = Interpolation(x_points=[1.0, 4.0, 3.0, 2.0],y_points=[1.0, 16.0, 9.0, 4.0], mode='linear')(x.last())
-        out = Output('out',rel1)
+        x1 = Input('x1')
+        rel1 = Interpolation(x_points=[1.0, 4.0, 3.0, 2.0],y_points=[1.0, 16.0, 9.0, 4.0], mode='linear')(x1.last())
+        out = Output('out1',rel1)
 
         test = Modely(visualizer=None)
         test.addModel('fun',[out])
         test.neuralizeModel(0.01)
 
-        inference = test(inputs={'x':[1.5,2.5,3.5]})
-        self.assertEqual(inference['out'],[2.5,6.5,12.5])
+        inference = test(inputs={'x1':[1.5,2.5,3.5]})
+        self.assertEqual(inference['out1'],[2.5,6.5,12.5])
 
     def test_softmax_and_sigmoid(self):
-        torch.manual_seed(1)
+        NeuObj.clearNames()
         x = Input('x')
         y = Input('y', dimensions=3)
         softmax = Softmax(y.last())
@@ -303,7 +311,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         self.TestAlmostEqual([[[27.3082332611084, 1.5430806875228882, 1.0, 201.71563720703125, 3.762195587158203]]], result['cosh_out_3'])
 
     def test_concatenate_time_concatenate(self):
-        torch.manual_seed(1)
+        NeuObj.clearNames()
         input = Input('in1')
         input2 = Input('in2')
         concatenate_rel = Concatenate(input.last(),input2.last())
@@ -328,7 +336,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         out7 = Output('concatenate_tw_5', concatenate_tw_rel_5)
         out8 = Output('time_concatenate_tw_5', timeconcatenate_tw_rel_5)
 
-        test = Modely(visualizer=None)
+        test = Modely(seed=1,visualizer=None)
         test.addModel('model',[out1,out2,out3,out4,out5,out6,out7,out8])
         test.neuralizeModel(1)
 
@@ -360,6 +368,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
                            [32.0, 33.0, 34.0, 35.0, 36.0]]], result['time_concatenate_tw_5'])
 
     def test_equation_learner(self):
+        NeuObj.clearNames()
         x = Input('x')
         F = Input('F')
 
@@ -423,6 +432,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         self.assertEqual(result['el3_multi_tw'], [[[20.0, 8.0, 0.0, 0.0, 0.0, 1.0], [30.0, 12.0, 0.0, 0.0, 0.0, 1.0]]])
 
     def test_localmodel(self):
+        NeuObj.clearNames()
         x = Input('x')
         activationA = Fuzzify(2, [0, 1], functions='Triangular')(x.last())
         loc = LocalModel(input_function=Fir())(x.tw(1), activationA)
