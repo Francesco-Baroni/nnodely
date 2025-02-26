@@ -99,7 +99,7 @@ class Relation():
         from nnodely.arithmetic import Pow
         return Pow(self, obj)
 
-    def __pow__(self, obj):
+    def __rpow__(self, obj):
         from nnodely.arithmetic import Pow
         return Pow(obj, self)
 
