@@ -125,7 +125,7 @@ class Parameter(NeuObj, Relation):
                  tw:float|int|None = None,
                  sw:int|None = None,
                  values:list|float|int|np.ndarray|None = None,
-                 init:Callable|None = None,
+                 init:Callable|str|None = None,
                  init_params:dict|None = None):
 
         NeuObj.__init__(self, name)
@@ -154,8 +154,7 @@ class Parameter(NeuObj, Relation):
             if dimensions is None:
                 dimensions = values_dimensions
             else:
-                check(dimensions == values_dimensions, ValueError,
-                      f"The dimensions = {dimensions} are different from dimensions = {values_dimensions} of the values.")
+                check(dimensions == values_dimensions, ValueError,f"The dimensions = {dimensions} are different from dimensions = {values_dimensions} of the values.")
             self.dim = {'dim': dimensions}
 
             if tw is not None:
@@ -173,9 +172,12 @@ class Parameter(NeuObj, Relation):
 
         if init is not None:
             check('values' not in self.json['Parameters'][self.name], ValueError, f"The parameter {self.name} is already initialized.")
-            check(inspect.isfunction(init), ValueError,f"The init parameter must be a function.")
-            code = textwrap.dedent(inspect.getsource(init)).replace('\"', '\'')
-            self.json['Parameters'][self.name]['init_fun'] = { 'code' : code, 'name' : init.__name__}
+            #check(inspect.isfunction(init), ValueError,f"The init parameter must be a function.")
+            if inspect.isfunction(init):
+                code = textwrap.dedent(inspect.getsource(init)).replace('\"', '\'')
+                self.json['Parameters'][self.name]['init_fun'] = { 'code' : code, 'name' : init.__name__}
+            elif type(init) is str:
+                self.json['Parameters'][self.name]['init_fun'] = { 'name' : init}
             if init_params is not None:
                 self.json['Parameters'][self.name]['init_fun']['params'] = init_params
 

@@ -104,8 +104,7 @@ class ParamFun(NeuObj):
 
         # Create the missing parameters from list
         if type(self.parameters) is list:
-            check(self.parameters_dimensions is None, ValueError,
-                  '\"parameters_dimensions\" must be None if \"parameters\" is set using list')
+            check(self.parameters_dimensions is None, ValueError,'\"parameters_dimensions\" must be None if \"parameters\" is set using list')
             for param in self.parameters:
                 if type(param) is Parameter:
                     self.json['Functions'][self.name]['params_and_consts'].append(param.name)

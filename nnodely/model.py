@@ -1,5 +1,6 @@
 from itertools import product
 from nnodely.utils import TORCH_DTYPE
+from nnodely import initializer
 import numpy as np
 
 import torch.nn as nn
@@ -79,8 +80,11 @@ class Model(nn.Module):
                 self.all_parameters[name] = nn.Parameter(torch.tensor(param_data['values'], dtype=TORCH_DTYPE), requires_grad=True)
             # TODO clean code
             elif 'init_fun' in param_data:
-                exec(param_data['init_fun']['code'], globals())
-                function_to_call = globals()[param_data['init_fun']['name']]
+                if 'code' in param_data['init_fun'].keys():
+                    exec(param_data['init_fun']['code'], globals())
+                    function_to_call = globals()[param_data['init_fun']['name']]
+                else:
+                    function_to_call = getattr(initializer, param_data['init_fun']['name'])
                 values = np.zeros(param_size)
                 for indexes in product(*(range(v) for v in param_size)):
                     if 'params' in param_data['init_fun']:

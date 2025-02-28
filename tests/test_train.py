@@ -32,13 +32,17 @@ class ModelyTrainingTest(unittest.TestCase):
         target = Input('out1')
         a = Parameter('a', values=[[1]])
         output1 = Output('out', Fir(parameter=a)(input1.last()))
+        output2 = Output('out2', Fir(parameter_init='init_constant', parameter_init_params={'value':1})(input1.last()))
+        output3 = Output('out3', Fir(parameter_init='init_exp', bias_init='init_exp')(input1.last()))
+        output4 = Output('out4', Fir(parameter_init='init_lin', bias_init='init_lin')(input1.last()))
+        output5 = Output('out5', Fir(parameter_init='init_negexp', bias_init='init_negexp')(input1.last()))
 
         test = Modely(visualizer=None,seed=42)
-        test.addModel('model', output1)
+        test.addModel('model', [output1,output2,output3,output4,output5])
         test.addMinimize('error', target.last(), output1)
         test.neuralizeModel()
 
-        dataset = {'in1': [1], 'out1': [2]}
+        dataset = {'in1': [1], 'in2':[[1,2,3]], 'out1': [2]}
         test.loadData(name='dataset', source=dataset)
 
         self.assertListEqual([[1.0]],test.model.all_parameters['a'].data.numpy().tolist())
@@ -52,17 +56,22 @@ class ModelyTrainingTest(unittest.TestCase):
     def test_training_values_linear(self):
         NeuObj.clearNames()
         input1 = Input('in1')
+        input2 = Input('in2', dimensions=3)
         target = Input('out1')
         W = Parameter('W', values=[[[1]]])
         b = Parameter('b', values=[[1]])
         output1 = Output('out', Linear(W=W,b=b)(input1.last()))
+        output2 = Output('out2', Linear(W_init='init_constant', W_init_params={'value':1})(input1.last()))
+        output3 = Output('out3', Linear(W_init='init_exp', b_init='init_exp')(input2.last()))
+        output4 = Output('out4', Linear(W_init='init_negexp', b_init='init_negexp')(input2.last()))
+        output5 = Output('out5', Linear(W_init='init_lin', b_init='init_lin')(input2.last()))
 
         test = Modely(visualizer=None, seed=42)
-        test.addModel('model', output1)
+        test.addModel('model', [output1,output2,output3,output4,output5])
         test.addMinimize('error', target.last(), output1)
         test.neuralizeModel()
 
-        dataset = {'in1': [1], 'out1': [3]}
+        dataset = {'in1': [1], 'in2':[[1,2,3]], 'out1': [3]}
         test.loadData(name='dataset', source=dataset)
 
         self.assertListEqual([[[1.0]]],test.model.all_parameters['W'].data.numpy().tolist())
