@@ -180,7 +180,7 @@ class Parameter(NeuObj, Relation):
                 self.json['Parameters'][self.name]['init_fun'] = { 'name' : init}
             if init_params is not None:
                 self.json['Parameters'][self.name]['init_fun']['params'] = init_params
-
+    
 class SampleTime():
     """
     Represents a constant that value is equal to the sample time.

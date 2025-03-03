@@ -94,10 +94,12 @@ class ParamFun(NeuObj):
             for const in self.constants:
                 if type(const) is Constant:
                     self.json['Functions'][self.name]['params_and_consts'].append(const.name)
-                    self.json['Constants'][const.name] = copy.deepcopy(const.json['Constants'][const.name])
+                    #self.json['Constants'][const.name] = copy.deepcopy(const.json['Constants'][const.name])
+                    self.json = merge(self.json, const.json)
                 elif type(const) is str:
                     self.json['Functions'][self.name]['params_and_consts'].append(const)
-                    self.json['Constants'][const] = {'dim': 1, 'sw' : 1}
+                    #self.json['Constants'][const] = {'dim': 1, 'sw' : 1}
+                    self.json = merge(self.json, Constant(name=const, dimensions=1, sw=1).json)
                 else:
                     check(type(const) is Constant or type(const) is str, TypeError,
                           'The element inside the \"constants\" list must be a Constant or str')
@@ -108,11 +110,9 @@ class ParamFun(NeuObj):
             for param in self.parameters:
                 if type(param) is Parameter:
                     self.json['Functions'][self.name]['params_and_consts'].append(param.name)
-                    #self.json['Parameters'][param.name] = copy.deepcopy(param.json['Parameters'][param.name])
                     self.json = merge(self.json,param.json)
                 elif type(param) is str:
                     self.json['Functions'][self.name]['params_and_consts'].append(param)
-                    #self.json['Parameters'][param] = {'dim': 1, 'sw' : 1}
                     self.json = merge(self.json, Parameter(name=param, dimensions=1, sw=1).json)
                 else:
                     check(type(param) is Parameter or type(param) is str, TypeError,
@@ -123,7 +123,6 @@ class ParamFun(NeuObj):
                 idx = i + len(funinfo.args) - len(self.parameters_dimensions)
                 param_name = self.name + str(idx)
                 self.json['Functions'][self.name]['params_and_consts'].append(param_name)
-                #self.json['Parameters'][param_name] = {'dim': list(self.parameters_dimensions[i]),'sw' : 1}
                 self.json = merge(self.json, Parameter(name=param_name, dimensions=list(self.parameters_dimensions[i]), sw=1).json)
 
         self.json_stream = {}

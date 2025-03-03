@@ -29,18 +29,18 @@ class Fir(NeuObj, AutoToStream):
     ----------
     output_dimension : int, optional
         The output dimension of the FIR relation.
-    parameter_init : Callable, optional
+    W_init : Callable, optional
         A callable for initializing the parameters.
-    parameter_init_params : dict, optional
+    W_init_params : dict, optional
         A dictionary of parameters for the parameter initializer.
-    bias_init : Callable, optional
+    b_init : Callable, optional
         A callable for initializing the bias.
-    bias_init_params : dict, optional
+    b_init_params : dict, optional
         A dictionary of parameters for the bias initializer.
-    parameter : Parameter or str, optional
+    W : Parameter or str, optional
         The parameter object or tag. The parameter can be defined using the relative class 'Parameter'.
         If not given a new parameter will be auto-generated.
-    bias : bool, str, or Parameter, optional
+    b : bool, str, or Parameter, optional
         The bias parameter object, tag, or a boolean indicating whether to use bias.
         If set to 'True' a new parameter will be auto-generated.
     dropout : int or float, optional
@@ -50,17 +50,17 @@ class Fir(NeuObj, AutoToStream):
     ----------
     relation_name : str
         The name of the relation.
-    parameter_init : Callable
+    W_init : Callable
         The parameter initializer.
-    parameter_init_params : dict
+    W_init_params : dict
         The parameters for the parameter initializer.
-    parameter : Parameter or str
+    W : Parameter or str
         The parameter object or name.
-    bias_init : Callable
+    b_init : Callable
         The bias initializer.
-    bias_init_params : dict
+    b_init_params : dict
         The parameters for the bias initializer.
-    bias : bool, str, or Parameter
+    b : bool, str, or Parameter
         The bias object, name, or a boolean indicating whether to use bias.
     pname : str
         The name of the parameter.
@@ -81,13 +81,13 @@ class Fir(NeuObj, AutoToStream):
     Example - passing a parameter:
         >>> input = Input('in')
         >>> par = Parameter('par', dimensions=3, sw=2, init=init_constant)
-        >>> relation = Fir(parameter=par)(input.sw(2))
+        >>> relation = Fir(W=par)(input.sw(2))
 
     Example - parameters initialization:
         >>> x = Input('x')
         >>> F = Input('F')
-        >>> fir_x = Fir(parameter_init=init_negexp)(x.tw(0.2)) 
-        >>> fir_F = Fir(parameter_init=init_constant, parameter_init_params={'value':1})(F.last())
+        >>> fir_x = Fir(W_init=init_negexp)(x.tw(0.2)) 
+        >>> fir_F = Fir(W_init=init_constant, W_init_params={'value':1})(F.last())
 
     """
     @enforce_types

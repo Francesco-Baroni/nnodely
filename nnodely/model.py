@@ -181,10 +181,6 @@ class Model(nn.Module):
                         else: ## relation than takes another relation or a connect variable
                             layer_inputs.append(result_dict[key])
 
-                    #print('relation: ',relation)
-                    #print('layer inputs: ',layer_inputs)
-                    #print('relation forward: ',self.relation_forward)
-
                     ## Execute the current relation
                     result_dict[relation] = self.relation_forward[relation](*layer_inputs)
                     available_keys.add(relation)
@@ -192,11 +188,6 @@ class Model(nn.Module):
                     ## Check if the relation is inside the connect
                     for connect_input, connect_rel in self.connect_update.items():
                         if relation == connect_rel:
-                            # shift = result_dict[relation].shape[1]
-                            # virtual = torch.roll(kwargs[connect_input], shifts=-1, dims=1)
-                            # virtual[:, -shift:, :] = result_dict[relation]
-                            # result_dict[connect_input] = virtual.clone()
-                            # available_keys.add(connect_input)
                             result_dict[connect_input] = connect(kwargs[connect_input], result_dict[relation])
                             available_keys.add(connect_input)
 
