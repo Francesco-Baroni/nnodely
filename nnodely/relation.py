@@ -52,7 +52,7 @@ class NeuObj():
         if name == '':
             name = 'Auto'+str(NeuObj.count)
         if CHECK_NAMES == True:
-            check(name not in NeuObj.names, NameError, f"The name {name} is already used change the name of NeuObj.")
+            check(name not in NeuObj.names, NameError, f"The name '{name}' is already used change the name of NeuObj.")
             check(name not in ForbiddenTags, NameError, f"The name '{name}' is a forbidden tag.")
             NeuObj.names.append(name)
         self.name = name
@@ -67,21 +67,41 @@ class Relation():
         from nnodely.arithmetic import Add
         return Add(self, obj)
 
+    def __radd__(self, obj):
+        from nnodely.arithmetic import Add
+        return Add(obj, self)
+
     def __sub__(self, obj):
         from nnodely.arithmetic import Sub
         return Sub(self, obj)
+
+    def __rsub__(self, obj):
+        from nnodely.arithmetic import Sub
+        return Sub(obj, self)
 
     def __truediv__(self, obj):
         from nnodely.arithmetic import Div
         return Div(self, obj)
 
+    def __rtruediv__(self, obj):
+        from nnodely.arithmetic import Div
+        return Div(obj, self)
+
     def __mul__(self, obj):
         from nnodely.arithmetic import Mul
         return Mul(self, obj)
 
+    def __rmul__(self, obj):
+        from nnodely.arithmetic import Mul
+        return Mul(obj, self)
+
     def __pow__(self, obj):
         from nnodely.arithmetic import Pow
         return Pow(self, obj)
+
+    def __rpow__(self, obj):
+        from nnodely.arithmetic import Pow
+        return Pow(obj, self)
 
     def __neg__(self):
         from nnodely.arithmetic import Neg
@@ -99,6 +119,20 @@ class Stream(Relation):
         self.name = name
         self.json = copy.deepcopy(json)
         self.dim = dim
+
+    def __str__(self):
+        from nnodely.visualizer.visualizer import color, GREEN
+        from pprint import pformat
+        stream = f" Stream "
+        stream_name = f" {self.name} {self.dim} "
+
+        title = color((stream).center(80, '='), GREEN, True)
+        json = color(pformat(self.json), GREEN)
+        stream = color((stream_name).center(80, '-'), GREEN, True)
+        return title + '\n' + json + '\n' + stream
+
+    def __repr__(self):
+        return self.__str__()
 
     @enforce_types
     def tw(self, tw:float|int|list, offset:float|int|None = None) -> "Stream":
@@ -122,7 +156,7 @@ class Stream(Relation):
         from nnodely.input import State, Connect
         if type(tw) is list:
             check(0 >= tw[1] > tw[0] and tw[0] < 0, ValueError, "The dimension of the sample window must be in the past.")
-        s = State(self.name+"_state",dimensions=self.dim['dim'])
+        s = State(self.name+"_tw"+str(NeuObj.count),dimensions=self.dim['dim'])
         out_connect = Connect(self, s)
         win_state = s.tw(tw, offset)
         return Stream(win_state.name, merge(win_state.json, out_connect.json), win_state.dim,0 )
@@ -149,7 +183,7 @@ class Stream(Relation):
         from nnodely.input import State, Connect
         if type(sw) is list:
             check(0 >= sw[1] > sw[0] and sw[0] < 0, ValueError, "The dimension of the sample window must be in the past.")
-        s = State(self.name+"_state",dimensions=self.dim['dim'])
+        s = State(self.name+"_sw"+str(NeuObj.count),dimensions=self.dim['dim'])
         out_connect = Connect(self, s)
         win_state = s.sw(sw, offset)
         return Stream(win_state.name, merge(win_state.json, out_connect.json), win_state.dim,0 )

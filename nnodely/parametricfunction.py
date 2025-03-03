@@ -98,8 +98,8 @@ class ParamFun(NeuObj):
                     self.json = merge(self.json, const.json)
                 elif type(const) is str:
                     self.json['Functions'][self.name]['params_and_consts'].append(const)
-                    #self.json['Constants'][const] = {'dim': 1, 'sw' : 1}
-                    self.json = merge(self.json, Constant(name=const, dimensions=1, sw=1).json)
+                    self.json['Constants'][const] = {'dim': 1, 'sw' : 1}
+                    #self.json = merge(self.json, Constant(name=const, values=[[0.0]], sw=1).json)
                 else:
                     check(type(const) is Constant or type(const) is str, TypeError,
                           'The element inside the \"constants\" list must be a Constant or str')
@@ -113,7 +113,8 @@ class ParamFun(NeuObj):
                     self.json = merge(self.json,param.json)
                 elif type(param) is str:
                     self.json['Functions'][self.name]['params_and_consts'].append(param)
-                    self.json = merge(self.json, Parameter(name=param, dimensions=1, sw=1).json)
+                    if param not in self.json['Parameters'].keys():
+                        self.json = merge(self.json, Parameter(name=param, dimensions=1, sw=1).json)
                 else:
                     check(type(param) is Parameter or type(param) is str, TypeError,
                           'The element inside the \"parameters\" list must be a Parameter or str')

@@ -2,10 +2,9 @@ import unittest, os, sys
 import numpy as np
 
 from nnodely import *
-from nnodely import relation
-relation.CHECK_NAMES = False
-
+from nnodely.relation import NeuObj
 from nnodely.logger import logging, nnLogger
+
 log = nnLogger(__name__, logging.CRITICAL)
 log.setAllLevel(logging.CRITICAL)
 
@@ -28,6 +27,7 @@ class ModelyTrainingTest(unittest.TestCase):
             self.assertAlmostEqual(data1, data2, places=precision)
 
     def test_losses_compare(self):
+        NeuObj.clearNames()
         input1 = Input('in1')
         target1 = Input('out1')
         target2 = Input('out2')
@@ -73,6 +73,7 @@ class ModelyTrainingTest(unittest.TestCase):
         self.TestAlmostEqual(test.performance['test_dataset_0.10']['error2']['mse'], test.training['error2']['val'][-1])
 
     def test_losses_compare_closed_loop_state(self):
+        NeuObj.clearNames()
         input1 = State('in1')
         target1 = Input('out1')
         target2 = Input('out2')
@@ -136,6 +137,7 @@ class ModelyTrainingTest(unittest.TestCase):
         self.TestAlmostEqual(test.performance['validation_dataset_0.50']['error2']['mse'], test.training['error2']['val'][-1])
 
     def test_losses_compare_closed_loop(self):
+        NeuObj.clearNames()
         input1 = Input('in1')
         target1 = Input('out1')
         target2 = Input('out2')

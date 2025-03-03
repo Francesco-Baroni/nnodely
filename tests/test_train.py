@@ -3,10 +3,8 @@ import numpy as np
 
 from nnodely import *
 from nnodely.relation import NeuObj
-from nnodely import relation
-relation.CHECK_NAMES = False
-
 from nnodely.logger import logging, nnLogger
+
 log = nnLogger(__name__, logging.CRITICAL)
 log.setAllLevel(logging.CRITICAL)
 
@@ -28,6 +26,7 @@ class ModelyTrainingTest(unittest.TestCase):
             self.assertAlmostEqual(data1, data2, places=precision)
 
     def test_training_values_fir(self):
+        NeuObj.clearNames()
         input1 = Input('in1')
         target = Input('out1')
         a = Parameter('a', values=[[1]])
@@ -130,6 +129,7 @@ class ModelyTrainingTest(unittest.TestCase):
         self.assertListEqual([[-51.0]], test.model.all_parameters['a'].data.numpy().tolist())
 
     def test_network_linear_interpolation_train(self):
+        NeuObj.clearNames()
         x = Input('x')
         param = Parameter(name='a', sw=1)
         rel1 = Fir(W=param)(Interpolation(x_points=[1.0, 2.0, 3.0, 4.0],y_points=[2.0, 4.0, 6.0, 8.0], mode='linear')(x.last()))
@@ -146,6 +146,7 @@ class ModelyTrainingTest(unittest.TestCase):
         self.assertAlmostEqual(test.model.all_parameters['a'].item(), 0.5, places=2)
 
     def test_multimodel_with_loss_gain_and_lr_gain(self):
+        NeuObj.clearNames()
         ## Model1
         input1 = Input('in1')
         a1 = Parameter('a1', dimensions=1, tw=0.05, values=[[1],[1],[1],[1],[1]])
@@ -248,6 +249,7 @@ class ModelyTrainingTest(unittest.TestCase):
         self.assertListEqual(test.model.all_parameters['b3'].data.numpy().tolist(), [[-5],[-5],[-5],[-5],[-5]])
 
     def test_train_equation_learner(self):
+        NeuObj.clearNames()
         def func(x):
             return np.cos(x) + np.sin(x)
         

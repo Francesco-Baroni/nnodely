@@ -2,10 +2,9 @@ import unittest, os, sys
 import numpy as np
 
 from nnodely import *
-from nnodely import relation
-relation.CHECK_NAMES = False
-
+from nnodely.relation import NeuObj
 from nnodely.logger import logging, nnLogger
+
 log = nnLogger(__name__, logging.CRITICAL)
 log.setAllLevel(logging.CRITICAL)
 
@@ -29,6 +28,7 @@ class ModelyTrainingTest(unittest.TestCase):
             self.assertAlmostEqual(data1, data2, places=precision)
 
     def test_analysis_results(self):
+        NeuObj.clearNames()
         input1 = Input('in1')
         target1 = Input('out1')
         target2 = Input('out2')
@@ -96,6 +96,7 @@ class ModelyTrainingTest(unittest.TestCase):
         self.assertAlmostEqual(((1.0 ** 2) * 8.0 / 10.0 * 0.5 + 0.0)/2.0, test.performance['dataset2']['total']['mean_error'], places=6)
 
     def test_analysis_results_closed_loop_state(self):
+        NeuObj.clearNames()
         input1 = State('in1')
         target1 = Input('out1')
         target2 = Input('out2')
@@ -207,6 +208,7 @@ class ModelyTrainingTest(unittest.TestCase):
         self.assertAlmostEqual((np.sum((np.array(A).flatten()-np.array(B).flatten())**2)/30.0+np.sum((np.array(C).flatten()-np.array(B).flatten())**2)/30.0)/2.0, test.performance['dataset']['total']['mean_error'], places=3)
 
     def test_analysis_results_closed_loop(self):
+        NeuObj.clearNames()
         input1 = Input('in1')
         target1 = Input('out1')
         target2 = Input('out2')
