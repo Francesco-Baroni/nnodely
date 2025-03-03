@@ -113,7 +113,7 @@ class ModelyTrainingTest(unittest.TestCase):
         input1 = Input('in1')
         target = Input('out1')
         a = Parameter('a', values=[[1]])
-        output1 = Output('out1',Fir(parameter=a)(input1.last()))
+        output1 = Output('out1',Fir(W=a)(input1.last()))
 
         inout = State('inout')
         W = Parameter('W', values=[[[1]]])
@@ -183,7 +183,7 @@ class ModelyTrainingTest(unittest.TestCase):
         input1 = Input('in1')
         target = Input('out1')
         a = Parameter('a', values=[[1]])
-        output1 = Output('out1',Fir(parameter=a)(input1.last()))
+        output1 = Output('out1',Fir(W=a)(input1.last()))
 
         inout = Input('inout')
         W = Parameter('W', values=[[[1]]])
@@ -252,7 +252,7 @@ class ModelyTrainingTest(unittest.TestCase):
         input1 = Input('in1')
         target = Input('out1')
         a = Parameter('a', values=[[1]])
-        output1 = Output('out1',Fir(parameter=a)(input1.last()))
+        output1 = Output('out1',Fir(W=a)(input1.last()))
 
         inout = State('inout')
         W = Parameter('W', values=[[[1]]])
@@ -304,7 +304,7 @@ class ModelyTrainingTest(unittest.TestCase):
         input1 = Input('in1')
         target = Input('out1')
         a = Parameter('a', values=[[1]])
-        output1 = Output('out1',Fir(parameter=a)(input1.last()))
+        output1 = Output('out1',Fir(W=a)(input1.last()))
 
         inout = Input('inout')
         W = Parameter('W', values=[[[1]]])
@@ -356,7 +356,7 @@ class ModelyTrainingTest(unittest.TestCase):
         input1 = Input('in1')
         target = Input('out1')
         a = Parameter('a', values=[[1]])
-        output1 = Output('out1',Fir(parameter=a)(input1.last()))
+        output1 = Output('out1',Fir(W=a)(input1.last()))
 
         inout = State('inout')
         W = Parameter('W', values=[[[1]]])
@@ -417,7 +417,7 @@ class ModelyTrainingTest(unittest.TestCase):
         input1 = Input('in1')
         target = Input('out1')
         a = Parameter('a', values=[[1]])
-        output1 = Output('out1',Fir(parameter=a)(input1.last()))
+        output1 = Output('out1',Fir(W=a)(input1.last()))
 
         inout = Input('inout')
         W = Parameter('W', values=[[[1]]])
@@ -498,9 +498,9 @@ class ModelyTrainingTest(unittest.TestCase):
         inout = State('inout')
         a = Parameter('a', values=[[4], [5]])
         a_big = Parameter('ab', values=[[1], [2], [3], [4], [5]])
-        output2 = Output('out2', Fir(parameter=a)(inout.sw(2)))
-        output3 = Output('out3', Fir(parameter=a_big)(inout.sw(5)))
-        output4 = Output('out4', Fir(parameter=a)(lin_out))
+        output2 = Output('out2', Fir(W=a)(inout.sw(2)))
+        output3 = Output('out3', Fir(W=a_big)(inout.sw(5)))
+        output4 = Output('out4', Fir(W=a)(lin_out))
 
         target = Input('target')
 
@@ -750,9 +750,9 @@ class ModelyTrainingTest(unittest.TestCase):
         inout = Input('inout')
         a = Parameter('a', values=[[4], [5]])
         a_big = Parameter('ab', values=[[1], [2], [3], [4], [5]])
-        output2 = Output('out2', Fir(parameter=a)(inout.sw(2)))
-        output3 = Output('out3', Fir(parameter=a_big)(inout.sw(5)))
-        output4 = Output('out4', Fir(parameter=a)(lin_out))
+        output2 = Output('out2', Fir(W=a)(inout.sw(2)))
+        output3 = Output('out3', Fir(W=a_big)(inout.sw(5)))
+        output4 = Output('out4', Fir(W=a)(lin_out))
 
         target = Input('target')
 
@@ -995,7 +995,7 @@ class ModelyTrainingTest(unittest.TestCase):
         input1 = State('in1')
         target_out1 = Input('out1')
         a = Parameter('a', values=[[1]])
-        output1 = Output('out1',Fir(parameter=a)(input1.last()))
+        output1 = Output('out1',Fir(W=a)(input1.last()))
 
         input2 = State('in2')
         target_out2 = Input('out2')
@@ -1072,7 +1072,7 @@ class ModelyTrainingTest(unittest.TestCase):
         input1 = Input('in1')
         target_out1 = Input('out1')
         a = Parameter('a', values=[[1]])
-        output1 = Output('out1',Fir(parameter=a)(input1.last()))
+        output1 = Output('out1',Fir(W=a)(input1.last()))
 
         input2 = Input('in2')
         target_out2 = Input('out2')
@@ -1146,7 +1146,7 @@ class ModelyTrainingTest(unittest.TestCase):
         input1 = State('in1')
         target_out1 = Input('out1')
         a = Parameter('a', values=[[1]])
-        output1 = Output('out1',Fir(parameter=a)(input1.last()))
+        output1 = Output('out1',Fir(W=a)(input1.last()))
 
         input2 = State('in2')
         target_out2 = Input('out2')
@@ -1212,7 +1212,7 @@ class ModelyTrainingTest(unittest.TestCase):
         input1 = Input('in1')
         target_out1 = Input('out1')
         a = Parameter('a', values=[[1]])
-        output1 = Output('out1',Fir(parameter=a)(input1.last()))
+        output1 = Output('out1',Fir(W=a)(input1.last()))
 
         input2 = Input('in2')
         target_out2 = Input('out2')
@@ -1272,7 +1272,7 @@ class ModelyTrainingTest(unittest.TestCase):
 
         input2 = State('in2')
         a = Parameter('a', values=[[1,3],[2,4],[3,5],[4,6]])
-        output2 = Output('out2', Fir(output_dimension=2,parameter=a)(input2.sw(4)))
+        output2 = Output('out2', Fir(output_dimension=2,W=a)(input2.sw(4)))
 
         target1 = Input('target1')
         target2 = Input('target2', dimensions=2)
@@ -1367,7 +1367,7 @@ class ModelyTrainingTest(unittest.TestCase):
 
         input2 = Input('in2')
         a = Parameter('a', values=[[1,3],[2,4],[3,5],[4,6]])
-        output2 = Output('out2', Fir(output_dimension=2,parameter=a)(input2.sw(4)))
+        output2 = Output('out2', Fir(output_dimension=2,W=a)(input2.sw(4)))
 
         target1 = Input('target1')
         target2 = Input('target2', dimensions=2)
@@ -1472,7 +1472,7 @@ class ModelyTrainingTest(unittest.TestCase):
 
         input2 = Input('in2')
         a = Parameter('a', values=[[0.1,0.3],[0.2,0.4],[0.3,0.5],[0.4,0.6]])
-        output2 = Output('out2', Fir(output_dimension=2,parameter=a)(input2.sw(4)))
+        output2 = Output('out2', Fir(output_dimension=2,W=a)(input2.sw(4)))
 
         target1 = Input('target1')
         target2 = Input('target2', dimensions=2)
@@ -1494,7 +1494,7 @@ class ModelyTrainingTest(unittest.TestCase):
 
         input2 = State('in2')
         a = Parameter('a', values=[[0.1,0.3],[0.2,0.4],[0.3,0.5],[0.4,0.6]])
-        output2 = Output('out2', Fir(output_dimension=2, parameter=a)(input2.sw(4)))
+        output2 = Output('out2', Fir(output_dimension=2, W=a)(input2.sw(4)))
 
         target1 = Input('target1')
         target2 = Input('target2', dimensions=2)

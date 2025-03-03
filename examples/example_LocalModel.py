@@ -139,7 +139,7 @@ def input_function_gen(idx_list):
     return ParamFun(myFun,parameters=[p1,p2])
 def output_function_gen(idx_list):
     pfir = Parameter('pfir_'+str(idx_list),tw=1,dimensions=2,values=[[1+idx_list[0],2+idx_list[1]],[3+idx_list[0],4+idx_list[1]]])
-    return Fir(2,parameter=pfir)
+    return Fir(2,W=pfir)
 
 loc = LocalModel(input_function = input_function_gen, output_function = output_function_gen, pass_indexes = True)(x.tw(1),(activationA,activationB))
 #Example of the structure of the local model
@@ -173,10 +173,10 @@ out_mul00 = Output('mul00',mul00)
 out_mul01 = Output('mul01',mul01)
 out_mul10 = Output('mul10',mul10)
 out_mul11 = Output('mul11',mul11)
-fir00 =  Fir(2,parameter=pfir00)(mul00)
-fir01 =  Fir(2,parameter=pfir01)(mul01)
-fir10 =  Fir(2,parameter=pfir10)(mul10)
-fir11 =  Fir(2,parameter=pfir11)(mul11)
+fir00 =  Fir(2,W=pfir00)(mul00)
+fir01 =  Fir(2,W=pfir01)(mul01)
+fir10 =  Fir(2,W=pfir10)(mul10)
+fir11 =  Fir(2,W=pfir11)(mul11)
 out_fir00 = Output('fir00',fir00)
 out_fir01 = Output('fir01',fir01)
 out_fir10 = Output('fir10',fir10)

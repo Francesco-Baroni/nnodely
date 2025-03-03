@@ -31,11 +31,11 @@ class ModelyTrainingTest(unittest.TestCase):
         input1 = Input('in1')
         target = Input('out1')
         a = Parameter('a', values=[[1]])
-        output1 = Output('out', Fir(parameter=a)(input1.last()))
-        output2 = Output('out2', Fir(parameter_init='init_constant', parameter_init_params={'value':1})(input1.last()))
-        output3 = Output('out3', Fir(parameter_init='init_exp', bias_init='init_exp')(input1.last()))
-        output4 = Output('out4', Fir(parameter_init='init_lin', bias_init='init_lin')(input1.last()))
-        output5 = Output('out5', Fir(parameter_init='init_negexp', bias_init='init_negexp')(input1.last()))
+        output1 = Output('out', Fir(W=a)(input1.last()))
+        output2 = Output('out2', Fir(W_init='init_constant', W_init_params={'value':1})(input1.last()))
+        output3 = Output('out3', Fir(W_init='init_exp', b_init='init_exp')(input1.last()))
+        output4 = Output('out4', Fir(W_init='init_lin', b_init='init_lin')(input1.last()))
+        output5 = Output('out5', Fir(W_init='init_negexp', b_init='init_negexp')(input1.last()))
 
         test = Modely(visualizer=None,seed=42)
         test.addModel('model', [output1,output2,output3,output4,output5])
@@ -88,7 +88,7 @@ class ModelyTrainingTest(unittest.TestCase):
         input1 = Input('in1')
         target = Input('int1')
         a = Parameter('a', values=[[1]])
-        fir_out = Fir(parameter=a)(input1.last())
+        fir_out = Fir(W=a)(input1.last())
         output1 = Output('out1', fir_out)
 
         W = Parameter('W', values=[[[1]]])
@@ -132,7 +132,7 @@ class ModelyTrainingTest(unittest.TestCase):
     def test_network_linear_interpolation_train(self):
         x = Input('x')
         param = Parameter(name='a', sw=1)
-        rel1 = Fir(parameter=param)(Interpolation(x_points=[1.0, 2.0, 3.0, 4.0],y_points=[2.0, 4.0, 6.0, 8.0], mode='linear')(x.last()))
+        rel1 = Fir(W=param)(Interpolation(x_points=[1.0, 2.0, 3.0, 4.0],y_points=[2.0, 4.0, 6.0, 8.0], mode='linear')(x.last()))
         out = Output('out',rel1)
 
         test = Modely(visualizer=None, seed=1)
@@ -149,11 +149,11 @@ class ModelyTrainingTest(unittest.TestCase):
         ## Model1
         input1 = Input('in1')
         a1 = Parameter('a1', dimensions=1, tw=0.05, values=[[1],[1],[1],[1],[1]])
-        output11 = Output('out11', Fir(parameter=a1)(input1.tw(0.05)))
+        output11 = Output('out11', Fir(W=a1)(input1.tw(0.05)))
         a2 = Parameter('a2', dimensions=1, tw=0.05, values=[[1], [1], [1], [1], [1]])
-        output12 = Output('out12', Fir(parameter=a2)(input1.tw(0.05)))
+        output12 = Output('out12', Fir(W=a2)(input1.tw(0.05)))
         a3 = Parameter('a3', dimensions=1, tw=0.05, values=[[1], [1], [1], [1], [1]])
-        output13 = Output('out13', Fir(parameter=a3)(input1.tw(0.05)))
+        output13 = Output('out13', Fir(W=a3)(input1.tw(0.05)))
 
         test = Modely(visualizer=None, seed=42)
         test.addModel('model1', [output11, output12, output13])
@@ -164,11 +164,11 @@ class ModelyTrainingTest(unittest.TestCase):
         ## Model2
         input2 = Input('in2')
         b1 = Parameter('b1', dimensions=1, tw=0.05, values=[[1],[1],[1],[1],[1]])
-        output21 = Output('out21', Fir(parameter=b1)(input2.tw(0.05)))
+        output21 = Output('out21', Fir(W=b1)(input2.tw(0.05)))
         b2 = Parameter('b2', dimensions=1, tw=0.05, values=[[1],[1],[1],[1],[1]])
-        output22 = Output('out22', Fir(parameter=b2)(input2.tw(0.05)))
+        output22 = Output('out22', Fir(W=b2)(input2.tw(0.05)))
         b3 = Parameter('b3', dimensions=1, tw=0.05, values=[[1],[1],[1],[1],[1]])
-        output23 = Output('out23', Fir(parameter=b3)(input2.tw(0.05)))
+        output23 = Output('out23', Fir(W=b3)(input2.tw(0.05)))
 
         test.addModel('model2', [output21, output22, output23])
         test.addMinimize('error21', input2.next(), output21)

@@ -41,9 +41,9 @@ class ModelyExportTest(unittest.TestCase):
         a = Parameter('a', dimensions=1, sw=1, values=[[1]])
         b = Parameter('b', dimensions=1, sw=1, values=[[1]])
         c = Parameter('c', dimensions=1, sw=1, values=[[1]])
-        fir_x = Fir(parameter=a)(x.last())
-        fir_y = Fir(parameter=b)(y.last())
-        fir_z = Fir(parameter=c)(z.last())
+        fir_x = Fir(W=a)(x.last())
+        fir_y = Fir(W=b)(y.last())
+        fir_z = Fir(W=c)(z.last())
         data_x, data_y, data_z = np.random.rand(20), np.random.rand(20), np.random.rand(20)
         dataset = {'x':data_x, 'y':data_y, 'z':data_z, 'target':3*data_x + 3*data_y + 3*data_z}
         fir_x.connect(y)
@@ -83,9 +83,9 @@ class ModelyExportTest(unittest.TestCase):
         a = Parameter('a', dimensions=1, sw=1, values=[[1]])
         b = Parameter('b', dimensions=1, sw=1, values=[[1]])
         c = Parameter('c', dimensions=1, sw=1, values=[[1]])
-        fir_x = Fir(parameter=a)(x.last())
-        fir_y = Fir(parameter=b)(y.last())
-        fir_z = Fir(parameter=c)(z.last())
+        fir_x = Fir(W=a)(x.last())
+        fir_y = Fir(W=b)(y.last())
+        fir_z = Fir(W=c)(z.last())
         fir_x.connect(y)
         sum_rel = fir_x + fir_y + fir_z
         sum_rel.closedLoop(z)
@@ -125,9 +125,9 @@ class ModelyExportTest(unittest.TestCase):
         a = Parameter('a', dimensions=1, sw=1, values=[[1]])
         b = Parameter('b', dimensions=1, sw=1, values=[[1]])
         c = Parameter('c', dimensions=1, sw=1, values=[[1]])
-        fir_x = Fir(parameter=a)(x.last())
-        fir_y = Fir(parameter=b)(y.last())
-        fir_z = Fir(parameter=c)(z.last())
+        fir_x = Fir(W=a)(x.last())
+        fir_y = Fir(W=b)(y.last())
+        fir_z = Fir(W=c)(z.last())
         fir_x.connect(y)
         sum_rel = fir_x + fir_y + fir_z
         sum_rel.closedLoop(z)
@@ -199,10 +199,10 @@ class ModelyExportTest(unittest.TestCase):
 
         # Create neural network relations
         air_drag_force = Linear(b=True)(velocity.last()**2)
-        breaking_force = -Relu(Fir(parameter_init = init_negexp, parameter_init_params={'size_index':0, 'first_value':0.002, 'lambda':3})(brake.sw(n)))
+        breaking_force = -Relu(Fir(W_init = init_negexp, W_init_params={'size_index':0, 'first_value':0.002, 'lambda':3})(brake.sw(n)))
         gravity_force = Linear(W_init=init_constant, W_init_params={'value':0}, dropout=0.1, W='gravity')(altitude.last())
         fuzzi_gear = Fuzzify(6, range=[2,7], functions='Rectangular')(gear.last())
-        local_model = LocalModel(input_function=lambda: Fir(parameter_init = init_negexp, parameter_init_params={'size_index':0, 'first_value':0.002, 'lambda':3}))
+        local_model = LocalModel(input_function=lambda: Fir(W_init = init_negexp, W_init_params={'size_index':0, 'first_value':0.002, 'lambda':3}))
         engine_force = local_model(torque.sw(n), fuzzi_gear)
 
         # Create neural network output
@@ -427,10 +427,10 @@ class ModelyExportTest(unittest.TestCase):
 
         # Create neural network relations
         air_drag_force = Linear(b=True)(velocity.last()**2)
-        breaking_force = -Relu(Fir(parameter_init = init_negexp, parameter_init_params={'size_index':0, 'first_value':0.002, 'lambda':3})(brake.sw(n)))
+        breaking_force = -Relu(Fir(W_init = init_negexp, W_init_params={'size_index':0, 'first_value':0.002, 'lambda':3})(brake.sw(n)))
         gravity_force = Linear(W_init=init_constant, W_init_params={'value':0}, dropout=0.1, W='gravity')(altitude.last())
         fuzzi_gear = Fuzzify(6, range=[2,7], functions='Rectangular')(gear.last())
-        local_model = LocalModel(input_function=lambda: Fir(parameter_init = init_negexp, parameter_init_params={'size_index':0, 'first_value':0.002, 'lambda':3}))
+        local_model = LocalModel(input_function=lambda: Fir(W_init = init_negexp, W_init_params={'size_index':0, 'first_value':0.002, 'lambda':3}))
         engine_force = local_model(torque.sw(n), fuzzi_gear)
 
         sum_rel = air_drag_force+breaking_force+gravity_force+engine_force
@@ -496,10 +496,10 @@ class ModelyExportTest(unittest.TestCase):
 
         # Create neural network relations
         air_drag_force = Linear(b=True)(velocity.last()**2)
-        breaking_force = -Relu(Fir(parameter_init = init_negexp, parameter_init_params={'size_index':0, 'first_value':0.002, 'lambda':3})(brake.sw(n)))
+        breaking_force = -Relu(Fir(W_init = init_negexp, W_init_params={'size_index':0, 'first_value':0.002, 'lambda':3})(brake.sw(n)))
         gravity_force = Linear(W_init=init_constant, W_init_params={'value':0}, dropout=0.1, W='gravity')(altitude.last())
         fuzzi_gear = Fuzzify(6, range=[2,7], functions='Rectangular')(gear.last())
-        local_model = LocalModel(input_function=lambda: Fir(parameter_init = init_negexp, parameter_init_params={'size_index':0, 'first_value':0.002, 'lambda':3}))
+        local_model = LocalModel(input_function=lambda: Fir(W_init = init_negexp, W_init_params={'size_index':0, 'first_value':0.002, 'lambda':3}))
         engine_force = local_model(torque.sw(n), fuzzi_gear)
 
         sum_rel = air_drag_force+breaking_force+gravity_force+engine_force

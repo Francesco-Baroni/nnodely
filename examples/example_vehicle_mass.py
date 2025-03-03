@@ -308,7 +308,7 @@ reg_fact           = Constant('reg_fact',values=reg_fact)  # regularization fact
 # First fully connected layer
 FC1_steer_weights_init = Parameter('FC1_steer_weight_init', sw=1, init=init_constant, init_params={'value':1e-4})  # initial guess for the weights
 FC1_steer_biases       = Parameter('FC1_steer_bias_init', init=init_constant, init_params={'value':1e-6})   # initial guess for the biases
-FC1_steer_weights      = Fir(parameter=FC1_steer_weights_init, bias=FC1_steer_biases)
+FC1_steer_weights      = Fir(W=FC1_steer_weights_init, b=FC1_steer_biases)
 # Second fully connected layer
 FC2_NN_steer = Linear(output_dimension=1, W_init=init_constant, W_init_params={'value':1e-4},
                       b=True, b_init=init_constant, b_init_params={'value':1e-6})

@@ -19,7 +19,7 @@ next_x = x.next()
 # Prediction model
 px = Parameter('px', tw=0.5, values=[[1.],[1.],[1.],[1.],[1.],[1.],[1.],[1.],[1.],[1.]])
 pf = Parameter('pf', sw=1, values=[[1.]])
-model_next_x = Fir(parameter=px)(x_win)+Fir(parameter=pf)(f_last)
+model_next_x = Fir(W=px)(x_win)+Fir(W=pf)(f_last)
 
 # Define one or multiple Outputs to be added to the model
 out_model_next_x = Output('model_next_x',model_next_x)

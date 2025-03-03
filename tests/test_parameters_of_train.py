@@ -123,7 +123,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
 
         x = Input('in1')
         p = Parameter('p', dimensions=1, sw=1, values=[[1.0]])
-        fir = Fir(parameter=p)(x.last())
+        fir = Fir(W=p)(x.last())
         out = Output('out', fir)
 
         test = Modely(visualizer=None, seed=42)
@@ -614,7 +614,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         a = Parameter('a', dimensions=1, tw=0.05, values=[[1], [1], [1], [1], [1]])
         shared_w = Parameter('w', values=[[5]])
         output1 = Output('out1',
-                         Fir(parameter=a)(input1.tw(0.05)) + ParamFun(funIn, parameters={'w': shared_w})(
+                         Fir(W=a)(input1.tw(0.05)) + ParamFun(funIn, parameters={'w': shared_w})(
                              input1.last()))
 
         test = Modely(visualizer=None, seed=42)
@@ -625,7 +625,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         input2 = Input('in2')
         b = Parameter('b', dimensions=1, tw=0.05, values=[[1], [1], [1], [1], [1]])
         output2 = Output('out2',
-                         Fir(parameter=b)(input2.tw(0.05)) + ParamFun(funOut, parameters={'w': shared_w})(
+                         Fir(W=b)(input2.tw(0.05)) + ParamFun(funOut, parameters={'w': shared_w})(
                              input2.last()))
 
         test.addModel('model2', output2)

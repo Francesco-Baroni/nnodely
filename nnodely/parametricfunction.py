@@ -108,10 +108,12 @@ class ParamFun(NeuObj):
             for param in self.parameters:
                 if type(param) is Parameter:
                     self.json['Functions'][self.name]['params_and_consts'].append(param.name)
-                    self.json['Parameters'][param.name] = copy.deepcopy(param.json['Parameters'][param.name])
+                    #self.json['Parameters'][param.name] = copy.deepcopy(param.json['Parameters'][param.name])
+                    self.json = merge(self.json,param.json)
                 elif type(param) is str:
                     self.json['Functions'][self.name]['params_and_consts'].append(param)
-                    self.json['Parameters'][param] = {'dim': 1, 'sw' : 1}
+                    #self.json['Parameters'][param] = {'dim': 1, 'sw' : 1}
+                    self.json = merge(self.json, Parameter(name=param, dimensions=1, sw=1).json)
                 else:
                     check(type(param) is Parameter or type(param) is str, TypeError,
                           'The element inside the \"parameters\" list must be a Parameter or str')
@@ -121,7 +123,8 @@ class ParamFun(NeuObj):
                 idx = i + len(funinfo.args) - len(self.parameters_dimensions)
                 param_name = self.name + str(idx)
                 self.json['Functions'][self.name]['params_and_consts'].append(param_name)
-                self.json['Parameters'][param_name] = {'dim': list(self.parameters_dimensions[i]),'sw' : 1}
+                #self.json['Parameters'][param_name] = {'dim': list(self.parameters_dimensions[i]),'sw' : 1}
+                self.json = merge(self.json, Parameter(name=param_name, dimensions=list(self.parameters_dimensions[i]), sw=1).json)
 
         self.json_stream = {}
 
@@ -161,8 +164,7 @@ class ParamFun(NeuObj):
 
             self.json_stream[n_call_input]['Functions'][self.name]['in_dim'] = copy.deepcopy(input_dimensions)
             self.json_stream[n_call_input]['Functions'][self.name]['map_over_dim'] = self.__infer_map_over_batch(input_types, n_new_constants_and_params)
-            output_dimension = self.__infer_output_dimensions(self.json_stream[n_call_input], input_types,
-                                                                  input_dimensions)
+            output_dimension = self.__infer_output_dimensions(self.json_stream[n_call_input], input_types, input_dimensions)
         else:
             map_over_batch = self.__infer_map_over_batch(input_types, n_new_constants_and_params)
             check(map_over_batch == self.json_stream[n_call_input]['Functions'][self.name]['map_over_dim'], ValueError, f"The function {self.name} was called with different type of input using map_over_batch=True.")
@@ -221,15 +223,16 @@ class ParamFun(NeuObj):
                 if i >= n_input:
                     if type(self.parameters) is dict and key in self.parameters:
                         if self.parameters_dimensions:
-                            check(key in self.parameters_dimensions, TypeError,
-                                  f'The parameter {key} must be removed from \"parameters_dimensions\".')
+                            check(key in self.parameters_dimensions, TypeError, f'The parameter {key} must be removed from \"parameters_dimensions\".')
                         param = self.parameters[key]
                         if type(self.parameters[key]) is Parameter:
                             stream_json['Functions'][self.name]['params_and_consts'].append(param.name)
                             stream_json['Parameters'][param.name] = copy.deepcopy(param.json['Parameters'][param.name])
+                            #stream_json = merge(stream_json, param.json)
                         elif type(self.parameters[key]) is str:
                             stream_json['Functions'][self.name]['params_and_consts'].append(param)
                             stream_json['Parameters'][param] = {'dim' : 1,'sw' : 1}
+                            #stream_json = merge(stream_json, Parameter(name=param, dimensions=1, sw=1).json)
                         else:
                             check(type(param) is Parameter or type(param) is str, TypeError,
                                   'The element inside the \"parameters\" dict must be a Parameter or str')
@@ -241,6 +244,8 @@ class ParamFun(NeuObj):
                               'The element inside the \"parameters_dimensions\" dict must be a tuple or int')
                         stream_json['Functions'][self.name]['params_and_consts'].append(param_name)
                         stream_json['Parameters'][param_name] = {'dim': list(dim) if type(dim) is tuple else dim, 'sw' : 1}
+                        #json_dim = list(dim) if type(dim) is tuple else dim
+                        #stream_json = merge(stream_json, Parameter(name=param_name, dimensions=json_dim, sw=1).json)
                         n_elem_dict -= 1
                     elif type(self.constants) is dict and key in self.constants:
                         const = self.constants[key]
@@ -258,6 +263,7 @@ class ParamFun(NeuObj):
                         param_name = self.name + key
                         stream_json['Functions'][self.name]['params_and_consts'].append(param_name)
                         stream_json['Parameters'][param_name] = {'dim': 1, 'sw' : 1}
+                        #stream_json = merge(stream_json, Parameter(name=param_name, dimensions=1, sw=1).json)
             check(n_elem_dict == 0, ValueError, 'Some of the input parameters are not used in the function.')
 
     def __infer_output_dimensions(self, stream_json, input_types, input_dimensions):

@@ -341,34 +341,34 @@ class ModelyPredictTest(unittest.TestCase):
         x = Input('x')
         p1 = Parameter('p1', tw=3, values=[[1],[2],[3],[6],[2],[3]])
         with self.assertRaises(TypeError):
-            Fir(parameter=p1)(x)
+            Fir(W=p1)(x)
         with self.assertRaises(ValueError):
-            Fir(parameter=p1)(x.tw([-3, 1]))
-        out1 = Output('out1', Fir(parameter=p1)(x.tw([-2, 1])))
+            Fir(W=p1)(x.tw([-3, 1]))
+        out1 = Output('out1', Fir(W=p1)(x.tw([-2, 1])))
 
         p2 = Parameter('p2', sw=1, values=[[-2]])
         with self.assertRaises(KeyError):
-            Fir(parameter=p2)(x.tw([-2, 1]))
-        out2 = Output('out2', Fir(parameter=p2)(x.last()))
+            Fir(W=p2)(x.tw([-2, 1]))
+        out2 = Output('out2', Fir(W=p2)(x.last()))
 
         p3 = Parameter('p3', dimensions=2, sw=1, values=[[-2,1]])
         with self.assertRaises(KeyError):
-            Fir(parameter=p3)(x.tw([-2, 1]))
-        out3 = Output('out3', Fir(parameter=p3)(x.last()))
+            Fir(W=p3)(x.tw([-2, 1]))
+        out3 = Output('out3', Fir(W=p3)(x.last()))
 
         p4 = Parameter('p4', dimensions=2, tw=2, values=[[-2,1],[2,0],[0,1],[4,0]])
         with self.assertRaises(KeyError):
-            Fir(parameter=p4)(x.sw([-2, 0]))
-        out4 = Output('out4', Fir(parameter=p4)(x.tw([-2, 0])))
+            Fir(W=p4)(x.sw([-2, 0]))
+        out4 = Output('out4', Fir(W=p4)(x.tw([-2, 0])))
 
         p5 = Parameter('p6', sw=2, dimensions=2, values=[[-2,1],[2,0]])
         with self.assertRaises(TypeError):
-            Fir(parameter = p5)(x)
+            Fir(W = p5)(x)
         with self.assertRaises(KeyError):
-            Fir(parameter = p5)(x.tw([-2,1]))
+            Fir(W = p5)(x.tw([-2,1]))
         with self.assertRaises(ValueError):
-            Fir(parameter = p5)(x.sw([-2,1]))
-        out5 = Output('out5', Fir(parameter=p5)(x.sw([-2, 0])))
+            Fir(W = p5)(x.sw([-2,1]))
+        out5 = Output('out5', Fir(W=p5)(x.sw([-2, 0])))
 
         test = Modely(visualizer=None)
         test.addModel('out',[out1, out2, out3, out4, out5])
@@ -627,7 +627,7 @@ class ModelyPredictTest(unittest.TestCase):
         in2 = Input('in2')
         k1 = Parameter('k1', dimensions=1, tw=0.4, values=[[1.0], [1.0], [1.0], [1.0]])
         k_fir = Parameter('k_fir', dimensions=1, tw=0.4, values=[[1.0], [1.0], [1.0], [1.0]])
-        out = Output('out', Fir(parameter=k_fir)(ParamFun(myfun2, parameters=[k1])(in1.tw(0.4), in2.tw(0.4))))
+        out = Output('out', Fir(W=k_fir)(ParamFun(myfun2, parameters=[k1])(in1.tw(0.4), in2.tw(0.4))))
         test = Modely(visualizer=None, seed=42)
         test.addModel('out', out)
         test.neuralizeModel(0.1)
@@ -659,7 +659,7 @@ class ModelyPredictTest(unittest.TestCase):
         k1 = Parameter('k1', dimensions=1, tw=0.4, values=[[1.0], [1.0], [1.0], [1.0]])
         k_fir = Parameter('k_fir', dimensions=3, tw=0.4,
                           values=[[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]])
-        out = Output('out', Fir(3, parameter=k_fir)(ParamFun(myfun2, parameters=[k1])(in1.tw(0.4), in2.tw(0.4))))
+        out = Output('out', Fir(3, W=k_fir)(ParamFun(myfun2, parameters=[k1])(in1.tw(0.4), in2.tw(0.4))))
         test = Modely(visualizer=None)
         test.addModel('out', out)
         test.neuralizeModel(0.1)
@@ -833,24 +833,24 @@ class ModelyPredictTest(unittest.TestCase):
         o52 = Output('out52', Linear(W=W5,b=b2)(input.last()))
 
         par = Parameter('par', dimensions=3, sw=2, init=init_constant)
-        opar = Output('outpar', Fir(parameter=par)(input.sw(2)))
+        opar = Output('outpar', Fir(W=par)(input.sw(2)))
 
         par2 = Parameter('par2', dimensions=3, sw=2, init=init_constant, init_params={'value':2})
-        opar2 = Output('outpar2', Fir(parameter=par2)(input.sw(2)))
+        opar2 = Output('outpar2', Fir(W=par2)(input.sw(2)))
 
         ol = Output('outl', Linear(output_dimension=1,b=True,W_init=init_constant,b_init=init_constant)(input.last()))
         ol52 = Output('outl52', Linear(output_dimension=1,b=True,W_init=init_constant,b_init=init_constant,W_init_params={'value':5},b_init_params={'value':2})(input.last()))
-        ofpar = Output('outfpar', Fir(output_dimension=3,parameter_init=init_constant)(input.sw(2)))
-        ofpar2 = Output('outfpar2', Fir(output_dimension=3,parameter_init=init_constant,parameter_init_params={'value':2})(input.sw(2)))
+        ofpar = Output('outfpar', Fir(output_dimension=3,W_init=init_constant)(input.sw(2)))
+        ofpar2 = Output('outfpar2', Fir(output_dimension=3,W_init=init_constant,W_init_params={'value':2})(input.sw(2)))
 
-        outnegexp = Output('outnegexp', Fir(output_dimension=3,parameter_init=init_negexp)(input.sw(2)))
-        outnegexp2 = Output('outnegexp2', Fir(output_dimension=3,parameter_init=init_negexp,parameter_init_params={'size_index':1, 'first_value':3, 'lambda':1})(input.sw(2)))
+        outnegexp = Output('outnegexp', Fir(output_dimension=3,W_init=init_negexp)(input.sw(2)))
+        outnegexp2 = Output('outnegexp2', Fir(output_dimension=3,W_init=init_negexp,W_init_params={'size_index':1, 'first_value':3, 'lambda':1})(input.sw(2)))
 
-        outexp = Output('outexp', Fir(output_dimension=3,parameter_init=init_exp)(input.sw(2)))
-        outexp2 = Output('outexp2', Fir(output_dimension=3,parameter_init=init_exp,parameter_init_params={'size_index':1, 'max_value':2, 'lambda':2, 'monotonicity':'increasing'})(input.sw(2)))
+        outexp = Output('outexp', Fir(output_dimension=3,W_init=init_exp)(input.sw(2)))
+        outexp2 = Output('outexp2', Fir(output_dimension=3,W_init=init_exp,W_init_params={'size_index':1, 'max_value':2, 'lambda':2, 'monotonicity':'increasing'})(input.sw(2)))
 
-        outlin = Output('outlin', Fir(output_dimension=3,parameter_init=init_lin)(input.sw(2)))
-        outlin2 = Output('outlin2', Fir(output_dimension=3,parameter_init=init_lin,parameter_init_params={'size_index':1, 'first_value':4, 'last_value':5})(input.sw(2)))
+        outlin = Output('outlin', Fir(output_dimension=3,W_init=init_lin)(input.sw(2)))
+        outlin2 = Output('outlin2', Fir(output_dimension=3,W_init=init_lin,W_init_params={'size_index':1, 'first_value':4, 'last_value':5})(input.sw(2)))
 
         n = Modely(visualizer=None)
         n.addModel('model',[o,o52,opar,opar2,ol,ol52,ofpar,ofpar2,outnegexp,outnegexp2,outexp,outexp2,outlin,outlin2])
@@ -1625,7 +1625,7 @@ class ModelyPredictTest(unittest.TestCase):
         def output_function_gen(idx_list):
             pfir = Parameter('pfir_' + str(idx_list), tw=1, dimensions=2,
                              values=[[1 + idx_list[0], 2 + idx_list[1]], [3 + idx_list[0], 4 + idx_list[1]]])
-            return Fir(2, parameter=pfir)
+            return Fir(2, W=pfir)
 
         loc = LocalModel(input_function=input_function_gen, output_function=output_function_gen, pass_indexes=True)(x.tw(1), (activationA, activationB))
         # Example of the structure of the local model
@@ -1659,10 +1659,10 @@ class ModelyPredictTest(unittest.TestCase):
         out_mul01 = Output('mul01', mul01)
         out_mul10 = Output('mul10', mul10)
         out_mul11 = Output('mul11', mul11)
-        fir00 = Fir(2, parameter=pfir00)(mul00)
-        fir01 = Fir(2, parameter=pfir01)(mul01)
-        fir10 = Fir(2, parameter=pfir10)(mul10)
-        fir11 = Fir(2, parameter=pfir11)(mul11)
+        fir00 = Fir(2, W=pfir00)(mul00)
+        fir01 = Fir(2, W=pfir01)(mul01)
+        fir10 = Fir(2, W=pfir10)(mul10)
+        fir11 = Fir(2, W=pfir11)(mul11)
         out_fir00 = Output('fir00', fir00)
         out_fir01 = Output('fir01', fir01)
         out_fir10 = Output('fir10', fir10)

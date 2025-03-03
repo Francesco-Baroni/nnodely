@@ -92,16 +92,16 @@ class Fir(NeuObj, AutoToStream):
     """
     @enforce_types
     def __init__(self, output_dimension:int|None = None,
-                 parameter_init:Callable|str|None = None,
-                 parameter_init_params:dict|None = None,
-                 bias_init:Callable|str|None = None,
-                 bias_init_params:dict|None = None,
-                 parameter:Parameter|str|None = None,
-                 bias:bool|str|Parameter|None = None,
+                 W_init:Callable|str|None = None,
+                 W_init_params:dict|None = None,
+                 b_init:Callable|str|None = None,
+                 b_init_params:dict|None = None,
+                 W:Parameter|str|None = None,
+                 b:bool|str|Parameter|None = None,
                  dropout:int|float = 0):
 
-        self.W_type = type(parameter)
-        self.b_type = type(bias)
+        self.W_type = type(W)
+        self.b_type = type(b)
         self.pname = None
         self.bname = None
         self.W = None
@@ -109,33 +109,32 @@ class Fir(NeuObj, AutoToStream):
         self.dropout = dropout
         super().__init__('P' + fir_relation_name + str(NeuObj.count))
 
-        if type(parameter) is Parameter:
-            check(type(parameter) is Parameter, TypeError, 'Input parameter must be of type Parameter')
-            check(len(parameter.dim) == 2,ValueError,f"The values of the parameters must have two dimensions (tw/sample_rate or sw,output_dimension).")
+        if self.W_type is Parameter:
+            check(len(W.dim) == 2,ValueError,f"The values of the parameters must have two dimensions (tw/sample_rate or sw,output_dimension).")
             if output_dimension is None:
-                check(type(parameter.dim['dim']) is int, TypeError, 'Dimension of the parameter must be an integer for the Fir')
-                self.output_dimension = parameter.dim['dim']
+                check(type(W.dim['dim']) is int, TypeError, 'Dimension of the parameter must be an integer for the Fir')
+                self.output_dimension = W.dim['dim']
             else:
                 self.output_dimension = output_dimension
-                check(parameter.dim['dim'] == self.output_dimension, ValueError, 'output_dimension must be equal to dim of the Parameter')
-            self.pname = parameter.name
-            self.W = parameter
+                check(W.dim['dim'] == self.output_dimension, ValueError, 'output_dimension must be equal to dim of the Parameter')
+            self.pname = W.name
+            self.W = W
         else:  ## Create a new default parameter
             self.output_dimension = 1 if output_dimension is None else output_dimension
-            self.pname = parameter if type(parameter) is str else self.name + 'p'
-            self.W = Parameter(name=self.pname, dimensions=self.output_dimension, init=parameter_init, init_params=parameter_init_params)
+            self.pname = W if type(W) is str else self.name + 'p'
+            self.W = Parameter(name=self.pname, dimensions=self.output_dimension, init=W_init, init_params=W_init_params)
         self.json = merge(self.json,self.W.json)
 
-        if bias:
-            if type(bias) is Parameter:
-                check(type(bias.dim['dim']) is int, ValueError, 'The "bias" dimensions must be an integer.')
+        if b:
+            if self.b_type is Parameter:
+                check(type(b.dim['dim']) is int, ValueError, 'The "bias" dimensions must be an integer.')
                 if output_dimension:
-                    check(bias.dim['dim'] == output_dimension, ValueError, 'output_dimension must be equal to the dim of the "bias".')
-                self.bname = bias.name
-                self.b = bias
+                    check(b.dim['dim'] == output_dimension, ValueError, 'output_dimension must be equal to the dim of the "bias".')
+                self.bname = b.name
+                self.b = b
             else:
-                self.bname = bias if type(bias) is str else self.name + 'b'
-                self.b = Parameter(name=self.bname, dimensions=self.output_dimension, init=bias_init, init_params=bias_init_params)
+                self.bname = b if self.b_type is str else self.name + 'b'
+                self.b = Parameter(name=self.bname, dimensions=self.output_dimension, init=b_init, init_params=b_init_params)
             self.json = merge(self.json,self.b.json)
         self.json_stream = {}
 

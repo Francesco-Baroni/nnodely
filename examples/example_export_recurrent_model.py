@@ -18,8 +18,8 @@ if example == 1:
     a = Parameter('a', dimensions=1, sw=1)
     b = Parameter('b', dimensions=1, sw=1)
 
-    fir_x = Fir(parameter=a)(x.last())
-    fir_y = Fir(parameter=b)(y.last())
+    fir_x = Fir(W=a)(x.last())
+    fir_y = Fir(W=b)(y.last())
     sum_rel = fir_x+fir_y
 
     sum_rel.closedLoop(y)
@@ -44,8 +44,8 @@ elif example == 2:
     a = Parameter('a', dimensions=1, sw=1)
     b = Parameter('b', dimensions=1, sw=1)
 
-    fir_x = Fir(parameter=a)(x.last())
-    fir_y = Fir(parameter=b)(y.last())
+    fir_x = Fir(W=a)(x.last())
+    fir_y = Fir(W=b)(y.last())
     fir_x.connect(y)
     out = Output('out', fir_x+fir_y)
 
@@ -70,9 +70,9 @@ elif example == 3:
     b = Parameter('b', dimensions=1, sw=1, values=[[1]])
     c = Parameter('c', dimensions=1, sw=1, values=[[1]])
 
-    fir_x = Fir(parameter=a)(x.last())
-    fir_y = Fir(parameter=b)(y.last())
-    fir_z = Fir(parameter=c)(z.last())
+    fir_x = Fir(W=a)(x.last())
+    fir_y = Fir(W=b)(y.last())
+    fir_z = Fir(W=c)(z.last())
 
     data_x, data_y, data_z = np.random.rand(20), np.random.rand(20), np.random.rand(20)
     dataset = {'x':data_x, 'y':data_y, 'z':data_z, 'target':3*data_x + 3*data_y + 3*data_z}
@@ -143,9 +143,9 @@ elif example == 4:
     b = Parameter('b', dimensions=1, sw=1, values=[[1]])
     c = Parameter('c', dimensions=1, sw=1, values=[[1]])
 
-    fir_x = Fir(parameter=a)(x.last())
-    fir_y = Fir(parameter=b)(y.last())
-    fir_z = Fir(parameter=c)(z.last())
+    fir_x = Fir(W=a)(x.last())
+    fir_y = Fir(W=b)(y.last())
+    fir_z = Fir(W=c)(z.last())
 
     data_x, data_y, data_z = np.random.rand(100), np.random.rand(100), np.random.rand(100)
     dataset = {'x':data_x, 'y':data_y, 'z':data_z, 'target':3*data_x + 3*data_y + 3*data_z}

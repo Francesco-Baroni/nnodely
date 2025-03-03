@@ -55,8 +55,8 @@ class ModelyExportTest(unittest.TestCase):
         parfun_x = ParamFun(myFun, parameters=[K_x], constants=[c_v])
         parfun_y = ParamFun(myFun, parameters=[K_y])
         parfun_z = ParamFun(myFun)
-        fir_w = Fir(parameter=w_5)(x.tw(5))
-        fir_t = Fir(parameter=t_5)(y.tw(5))
+        fir_w = Fir(W=w_5)(x.tw(5))
+        fir_t = Fir(W=t_5)(y.tw(5))
         time_part = TimePart(x.tw(5), i=1, j=3)
         sample_select = SampleSelect(x.sw(5), i=1)
 

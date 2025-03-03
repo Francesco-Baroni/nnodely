@@ -33,7 +33,7 @@ class ModelyTrainingTest(unittest.TestCase):
         target1 = Input('out1')
         target2 = Input('out2')
         a = Parameter('a', values=[[1]])
-        output1 = Output('out', Fir(parameter=a)(input1.last()))
+        output1 = Output('out', Fir(W=a)(input1.last()))
 
         test = Modely(visualizer=None,seed=42)
         test.addModel('model', output1)
@@ -100,7 +100,7 @@ class ModelyTrainingTest(unittest.TestCase):
         target1 = Input('out1')
         target2 = Input('out2')
         a = Parameter('a', values=[[2]])
-        output1 = Output('out', Fir(parameter=a)(input1.last()))
+        output1 = Output('out', Fir(W=a)(input1.last()))
 
         test = Modely(visualizer=None,seed=42)
         test.addModel('model', output1)
@@ -211,7 +211,7 @@ class ModelyTrainingTest(unittest.TestCase):
         target1 = Input('out1')
         target2 = Input('out2')
         a = Parameter('a', values=[[2]])
-        output1 = Output('out', Fir(parameter=a)(input1.last()))
+        output1 = Output('out', Fir(W=a)(input1.last()))
 
         test = Modely(visualizer=None, seed=42)
         test.addModel('model', output1)
