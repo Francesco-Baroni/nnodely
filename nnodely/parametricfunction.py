@@ -96,13 +96,9 @@ class ParamFun(NeuObj):
                     self.json['Functions'][self.name]['params_and_consts'].append(const.name)
                     #self.json['Constants'][const.name] = copy.deepcopy(const.json['Constants'][const.name])
                     self.json = merge(self.json, const.json)
-                elif type(const) is str:
-                    self.json['Functions'][self.name]['params_and_consts'].append(const)
-                    self.json['Constants'][const] = {'dim': 1, 'sw' : 1}
-                    #self.json = merge(self.json, Constant(name=const, values=[[0.0]], sw=1).json)
                 else:
-                    check(type(const) is Constant or type(const) is str, TypeError,
-                          'The element inside the \"constants\" list must be a Constant or str')
+                    check(type(const) is Constant, TypeError,
+                          'The element inside the \"constants\" list must be a Constant')
 
         # Create the missing parameters from list
         if type(self.parameters) is list:
@@ -252,12 +248,9 @@ class ParamFun(NeuObj):
                         if type(self.constants[key]) is Constant:
                             stream_json['Functions'][self.name]['params_and_consts'].append(const.name)
                             stream_json['Constants'][const.name] = copy.deepcopy(const.json['Constants'][const.name])
-                        elif type(self.constants[key]) is str:
-                            stream_json['Functions'][self.name]['params_and_consts'].append(const)
-                            stream_json['Constants'][const] = {'dim': 1, 'sw' : 1}
                         else:
-                            check(type(const) is Constant or type(const) is str, TypeError,
-                                  'The element inside the \"constants\" dict must be a Constant or str')
+                            check(type(const) is Constant, TypeError,
+                                  'The element inside the \"constants\" dict must be a Constant')
                         n_elem_dict -= 1
                     else:
                         param_name = self.name + key

@@ -47,6 +47,7 @@ class NeuObj():
             else:
                 if names in NeuObj.names:
                     NeuObj.names.remove(names)
+
     def __init__(self, name='', json={}, dim=0):
         NeuObj.count += 1
         if name == '':
