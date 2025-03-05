@@ -102,7 +102,7 @@ class Fir(NeuObj, AutoToStream):
 
         self.W_type = type(W)
         self.b_type = type(b)
-        self.pname = None
+        self.Wname = None
         self.bname = None
         self.W = None
         self.b = None
@@ -117,12 +117,12 @@ class Fir(NeuObj, AutoToStream):
             else:
                 self.output_dimension = output_dimension
                 check(W.dim['dim'] == self.output_dimension, ValueError, 'output_dimension must be equal to dim of the Parameter')
-            self.pname = W.name
+            self.Wname = W.name
             self.W = W
         else:  ## Create a new default parameter
             self.output_dimension = 1 if output_dimension is None else output_dimension
-            self.pname = W if type(W) is str else self.name + 'p'
-            self.W = Parameter(name=self.pname, dimensions=self.output_dimension, init=W_init, init_params=W_init_params)
+            self.Wname = W if type(W) is str else self.name + 'p'
+            self.W = Parameter(name=self.Wname, dimensions=self.output_dimension, init=W_init, init_params=W_init_params)
         self.json = merge(self.json,self.W.json)
 
         if b:
@@ -148,12 +148,12 @@ class Fir(NeuObj, AutoToStream):
             if len(self.json_stream) > 0:
                 log.warning(f"The Fir {self.name} was called with inputs with different dimensions. If both Fir enter in the model an error will be raised.")
             self.json_stream[json_stream_name] = copy.deepcopy(self.json)
-        self.json_stream[json_stream_name]['Parameters'][self.pname][window] = obj.dim[window]
+        self.json_stream[json_stream_name]['Parameters'][self.Wname][window] = obj.dim[window]
 
         if self.W_type is Parameter: ## The parameter already have a time window
             check(self.W.dim[window] == obj.dim[window], ValueError, f"The window \'{window}\' of the input must be the same of the parameter")
         else: ## set the time window
-            self.json['Parameters'][self.pname][window] = obj.dim[window]
+            self.json['Parameters'][self.Wname][window] = obj.dim[window]
 
         if self.b:
             if self.b_type is Parameter: ## The bias already have a time window
@@ -163,7 +163,7 @@ class Fir(NeuObj, AutoToStream):
             self.json_stream[json_stream_name]['Parameters'][self.bname][window] = obj.dim[window]
 
         stream_json = merge(self.json_stream[json_stream_name],obj.json)
-        stream_json['Relations'][stream_name] = [fir_relation_name, [obj.name], self.pname, self.bname, self.dropout]
+        stream_json['Relations'][stream_name] = [fir_relation_name, [obj.name], self.Wname, self.bname, self.dropout]
         return Stream(stream_name, stream_json,{'dim':self.output_dimension, 'sw': 1})
 
 
