@@ -100,49 +100,49 @@ class Fir(NeuObj, AutoToStream):
                  b:bool|str|Parameter|None = None,
                  dropout:int|float = 0):
 
-        self.W_type = type(W)
-        self.b_type = type(b)
+        self.W = W
+        self.b = b
         self.Wname = None
         self.bname = None
-        self.W = None
-        self.b = None
         self.dropout = dropout
-        super().__init__('P' + fir_relation_name + str(NeuObj.count))
 
-        if self.W_type is Parameter:
-            check(len(W.dim) == 2,ValueError,f"The values of the parameters must have two dimensions (tw/sample_rate or sw,output_dimension).")
+        super().__init__('P'+fir_relation_name + str(NeuObj.count))
+
+        if type(self.W) is Parameter:
+            check(len(self.W.dim) == 2,ValueError,f"The values of the parameters must have two dimensions (tw/sample_rate or sw,output_dimension).")
             if output_dimension is None:
-                check(type(W.dim['dim']) is int, TypeError, 'Dimension of the parameter must be an integer for the Fir')
-                self.output_dimension = W.dim['dim']
+                check(type(self.W.dim['dim']) is int, TypeError, 'Dimension of the parameter must be an integer for the Fir')
+                self.output_dimension = self.W.dim['dim']
             else:
                 self.output_dimension = output_dimension
-                check(W.dim['dim'] == self.output_dimension, ValueError, 'output_dimension must be equal to dim of the Parameter')
-            self.Wname = W.name
-            self.W = W
+                check(self.W.dim['dim'] == self.output_dimension, ValueError, 'output_dimension must be equal to dim of the Parameter')
+            self.Wname = self.W.name
+            W_json = self.W.json
         else:  ## Create a new default parameter
             self.output_dimension = 1 if output_dimension is None else output_dimension
-            self.Wname = W if type(W) is str else self.name + 'p'
-            self.W = Parameter(name=self.Wname, dimensions=self.output_dimension, init=W_init, init_params=W_init_params)
-        self.json = merge(self.json,self.W.json)
+            self.Wname = W if type(W) is str else self.name + 'W'
+            W_json = Parameter(name=self.Wname, dimensions=self.output_dimension, init=W_init, init_params=W_init_params).json
+        self.json = merge(self.json,W_json)
 
-        if b:
-            if self.b_type is Parameter:
-                check(type(b.dim['dim']) is int, ValueError, 'The "bias" dimensions must be an integer.')
+        if self.b is not None:
+            if type(self.b) is Parameter:
+                check(type(self.b.dim['dim']) is int, ValueError, 'The "bias" dimensions must be an integer.')
                 if output_dimension:
-                    check(b.dim['dim'] == output_dimension, ValueError, 'output_dimension must be equal to the dim of the "bias".')
-                self.bname = b.name
-                self.b = b
+                    check(self.b.dim['dim'] == output_dimension, ValueError, 'output_dimension must be equal to the dim of the "bias".')
+                self.bname = self.b.name
+                b_json = self.b.json
             else:
-                self.bname = b if self.b_type is str else self.name + 'b'
-                self.b = Parameter(name=self.bname, dimensions=self.output_dimension, init=b_init, init_params=b_init_params)
-            self.json = merge(self.json,self.b.json)
+                self.bname = b if type(self.b) is str else self.name + 'b'
+                b_json = Parameter(name=self.bname, dimensions=self.output_dimension, init=b_init, init_params=b_init_params).json
+            self.json = merge(self.json,b_json)
         self.json_stream = {}
 
     @enforce_types
     def __call__(self, obj:Stream) -> Stream:
         stream_name = fir_relation_name + str(Stream.count)
         check('dim' in obj.dim and obj.dim['dim'] == 1, ValueError, f"Input dimension is {obj.dim['dim']} and not scalar")
-        window = 'tw' if 'tw' in obj.dim else 'sw'
+        window = 'tw' if 'tw' in obj.dim else ('sw' if 'sw' in obj.dim else None)
+
         json_stream_name = window + str(obj.dim[window])
         if json_stream_name not in self.json_stream:
             if len(self.json_stream) > 0:
@@ -150,17 +150,19 @@ class Fir(NeuObj, AutoToStream):
             self.json_stream[json_stream_name] = copy.deepcopy(self.json)
         self.json_stream[json_stream_name]['Parameters'][self.Wname][window] = obj.dim[window]
 
-        if self.W_type is Parameter: ## The parameter already have a time window
-            check(self.W.dim[window] == obj.dim[window], ValueError, f"The window \'{window}\' of the input must be the same of the parameter")
-        else: ## set the time window
-            self.json['Parameters'][self.Wname][window] = obj.dim[window]
-
-        if self.b:
-            if self.b_type is Parameter: ## The bias already have a time window
-                check(self.b.dim[window] == obj.dim[window], ValueError, f"The window \'{window}\' of the input must be the same of the bias")
-            else: ## set the time window
-                self.json['Parameters'][self.bname][window] = obj.dim[window]
-            self.json_stream[json_stream_name]['Parameters'][self.bname][window] = obj.dim[window]
+        if window:
+            if type(self.W) is Parameter:
+                check(window in self.json['Parameters'][self.Wname],
+                      KeyError,
+                      f"The window \'{window}\' of the input is not in the W")
+                check(self.json['Parameters'][self.Wname][window] == obj.dim[window],
+                      ValueError,
+                      f"The window \'{window}\' of the input must be the same of the W")
+        else:
+            if type(self.W) is Parameter:
+                cond = 'sw' not in self.json_stream[json_stream_name]['Parameters'][self.Wname] and 'tw' not in \
+                       self.json_stream[json_stream_name]['Parameters'][self.Wname]
+                check(cond, KeyError, 'The W have a time window and the input no')
 
         stream_json = merge(self.json_stream[json_stream_name],obj.json)
         stream_json['Relations'][stream_name] = [fir_relation_name, [obj.name], self.Wname, self.bname, self.dropout]

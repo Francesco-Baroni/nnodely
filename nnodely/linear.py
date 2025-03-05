@@ -96,38 +96,39 @@ class Linear(NeuObj, AutoToStream):
                  b:bool|str|Parameter|None = None,
                  dropout:int|float = 0):
 
-        self.output_dimension = output_dimension
+        self.W = W
+        self.b = b
         self.bname = None
         self.Wname = None
         self.dropout = dropout
+
         super().__init__('P' + linear_relation_name + str(NeuObj.count))
 
-        if type(W) is Parameter:
-            check(type(W) is Parameter or type(W) is str, TypeError, 'The "W" must be of type Parameter or str.')
-            check('sw' in W.dim and W.dim['sw'] == 1, ValueError, f'The "W" must have window dimension sw=1 but was {W.dim}.')
-            check(len(W.dim['dim']) == 2, ValueError,'The "W" dimensions must be a list of 2.')
-            self.output_dimension = W.dim['dim'][1]
+        if type(self.W) is Parameter:
+            check('sw' in self.W.dim and self.W.dim['sw'] == 1, ValueError, f'The "W" must have window dimension sw=1 but was {W.dim}.')
+            check(len(self.W.dim['dim']) == 2, ValueError,'The "W" dimensions must be a list of 2.')
+            self.output_dimension = self.W.dim['dim'][1]
             if output_dimension is not None:
-                check(W.dim['dim'][1] == output_dimension, ValueError, 'output_dimension must be equal to the second dim of "W".')
-            self.Wname = W.name
-            self.W = W
+                check(self.W.dim['dim'][1] == output_dimension, ValueError, 'output_dimension must be equal to the second dim of "W".')
+            self.Wname = self.W.name
+            W_json = W.json
         else:
             self.output_dimension = 1 if output_dimension is None else output_dimension
             self.Wname = W if type(W) is str else self.name + 'W'
-            self.W = Parameter(name=self.Wname, dimensions=self.output_dimension, init=W_init, init_params=W_init_params)
-        self.json = merge(self.json,self.W.json)
+            W_json = Parameter(name=self.Wname, dimensions=self.output_dimension, init=W_init, init_params=W_init_params).json
+        self.json = merge(self.json,W_json)
 
-        if b is not None:
-            if type(b) is Parameter:
-                check(type(b.dim['dim']) is int, ValueError, 'The "b" dimensions must be an integer.')
+        if self.b is not None:
+            if type(self.b) is Parameter:
+                check(type(self.b.dim['dim']) is int, ValueError, 'The "b" dimensions must be an integer.')
                 if output_dimension is not None:
-                    check(b.dim['dim'] == output_dimension, ValueError,'output_dimension must be equal to the dim of the "b".')
-                self.bname = b.name
-                self.b = b
+                    check(self.b.dim['dim'] == output_dimension, ValueError,'output_dimension must be equal to the dim of the "b".')
+                self.bname = self.b.name
+                b_json = self.b.json
             else:
-                self.bname = b if type(b) is str else self.name + 'b'
-                self.b = Parameter(name=self.bname, dimensions=self.output_dimension, init=b_init, init_params=b_init_params)
-            self.json = merge(self.json,self.b.json)
+                self.bname = b if type(self.b) is str else self.name + 'b'
+                b_json = Parameter(name=self.bname, dimensions=self.output_dimension, init=b_init, init_params=b_init_params).json
+            self.json = merge(self.json,b_json)
 
         self.json_stream = {}
 
@@ -146,6 +147,10 @@ class Linear(NeuObj, AutoToStream):
 
             self.json_stream[json_stream_name]['Parameters'][self.Wname]['dim'] = [obj.dim['dim'],self.output_dimension,]
             self.json_stream[json_stream_name]['Parameters'][self.Wname]['sw'] = 1
+
+        if type(self.W) is Parameter:
+            check(self.json['Parameters'][self.Wname]['dim'][0] == obj.dim['dim'], ValueError,
+                  'the input dimension must be equal to the first dim of the parameter')
 
         stream_json = merge(self.json_stream[json_stream_name],obj.json)
         stream_json['Relations'][stream_name] = [linear_relation_name, [obj.name], self.Wname, self.bname, self.dropout]
