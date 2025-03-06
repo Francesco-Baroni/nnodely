@@ -115,7 +115,9 @@ class Fir(NeuObj, AutoToStream):
                 self.output_dimension = self.W.dim['dim']
             else:
                 self.output_dimension = output_dimension
-                check(self.W.dim['dim'] == self.output_dimension, ValueError, 'output_dimension must be equal to dim of the Parameter')
+                check(self.W.dim['dim'] == self.output_dimension,
+                      ValueError,
+                      'output_dimension must be equal to dim of the Parameter')
             self.Wname = self.W.name
             W_json = self.W.json
         else:  ## Create a new default parameter
@@ -126,9 +128,9 @@ class Fir(NeuObj, AutoToStream):
 
         if self.b is not None:
             if type(self.b) is Parameter:
+                check('tw' not in self.b.dim and 'sw' not in self.b.dim, TypeError, f'The "bias" must no have a time dimensions but got {self.b.dim}.')
                 check(type(self.b.dim['dim']) is int, ValueError, 'The "bias" dimensions must be an integer.')
-                if output_dimension:
-                    check(self.b.dim['dim'] == output_dimension, ValueError, 'output_dimension must be equal to the dim of the "bias".')
+                check(self.b.dim['dim'] == self.output_dimension, ValueError, 'output_dimension must be equal to the dim of the "bias".')
                 self.bname = self.b.name
                 b_json = self.b.json
             else:
@@ -140,7 +142,9 @@ class Fir(NeuObj, AutoToStream):
     @enforce_types
     def __call__(self, obj:Stream) -> Stream:
         stream_name = fir_relation_name + str(Stream.count)
-        check('dim' in obj.dim and obj.dim['dim'] == 1, ValueError, f"Input dimension is {obj.dim['dim']} and not scalar")
+        check('dim' in obj.dim and obj.dim['dim'] == 1,
+              ValueError,
+              f"Input dimension is {obj.dim['dim']} and not scalar")
         window = 'tw' if 'tw' in obj.dim else ('sw' if 'sw' in obj.dim else None)
 
         json_stream_name = window + str(obj.dim[window])
@@ -153,7 +157,7 @@ class Fir(NeuObj, AutoToStream):
         if window:
             if type(self.W) is Parameter:
                 check(window in self.json['Parameters'][self.Wname],
-                      KeyError,
+                      TypeError,
                       f"The window \'{window}\' of the input is not in the W")
                 check(self.json['Parameters'][self.Wname][window] == obj.dim[window],
                       ValueError,

@@ -105,7 +105,7 @@ class Linear(NeuObj, AutoToStream):
         super().__init__('P' + linear_relation_name + str(NeuObj.count))
 
         if type(self.W) is Parameter:
-            check('sw' in self.W.dim and self.W.dim['sw'] == 1, ValueError, f'The "W" must have window dimension sw=1 but was {W.dim}.')
+            check('tw' not in self.W.dim.keys() and 'sw' not in self.W.dim.keys(), TypeError, f'The "W" must no have time dimension but was {W.dim}.')
             check(len(self.W.dim['dim']) == 2, ValueError,'The "W" dimensions must be a list of 2.')
             self.output_dimension = self.W.dim['dim'][1]
             if output_dimension is not None:
@@ -120,9 +120,9 @@ class Linear(NeuObj, AutoToStream):
 
         if self.b is not None:
             if type(self.b) is Parameter:
-                check(type(self.b.dim['dim']) is int, ValueError, 'The "b" dimensions must be an integer.')
-                if output_dimension is not None:
-                    check(self.b.dim['dim'] == output_dimension, ValueError,'output_dimension must be equal to the dim of the "b".')
+                check('tw' not in self.b.dim and 'sw' not in self.b.dim, TypeError, f'The "bias" must no have a time dimensions but got {self.b.dim}.')
+                check(type(self.b.dim['dim']) is int, TypeError, 'The "b" dimensions must be an integer.')
+                check(self.b.dim['dim'] == self.output_dimension, ValueError,'output_dimension must be equal to the dim of the "b".')
                 self.bname = self.b.name
                 b_json = self.b.json
             else:
@@ -137,7 +137,6 @@ class Linear(NeuObj, AutoToStream):
         stream_name = linear_relation_name + str(Stream.count)
         check(type(obj) is Stream, TypeError,f"The type of {obj} is {type(obj)} and is not supported for Linear operation.")
         window = 'tw' if 'tw' in obj.dim else ('sw' if 'sw' in obj.dim else None)
-        assert(window is not None), f"The Stream object [{obj.name} has no window dimension"
 
         json_stream_name = obj.dim['dim']
         if obj.dim['dim'] not in self.json_stream:
@@ -146,7 +145,7 @@ class Linear(NeuObj, AutoToStream):
             self.json_stream[json_stream_name] = copy.deepcopy(self.json)
 
             self.json_stream[json_stream_name]['Parameters'][self.Wname]['dim'] = [obj.dim['dim'],self.output_dimension,]
-            self.json_stream[json_stream_name]['Parameters'][self.Wname]['sw'] = 1
+            #self.json_stream[json_stream_name]['Parameters'][self.Wname]['sw'] = 1
 
         if type(self.W) is Parameter:
             check(self.json['Parameters'][self.Wname]['dim'][0] == obj.dim['dim'], ValueError,
@@ -167,7 +166,7 @@ class Linear_Layer(nn.Module):
     def forward(self, x):
         # x is expected to be of shape [batch, window, input_dimension]
         # Using torch.einsum for batch matrix multiplication
-        y = torch.einsum('bwi,io->bwo', x, self.weights[0])  # y will have shape [batch, window, output_features]
+        y = torch.einsum('bwi,io->bwo', x, self.weights)  # y will have shape [batch, window, output_features]
         if self.bias is not None:
             y += self.bias  # Add bias
         # Add dropout if necessary

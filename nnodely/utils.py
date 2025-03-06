@@ -16,6 +16,9 @@ NP_DTYPE = np.float32
 
 ForbiddenTags = keyword.kwlist
 
+def get_window(obj):
+    return 'tw' if 'tw' in obj.dim else ('sw' if 'sw' in obj.dim else None)
+
 def enforce_types(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -115,13 +118,12 @@ def merge(source, destination, main = True):
                           f"The Parameter {key} is present multiple times, with different dimensions. "
                           f"The Parameter {key} is called with {value['dim']} dimension and with {source['Parameters'][key]['dim']} dimension.")
                 window_dest = 'tw' if 'tw' in value else ('sw' if 'sw' in value else None)
-                assert (window_dest is not None), f"Parameters {key} with no window dimension"
                 window_source = 'tw' if 'tw' in source["Parameters"][key] else ('sw' if 'sw' in source["Parameters"][key] else None)
-                assert (window_source is not None), f"Parameters {key} with no window dimension"
-                check(window_dest == window_source and value[window_dest] == source["Parameters"][key][window_source] ,
-                      TypeError,
-                      f"The Parameter {key} is present multiple times, with different window. "
-                      f"The Parameter {key} is called with {window_dest}={value[window_dest]} dimension and with {window_source}={source['Parameters'][key][window_source]} dimension.")
+                if window_dest is not None:
+                    check(window_dest == window_source and value[window_dest] == source["Parameters"][key][window_source] ,
+                          TypeError,
+                          f"The Parameter {key} is present multiple times, with different window. "
+                          f"The Parameter {key} is called with {window_dest}={value[window_dest]} dimension and with {window_source}={source['Parameters'][key][window_source]} dimension.")
 
         log.debug("Merge Source")
         log.debug("\n"+pformat(source))

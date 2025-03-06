@@ -110,7 +110,7 @@ class ParamFun(NeuObj):
                 elif type(param) is str:
                     self.json['Functions'][self.name]['params_and_consts'].append(param)
                     if param not in self.json['Parameters'].keys():
-                        self.json = merge(self.json, Parameter(name=param, dimensions=1, sw=1).json)
+                        self.json = merge(self.json, Parameter(name=param, dimensions=1).json)
                 else:
                     check(type(param) is Parameter or type(param) is str, TypeError,
                           'The element inside the \"parameters\" list must be a Parameter or str')
@@ -120,7 +120,7 @@ class ParamFun(NeuObj):
                 idx = i + len(funinfo.args) - len(self.parameters_dimensions)
                 param_name = self.name + str(idx)
                 self.json['Functions'][self.name]['params_and_consts'].append(param_name)
-                self.json = merge(self.json, Parameter(name=param_name, dimensions=list(self.parameters_dimensions[i]), sw=1).json)
+                self.json = merge(self.json, Parameter(name=param_name, dimensions=list(self.parameters_dimensions[i])).json)
 
         self.json_stream = {}
 
@@ -227,7 +227,7 @@ class ParamFun(NeuObj):
                             #stream_json = merge(stream_json, param.json)
                         elif type(self.parameters[key]) is str:
                             stream_json['Functions'][self.name]['params_and_consts'].append(param)
-                            stream_json['Parameters'][param] = {'dim' : 1,'sw' : 1}
+                            stream_json['Parameters'][param] = {'dim' : 1}
                             #stream_json = merge(stream_json, Parameter(name=param, dimensions=1, sw=1).json)
                         else:
                             check(type(param) is Parameter or type(param) is str, TypeError,
@@ -239,7 +239,7 @@ class ParamFun(NeuObj):
                         check(isinstance(dim,(list,tuple,int)), TypeError,
                               'The element inside the \"parameters_dimensions\" dict must be a tuple or int')
                         stream_json['Functions'][self.name]['params_and_consts'].append(param_name)
-                        stream_json['Parameters'][param_name] = {'dim': list(dim) if type(dim) is tuple else dim, 'sw' : 1}
+                        stream_json['Parameters'][param_name] = {'dim': list(dim) if type(dim) is tuple else dim}
                         #json_dim = list(dim) if type(dim) is tuple else dim
                         #stream_json = merge(stream_json, Parameter(name=param_name, dimensions=json_dim, sw=1).json)
                         n_elem_dict -= 1
@@ -255,7 +255,7 @@ class ParamFun(NeuObj):
                     else:
                         param_name = self.name + key
                         stream_json['Functions'][self.name]['params_and_consts'].append(param_name)
-                        stream_json['Parameters'][param_name] = {'dim': 1, 'sw' : 1}
+                        stream_json['Parameters'][param_name] = {'dim': 1}
                         #stream_json = merge(stream_json, Parameter(name=param_name, dimensions=1, sw=1).json)
             check(n_elem_dict == 0, ValueError, 'Some of the input parameters are not used in the function.')
 
@@ -292,12 +292,18 @@ class ParamFun(NeuObj):
             elif window == 'sw':
                 dim_win = dim[window]
             else:
-                dim_win = 1
+                dim_win = None if t in (Parameter, Constant) else 1
             if t in (Parameter, Constant):
                 if type(dim['dim']) is list:
-                    inputs.append(torch.rand(size=(dim_win,) + tuple(dim['dim'])))
+                    if dim_win is not None:
+                        inputs.append(torch.rand(size=(dim_win,) + tuple(dim['dim'])))
+                    else:
+                        inputs.append(torch.rand(size=tuple(dim['dim'])))
                 else:
-                    inputs.append(torch.rand(size=(dim_win, dim['dim'])))
+                    if dim_win is not None:
+                        inputs.append(torch.rand(size=(dim_win, dim['dim'])))
+                    else:
+                        inputs.append(torch.rand(size=(dim['dim'],)))
             else:
                 inputs.append(torch.rand(size=(batch_dim, dim_win, dim['dim'])))
 
