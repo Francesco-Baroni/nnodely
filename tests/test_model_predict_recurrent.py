@@ -734,13 +734,13 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
     def test_predict_values_linear_and_fir_2models_same_window_connect(self):
         NeuObj.clearNames()
         input1 = Input('in1',dimensions=2)
-        W = Parameter('W', values=[[[-1],[-5]]])
-        b = Parameter('b', values=[[1]])
+        W = Parameter('W', values=[[-1],[-5]])
+        b = Parameter('b', values=1)
         lin_out = Linear(W=W, b=b)(input1.sw(2))
         output1 = Output('out1', lin_out)
 
         inout = State('inout')
-        a = Parameter('a', values=[[4],[5]])
+        a = Parameter('a', sw = 2, values=[[4],[5]])
         output2 = Output('out2', Fir(W=a)(inout.sw(2)))
         output3 = Output('out3', Fir(W=a)(lin_out))
 
@@ -755,13 +755,13 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
     def test_predict_values_linear_and_fir_2models_same_window_connect_predict(self):
         NeuObj.clearNames()
         input1 = Input('in1',dimensions=2)
-        W = Parameter('W', values=[[[-1],[-5]]])
-        b = Parameter('b', values=[[1]])
+        W = Parameter('W', values=[[-1],[-5]])
+        b = Parameter('b', values=[1])
         lin_out = Linear(W=W, b=b)(input1.sw(2))
         output1 = Output('out1', lin_out)
 
         inout = Input('inout')
-        a = Parameter('a', values=[[4],[5]])
+        a = Parameter('a', sw = 2, values=[[4],[5]])
         output2 = Output('out2', Fir(W=a)(inout.sw(2)))
         output3 = Output('out3', Fir(W=a)(lin_out))
 
@@ -777,14 +777,14 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
     def test_predict_values_linear_and_fir_2models_more_window_connect(self):
         NeuObj.clearNames()
         input1 = Input('in1',dimensions=2)
-        W = Parameter('W', values=[[[-1],[-5]]])
-        b = Parameter('b', values=[[1]])
+        W = Parameter('W', values=[[-1],[-5]])
+        b = Parameter('b', values=1)
         lin_out = Linear(W=W, b=b)(input1.sw(2))
         output1 = Output('out1', lin_out)
 
         inout = State('inout')
-        a = Parameter('a', values=[[4], [5]])
-        a_big = Parameter('ab', values=[[1], [2], [3], [4], [5]])
+        a = Parameter('a', sw = 2, values=[[4], [5]])
+        a_big = Parameter('ab', sw = 5, values=[[1], [2], [3], [4], [5]])
         output2 = Output('out2', Fir(W=a)(inout.sw(2)))
         output3 = Output('out3', Fir(W=a_big)(inout.sw(5)))
         output4 = Output('out4', Fir(W=a)(lin_out))
@@ -812,15 +812,15 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
     def test_predict_values_linear_and_fir_2models_more_window_connect_predict(self):
         NeuObj.clearNames()
         input1 = Input('in1',dimensions=2)
-        W = Parameter('W', values=[[[-1],[-5]]])
-        b = Parameter('b', values=[[1]])
+        W = Parameter('W', values=[[-1],[-5]])
+        b = Parameter('b', values=[1])
         lin_out = Linear(W=W, b=b)(input1.sw(2))
         output1 = Output('out1', lin_out)
 
         inout = Input('inout')
-        a = Parameter('a', values=[[4], [5]])
+        a = Parameter('a', sw = 2, values=[[4], [5]])
         output2 = Output('out2', Fir(W=a)(inout.sw(2)))
-        a_big = Parameter('ab', values=[[1], [2], [3], [4], [5]])
+        a_big = Parameter('ab', sw = 5, values=[[1], [2], [3], [4], [5]])
         output3 = Output('out3', Fir(W=a_big)(inout.sw(5)))
         output4 = Output('out4', Fir(W=a)(lin_out))
 
@@ -858,14 +858,14 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
     def test_predict_values_linear_and_fir_2models_more_window_closed_loop(self):
         NeuObj.clearNames()
         input1 = State('in1',dimensions=2)
-        W = Parameter('W', values=[[[-1],[-5]]])
-        b = Parameter('b', values=[[1]])
+        W = Parameter('W', values=[[-1],[-5]])
+        b = Parameter('b', values=1)
         output1 = Output('out1', Linear(W=W, b=b)(input1.sw(2)))
 
         # input2 = State('inout') #TODO loop forever
         # test.addConnect(output1, input1) # With this
         input2 = State('in2')
-        a = Parameter('a', values=[[1,3],[2,4],[3,5],[4,6],[5,7]])
+        a = Parameter('a', sw=5, values=[[1,3],[2,4],[3,5],[4,6],[5,7]])
         output2 = Output('out2', Fir(output_dimension=2,W=a)(input2.sw(5)))
 
         test = Modely(visualizer=None, seed=42)
@@ -888,14 +888,14 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
     def test_predict_values_linear_and_fir_2models_more_window_closed_loop_predict(self):
         NeuObj.clearNames()
         input1 = Input('in1',dimensions=2)
-        W = Parameter('W', values=[[[-1],[-5]]])
-        b = Parameter('b', values=[[1]])
+        W = Parameter('W', values=[[-1],[-5]])
+        b = Parameter('b', values=[1])
         output1 = Output('out1', Linear(W=W, b=b)(input1.sw(2)))
 
         # input2 = State('inout') #TODO loop forever
         # test.addConnect(output1, input1) # With this
         input2 = Input('in2')
-        a = Parameter('a', values=[[1,3],[2,4],[3,5],[4,6],[5,7]])
+        a = Parameter('a', sw=5, values=[[1,3],[2,4],[3,5],[4,6],[5,7]])
         output2 = Output('out2', Fir(output_dimension=2,W=a)(input2.sw(5)))
 
         test = Modely(visualizer=None, seed=42)
@@ -1096,7 +1096,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
     def test_parameters_predict_closed_loop_perdict(self):
         NeuObj.clearNames()
         input1 = Input('in1')
-        W = Parameter('W', values=[[1], [2], [3]])
+        W = Parameter('W', sw=3, values=[[1], [2], [3]])
         out = Output('out',Fir(W=W)(input1.sw(3)))
 
         test = Modely(visualizer=None, seed=42)
@@ -1162,7 +1162,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
     def test_parameters_predict_closed_loop(self):
         NeuObj.clearNames()
         input1 = State('in1')
-        W = Parameter('W', values=[[1], [2], [3]])
+        W = Parameter('W', sw=3, values=[[1], [2], [3]])
         out = Output('out',Fir(W=W)(input1.sw(3)))
 
         test = Modely(visualizer=None, seed=42)

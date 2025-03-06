@@ -350,24 +350,24 @@ class ModelyPredictTest(unittest.TestCase):
         out1 = Output('out1', Fir(W=p1)(x.tw([-2, 1])))
 
         p2 = Parameter('p2', sw=1, values=[[-2]])
-        with self.assertRaises(KeyError):
+        with self.assertRaises(TypeError):
             Fir(W=p2)(x.tw([-2, 1]))
         out2 = Output('out2', Fir(W=p2)(x.last()))
 
         p3 = Parameter('p3', dimensions=2, sw=1, values=[[-2,1]])
-        with self.assertRaises(KeyError):
+        with self.assertRaises(TypeError):
             Fir(W=p3)(x.tw([-2, 1]))
         out3 = Output('out3', Fir(W=p3)(x.last()))
 
         p4 = Parameter('p4', dimensions=2, tw=2, values=[[-2,1],[2,0],[0,1],[4,0]])
-        with self.assertRaises(KeyError):
+        with self.assertRaises(TypeError):
             Fir(W=p4)(x.sw([-2, 0]))
         out4 = Output('out4', Fir(W=p4)(x.tw([-2, 0])))
 
         p5 = Parameter('p6', sw=2, dimensions=2, values=[[-2,1],[2,0]])
         with self.assertRaises(TypeError):
             Fir(W = p5)(x)
-        with self.assertRaises(KeyError):
+        with self.assertRaises(TypeError):
             Fir(W = p5)(x.tw([-2,1]))
         with self.assertRaises(ValueError):
             Fir(W = p5)(x.sw([-2,1]))
@@ -510,8 +510,8 @@ class ModelyPredictTest(unittest.TestCase):
         # Vector input for parametric function
         in1 = Input('in1', dimensions=3)
         in2 = Input('in2', dimensions=2)
-        p1 = Parameter('p1', dimensions=(3,2),values=[[[1,2],[3,4],[5,6]]])
-        p2 = Parameter('p2', dimensions=3,values=[[1,2,3]])
+        p1 = Parameter('p1', sw=1, dimensions=(3,2), values=[[[1,2],[3,4],[5,6]]])
+        p2 = Parameter('p2', sw=1, dimensions=(1,3), values=[[1,2,3]])
         parfun = ParamFun(myfun3, parameters=[p1,p2])
         out = Output('out', parfun(in1.last(),in2.last()))
         test = Modely(visualizer = None, seed = 1)
@@ -709,9 +709,9 @@ class ModelyPredictTest(unittest.TestCase):
     def test_trigonometri_parameter_and_numeric_constant(self):
         NeuObj.clearNames()
         in1 = Input('in1').last()
-        par = Parameter('par', values=[[5]])
+        par = Parameter('par', values=5)
         in4 = Input('in4', dimensions=4).last()
-        par4 = Parameter('par4', values=[[1,2,3,4]])
+        par4 = Parameter('par4', values=[1,2,3,4])
         add = in1 + par + 5.2
         sub = in1 - par - 5.2
         mul = in1 * par * 5.2
@@ -755,7 +755,7 @@ class ModelyPredictTest(unittest.TestCase):
         out4 = Output('out4', tot4)
         out41 = Output('out41', tot41)
 
-        linW = Parameter('linW',dimensions=(4,1),values=[[[1],[1],[1],[1]]])
+        linW = Parameter('linW', dimensions=(4,1),values=[[1],[1],[1],[1]])
         outtot = Output('outtot', tot1 + Linear(W=linW)(tot4))
         test = Modely(visualizer=None, seed=1)
         test.addModel('out',[out1,out4,outtot,out11,out41])
@@ -781,7 +781,7 @@ class ModelyPredictTest(unittest.TestCase):
     def test_check_modify_stream(self):
         NeuObj.clearNames()
         in1 = Input('in1').last()
-        par = Parameter('par', values=[[5]])
+        par = Parameter('par', values=5)
         add1 = in1 + par # 1 + 5 = 6
         add2 = add1 + 5.2 # 6 + 5.2 = 11.2
         tot1 = add1 + add2 # 6 + 11.2 = 17.2
@@ -803,11 +803,11 @@ class ModelyPredictTest(unittest.TestCase):
     def test_parameter_and_linear(self):
         NeuObj.clearNames()
         input = Input('in1').last()
-        W15 = Parameter('W15', dimensions=(1, 5), values=[[[1,2,3,4,5]]])
-        b15 = Parameter('b15', dimensions=5, values=[[1,2,3,4,5]])
-        input4 = Input('in4',dimensions=4).last()
-        W45 = Parameter('W45', dimensions=(4, 5), values=[[[1,2,3,4,5],[5,3,3,4,5],[1,2,3,4,7],[-8,2,3,4,5]]])
-        b45 = Parameter('b45', dimensions=5, values=[[5,2,3,4,5]])
+        W15 = Parameter('W15', dimensions=(1, 5), values=[[1,2,3,4,5]])
+        b15 = Parameter('b15', dimensions=5, values=[1,2,3,4,5])
+        input4 = Input('in4', dimensions=4).last()
+        W45 = Parameter('W45', dimensions=(4, 5), values=[[1,2,3,4,5],[5,3,3,4,5],[1,2,3,4,7],[-8,2,3,4,5]])
+        b45 = Parameter('b45', dimensions=5, values=[5,2,3,4,5])
 
         o = Output('out' , Linear(input) + Linear(input4))
         o3 = Output('out3' , Linear(3)(input) + Linear(3)(input4))
@@ -1320,12 +1320,11 @@ class ModelyPredictTest(unittest.TestCase):
     def test_predict_paramfun_map_over_batch(self):
         NeuObj.clearNames()
         input2 = Input('in2')
-        pp = Parameter('pp', values=[[7],[8],[9]])
-        ll = Constant('ll', values=[[12],[13],[14]])
-        oo = Constant('oo', values=[[1],[2],[3]])
+        pp = Parameter('pp', sw=3, values=[[7],[8],[9]])
+        ll = Constant('ll', sw=3, values=[[12],[13],[14]])
+        oo = Constant('oo', sw=3, values=[[1],[2],[3]])
 
         def fun_test(x, y, z, k):
-            print(x, y, z, k)
             return (x + y) * (z - k)
 
         fun_map = ParamFun(fun_test,parameters=[pp], constants=[ll,oo], map_over_batch=True)
