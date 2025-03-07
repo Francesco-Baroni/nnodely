@@ -27,8 +27,8 @@ c = 5
 w_5 = Parameter('w_5', dimensions=1, tw=5)
 t_5 = Parameter('t_5', dimensions=1, tw=5)
 c_5 = [[1],[2],[3],[4],[5],[6],[7],[8],[9],[10]]
-parfun_x = ParamFun(myFun, parameters = [K_x], constants=[c_v])
-parfun_y = ParamFun(myFun, parameters = [K_y])
+parfun_x = ParamFun(myFun, parameters_and_constants = [K_x,c_v])
+parfun_y = ParamFun(myFun, parameters_and_constants = [K_y])
 parfun_z = ParamFun(myFun)
 fir_w = Fir(W=w_5)(x.tw(5))
 fir_t = Fir(W=t_5)(y.tw(5))

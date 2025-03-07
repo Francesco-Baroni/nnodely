@@ -46,7 +46,7 @@ t = Parameter('tt', dimensions=3, values=[[1,2,3]])
 def fun(x, k, t):
     import torch
     return x+(k+t)
-p = ParamFun(fun, parameters=[g,t])
+p = ParamFun(fun, parameters_and_constants=[g,t])
 out = Output('out', p(x.tw(1)))
 example = Modely()
 example.addModel('out',out)
@@ -58,7 +58,7 @@ print("------------------------EXAMPLE 4------------------------")
 NeuObj.clearNames('out')
 # Example 4
 # Create two parameters fo initializa a Fir and a Linear the two parameters are initialized.
-g = Parameter('ggg', dimensions=(4,1),values=[[[1],[2],[3],[4]]])
+g = Parameter('ggg', dimensions=(4,1),values=[[1],[2],[3],[4]])
 o = Parameter('o', sw=3, dimensions=2, values=[[2,3],[1,2],[1,2]])
 x = Input('xx', dimensions=4)
 y = Input('y')
@@ -74,8 +74,8 @@ print("------------------------EXAMPLE 5------------------------")
 NeuObj.clearNames('out')
 # Example 5
 # Sum Parameter to constant
-g = Parameter('p14', values=[[1,2,3,4]])
-o = Constant('c14', values=[[1,2,3,4]])
+g = Parameter('p14', sw=1, values=[[1,2,3,4]])
+o = Constant('c14', sw=1, values=[[1,2,3,4]])
 x = Input('xxx', dimensions=4)
 out = Output('out', x.last()+g+o)
 example = Modely()

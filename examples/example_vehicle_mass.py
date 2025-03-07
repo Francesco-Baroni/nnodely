@@ -376,8 +376,7 @@ out_Fr_model = LocalModel(input_function=Fr_model_gen, pass_indexes=True)((vx_sa
 c_r = Parameter('c_r',values=[[pd.read_csv(vehicle_data_csv)['c_r'][0]]])  # initial guess for the rolling resistance coefficient
 # Regressors model
 out_Phi_model = ParamFun(Phi_model,
-                         constants=[g],
-                         parameters=[c_r])(theta.sw([0,1]), ax_sat, out_Fr_model)
+                         parameters_and_constants=[g, c_r])(theta.sw([0,1]), ax_sat, out_Fr_model)
 
 # -----------------------------------------------
 # Measurement model for recursive least squares
@@ -387,15 +386,14 @@ c_v = Parameter('c_v',values=[[pd.read_csv(vehicle_data_csv)['c_v'][0]]])  # ini
 k_d = Parameter('k_d',values=[[pd.read_csv(vehicle_data_csv)['k_d'][0]]])  # initial guess for the quadratic drag coefficient
 # Measurement model
 out_y_model = ParamFun(y_model,
-                       constants=[I_wf, I_wr, r_f, r_r, i_gear],
-                       parameters=[c_v,k_d])(Tyf_engine_sat, Tyf_brake_sat, Tyr_brake_sat, vx_sat, ax_sat, out_Fy_model, out_NN_steer)
+                       parameters_and_constants=[I_wf, I_wr, r_f, r_r, i_gear,c_v,k_d])(Tyf_engine_sat, Tyf_brake_sat, Tyr_brake_sat, vx_sat, ax_sat, out_Fy_model, out_NN_steer)
 
 # -------------------------------------------------
 # Neural RLS update for the vehicle mass estimate 
 # and the covariance of the estimation error
 # -------------------------------------------------
 out_RLS_update = ParamFun(RLS_update,
-                          constants=[i_gear, lambda_forget, Tyf_min_thresh_pos, Tyf_min_thresh_neg, vx_min_thresh, reg_fact])(
+                          parameters_and_constants=[i_gear, lambda_forget, Tyf_min_thresh_pos, Tyf_min_thresh_neg, vx_min_thresh, reg_fact])(
                           m.sw([0,1]), P.sw([0,1]), out_Phi_model, out_y_model, Tyf_engine_sat, Tyf_brake_sat, vx_sat)
 
 # -------------------------------------------------

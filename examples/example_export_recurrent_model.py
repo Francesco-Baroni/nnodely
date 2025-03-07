@@ -252,10 +252,10 @@ elif example == 6:
 
     # Create neural network relations
     air_drag_force = Linear(b=True)(velocity.last()**2)
-    breaking_force = -Relu(Fir(parameter_init = init_negexp, parameter_init_params={'size_index':0, 'first_value':0.002, 'lambda':3})(brake.sw(n)))
+    breaking_force = -Relu(Fir(W_init = init_negexp, W_init_params={'size_index':0, 'first_value':0.002, 'lambda':3})(brake.sw(n)))
     gravity_force = Linear(W_init=init_constant, W_init_params={'value':0}, dropout=0.1, W='gravity')(altitude.last())
     fuzzi_gear = Fuzzify(6, range=[2,7], functions='Rectangular')(gear.last())
-    local_model = LocalModel(input_function=lambda: Fir(parameter_init = init_negexp, parameter_init_params={'size_index':0, 'first_value':0.002, 'lambda':3}))
+    local_model = LocalModel(input_function=lambda: Fir(W_init = init_negexp, W_init_params={'size_index':0, 'first_value':0.002, 'lambda':3}))
     engine_force = local_model(torque.sw(n), fuzzi_gear)
 
     sum_rel = air_drag_force+breaking_force+gravity_force+engine_force

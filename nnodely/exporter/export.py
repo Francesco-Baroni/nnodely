@@ -166,7 +166,7 @@ def export_python_model(model_def, model, model_path):
         file.write("        pass\n")
         # file.write("        self.closed_loop_update = {}\n")
         # file.write("        self.connect_update = {}\n")
-        # file.write("        for key, state in self.state_model.items():\n")
+        # file.write("        for key, state in self.states.items():\n")
         # file.write("            if 'connect' in state.keys():\n")
         # file.write("                self.connect_update[key] = state['connect']\n")
         # file.write("            elif 'closedLoop' in state.keys():\n")

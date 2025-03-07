@@ -61,7 +61,7 @@ for key in example.model.all_parameters.keys():
 threshold = 0.01
 equation = ''
 functions = ['Identity', 'Sin', 'Cos', 'sigma_fun', 'Mul', 'Mul', 'Sech']
-for value_t, value_y, value_b, function in zip(example.model.all_parameters['PLinear3W'].data.numpy()[0][0], example.model.all_parameters['PLinear3W'].data.numpy()[0][1], example.model.all_parameters['PLinear3b'].data.numpy()[0], functions):
+for value_t, value_y, value_b, function in zip(example.model.all_parameters['PLinear4W'].data.numpy()[0], example.model.all_parameters['PLinear4W'].data.numpy()[1], example.model.all_parameters['PLinear4b'].data.numpy(), functions):
     equation_temp = ''
     if abs(value_t) > threshold and abs(value_y) > threshold:
         equation_temp = f'({value_t:.2f}*t) + ({value_y:.2f}*y)'

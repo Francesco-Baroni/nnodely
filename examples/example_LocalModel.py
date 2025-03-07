@@ -136,7 +136,7 @@ def input_function_gen(idx_list):
         p1, p2 = p1_1, p2_0
     if idx_list == [1, 1]:
         p1, p2 = p1_1, p2_1
-    return ParamFun(myFun,parameters=[p1,p2])
+    return ParamFun(myFun,parameters_and_constants=[p1,p2])
 def output_function_gen(idx_list):
     pfir = Parameter('pfir_'+str(idx_list),tw=1,dimensions=2,values=[[1+idx_list[0],2+idx_list[1]],[3+idx_list[0],4+idx_list[1]]])
     return Fir(2,W=pfir)
@@ -147,10 +147,10 @@ pfir00 = Parameter('N_pfir_[0, 0]',tw=1,dimensions=2,values=[[1,2],[3,4]])
 pfir01 = Parameter('N_pfir_[0, 1]',tw=1,dimensions=2,values=[[1,3],[3,5]])
 pfir10 = Parameter('N_pfir_[1, 0]',tw=1,dimensions=2,values=[[2,2],[4,4]])
 pfir11 = Parameter('N_pfir_[1, 1]',tw=1,dimensions=2,values=[[2,3],[4,5]])
-parfun_00 = ParamFun(myFun,parameters=[p1_0,p2_0])(x.tw(1))
-parfun_01 = ParamFun(myFun,parameters=[p1_0,p2_1])(x.tw(1))
-parfun_10 = ParamFun(myFun,parameters=[p1_1,p2_0])(x.tw(1))
-parfun_11 = ParamFun(myFun,parameters=[p1_1,p2_1])(x.tw(1))
+parfun_00 = ParamFun(myFun,parameters_and_constants=[p1_0,p2_0])(x.tw(1))
+parfun_01 = ParamFun(myFun,parameters_and_constants=[p1_0,p2_1])(x.tw(1))
+parfun_10 = ParamFun(myFun,parameters_and_constants=[p1_1,p2_0])(x.tw(1))
+parfun_11 = ParamFun(myFun,parameters_and_constants=[p1_1,p2_1])(x.tw(1))
 out_in_00 = Output('parfun00', parfun_00)
 out_in_01 = Output('parfun01', parfun_01)
 out_in_10 = Output('parfun10', parfun_10)

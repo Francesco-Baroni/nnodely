@@ -1,5 +1,8 @@
 import sys, os
 import numpy as np
+
+from nnodely.relation import NeuObj
+
 sys.path.append(os.getcwd())
 
 from nnodely import *
@@ -21,7 +24,8 @@ print("------------------------EXAMPLE 1------------------------")
 # Modello b
 a = Input('a')
 b_t = Input('b_t')
-b = Output('b',Linear(W='condiviso')(a.last())+Linear(W='A')(Fir(W='B')(a.tw(0.5))))
+condiviso = Parameter('condiviso',dimensions=(1,1))
+b = Output('b',Linear(W=condiviso)(a.last())+Linear(W='A')(Fir(W='B')(a.tw(0.5))))
 
 model = Modely(seed=42,visualizer=MPLVisualizer())
 model.addModel('b_model', b)
@@ -32,7 +36,7 @@ model.neuralizeModel(0.1)
 c = Input('c')
 b_in = Input('b_in')
 d_t = Input('d_t')
-d = Output('d',Linear(W='condiviso')(c.last())+Fir(W='C')(c.tw(0.5))+Fir(W='D')(b_in.tw(0.3)))
+d = Output('d',Linear(W=condiviso)(c.last())+Fir(W='C')(c.tw(0.5))+Fir(W='D')(b_in.tw(0.3)))
 
 model.addModel('d_model', d)
 model.addMinimize('d_min', d, d_t.last())
@@ -52,10 +56,12 @@ print('closed loop variables: ', model.model.closed_loop_update)
 
 
 print("------------------------EXAMPLE 2------------------------")
+NeuObj.clearNames()
 # Modello b
 a = Input('a')
 b_t = Input('b_t')
-b = Output('b',Linear(W='condiviso')(a.last())+Linear(W='A')(Fir(W='B')(a.tw(0.5))))
+condiviso = Parameter('condiviso',dimensions=(1,1))
+b = Output('b',Linear(W=condiviso)(a.last())+Linear(W='A')(Fir(W='B')(a.tw(0.5))))
 
 model = Modely(seed=42)
 model.addModel('b_model', b)
@@ -67,7 +73,7 @@ c = Input('c')
 d_t = Input('d_t')
 b_in = State('b_in')
 model.addConnect(b, b_in)
-d = Output('d',Linear(W='condiviso')(c.last())+Fir(W='C')(c.tw(0.5))+Fir(W='D')(b_in.tw(0.3)))
+d = Output('d',Linear(W=condiviso)(c.last())+Fir(W='C')(c.tw(0.5))+Fir(W='D')(b_in.tw(0.3)))
 
 model.addModel('d_model', [b,d])
 model.addMinimize('d_min', d, d_t.last())

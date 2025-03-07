@@ -117,7 +117,7 @@ NeuObj.clearNames(['out','out2'])
 def myFun(K1,p1):
     return K1*p1
 K = Parameter('k', dimensions =  1, sw = 1,values=[[2.0]])
-parfun = ParamFun(myFun, parameters = [K] )
+parfun = ParamFun(myFun, parameters_and_constants = [K] )
 
 equation_learner = EquationLearner([parfun])
 
@@ -135,7 +135,7 @@ def myFun(K1,K2,p1,p2):
     return K1*p1+K2*p2
 K1 = Parameter('k1', dimensions =  1, sw = 1,values=[[2.0]])
 K2 = Parameter('k2', dimensions =  1, sw = 1,values=[[3.0]])
-parfun = ParamFun(myFun, parameters = [K1,K2] )
+parfun = ParamFun(myFun, parameters_and_constants = [K1,K2] )
 
 equation_learner = EquationLearner([parfun, Sin, Add])
 
@@ -152,7 +152,7 @@ NeuObj.clearNames(['out','k'])
 def myFun(K1,p1):
     return K1*p1
 K = Parameter('k', dimensions =  1, sw = 1,values=[[2.0]])
-parfun = ParamFun(myFun, parameters = [K])
+parfun = ParamFun(myFun, parameters_and_constants = [K])
 fuzzi = Fuzzify(centers=[0,1,2,3])
 
 equation_learner = EquationLearner([parfun, fuzzi])
@@ -171,7 +171,7 @@ def myFun(K1,K2,p1,p2):
     return K1*p1+K2*p2
 K1 = Parameter('k1', dimensions =  1, sw = 1,values=[[2.0]])
 K2 = Parameter('k2', dimensions =  1, sw = 1,values=[[3.0]])
-parfun = ParamFun(myFun, parameters = [K1,K2] )
+parfun = ParamFun(myFun, parameters_and_constants = [K1,K2] )
 
 equation_learner = EquationLearner([parfun, Sin, Add])
 
