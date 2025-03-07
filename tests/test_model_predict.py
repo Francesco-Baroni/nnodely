@@ -512,7 +512,7 @@ class ModelyPredictTest(unittest.TestCase):
         in2 = Input('in2', dimensions=2)
         p1 = Parameter('p1', sw=1, dimensions=(3,2), values=[[[1,2],[3,4],[5,6]]])
         p2 = Parameter('p2', sw=1, dimensions=(1,3), values=[[1,2,3]])
-        parfun = ParamFun(myfun3, parameters=[p1,p2])
+        parfun = ParamFun(myfun3, parameters_and_constants=[p1,p2])
         out = Output('out', parfun(in1.last(),in2.last()))
         test = Modely(visualizer = None, seed = 1)
         test.addModel('out',out)
@@ -617,7 +617,7 @@ class ModelyPredictTest(unittest.TestCase):
         in2 = Input('in2')
         k1 = Parameter('k1', dimensions=1, tw=0.4, values=[[1.0], [1.0], [1.0], [1.0]])
         k2 = Parameter('k2', dimensions=1, tw=0.4, values=[[1.0], [1.0], [1.0], [1.0]])
-        out = Output('out', Fir(ParamFun(myfun2, parameters=[k1, k2])(in1.tw(0.4))))
+        out = Output('out', Fir(ParamFun(myfun2, parameters_and_constants=[k1, k2])(in1.tw(0.4))))
         test = Modely(visualizer=None, seed=42)
         test.addModel('out', out)
         test.neuralizeModel(0.1)
@@ -639,7 +639,7 @@ class ModelyPredictTest(unittest.TestCase):
         in2 = Input('in2')
         k1 = Parameter('k1', dimensions=1, tw=0.4, values=[[1.0], [1.0], [1.0], [1.0]])
         k_fir = Parameter('k_fir', dimensions=1, tw=0.4, values=[[1.0], [1.0], [1.0], [1.0]])
-        out = Output('out', Fir(W=k_fir)(ParamFun(myfun2, parameters=[k1])(in1.tw(0.4), in2.tw(0.4))))
+        out = Output('out', Fir(W=k_fir)(ParamFun(myfun2, parameters_and_constants=[k1])(in1.tw(0.4), in2.tw(0.4))))
         test = Modely(visualizer=None, seed=42)
         test.addModel('out', out)
         test.neuralizeModel(0.1)
@@ -672,7 +672,7 @@ class ModelyPredictTest(unittest.TestCase):
         k1 = Parameter('k1', dimensions=1, tw=0.4, values=[[1.0], [1.0], [1.0], [1.0]])
         k_fir = Parameter('k_fir', dimensions=3, tw=0.4,
                           values=[[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]])
-        out = Output('out', Fir(3, W=k_fir)(ParamFun(myfun2, parameters=[k1])(in1.tw(0.4), in2.tw(0.4))))
+        out = Output('out', Fir(3, W=k_fir)(ParamFun(myfun2, parameters_and_constants=[k1])(in1.tw(0.4), in2.tw(0.4))))
         test = Modely(visualizer=None)
         test.addModel('out', out)
         test.neuralizeModel(0.1)
@@ -1284,7 +1284,7 @@ class ModelyPredictTest(unittest.TestCase):
             return (x + y) * (z - k)
 
         NeuObj.clearNames()
-        out = Output('out',ParamFun(fun_test,parameters=[pp],constants=[ll,oo])(input2.tw(0.03)))
+        out = Output('out',ParamFun(fun_test,parameters_and_constants=[ll,oo,pp])(input2.tw(0.03)))
         test = Modely(visualizer=None)
         test.addModel('out',[out])
         test.neuralizeModel(0.01)
@@ -1293,7 +1293,7 @@ class ModelyPredictTest(unittest.TestCase):
         self.assertEqual([[-72.0, -84.0, -96.0]], results['out'])
 
         NeuObj.clearNames()
-        out = Output('out',ParamFun(fun_test,parameters={'z':pp},constants={'y':ll,'k':oo})(input2.tw(0.03)))
+        out = Output('out',ParamFun(fun_test,parameters_and_constants={'z':pp,'y':ll,'k':oo})(input2.tw(0.03)))
         test = Modely(visualizer=None)
         test.addModel('out',[out])
         test.neuralizeModel(0.01)
@@ -1327,13 +1327,13 @@ class ModelyPredictTest(unittest.TestCase):
         def fun_test(x, y, z, k):
             return (x + y) * (z - k)
 
-        fun_map = ParamFun(fun_test,parameters=[pp], constants=[ll,oo], map_over_batch=True)
-        fun = ParamFun(fun_test, parameters=[pp], constants=[ll, oo])
+        fun_map = ParamFun(fun_test,parameters_and_constants=[ll,oo, pp])
+        fun = ParamFun(fun_test, parameters_and_constants=[ll,oo, pp])
         fun_map_2 = ParamFun(fun_test, map_over_batch=True)
 
         out1 = Output('out1',fun_map(input2.tw(0.03)))
         out2 = Output('out2', fun(input2.tw(0.03)))
-        test = Modely(visualizer=None)
+        test = Modely()
         test.addModel('out',[out1,out2])
         test.neuralizeModel(0.01)
         results = test({'in2': [0, 1, 2]})
@@ -1676,7 +1676,7 @@ class ModelyPredictTest(unittest.TestCase):
                 p1, p2 = p1_1, p2_0
             if idx_list == [1, 1]:
                 p1, p2 = p1_1, p2_1
-            return ParamFun(myFun, parameters=[p1, p2])
+            return ParamFun(myFun, parameters_and_constants=[p1, p2])
 
         def output_function_gen(idx_list):
             pfir = Parameter('pfir_' + str(idx_list), tw=1, dimensions=2,
@@ -1689,10 +1689,10 @@ class ModelyPredictTest(unittest.TestCase):
         pfir01 = Parameter('N_pfir_[0, 1]', tw=1, dimensions=2, values=[[1, 3], [3, 5]])
         pfir10 = Parameter('N_pfir_[1, 0]', tw=1, dimensions=2, values=[[2, 2], [4, 4]])
         pfir11 = Parameter('N_pfir_[1, 1]', tw=1, dimensions=2, values=[[2, 3], [4, 5]])
-        parfun_00 = ParamFun(myFun, parameters=[p1_0, p2_0])(x.tw(1))
-        parfun_01 = ParamFun(myFun, parameters=[p1_0, p2_1])(x.tw(1))
-        parfun_10 = ParamFun(myFun, parameters=[p1_1, p2_0])(x.tw(1))
-        parfun_11 = ParamFun(myFun, parameters=[p1_1, p2_1])(x.tw(1))
+        parfun_00 = ParamFun(myFun, parameters_and_constants=[p1_0, p2_0])(x.tw(1))
+        parfun_01 = ParamFun(myFun, parameters_and_constants=[p1_0, p2_1])(x.tw(1))
+        parfun_10 = ParamFun(myFun, parameters_and_constants=[p1_1, p2_0])(x.tw(1))
+        parfun_11 = ParamFun(myFun, parameters_and_constants=[p1_1, p2_1])(x.tw(1))
         out_in_00 = Output('parfun00', parfun_00)
         out_in_01 = Output('parfun01', parfun_01)
         out_in_10 = Output('parfun10', parfun_10)

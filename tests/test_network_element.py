@@ -377,9 +377,9 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
 
         K1 = Parameter('k1', dimensions =  1, sw = 1,values=[[2.0]])
         K2 = Parameter('k2', dimensions =  1, sw = 1,values=[[3.0]])
-        parfun = ParamFun(myFun, parameters=[K1,K2])
-        parfun2 = ParamFun(myFun, parameters=[K1,K2])
-        parfun3 = ParamFun(myFun, parameters=[K1,K2])
+        parfun = ParamFun(myFun, parameters_and_constants=[K1,K2])
+        parfun2 = ParamFun(myFun, parameters_and_constants=[K1,K2])
+        parfun3 = ParamFun(myFun, parameters_and_constants=[K1,K2])
         fuzzi = Fuzzify(centers=[0,1,2,3])
 
         linear_layer_in = Linear(output_dimension=3, W_init=init_constant, W_init_params={'value':0}, b_init=init_constant, b_init_params={'value':0}, b=False)

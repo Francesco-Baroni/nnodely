@@ -950,7 +950,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         cl1 = State('cl1')
         co1 = State('co1')
         W = Parameter('W', values=[[1], [2], [3]])
-        parfun = ParamFun(myfunsum, parameters=[W])
+        parfun = ParamFun(myfunsum, parameters_and_constants=[W])
         matmulfun = ParamFun(matmul)
         parfun_out = parfun(input1.sw(3))
         output = Output('out', parfun_out)
