@@ -249,24 +249,23 @@ The model structured NN Inputs Outputs and Parameters:
 3. __parameter.py__ contains the logic for create a generic parameters and constants.
 
 The main basic layers without parameters are:
-4. __activation.py__ this file contains all the activation functions. The activation are mainly based on the pytorch functions.
-5. __arithmetic.py__ this file contains the aritmetic functions as: +, -, /, *., **.
-6. __trigonometric.py__ this file contains all the trigonometric functions.
-7. __part.py__ are used for selecting part of the data.
-8. __fuzzify.py__ contains the operation for the fuzzification of a variable, 
+1. __activation.py__ this file contains all the activation functions. The activation are mainly based on the pytorch functions.
+2. __arithmetic.py__ this file contains the aritmetic functions as: +, -, /, *., **.
+3. __trigonometric.py__ this file contains all the trigonometric functions.
+4. __part.py__ are used for selecting part of the data.
+5. __fuzzify.py__ contains the operation for the fuzzification of a variable, 
 commonly used in the local model as activation function as in [[1]](#1) with rectangular activation functions or in [[3]](#3), [[4]](#4) and [[5]](#5) with triangular activation function activation functions.
 Using fuzzification it is also possible create a channel coding as presented in [[2]](#2).
 
 The main basic layers with parameters are:
-9. __fir.py__ this file contains the finite inpulse response filter function. It is a linear operation on the time dimension (second dimension). 
+1. __fir.py__ this file contains the finite inpulse response filter function. It is a linear operation on the time dimension (second dimension). 
 This filter was introduced in [[1]](#1).
-10. __linear.py__ this file contains the linear function. Typical Linear operation `W*x+b` operated on the space dimension (third dimension). 
+2. __linear.py__ this file contains the linear function. Typical Linear operation `W*x+b` operated on the space dimension (third dimension). 
 This operation is presented in [[1]](#1).
-11. __localmodel.py__ this file contains the logic for build a local model. This operation is presented in [[1]](#1), [[3]](#3), [[4]](#4) and [[5]](#5).
-12. __parametricfunction.py__ are the user custom function. The function can use the pytorch syntax. A parametric function is presented in [[3]](#3), [[4]](#4), [[5]](#5).
-13. __equationlearner.py__ contains the logic for the equation learner. The equation learner is used for learn a relation input outpur following a list of activation functions. The first implementation is presented in [[6]](#6).
-14. __timeoperation.py__ contains the time operation functions. The time operation are used for extract a time window from a signal.
-
+3. __localmodel.py__ this file contains the logic for build a local model. This operation is presented in [[1]](#1), [[3]](#3), [[4]](#4) and [[5]](#5).
+4. __parametricfunction.py__ are the user custom function. The function can use the pytorch syntax. A parametric function is presented in [[3]](#3), [[4]](#4), [[5]](#5).
+5. __equationlearner.py__ contains the logic for the equation learner. The equation learner is used for learn a relation input outpur following a list of activation functions. The first implementation is presented in [[6]](#6).
+6. __timeoperation.py__ contains the time operation functions. The time operation are used for extract a time window from a signal.
 
 <a name="testsfolder"></a>
 ### Tests Folder
