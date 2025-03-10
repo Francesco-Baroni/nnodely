@@ -51,8 +51,8 @@ example.loadData(name='dataset', source=dataset)
 print('BEFORE TRAINING')
 for key in example.model.all_parameters.keys():
     print(f'{key}: {example.model.all_parameters[key].data.numpy()}')
-optimizer_defaults = {'weight_decay': 0.3,}
-example.trainModel(train_dataset='dataset', lr=0.003, num_of_epochs=200, optimizer_defaults=optimizer_defaults)
+optimizer_defaults = {'weight_decay': 0.02,}
+example.trainModel(train_dataset='dataset', lr=0.05, num_of_epochs=1000, optimizer_defaults=optimizer_defaults)
 print('AFTER TRAINING')
 for key in example.model.all_parameters.keys():
     print(f'{key}: {example.model.all_parameters[key].data.numpy()}')

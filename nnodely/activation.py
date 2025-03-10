@@ -109,7 +109,11 @@ class Sigmoid(Stream, ToStream):
     """
         Implement the Sigmoid relation function.
         The Sigmoid function is defined as:
-        
+
+        see also:
+            Official PyTorch Softmax documentation:
+            `Sigmoid function <https://pytorch.org/docs/stable/generated/torch.nn.Sigmoid.html#torch.nn.Sigmoid`_
+
         .. math::
             \sigma(x) = \frac{1}{1 + e^{-x}}
 
