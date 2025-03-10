@@ -73,7 +73,7 @@ relation module
     :undoc-members:
     :no-inherited-members:
 
-    .. autoclass:: nnodely.activation.Stream
+    .. autoclass:: nnodely.relation.Stream
         :undoc-members:
         :no-inherited-members:
 
