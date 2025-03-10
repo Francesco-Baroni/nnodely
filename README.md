@@ -236,22 +236,36 @@ print(results)
 ## Structure of the Repository
 
 <a name="nnodelyfolder"></a>
-### nnodely folder
-This folder contains all the nnodely library files, the main files are the following:
-1. __activation.py__ this file contains all the activation functions.
-2. __arithmetic.py__ this file contains the aritmetic functions as: +, -, /, *., **,
-3. __fir.py__ this file contains the finite inpulse response filter function. It is a linear operation without bias on the second dimension.
-4. __fuzzify.py__ contains the operation for the fuzzification of a variable, commonly used in the local model as activation function.
-5. __input.py__ contains the Input class used for create an input for the network.
-6. __linear.py__ this file contains the linear function. Typical Linear operation `W*x+b` operated on the third dimension. 
-7. __localmodel.py__ this file contains the logic for build a local model.
-8. __ouptut.py__ contains the Output class used for create an output for the network.
-9. __parameter.py__ contains the logic for create a generic parameters
-10. __parametricfunction.py__ are the user custom function. The function can use the pytorch syntax.  
-11. __part.py__ are used for selecting part of the data. 
-12. __trigonometric.py__ this file contains all the trigonometric functions.
-13. __nnodely.py__ the main file for create the structured network
-14. __model.py__ containts the pytorch template model for the structured network
+### nnodely Folder
+This folder contains all the nnodely library files with relative references.
+
+The nnodely main library files are:
+1. __nnodely.py__ the main file for create the structured network.
+2. __model.py__ containts the pytorch template model for the structured network.
+
+The model structured NN Inputs Outputs and Parameters:
+1. __input.py__ contains the Input class used for create an input for the network.
+2. __ouptut.py__ contains the Output class used for create an output for the network.
+3. __parameter.py__ contains the logic for create a generic parameters and constants.
+
+The main basic layers without parameters are:
+1. __activation.py__ this file contains all the activation functions. The activation are mainly based on the pytorch functions.
+2. __arithmetic.py__ this file contains the aritmetic functions as: +, -, /, *., **.
+3. __trigonometric.py__ this file contains all the trigonometric functions.
+4. __part.py__ are used for selecting part of the data.
+5. __fuzzify.py__ contains the operation for the fuzzification of a variable, 
+commonly used in the local model as activation function as in [[1]](#1) with rectangular activation functions or in [[3]](#3), [[4]](#4) and [[5]](#5) with triangular activation function activation functions.
+Using fuzzification it is also possible create a channel coding as presented in [[2]](#2).
+
+The main basic layers with parameters are:
+1. __fir.py__ this file contains the finite inpulse response filter function. It is a linear operation on the time dimension (second dimension). 
+This filter was introduced in [[1]](#1).
+2. __linear.py__ this file contains the linear function. Typical Linear operation `W*x+b` operated on the space dimension (third dimension). 
+This operation is presented in [[1]](#1).
+3. __localmodel.py__ this file contains the logic for build a local model. This operation is presented in [[1]](#1), [[3]](#3), [[4]](#4) and [[5]](#5).
+4. __parametricfunction.py__ are the user custom function. The function can use the pytorch syntax. A parametric function is presented in [[3]](#3), [[4]](#4), [[5]](#5).
+5. __equationlearner.py__ contains the logic for the equation learner. The equation learner is used for learn a relation input outpur following a list of activation functions. The first implementation is presented in [[6]](#6).
+6. __timeoperation.py__ contains the time operation functions. The time operation are used for extract a time window from a signal.
 
 <a name="testsfolder"></a>
 ### Tests Folder
@@ -270,3 +284,35 @@ This folder is useful to understand the flexibility and capability of the framew
 This project is released under the license [License: MIT](https://opensource.org/licenses/MIT).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+## References
+<a id="1">[1]</a> 
+Mauro Da Lio, Daniele Bortoluzzi, Gastone Pietro Rosati Papini. (2019). 
+Modelling longitudinal vehicle dynamics with neural networks. 
+Vehicle System Dynamics. https://doi.org/10.1080/00423114.2019.1638947 (look the [[code]](https://github.com/tonegas/nnodely-applications/blob/main/vehicle/model_longit_vehicle_dynamics/model_longit_vehicle_dynamics.py))
+
+<a id="2">[2]</a> 
+Alice Plebe, Mauro Da Lio, Daniele Bortoluzzi. (2019). 
+On Reliable Neural Network Sensorimotor Control in Autonomous Vehicles. 
+IEEE Transaction on Intelligent Trasportation System. https://doi.org/10.1109/TITS.2019.2896375
+
+<a id="3">[3]</a> 
+Mauro Da Lio, Riccardo Donà, Gastone Pietro Rosati Papini, Francesco Biral, Henrik Svensson. (2020). 
+A Mental Simulation Approach for Learning Neural-Network Predictive Control (in Self-Driving Cars).
+IEEE Access. https://doi.org/10.1109/ACCESS.2020.3032780 (look the [[code]](https://github.com/tonegas/nnodely-applications/blob/main/vehicle/model_lateral_vehicle_dynamics/model_lateral_vehicle_dynamics.ipynb))
+
+<a id="4">[4]</a> 
+Edoardo Pagot, Mattia Piccinini, Enrico Bertolazzi, Francesco Biral. (2023). 
+Fast Planning and Tracking of Complex Autonomous Parking Maneuvers With Optimal Control and Pseudo-Neural Networks.
+IEEE Access. https://doi.org/10.1109/ACCESS.2023.3330431 (look the [[code]](https://github.com/tonegas/nnodely-applications/blob/main/vehicle/control_steer_car_parking/control_steer_car_parking.ipynb))
+
+<a id="5">[5]</a> 
+Mattia Piccinini, Sebastiano Taddei, Matteo Larcher, Mattia Piazza, Francesco Biral. (2023).
+A Physics-Driven Artificial Agent for Online Time-Optimal Vehicle Motion Planning and Control.
+IEEE Access. https://doi.org/10.1109/ACCESS.2023.3274836 (look [[code basic]](https://github.com/tonegas/nnodely-applications/blob/main/vehicle/control_steer_artificial_race_driver/control_steer_artificial_race_driver.ipynb)
+and [[code extended]](https://github.com/tonegas/nnodely-applications/blob/main/vehicle/control_steer_artificial_race_driver_extended/control_steer_artificial_race_driver_extended.ipynb))
+
+<a id="6">[6]</a> 
+Hector Perez-Villeda, Justus Piater, Matteo Saveriano. (2023).
+Learning and extrapolation of robotic skills using task-parameterized equation learner networks.
+Robotics and Autonomous Systems. https://doi.org/10.1016/j.robot.2022.104309

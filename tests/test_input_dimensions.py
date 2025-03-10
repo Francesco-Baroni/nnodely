@@ -319,7 +319,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
     def test_network_building_sw_and_tw(self):
         NeuObj.clearNames()
         input2 = Input('in2')
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             input2.sw(5)+input2.tw(0.05)
 
         rel1 = Fir(input2.sw([-4,2]))+Fir(input2.tw([-0.01,0]))
@@ -360,11 +360,11 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         t_5 = Parameter('t_5', dimensions=1, tw=5)
         c_5 = [[1], [2], [3], [4], [5], [6], [7], [8], [9], [10]]
         c_5_2 = Constant('c_5_2', tw=5, values=c_5)
-        parfun_x = ParamFun(myFun, parameters=[K_x], constants=[c_v])
-        parfun_y = ParamFun(myFun, parameters=[K_y])
+        parfun_x = ParamFun(myFun, parameters_and_constants=[K_x,c_v])
+        parfun_y = ParamFun(myFun, parameters_and_constants=[K_y])
         parfun_z = ParamFun(myFun)
-        fir_w = Fir(parameter=w_5)(x.tw(5))
-        fir_t = Fir(parameter=t_5)(y.tw(5))
+        fir_w = Fir(W=w_5)(x.tw(5))
+        fir_t = Fir(W=t_5)(y.tw(5))
         time_part = TimePart(x.tw(5), i=1, j=3)
         sample_select = SampleSelect(x.sw(5), i=1)
 

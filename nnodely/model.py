@@ -1,5 +1,6 @@
 from itertools import product
 from nnodely.utils import TORCH_DTYPE
+from nnodely import initializer
 import numpy as np
 
 import torch.nn as nn
@@ -25,9 +26,10 @@ class Model(nn.Module):
         self.constants = model_def['Constants']
         self.sample_time = model_def['Info']['SampleTime']
         self.functions = model_def['Functions']
-        self.state_model_main = model_def['States']
+        self.states = model_def['States']
+        #self.state_model_main = model_def['States']
         self.minimizers = model_def['Minimizers']
-        self.state_model = copy.deepcopy(self.state_model_main)
+        #self.states = model_def['States']#copy.deepcopy(self.state_model_main)
         self.input_ns_backward = {key:value['ns'][0] for key, value in (model_def['Inputs']|model_def['States']).items()}
         self.input_n_samples = {key:value['ntot'] for key, value in (model_def['Inputs']|model_def['States']).items()}
         self.minimizers_keys = [self.minimizers[key]['A'] for key in self.minimizers] + [self.minimizers[key]['B'] for key in self.minimizers]
@@ -38,7 +40,7 @@ class Model(nn.Module):
         #print('params: ',self.params)
         #print('constants: ',self.constants)
         #print('sample_time: ',self.sample_time)
-        #print('state_model: ',self.state_model)
+        #print('states: ',self.states)
 
         ## Build the network
         self.all_parameters = {}
@@ -49,7 +51,7 @@ class Model(nn.Module):
         self.connect_update = {}
 
         ## Define the correct slicing
-        json_inputs = self.inputs | self.state_model
+        json_inputs = self.inputs | self.states
         for _, items in self.relations.items():
             if items[0] == 'SamplePart':
                 if items[1][0] in json_inputs.keys():
@@ -73,14 +75,20 @@ class Model(nn.Module):
         for name, param_data in self.params.items():
             window = 'tw' if 'tw' in param_data.keys() else ('sw' if 'sw' in param_data.keys() else None)
             aux_sample_time = self.sample_time if 'tw' == window else 1
-            sample_window = round(param_data[window] / aux_sample_time) if window else 1
-            param_size = (sample_window,)+tuple(param_data['dim']) if type(param_data['dim']) is list else (sample_window, param_data['dim'])
+            sample_window = round(param_data[window] / aux_sample_time) if window else None
+            if sample_window is None:
+                param_size = tuple(param_data['dim']) if type(param_data['dim']) is list else (param_data['dim'],)
+            else:
+                param_size = (sample_window,)+tuple(param_data['dim']) if type(param_data['dim']) is list else (sample_window, param_data['dim'])
             if 'values' in param_data:
                 self.all_parameters[name] = nn.Parameter(torch.tensor(param_data['values'], dtype=TORCH_DTYPE), requires_grad=True)
             # TODO clean code
             elif 'init_fun' in param_data:
-                exec(param_data['init_fun']['code'], globals())
-                function_to_call = globals()[param_data['init_fun']['name']]
+                if 'code' in param_data['init_fun'].keys():
+                    exec(param_data['init_fun']['code'], globals())
+                    function_to_call = globals()[param_data['init_fun']['name']]
+                else:
+                    function_to_call = getattr(initializer, param_data['init_fun']['name'])
                 values = np.zeros(param_size)
                 for indexes in product(*(range(v) for v in param_size)):
                     if 'params' in param_data['init_fun']:
@@ -155,7 +163,7 @@ class Model(nn.Module):
 
         ## Initially i have only the inputs from the dataset, the parameters, and the constants
         available_inputs = [key for key in self.inputs.keys() if key not in self.connect_update.keys()]  ## remove connected inputs
-        available_states = [key for key in self.state_model.keys() if key not in self.connect_update.keys()] ## remove connected states
+        available_states = [key for key in self.states.keys() if key not in self.connect_update.keys()] ## remove connected states
         available_keys = set(available_inputs + list(self.all_parameters.keys()) + list(self.all_constants.keys()) + available_states)
 
         ## Forward pass through the relations
@@ -177,10 +185,6 @@ class Model(nn.Module):
                         else: ## relation than takes another relation or a connect variable
                             layer_inputs.append(result_dict[key])
 
-                    #print('relation: ',relation)
-                    #print('layer inputs: ',layer_inputs)
-                    #print('relation forward: ',self.relation_forward)
-
                     ## Execute the current relation
                     result_dict[relation] = self.relation_forward[relation](*layer_inputs)
                     available_keys.add(relation)
@@ -188,11 +192,6 @@ class Model(nn.Module):
                     ## Check if the relation is inside the connect
                     for connect_input, connect_rel in self.connect_update.items():
                         if relation == connect_rel:
-                            # shift = result_dict[relation].shape[1]
-                            # virtual = torch.roll(kwargs[connect_input], shifts=-1, dims=1)
-                            # virtual[:, -shift:, :] = result_dict[relation]
-                            # result_dict[connect_input] = virtual.clone()
-                            # available_keys.add(connect_input)
                             result_dict[connect_input] = connect(kwargs[connect_input], result_dict[relation])
                             available_keys.add(connect_input)
 
@@ -214,7 +213,7 @@ class Model(nn.Module):
         self.closed_loop_update = {}
         self.connect_update = {}
 
-        for key, state in self.state_model.items():
+        for key, state in self.states.items():
             if 'connect' in state.keys():
                 self.connect_update[key] = state['connect']
             elif 'closedLoop' in state.keys():

@@ -93,7 +93,7 @@ class EquationLearner(NeuObj):
             if type(func) in Initialized_functions:
                 if type(func) == ParamFun:
                     funinfo = inspect.getfullargspec(func.param_fun)
-                    num_args = len(funinfo.args) - len(func.parameters) if func.parameters else len(funinfo.args)
+                    num_args = len(funinfo.args) - len(func.parameters_and_constants) if func.parameters_and_constants else len(funinfo.args)
                 elif type(func) == Fuzzify:
                     init_signature = inspect.signature(func.__call__)  
                     parameters = list(init_signature.parameters.values())

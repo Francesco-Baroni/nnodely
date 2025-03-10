@@ -66,6 +66,17 @@ initializer module
     .. autofunction:: nnodely.initializer.init_exp
     .. autofunction:: nnodely.initializer.init_lin
 
+relation module
+---------------
+
+.. automodule:: nnodely.relation
+    :undoc-members:
+    :no-inherited-members:
+
+    .. autoclass:: nnodely.activation.Stream
+        :undoc-members:
+        :no-inherited-members:
+
 Model structured NN building blocks
 ===================================
 
@@ -80,11 +91,19 @@ activation module
         :undoc-members:
         :no-inherited-members:
 
-    .. autoclass:: nnodely.activation.Tanh
+    .. autoclass:: nnodely.activation.ELU
         :undoc-members:
         :no-inherited-members:
 
-    .. autoclass:: nnodely.activation.ELU
+    .. autoclass:: nnodely.activation.Sigmoid
+        :undoc-members:
+        :no-inherited-members:
+
+    .. autoclass:: nnodely.activation.Softmax
+        :undoc-members:
+        :no-inherited-members:
+
+    .. autoclass:: nnodely.activation.Identity
         :undoc-members:
         :no-inherited-members:
 
@@ -221,6 +240,18 @@ trigonometric module
         :undoc-members:
         :no-inherited-members:
 
+    .. autoclass:: nnodely.trigonometric.Tanh
+        :undoc-members:
+        :no-inherited-members:
+
+    .. autoclass:: nnodely.trigonometric.Cosh
+        :undoc-members:
+        :no-inherited-members:
+
+    .. autoclass:: nnodely.trigonometric.Sech
+        :undoc-members:
+        :no-inherited-members:
+
 parametricfunction module
 -------------------------
 
@@ -231,12 +262,6 @@ parametricfunction module
     .. autoclass:: nnodely.parametricfunction.ParamFun
         :undoc-members:
         :no-inherited-members:
-
-..  
-   automodule:: nnodely.activation
-   :members:
-   :undoc-members:
-   :show-inheritance:
 
 Training
 ========

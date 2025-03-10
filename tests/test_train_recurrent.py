@@ -112,12 +112,12 @@ class ModelyTrainingTest(unittest.TestCase):
         NeuObj.clearNames()
         input1 = Input('in1')
         target = Input('target1')
-        a = Parameter('a', values=[[1]])
-        output1 = Output('out1',Fir(parameter=a)(input1.last()))
+        a = Parameter('a', sw=1, values=[[1]])
+        output1 = Output('out1',Fir(W=a)(input1.last()))
 
         inout = State('inout')
-        W = Parameter('W', values=[[[1]]])
-        b = Parameter('b', values=[[1]])
+        W = Parameter('W', values=[[1]])
+        b = Parameter('b', values=[1])
         output2 = Output('out2', Linear(W=W,b=b)(inout.last()))
 
         test = Modely(visualizer=None, seed=42)
@@ -130,38 +130,38 @@ class ModelyTrainingTest(unittest.TestCase):
         dataset = {'in1': [1], 'target1': [3]}
         test.loadData(name='dataset', source=dataset)
 
-        self.assertListEqual([[[1.0]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[1.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[1.0]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([1.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(optimizer='SGD', splits=[100, 0, 0], lr=1, num_of_epochs=1)
-        self.assertListEqual([[[3.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[3.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[3.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([3.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[3.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(optimizer='SGD', splits=[100, 0, 0], lr=1, num_of_epochs=1)
-        self.assertListEqual([[[-51.0]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[-15.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-51.0]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([-15.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[-51.0]], test.model.all_parameters['a'].data.numpy().tolist())
 
         test.neuralizeModel(clear_model=True)
-        self.assertListEqual([[[1.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[1.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[1.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([1.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(optimizer='SGD', splits=[100, 0, 0], lr=1, num_of_epochs=1)
-        self.assertListEqual([[[3.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[3.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[3.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([3.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[3.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(optimizer='SGD', splits=[100, 0, 0], lr=1, num_of_epochs=1)
-        self.assertListEqual([[[-51.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[-15.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-51.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([-15.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[-51.0]], test.model.all_parameters['a'].data.numpy().tolist())
 
         test.neuralizeModel(clear_model=True)
-        self.assertListEqual([[[1.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[1.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[1.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([1.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(optimizer='SGD', splits=[100, 0, 0], lr=1, num_of_epochs=2)
-        self.assertListEqual([[[-51.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[-15.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-51.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([-15.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[-51.0]], test.model.all_parameters['a'].data.numpy().tolist())
 
         dataset = {'in1': [1,1], 'target1': [3,3]}
@@ -169,25 +169,25 @@ class ModelyTrainingTest(unittest.TestCase):
         test.neuralizeModel(clear_model=True)
         # the out is 3.0 due the mean of the error is not the same of two epochs
         test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1)
-        self.assertListEqual([[[3.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[3.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[3.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([3.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[3.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.neuralizeModel(clear_model=True)
         test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=2)
-        self.assertListEqual([[[-51.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[-15.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-51.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([-15.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[-51.0]], test.model.all_parameters['a'].data.numpy().tolist())
 
     def test_training_values_fir_train_connect_linear(self):
         NeuObj.clearNames()
         input1 = Input('in1')
         target = Input('out1')
-        a = Parameter('a', values=[[1]])
-        output1 = Output('out1-net',Fir(parameter=a)(input1.last()))
+        a = Parameter('a', sw=1, values=[[1]])
+        output1 = Output('out1-net',Fir(W=a)(input1.last()))
 
         inout = Input('inout')
-        W = Parameter('W', values=[[[1]]])
-        b = Parameter('b', values=[[1]])
+        W = Parameter('W', values=[[1]])
+        b = Parameter('b', values=1)
         output2 = Output('out2-net', Linear(W=W,b=b)(inout.last()))
 
         test = Modely(visualizer=None, seed=42)
@@ -199,38 +199,38 @@ class ModelyTrainingTest(unittest.TestCase):
         dataset = {'in1': [1], 'out1': [3]}
         test.loadData(name='dataset', source=dataset)
 
-        self.assertListEqual([[[1.0]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[1.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[1.0]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertEqual([1.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(optimizer='SGD', splits=[100, 0, 0], lr=1, num_of_epochs=1, connect={'inout': 'out1-net'})
-        self.assertListEqual([[[3.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[3.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[3.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertEqual([3.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[3.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(optimizer='SGD', splits=[100, 0, 0], lr=1, num_of_epochs=1, connect={'inout': 'out1-net'})
-        self.assertListEqual([[[-51.0]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[-15.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-51.0]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertEqual([-15.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[-51.0]], test.model.all_parameters['a'].data.numpy().tolist())
 
         test.neuralizeModel(clear_model=True)
-        self.assertListEqual([[[1.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[1.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[1.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertEqual([1.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(optimizer='SGD', splits=[100, 0, 0], lr=1, num_of_epochs=1, connect={'inout': 'out1-net'})
-        self.assertListEqual([[[3.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[3.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[3.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertEqual([3.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[3.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(optimizer='SGD', splits=[100, 0, 0], lr=1, num_of_epochs=1, connect={'inout': 'out1-net'})
-        self.assertListEqual([[[-51.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[-15.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-51.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertEqual([-15.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[-51.0]], test.model.all_parameters['a'].data.numpy().tolist())
 
         test.neuralizeModel(clear_model=True)
-        self.assertListEqual([[[1.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[1.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[1.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertEqual([1.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(optimizer='SGD', splits=[100, 0, 0], lr=1, num_of_epochs=2, connect={'inout': 'out1-net'})
-        self.assertListEqual([[[-51.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[-15.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-51.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertEqual([-15.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[-51.0]], test.model.all_parameters['a'].data.numpy().tolist())
 
         dataset = {'in1': [1,1], 'out1': [3,3]}
@@ -238,25 +238,25 @@ class ModelyTrainingTest(unittest.TestCase):
         test.neuralizeModel(clear_model=True)
         # the out is 3.0 due the mean of the error is not the same of two epochs
         test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, connect={'inout': 'out1-net'})
-        self.assertListEqual([[[3.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[3.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[3.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertEqual([3.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[3.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.neuralizeModel(clear_model=True)
         test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=2, connect={'inout': 'out1-net'})
-        self.assertListEqual([[[-51.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[-15.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-51.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertEqual([-15.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[-51.0]], test.model.all_parameters['a'].data.numpy().tolist())
 
     def test_training_values_fir_connect_linear_only_model(self):
         NeuObj.clearNames()
         input1 = Input('in1')
         target = Input('target1')
-        a = Parameter('a', values=[[1]])
-        output1 = Output('out1',Fir(parameter=a)(input1.last()))
+        a = Parameter('a', sw=1, values=[[1]])
+        output1 = Output('out1',Fir(W=a)(input1.last()))
 
         inout = State('inout')
-        W = Parameter('W', values=[[[1]]])
-        b = Parameter('b', values=[[1]])
+        W = Parameter('W', values=[[1]])
+        b = Parameter('b', values=[1])
         output2 = Output('out2', Linear(W=W,b=b)(inout.last()))
 
         test = Modely(visualizer=None, seed=42)
@@ -271,44 +271,44 @@ class ModelyTrainingTest(unittest.TestCase):
         test.loadData(name='dataset', source=dataset)
 
         test.trainModel(optimizer='SGD', splits=[100, 0, 0], lr=1, num_of_epochs=1)
-        self.assertListEqual([[[3.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[3.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[3.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([3.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[3.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(optimizer='SGD', splits=[100, 0, 0], lr=1, num_of_epochs=1)
-        self.assertListEqual([[[-51.0]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[-15.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-51.0]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([-15.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[-51.0]], test.model.all_parameters['a'].data.numpy().tolist())
 
         test.neuralizeModel(clear_model=True)
         test.trainModel(models='model1', optimizer='SGD', splits=[100, 0, 0], lr=1, num_of_epochs=1)
-        self.assertListEqual([[[1.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[1.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[1.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([1.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[3.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(models='model1', optimizer='SGD', splits=[100, 0, 0], lr=1, num_of_epochs=1)
-        self.assertListEqual([[[1.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[1.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[1.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([1.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
 
         test.neuralizeModel(clear_model=True)
         test.trainModel(models='model2', optimizer='SGD', splits=[100, 0, 0], lr=1, num_of_epochs=1)
-        self.assertListEqual([[[3.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[3.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[3.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([3.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(models='model2', optimizer='SGD', splits=[100, 0, 0], lr=1, num_of_epochs=1)
-        self.assertListEqual([[[-3.0]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[-3.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-3.0]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([-3.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
 
     def test_training_values_fir_train_connect_linear_only_model(self):
         NeuObj.clearNames()
         input1 = Input('in1')
         target = Input('target1')
-        a = Parameter('a', values=[[1]])
-        output1 = Output('out1',Fir(parameter=a)(input1.last()))
+        a = Parameter('a', sw=1, values=[[1]])
+        output1 = Output('out1',Fir(W=a)(input1.last()))
 
         inout = Input('inout')
-        W = Parameter('W', values=[[[1]]])
-        b = Parameter('b', values=[[1]])
+        W = Parameter('W', values=[[1]])
+        b = Parameter('b', values=[1])
         output2 = Output('out2', Linear(W=W,b=b)(inout.last()))
 
         test = Modely(visualizer=None, seed=42)
@@ -323,44 +323,44 @@ class ModelyTrainingTest(unittest.TestCase):
         test.loadData(name='dataset', source=dataset)
 
         test.trainModel(optimizer='SGD', splits=[100, 0, 0], lr=1, num_of_epochs=1, connect={'inout': 'out1'})
-        self.assertListEqual([[[3.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[3.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[3.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([3.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[3.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(optimizer='SGD', splits=[100, 0, 0], lr=1, num_of_epochs=1, connect={'inout': 'out1'})
-        self.assertListEqual([[[-51.0]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[-15.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-51.0]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([-15.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[-51.0]], test.model.all_parameters['a'].data.numpy().tolist())
 
         test.neuralizeModel(clear_model=True)
         test.trainModel(models='model1', optimizer='SGD', splits=[100, 0, 0], lr=1, num_of_epochs=1, connect={'inout': 'out1'})
-        self.assertListEqual([[[1.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[1.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[1.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([1.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[3.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(models='model1', optimizer='SGD', splits=[100, 0, 0], lr=1, num_of_epochs=1, connect={'inout': 'out1'})
-        self.assertListEqual([[[1.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[1.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[1.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([1.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
 
         test.neuralizeModel(clear_model=True)
         test.trainModel(models='model2', optimizer='SGD', splits=[100, 0, 0], lr=1, num_of_epochs=1, connect={'inout': 'out1'})
-        self.assertListEqual([[[3.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[3.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[3.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([3.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(models='model2', optimizer='SGD', splits=[100, 0, 0], lr=1, num_of_epochs=1, connect={'inout': 'out1'})
-        self.assertListEqual([[[-3.0]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[-3.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-3.0]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([-3.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
 
     def test_training_values_fir_connect_linear_more_prediction(self):
         NeuObj.clearNames()
         input1 = Input('in1')
         target = Input('out1')
-        a = Parameter('a', values=[[1]])
-        output1 = Output('out1-net',Fir(parameter=a)(input1.last()))
+        a = Parameter('a', sw=1, values=[[1]])
+        output1 = Output('out1-net',Fir(W=a)(input1.last()))
 
         inout = State('inout')
-        W = Parameter('W', values=[[[1]]])
-        b = Parameter('b', values=[[1]])
+        W = Parameter('W', values=[[1]])
+        b = Parameter('b', values=1)
         output2 = Output('out2-net', Linear(W=W,b=b)(inout.last()))
 
         test = Modely(visualizer=None,seed=42)
@@ -373,55 +373,55 @@ class ModelyTrainingTest(unittest.TestCase):
         dataset = {'in1': [0,2,7,1], 'out1': [3,4,5,1], 'inout': [1,1,2,2]}
         test.loadData(name='dataset2', source=dataset)
 
-        self.assertListEqual([[[1.0]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[1.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[1.0]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertEqual([1.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, prediction_samples=0)
-        self.assertListEqual([[[-9.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[0.5]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-9.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertEqual([0.5], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[-9.0]], test.model.all_parameters['a'].data.numpy().tolist())
         with self.assertRaises(ValueError):
             test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, prediction_samples=10)
         # test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, prediction_samples=1) # TODO add this test
         test.neuralizeModel(clear_model=True)
-        self.assertListEqual([[[1.0]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[1.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[1.0]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertEqual([1.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, train_batch_size=1, prediction_samples=3)
-        self.assertListEqual([[[-9.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[0.5]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-9.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertEqual([0.5], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[-9.0]], test.model.all_parameters['a'].data.numpy().tolist())
 
         dataset = {'in1': [0, 2, 7, 1, 5, 0, 2], 'out1': [1, 4, 8, 2, 6, 1, 1]}
         test.loadData(name='dataset3', source=dataset)
 
         test.neuralizeModel(clear_model=True)
-        self.assertListEqual([[[1.0]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[1.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[1.0]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertEqual([1.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(train_dataset='dataset3', optimizer='SGD', shuffle_data=False, lr=1, num_of_epochs=1, train_batch_size=2, prediction_samples=3)
-        self.assertListEqual([[[-162.75]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[-15.75]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-162.75]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertEqual([-15.75], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[-162.75]], test.model.all_parameters['a'].data.numpy().tolist())
 
         # Because is a connect and the window is 1 the initialization of the state is overwritten by the out1
         test.loadData(name='dataset4', source=dataset|{'inout': [0,0,0,0,0,0,0]})
         test.neuralizeModel(clear_model=True)
         test.trainModel(train_dataset='dataset4', optimizer='SGD', shuffle_data=False, lr=1, num_of_epochs=1, train_batch_size=2, prediction_samples=3)
-        self.assertListEqual([[[-162.75]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[-15.75]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-162.75]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertEqual([-15.75], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[-162.75]], test.model.all_parameters['a'].data.numpy().tolist())
 
     def test_training_values_fir_train_connect_linear_more_prediction(self):
         NeuObj.clearNames()
         input1 = Input('in1')
         target = Input('target1')
-        a = Parameter('a', values=[[1]])
-        output1 = Output('out1',Fir(parameter=a)(input1.last()))
+        a = Parameter('a', sw=1, values=[[1]])
+        output1 = Output('out1',Fir(W=a)(input1.last()))
 
         inout = Input('inout')
-        W = Parameter('W', values=[[[1]]])
-        b = Parameter('b', values=[[1]])
+        W = Parameter('W', values=[[1]])
+        b = Parameter('b', values=[1])
         output2 = Output('out2', Linear(W=W,b=b)(inout.last()))
 
         test = Modely(visualizer=None, seed=42)
@@ -433,23 +433,23 @@ class ModelyTrainingTest(unittest.TestCase):
         dataset = {'in1': [0,2,7,1], 'target1': [3,4,5,1]}
         test.loadData(name='dataset2', source=dataset)
 
-        self.assertListEqual([[[1.0]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[1.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[1.0]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([1.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, prediction_samples=0, connect={'inout': 'out1'})
-        self.assertListEqual([[[-9.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[0.5]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-9.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([0.5], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[-9.0]], test.model.all_parameters['a'].data.numpy().tolist())
         with self.assertRaises(ValueError):
             test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, prediction_samples=10, connect={'inout': 'out1'})
         # test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, prediction_samples=1, connect={'inout': 'out1'}) # TODO add this test
         test.neuralizeModel(clear_model=True)
-        self.assertListEqual([[[1.0]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[1.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[1.0]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([1.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, train_batch_size=1, prediction_samples=3, connect={'inout': 'out1'})
-        self.assertListEqual([[[-9.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[0.5]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-9.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([0.5], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[-9.0]], test.model.all_parameters['a'].data.numpy().tolist())
 
         # Because is a connect and the window is 1 the initialization of the state is overwritten by the out1
@@ -457,25 +457,25 @@ class ModelyTrainingTest(unittest.TestCase):
         test.loadData(name='dataset3', source=dataset)
         test.neuralizeModel(clear_model=True)
         test.trainModel(train_dataset='dataset3', optimizer='SGD', lr=1, num_of_epochs=1, train_batch_size=1, prediction_samples=3, connect={'inout': 'out1'})
-        self.assertListEqual([[[-9.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[0.5]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-9.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([0.5], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[-9.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.neuralizeModel(clear_model=True)
         test.trainModel(train_dataset='dataset3', optimizer='SGD', shuffle_data=False, lr=1, num_of_epochs=1, train_batch_size=1, prediction_samples=3)
-        self.assertListEqual([[[-273.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[-137.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-273.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([-137.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
 
         dataset = {'in1': [0, 2, 7, 1, 5, 0, 2], 'target1': [1, 4, 8, 2, 6, 1, 1]}
         test.loadData(name='dataset4', source=dataset)
         test.neuralizeModel(clear_model=True)
-        self.assertListEqual([[[1.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[1.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[1.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([1.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(train_dataset='dataset4', optimizer='SGD', shuffle_data=False, lr=1, num_of_epochs=1,
                         train_batch_size=2, prediction_samples=3, connect={'inout': 'out1'})
-        self.assertListEqual([[[-162.75]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[-15.75]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-162.75]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([-15.75], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[-162.75]], test.model.all_parameters['a'].data.numpy().tolist())
 
         # Because is a connect and the window is 1 the initialization of the state is overwritten by the out1
@@ -483,24 +483,24 @@ class ModelyTrainingTest(unittest.TestCase):
         test.neuralizeModel(clear_model=True)
         test.trainModel(train_dataset='dataset5', optimizer='SGD', shuffle_data=False, lr=1, num_of_epochs=1,
                         train_batch_size=2, prediction_samples=3, connect={'inout': 'out1'})
-        self.assertListEqual([[[-162.75]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[-15.75]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-162.75]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([-15.75], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[-162.75]], test.model.all_parameters['a'].data.numpy().tolist())
 
     def test_training_values_fir_connect_linear_more_window(self):
         NeuObj.clearNames()
         input1 = Input('in1', dimensions=2)
-        W = Parameter('W', values=[[[-1], [-5]]])
-        b = Parameter('b', values=[[1]])
+        W = Parameter('W', values=[[-1], [-5]])
+        b = Parameter('b', values=1)
         lin_out = Linear(W=W, b=b)(input1.sw(2))
         output1 = Output('out1', lin_out)
 
         inout = State('inout')
-        a = Parameter('a', values=[[4], [5]])
-        a_big = Parameter('ab', values=[[1], [2], [3], [4], [5]])
-        output2 = Output('out2', Fir(parameter=a)(inout.sw(2)))
-        output3 = Output('out3', Fir(parameter=a_big)(inout.sw(5)))
-        output4 = Output('out4', Fir(parameter=a)(lin_out))
+        a = Parameter('a', sw=2, values=[[4], [5]])
+        a_big = Parameter('ab', sw=5, values=[[1], [2], [3], [4], [5]])
+        output2 = Output('out2', Fir(W=a)(inout.sw(2)))
+        output3 = Output('out3', Fir(W=a_big)(inout.sw(5)))
+        output4 = Output('out4', Fir(W=a)(lin_out))
 
         target = Input('target')
 
@@ -524,13 +524,13 @@ class ModelyTrainingTest(unittest.TestCase):
         # dataset = {'in1': [[0,1],[2,3],[7,4],[1,3],[4,2]], 'target': [3,4,5,1]}
         # test.loadData(name='dataset2', source=dataset)
 
-        self.assertListEqual([[[-1], [-5]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[1]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-1], [-5]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertEqual([1 ],test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[4], [5]], test.model.all_parameters['a'].data.numpy().tolist())
         self.assertListEqual([[1], [2], [3], [4], [5]], test.model.all_parameters['ab'].data.numpy().tolist())
         test.trainModel(train_dataset='dataset', optimizer='SGD', lr=1, num_of_epochs=1, prediction_samples=0)
-        self.assertListEqual([[[6143], [5627]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[2305]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[6143], [5627]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertEqual([2305], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[-3836], [-3323]], test.model.all_parameters['a'].data.numpy().tolist())
         self.assertListEqual([[1], [2], [3], [4], [5]], test.model.all_parameters['ab'].data.numpy().tolist())
         with self.assertRaises(ValueError):
@@ -552,14 +552,14 @@ class ModelyTrainingTest(unittest.TestCase):
         # Use a train_batch_size of 4
         # test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, prediction_samples=1) # TODO add this test
         test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, prediction_samples=0)
-        self.assertListEqual([[[12779], [11678.5]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[3142]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[12779], [11678.5]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertEqual([3142], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[-7682], [-7457.5]], test.model.all_parameters['a'].data.numpy().tolist())
         self.assertListEqual([[1], [2], [3], [4], [5]], test.model.all_parameters['ab'].data.numpy().tolist())
         test.neuralizeModel(clear_model=True)
         test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, train_batch_size=4)
-        self.assertListEqual([[[12779], [11678.5]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[3142]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[12779], [11678.5]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertEqual([3142], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[-7682], [-7457.5]], test.model.all_parameters['a'].data.numpy().tolist())
         self.assertListEqual([[1], [2], [3], [4], [5]], test.model.all_parameters['ab'].data.numpy().tolist())
 
@@ -568,8 +568,8 @@ class ModelyTrainingTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, train_batch_size=1, prediction_samples=4)
         test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, train_batch_size=1, prediction_samples=3)
-        self.assertListEqual([[[12779], [11678.5]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[3142]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[12779], [11678.5]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertEqual([3142], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[-7682], [-7457.5]], test.model.all_parameters['a'].data.numpy().tolist())
         self.assertListEqual([[1], [2], [3], [4], [5]], test.model.all_parameters['ab'].data.numpy().tolist())
 
@@ -577,21 +577,21 @@ class ModelyTrainingTest(unittest.TestCase):
         test.removeMinimize('error2')
         test.addMinimize('error3', target.last(), output3)
         test.neuralizeModel(clear_model=True)
-        self.assertListEqual([[[-1], [-5]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[1]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-1], [-5]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertEqual([1], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[4], [5]], test.model.all_parameters['a'].data.numpy().tolist())
         self.assertListEqual([[1], [2], [3], [4], [5]], test.model.all_parameters['ab'].data.numpy().tolist())
 
         # Use a train_batch_size of 4
         test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, prediction_samples=0)
-        self.assertListEqual([[[12779], [11678.5]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[3142]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[12779], [11678.5]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertEqual([3142], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[4], [5]], test.model.all_parameters['a'].data.numpy().tolist())
         self.assertListEqual([[1], [2], [3], [-7682], [-7457.5]], test.model.all_parameters['ab'].data.numpy().tolist())
         test.neuralizeModel(clear_model=True)
         test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, train_batch_size=4)
-        self.assertListEqual([[[12779], [11678.5]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[3142]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[12779], [11678.5]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertEqual([3142], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[4], [5]], test.model.all_parameters['a'].data.numpy().tolist())
         self.assertListEqual([[1], [2], [3], [-7682], [-7457.5]], test.model.all_parameters['ab'].data.numpy().tolist())
 
@@ -629,8 +629,8 @@ class ModelyTrainingTest(unittest.TestCase):
         # self.assertDictEqual({'inout': [[[0.0], [-15.0], [-13.0], [-30.0], [0.0]]]}, test.internals['inout_0_1']['state'])
         # self.assertDictEqual({'inout': [[[-15.0], [-13.0], [-30.0], [-28.0], [0.0]]]}, test.internals['inout_0_2']['state'])
         # self.assertDictEqual({'inout': [[[-13.0], [-30.0], [-28.0], [1.0], [-15.0]]]}, test.internals['inout_0_3']['state'])
-        self.assertListEqual([[[22273.5], [20993.0]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[6154.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[22273.5], [20993.0]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertEqual([6154.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[4], [5]], test.model.all_parameters['a'].data.numpy().tolist())
         self.assertListEqual([[-1784.0], [-4020.0], [-7564.5], [-10843.5], [-9033.0]], test.model.all_parameters['ab'].data.numpy().tolist())
         with self.assertRaises(KeyError):
@@ -671,9 +671,9 @@ class ModelyTrainingTest(unittest.TestCase):
         self.assertListEqual([[[0.0]]], test.internals['inout_1_0']['XY']['target'])
         self.assertListEqual([[[1.0]]], test.internals['inout_1_1']['XY']['target'])
         self.assertListEqual([[[0.0]]], test.internals['inout_1_2']['XY']['target'])
-        self.assertAlmostEqual({'inout': [[[0.0], [0.0], [0.0], [W[0][0][0]*4.0+W[0][1][0]*2.0+b[0][0]], [W[0][0][0]*6.0+W[0][1][0]*5.0+b[0][0]]]]}, test.internals['inout_1_0']['state'])
-        self.assertAlmostEqual({'inout': [[[0.0], [0.0], [W[0][0][0]*4.0+W[0][1][0]*2.0+b[0][0]], [W[0][0][0]*6.0+W[0][1][0]*5.0+b[0][0]], [W[0][0][0]*4.0+W[0][1][0]*5.0+b[0][0]]]]}, test.internals['inout_1_1']['state'])
-        self.assertAlmostEqual({'inout': [[[0.0], [W[0][0][0]*4.0+W[0][1][0]*2.0+b[0][0]], [W[0][0][0]*6.0+W[0][1][0]*5.0+b[0][0]], [W[0][0][0]*4.0+W[0][1][0]*5.0+b[0][0]],  [W[0][0][0]*0.0+W[0][1][0]*0.0+b[0][0]]]]}, test.internals['inout_1_2']['state'])
+        self.assertAlmostEqual({'inout': [[[0.0], [0.0], [0.0], [W[0][0]*4.0+W[1][0]*2.0+b[0]], [W[0][0]*6.0+W[1][0]*5.0+b[0]]]]}, test.internals['inout_1_0']['state'])
+        self.assertAlmostEqual({'inout': [[[0.0], [0.0], [W[0][0]*4.0+W[1][0]*2.0+b[0]], [W[0][0]*6.0+W[1][0]*5.0+b[0]], [W[0][0]*4.0+W[1][0]*5.0+b[0]]]]}, test.internals['inout_1_1']['state'])
+        self.assertAlmostEqual({'inout': [[[0.0], [W[0][0]*4.0+W[1][0]*2.0+b[0]], [W[0][0]*6.0+W[1][0]*5.0+b[0]], [W[0][0]*4.0+W[1][0]*5.0+b[0]],  [W[0][0]*0.0+W[1][0]*0.0+b[0]]]]}, test.internals['inout_1_2']['state'])
         # Replace instead of rolling
         # self.assertAlmostEqual({'inout': [[[0.0], [0.0], [W[0][0][0] * 4.0 + W[0][1][0] * 2.0 + b[0][0]],
         #                                    [W[0][0][0] * 6.0 + W[0][1][0] * 5.0 + b[0][0]], [0.0]]]},
@@ -715,16 +715,16 @@ class ModelyTrainingTest(unittest.TestCase):
         # self.assertDictEqual({'inout': [[[-15.0], [-13.0], [-30.0], [-28.0], [7.0]]]}, test.internals['inout_0_2']['state'])
         W = test.internals['inout_1_0']['param']['W']
         b = test.internals['inout_1_0']['param']['b']
-        self.assertAlmostEqual({'inout': [[[7.0], [6.0], [5.0], [W[0][0][0] * 4.0 + W[0][1][0] * 2.0 + b[0][0]],
-                                           [W[0][0][0] * 6.0 + W[0][1][0] * 5.0 + b[0][0]]]]},
+        self.assertAlmostEqual({'inout': [[[7.0], [6.0], [5.0], [W[0][0] * 4.0 + W[1][0] * 2.0 + b[0]],
+                                           [W[0][0] * 6.0 + W[1][0] * 5.0 + b[0]]]]},
                                test.internals['inout_1_0']['state'])
-        self.assertAlmostEqual({'inout': [[[6.0], [5.0], [W[0][0][0] * 4.0 + W[0][1][0] * 2.0 + b[0][0]],
-                                           [W[0][0][0] * 6.0 + W[0][1][0] * 5.0 + b[0][0]],
-                                           [W[0][0][0] * 4.0 + W[0][1][0] * 5.0 + b[0][0]]]]},
+        self.assertAlmostEqual({'inout': [[[6.0], [5.0], [W[0][0] * 4.0 + W[1][0] * 2.0 + b[0]],
+                                           [W[0][0] * 6.0 + W[1][0] * 5.0 + b[0]],
+                                           [W[0][0] * 4.0 + W[1][0] * 5.0 + b[0]]]]},
                                test.internals['inout_1_1']['state'])
         self.assertAlmostEqual({'inout': [
-            [[5.0], [W[0][0][0] * 4.0 + W[0][1][0] * 2.0 + b[0][0]], [W[0][0][0] * 6.0 + W[0][1][0] * 5.0 + b[0][0]],
-             [W[0][0][0] * 4.0 + W[0][1][0] * 5.0 + b[0][0]], [W[0][0][0] * 0.0 + W[0][1][0] * 0.0 + b[0][0]]]]},
+            [[5.0], [W[0][0] * 4.0 + W[1][0] * 2.0 + b[0]], [W[0][0] * 6.0 + W[1][0] * 5.0 + b[0]],
+             [W[0][0] * 4.0 + W[1][0] * 5.0 + b[0]], [W[0][0] * 0.0 + W[1][0] * 0.0 + b[0]]]]},
                                test.internals['inout_1_2']['state'])
         # replace insead of rolling
         # self.assertAlmostEqual({'inout': [[[7.0], [6.0], [W[0][0][0] * 4.0 + W[0][1][0] * 2.0 + b[0][0]],
@@ -742,17 +742,17 @@ class ModelyTrainingTest(unittest.TestCase):
     def test_training_values_fir_connect_train_linear_more_window(self):
         NeuObj.clearNames()
         input1 = Input('in1', dimensions=2)
-        W = Parameter('W', values=[[[-1], [-5]]])
-        b = Parameter('b', values=[[1]])
+        W = Parameter('W', values=[[-1], [-5]])
+        b = Parameter('b', values=[1])
         lin_out = Linear(W=W, b=b)(input1.sw(2))
         output1 = Output('out1', lin_out)
 
         inout = Input('inout')
-        a = Parameter('a', values=[[4], [5]])
-        a_big = Parameter('ab', values=[[1], [2], [3], [4], [5]])
-        output2 = Output('out2', Fir(parameter=a)(inout.sw(2)))
-        output3 = Output('out3', Fir(parameter=a_big)(inout.sw(5)))
-        output4 = Output('out4', Fir(parameter=a)(lin_out))
+        a = Parameter('a', sw=2, values=[[4], [5]])
+        a_big = Parameter('ab', sw=5, values=[[1], [2], [3], [4], [5]])
+        output2 = Output('out2', Fir(W=a)(inout.sw(2)))
+        output3 = Output('out3', Fir(W=a_big)(inout.sw(5)))
+        output4 = Output('out4', Fir(W=a)(lin_out))
 
         target = Input('target')
 
@@ -775,13 +775,13 @@ class ModelyTrainingTest(unittest.TestCase):
         # dataset = {'in1': [[0,1],[2,3],[7,4],[1,3],[4,2]], 'target': [3,4,5,1]}
         # test.loadData(name='dataset2', source=dataset)
 
-        self.assertListEqual([[[-1], [-5]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[1]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-1], [-5]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([1], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[4], [5]], test.model.all_parameters['a'].data.numpy().tolist())
         self.assertListEqual([[1], [2], [3], [4], [5]], test.model.all_parameters['ab'].data.numpy().tolist())
         test.trainModel(train_dataset='dataset', optimizer='SGD', lr=1, num_of_epochs=1, prediction_samples=0, connect={'inout':'out1'})
-        self.assertListEqual([[[6143], [5627]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[2305]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[6143], [5627]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([2305], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[-3836], [-3323]], test.model.all_parameters['a'].data.numpy().tolist())
         self.assertListEqual([[1], [2], [3], [4], [5]], test.model.all_parameters['ab'].data.numpy().tolist())
         with self.assertRaises(KeyError):
@@ -805,14 +805,14 @@ class ModelyTrainingTest(unittest.TestCase):
         # Use a train_batch_size of 4
         # test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, prediction_samples=1, connect={'inout':'out1'}) TODO add this test
         test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, prediction_samples=0, connect={'inout':'out1'})
-        self.assertListEqual([[[12779], [11678.5]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[3142]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[12779], [11678.5]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([3142], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[-7682], [-7457.5]], test.model.all_parameters['a'].data.numpy().tolist())
         self.assertListEqual([[1], [2], [3], [4], [5]], test.model.all_parameters['ab'].data.numpy().tolist())
         test.neuralizeModel(clear_model=True)
         test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, train_batch_size=4, connect={'inout':'out1'})
-        self.assertListEqual([[[12779], [11678.5]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[3142]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[12779], [11678.5]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([3142], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[-7682], [-7457.5]], test.model.all_parameters['a'].data.numpy().tolist())
         self.assertListEqual([[1], [2], [3], [4], [5]], test.model.all_parameters['ab'].data.numpy().tolist())
 
@@ -821,8 +821,8 @@ class ModelyTrainingTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, train_batch_size=1, prediction_samples=4, connect={'inout':'out1'})
         test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, train_batch_size=1, prediction_samples=3, connect={'inout':'out1'})
-        self.assertListEqual([[[12779], [11678.5]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[3142]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[12779], [11678.5]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([3142], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[-7682], [-7457.5]], test.model.all_parameters['a'].data.numpy().tolist())
         self.assertListEqual([[1], [2], [3], [4], [5]], test.model.all_parameters['ab'].data.numpy().tolist())
 
@@ -830,21 +830,21 @@ class ModelyTrainingTest(unittest.TestCase):
         test.removeMinimize('error2')
         test.addMinimize('error3', target.last(), output3)
         test.neuralizeModel(clear_model=True)
-        self.assertListEqual([[[-1], [-5]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[1]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-1], [-5]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([1], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[4], [5]], test.model.all_parameters['a'].data.numpy().tolist())
         self.assertListEqual([[1], [2], [3], [4], [5]], test.model.all_parameters['ab'].data.numpy().tolist())
 
         # Use a train_batch_size of 4
         test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, prediction_samples=0, connect={'inout':'out1'})
-        self.assertListEqual([[[12779], [11678.5]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[3142]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[12779], [11678.5]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([3142], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[4], [5]], test.model.all_parameters['a'].data.numpy().tolist())
         self.assertListEqual([[1], [2], [3], [-7682], [-7457.5]], test.model.all_parameters['ab'].data.numpy().tolist())
         test.neuralizeModel(clear_model=True)
         test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, train_batch_size=4, connect={'inout':'out1'})
-        self.assertListEqual([[[12779], [11678.5]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[3142]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[12779], [11678.5]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([3142], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[4], [5]], test.model.all_parameters['a'].data.numpy().tolist())
         self.assertListEqual([[1], [2], [3], [-7682], [-7457.5]], test.model.all_parameters['ab'].data.numpy().tolist())
 
@@ -881,8 +881,8 @@ class ModelyTrainingTest(unittest.TestCase):
                                           4 * -1 + 5 * -5 + 1.0) * 4.0 + (0 * -1 + 0 * -5 + 1.0) * 5.0]]],
                               'out4': [[[(4 * -1 + 5 * -5 + 1.0) * 4.0 + (0 * -1 + 0 * -5 + 1.0) * 5.0]]]},
                              test.internals['inout_0_3']['out'])
-        self.assertListEqual([[[22273.5], [20993.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[6154.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[22273.5], [20993.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([6154.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[4], [5]], test.model.all_parameters['a'].data.numpy().tolist())
         self.assertListEqual([[-1784.0], [-4020.0], [-7564.5], [-10843.5], [-9033.0]],
                              test.model.all_parameters['ab'].data.numpy().tolist())
@@ -925,16 +925,16 @@ class ModelyTrainingTest(unittest.TestCase):
         self.assertListEqual([[[0.0]]],test.internals['inout_1_0']['XY']['target'])
         self.assertListEqual([[[1.0]]],test.internals['inout_1_1']['XY']['target'])
         self.assertListEqual([[[0.0]]],test.internals['inout_1_2']['XY']['target'])
-        self.assertAlmostEqual({'inout': [[[0.0], [0.0], [0.0], [W[0][0][0] * 4.0 + W[0][1][0] * 2.0 + b[0][0]],
-                                         [W[0][0][0] * 6.0 + W[0][1][0] * 5.0 + b[0][0]]]]},
+        self.assertAlmostEqual({'inout': [[[0.0], [0.0], [0.0], [W[0][0] * 4.0 + W[1][0] * 2.0 + b[0]],
+                                         [W[0][0] * 6.0 + W[1][0] * 5.0 + b[0]]]]},
                              test.internals['inout_1_0']['state'])
-        self.assertAlmostEqual({'inout': [[[0.0], [0.0], [W[0][0][0] * 4.0 + W[0][1][0] * 2.0 + b[0][0]],
-                                         [W[0][0][0] * 6.0 + W[0][1][0] * 5.0 + b[0][0]],
-                                         [W[0][0][0] * 4.0 + W[0][1][0] * 5.0 + b[0][0]]]]},
+        self.assertAlmostEqual({'inout': [[[0.0], [0.0], [W[0][0] * 4.0 + W[1][0] * 2.0 + b[0]],
+                                         [W[0][0] * 6.0 + W[1][0] * 5.0 + b[0]],
+                                         [W[0][0] * 4.0 + W[1][0] * 5.0 + b[0]]]]},
                              test.internals['inout_1_1']['state'])
         self.assertAlmostEqual({'inout': [
-            [[0.0], [W[0][0][0] * 4.0 + W[0][1][0] * 2.0 + b[0][0]], [W[0][0][0] * 6.0 + W[0][1][0] * 5.0 + b[0][0]],
-             [W[0][0][0] * 4.0 + W[0][1][0] * 5.0 + b[0][0]], [W[0][0][0] * 0.0 + W[0][1][0] * 0.0 + b[0][0]]]]},
+            [[0.0], [W[0][0] * 4.0 + W[1][0] * 2.0 + b[0]], [W[0][0] * 6.0 + W[1][0] * 5.0 + b[0]],
+             [W[0][0] * 4.0 + W[1][0] * 5.0 + b[0]], [W[0][0] * 0.0 + W[1][0] * 0.0 + b[0]]]]},
                              test.internals['inout_1_2']['state'])
         with self.assertRaises(KeyError):
             test.internals['inout_2_0']
@@ -966,16 +966,16 @@ class ModelyTrainingTest(unittest.TestCase):
         # self.assertDictEqual({'inout': [[[-15.0], [-13.0], [-30.0], [-28.0], [7.0]]]}, test.internals['inout_0_2']['connect'])
         W = test.internals['inout_1_0']['param']['W']
         b = test.internals['inout_1_0']['param']['b']
-        self.assertAlmostEqual({'inout': [[[7.0], [6.0], [5.0], [W[0][0][0] * 4.0 + W[0][1][0] * 2.0 + b[0][0]],
-                                           [W[0][0][0] * 6.0 + W[0][1][0] * 5.0 + b[0][0]]]]},
+        self.assertAlmostEqual({'inout': [[[7.0], [6.0], [5.0], [W[0][0] * 4.0 + W[1][0] * 2.0 + b[0]],
+                                           [W[0][0] * 6.0 + W[1][0] * 5.0 + b[0]]]]},
                                test.internals['inout_1_0']['state'])
-        self.assertAlmostEqual({'inout': [[[6.0], [5.0], [W[0][0][0] * 4.0 + W[0][1][0] * 2.0 + b[0][0]],
-                                           [W[0][0][0] * 6.0 + W[0][1][0] * 5.0 + b[0][0]],
-                                           [W[0][0][0] * 4.0 + W[0][1][0] * 5.0 + b[0][0]]]]},
+        self.assertAlmostEqual({'inout': [[[6.0], [5.0], [W[0][0] * 4.0 + W[1][0] * 2.0 + b[0]],
+                                           [W[0][0] * 6.0 + W[1][0] * 5.0 + b[0]],
+                                           [W[0][0] * 4.0 + W[1][0] * 5.0 + b[0]]]]},
                                test.internals['inout_1_1']['state'])
-        self.assertAlmostEqual({'inout': [
-            [[5.0], [W[0][0][0] * 4.0 + W[0][1][0] * 2.0 + b[0][0]], [W[0][0][0] * 6.0 + W[0][1][0] * 5.0 + b[0][0]],
-             [W[0][0][0] * 4.0 + W[0][1][0] * 5.0 + b[0][0]], [W[0][0][0] * 0.0 + W[0][1][0] * 0.0 + b[0][0]]]]},
+        self.assertAlmostEqual({'inout':
+            [[[5.0], [W[0][0] * 4.0 + W[1][0] * 2.0 + b[0]], [W[0][0] * 6.0 + W[1][0] * 5.0 + b[0]],
+             [W[0][0] * 4.0 + W[1][0] * 5.0 + b[0]], [W[0][0] * 0.0 + W[1][0] * 0.0 + b[0]]]]},
                                test.internals['inout_1_2']['state'])
         # Replace insead of rolling
         # self.assertAlmostEqual({'inout': [[[7.0], [6.0], [W[0][0][0] * 4.0 + W[0][1][0] * 2.0 + b[0][0]],
@@ -994,13 +994,13 @@ class ModelyTrainingTest(unittest.TestCase):
         NeuObj.clearNames()
         input1 = State('in1')
         target_out1 = Input('target1')
-        a = Parameter('a', values=[[1]])
-        output1 = Output('out1',Fir(parameter=a)(input1.last()))
+        a = Parameter('a', sw=1, values=[[1]])
+        output1 = Output('out1',Fir(W=a)(input1.last()))
 
         input2 = State('in2')
         target_out2 = Input('target2')
-        W = Parameter('W', values=[[[1]]])
-        b = Parameter('b', values=[[1]])
+        W = Parameter('W', values=[[1]])
+        b = Parameter('b', values=[1])
         output2 = Output('out2', Linear(W=W,b=b)(input2.last()))
 
         test = Modely(visualizer=None, seed=42)
@@ -1019,38 +1019,38 @@ class ModelyTrainingTest(unittest.TestCase):
         dataset = {'in1': [1], 'in2': [1.0], 'target1': [3], 'target2': [3]}
         test.loadData(name='dataset', source=dataset)
 
-        self.assertListEqual([[[1.0]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[1.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[1.0]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([1.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(optimizer='SGD', splits=[100, 0, 0], lr=1, num_of_epochs=1)
-        self.assertListEqual([[[3.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[3.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[3.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([3.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[5.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(optimizer='SGD', splits=[100, 0, 0], lr=1, num_of_epochs=1)
-        self.assertListEqual([[[-3.0]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[-3.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-3.0]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([-3.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
 
         test.neuralizeModel(clear_model=True)
-        self.assertListEqual([[[1.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[1.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[1.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([1.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(optimizer='SGD', splits=[100, 0, 0], lr=1, num_of_epochs=1)
-        self.assertListEqual([[[3.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[3.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[3.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([3.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[5.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(optimizer='SGD', splits=[100, 0, 0], lr=1, num_of_epochs=1)
-        self.assertListEqual([[[-3.0]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[-3.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-3.0]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([-3.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
 
         test.neuralizeModel(clear_model=True)
-        self.assertListEqual([[[1.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[1.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[1.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([1.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(optimizer='SGD', splits=[100, 0, 0], lr=1, num_of_epochs=2)
-        self.assertListEqual([[[-3.0]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[-3.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-3.0]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([-3.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
 
         dataset = {'in1': [1.0,1.0], 'in2': [1.0,1.0], 'target1': [3.0,3.0], 'target2': [3.0,3.0]}
@@ -1058,26 +1058,26 @@ class ModelyTrainingTest(unittest.TestCase):
         test.neuralizeModel(clear_model=True)
         # the out is 3.0 due the mean of the error is not the same of two epochs
         test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1)
-        self.assertListEqual([[[3.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[3.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[3.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([3.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[5.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.neuralizeModel(clear_model=True)
         test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=2)
-        self.assertListEqual([[[-3.0]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[-3.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-3.0]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([-3.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
 
     def test_training_values_fir_and_liner_train_closed_loop(self):
         NeuObj.clearNames()
         input1 = Input('in1')
         target_out1 = Input('target1')
-        a = Parameter('a', values=[[1]])
-        output1 = Output('out1',Fir(parameter=a)(input1.last()))
+        a = Parameter('a', sw=1, values=[[1]])
+        output1 = Output('out1',Fir(W=a)(input1.last()))
 
         input2 = Input('in2')
         target_out2 = Input('target2')
-        W = Parameter('W', values=[[[1]]])
-        b = Parameter('b', values=[[1]])
+        W = Parameter('W', values=[[1]])
+        b = Parameter('b', values=1)
         output2 = Output('out2', Linear(W=W,b=b)(input2.last()))
 
         test = Modely(visualizer=None, seed=42)
@@ -1093,38 +1093,38 @@ class ModelyTrainingTest(unittest.TestCase):
         dataset = {'in1': [1], 'in2': [1.0], 'target1': [3], 'target2': [3]}
         test.loadData(name='dataset', source=dataset)
 
-        self.assertListEqual([[[1.0]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[1.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[1.0]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertEqual([1.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(optimizer='SGD', splits=[100, 0, 0], lr=1, num_of_epochs=1, closed_loop={'in1':'out1','in2':'out2'})
-        self.assertListEqual([[[3.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[3.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[3.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertEqual([3.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[5.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(optimizer='SGD', splits=[100, 0, 0], lr=1, num_of_epochs=1, closed_loop={'in1':'out1','in2':'out2'})
-        self.assertListEqual([[[-3.0]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[-3.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-3.0]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertEqual([-3.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
 
         test.neuralizeModel(clear_model=True)
-        self.assertListEqual([[[1.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[1.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[1.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertEqual([1.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(optimizer='SGD', splits=[100, 0, 0], lr=1, num_of_epochs=1, closed_loop={'in1':'out1','in2':'out2'})
-        self.assertListEqual([[[3.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[3.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[3.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertEqual([3.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[5.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(optimizer='SGD', splits=[100, 0, 0], lr=1, num_of_epochs=1, closed_loop={'in1':'out1','in2':'out2'})
-        self.assertListEqual([[[-3.0]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[-3.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-3.0]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertEqual([-3.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
 
         test.neuralizeModel(clear_model=True)
-        self.assertListEqual([[[1.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[1.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[1.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertEqual([1.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(optimizer='SGD', splits=[100, 0, 0], lr=1, num_of_epochs=2, closed_loop={'in1':'out1','in2':'out2'})
-        self.assertListEqual([[[-3.0]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[-3.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-3.0]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertEqual([-3.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
 
         dataset = {'in1': [1.0,1.0], 'in2': [1.0,1.0], 'target1': [3.0,3.0], 'target2': [3.0,3.0]}
@@ -1132,26 +1132,26 @@ class ModelyTrainingTest(unittest.TestCase):
         test.neuralizeModel(clear_model=True)
         # the out is 3.0 due the mean of the error is not the same of two epochs
         test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, closed_loop={'in1':'out1','in2':'out2'})
-        self.assertListEqual([[[3.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[3.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[3.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertEqual([3.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[5.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.neuralizeModel(clear_model=True)
         test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=2, closed_loop={'in1':'out1','in2':'out2'})
-        self.assertListEqual([[[-3.0]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[-3.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-3.0]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertEqual([-3.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
 
     def test_training_values_fir_and_linear_closed_loop_more_prediction(self):
         NeuObj.clearNames()
         input1 = State('in1')
         target_out1 = Input('target1')
-        a = Parameter('a', values=[[1]])
-        output1 = Output('out1',Fir(parameter=a)(input1.last()))
+        a = Parameter('a', sw=1, values=[[1]])
+        output1 = Output('out1',Fir(W=a)(input1.last()))
 
         input2 = State('in2')
         target_out2 = Input('target2')
-        W = Parameter('W', values=[[[1]]])
-        b = Parameter('b', values=[[1]])
+        W = Parameter('W', values=[[1]])
+        b = Parameter('b', values=[1])
         output2 = Output('out2', Linear(W=W,b=b)(input2.last()))
 
         test = Modely(visualizer=None, seed=42)
@@ -1175,12 +1175,12 @@ class ModelyTrainingTest(unittest.TestCase):
         dataset = {'in1': [0,2,7,1], 'in2': [-1,0,-3,7], 'target1': [3,4,5,1], 'target2': [-3,-4,-5,-1]}
         test.loadData(name='dataset2', source=dataset)
 
-        self.assertListEqual([[[1.0]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[1.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[1.0]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([1.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, prediction_samples=0)
-        self.assertListEqual([[[-24.5]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[-9.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-24.5]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([-9.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[-4.0]], test.model.all_parameters['a'].data.numpy().tolist())
         with self.assertRaises(ValueError):
             test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, prediction_samples=10)
@@ -1190,12 +1190,12 @@ class ModelyTrainingTest(unittest.TestCase):
         # self.assertListEqual([[1.0]], test.model.all_parameters['b'].data.numpy().tolist())
         # self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.neuralizeModel(clear_model=True)
-        self.assertListEqual([[[1.0]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[1.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[1.0]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([1.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, train_batch_size=1, prediction_samples=3)
-        self.assertListEqual([[[1.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[-24.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[1.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([-24.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
 
         # test.neuralizeModel(clear_model=True)
@@ -1211,13 +1211,13 @@ class ModelyTrainingTest(unittest.TestCase):
         NeuObj.clearNames()
         input1 = Input('in1')
         target_out1 = Input('target1')
-        a = Parameter('a', values=[[1]])
-        output1 = Output('out1',Fir(parameter=a)(input1.last()))
+        a = Parameter('a', sw=1, values=[[1]])
+        output1 = Output('out1',Fir(W=a)(input1.last()))
 
         input2 = Input('in2')
         target_out2 = Input('target2')
-        W = Parameter('W', values=[[[1]]])
-        b = Parameter('b', values=[[1]])
+        W = Parameter('W', values=[[1]])
+        b = Parameter('b', values=[1])
         output2 = Output('out2', Linear(W=W,b=b)(input2.last()))
 
         test = Modely(visualizer=None, seed=42)
@@ -1235,23 +1235,23 @@ class ModelyTrainingTest(unittest.TestCase):
         dataset = {'in1': [0,2,7,1], 'in2': [-1,0,-3,7], 'target1': [3,4,5,1], 'target2': [-3,-4,-5,-1]}
         test.loadData(name='dataset2', source=dataset)
 
-        self.assertListEqual([[[1.0]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[1.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[1.0]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([1.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, prediction_samples=0, closed_loop={'in2':'out2','in1':'out1'})
-        self.assertListEqual([[[-24.5]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[-9.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-24.5]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([-9.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[-4.0]], test.model.all_parameters['a'].data.numpy().tolist())
         with self.assertRaises(ValueError):
             test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, prediction_samples=10, closed_loop={'in2':'out2','in1':'out1'})
         # test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, prediction_samples=1,  closed_loop={'in2':'out2','in1':'out1'}) # TODO add this test
         test.neuralizeModel(clear_model=True)
-        self.assertListEqual([[[1.0]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[1.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[1.0]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([1.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, train_batch_size=1, prediction_samples=3,  closed_loop={'in2':'out2','in1':'out1'})
-        self.assertListEqual([[[1.0]]], test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[-24.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[1.0]], test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([-24.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1.0]], test.model.all_parameters['a'].data.numpy().tolist())
 
         # test.neuralizeModel(clear_model=True) # TODO add this test
@@ -1266,13 +1266,13 @@ class ModelyTrainingTest(unittest.TestCase):
     def test_training_values_fir_and_liner_closed_loop_bigger_window(self):
         NeuObj.clearNames()
         input1 = State('in1',dimensions=2)
-        W = Parameter('W', values=[[[-1],[-5]]])
-        b = Parameter('b', values=[[1]])
+        W = Parameter('W', values=[[-1],[-5]])
+        b = Parameter('b', values=[1])
         output1 = Output('out1', Linear(W=W, b=b)(input1.sw(2)))
 
         input2 = State('in2')
-        a = Parameter('a', values=[[1,3],[2,4],[3,5],[4,6]])
-        output2 = Output('out2', Fir(output_dimension=2,parameter=a)(input2.sw(4)))
+        a = Parameter('a', sw=4, values=[[1,3],[2,4],[3,5],[4,6]])
+        output2 = Output('out2', Fir(output_dimension=2,W=a)(input2.sw(4)))
 
         target1 = Input('target1')
         target2 = Input('target2', dimensions=2)
@@ -1296,12 +1296,12 @@ class ModelyTrainingTest(unittest.TestCase):
                           'out2': [[[-49.0, -107.0]], [[-120.0, -214.0]], [[-205.0, -333.0]]]},
                          test(dataset))
 
-        self.assertListEqual([[[-1],[-5]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[1.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-1],[-5]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([1.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1,3],[2,4],[3,5],[4,6]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(train_dataset='dataset', optimizer='SGD', lr=1, num_of_epochs=1, prediction_samples=0)
-        self.assertListEqual([[[83.0],[105.0]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[6.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[83.0],[105.0]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([6.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[-159.0, -227.0], [-254., -364.], [-77., -110.], [36., 52.]], test.model.all_parameters['a'].data.numpy().tolist())
         with self.assertRaises(ValueError):
             test.trainModel(train_dataset='dataset', optimizer='SGD', lr=1, num_of_epochs=1, prediction_samples=10)
@@ -1309,13 +1309,13 @@ class ModelyTrainingTest(unittest.TestCase):
             test.trainModel(train_dataset='dataset', optimizer='SGD', lr=1, num_of_epochs=1, prediction_samples=1)
         test.neuralizeModel(clear_model=True)
         test.trainModel(train_dataset='dataset', optimizer='SGD', lr=1, num_of_epochs=1, prediction_samples=0, minimize_gain={'error1':0})
-        self.assertListEqual([[[-1],[-5]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[1.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-1],[-5]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([1.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[-159.0, -227.0], [-254., -364.], [-77., -110.], [36., 52.]], test.model.all_parameters['a'].data.numpy().tolist())
         test.neuralizeModel(clear_model=True)
         test.trainModel(train_dataset='dataset', optimizer='SGD', lr=1, num_of_epochs=1, prediction_samples=0, minimize_gain={'error2':0})
-        self.assertListEqual([[[83.0],[105.0]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[6.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[83.0],[105.0]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([6.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1,3],[2,4],[3,5],[4,6]], test.model.all_parameters['a'].data.numpy().tolist())
 
         test.neuralizeModel(clear_model=True)
@@ -1330,13 +1330,13 @@ class ModelyTrainingTest(unittest.TestCase):
         # Use a train_batch_size of 4
         # test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, prediction_samples=1) # TODO Add this test
         test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, prediction_samples=0)
-        self.assertListEqual([[[20.0], [21.0]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[2.75]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[20.0], [21.0]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([2.75], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[23., 197.5], [-68.75, -94.75], [12., -76.5], [-70.75, -1.25]], test.model.all_parameters['a'].data.numpy().tolist())
         test.neuralizeModel(clear_model=True)
         test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, train_batch_size=4)
-        self.assertListEqual([[[20.0], [21.0]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[2.75]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[20.0], [21.0]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([2.75], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[23., 197.5], [-68.75, -94.75], [12., -76.5], [-70.75, -1.25]], test.model.all_parameters['a'].data.numpy().tolist())
 
         # Use a small batch but with a prediction sample of 3 = to 4 samples
@@ -1348,8 +1348,8 @@ class ModelyTrainingTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, train_batch_size=1, prediction_samples=4)
         test.trainModel(train_dataset='dataset3', optimizer='SGD', lr=1, num_of_epochs=1, train_batch_size=1, prediction_samples=3)
-        self.assertListEqual([[[-3010.5],[-5211.25]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[199.5]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-3010.5],[-5211.25]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([199.5], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[252.75, 1172.5], [420.5, 1998.25], [-228.5, 627.5], [-626.75, 3036.5]], test.model.all_parameters['a'].data.numpy().tolist())
 
         # test.neuralizeModel(clear_model=True)
@@ -1361,13 +1361,13 @@ class ModelyTrainingTest(unittest.TestCase):
     def test_training_values_fir_and_liner_train_closed_loop_bigger_window(self):
         NeuObj.clearNames()
         input1 = Input('in1',dimensions=2)
-        W = Parameter('W', values=[[[-1],[-5]]])
-        b = Parameter('b', values=[[1]])
-        output1 = Output('out1', Linear(W=W, b=b)(input1.sw(2)))
+        W = Parameter('W', values=[[-1],[-5]])
+        b = Parameter('b', values=[1])
+        output1 = Output('out1', Linear(W=W,b=b)(input1.sw(2)))
 
         input2 = Input('in2')
-        a = Parameter('a', values=[[1,3],[2,4],[3,5],[4,6]])
-        output2 = Output('out2', Fir(output_dimension=2,parameter=a)(input2.sw(4)))
+        a = Parameter('a', sw=4, values=[[1,3],[2,4],[3,5],[4,6]])
+        output2 = Output('out2', Fir(output_dimension=2,W=a)(input2.sw(4)))
 
         target1 = Input('target1')
         target2 = Input('target2', dimensions=2)
@@ -1389,12 +1389,12 @@ class ModelyTrainingTest(unittest.TestCase):
                           'out2': [[[-49.0, -107.0]], [[-120.0, -214.0]], [[-205.0, -333.0]]]},
                          test(dataset,closed_loop={'in1':'out2','in2':'out1'}))
 
-        self.assertListEqual([[[-1],[-5]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[1.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-1],[-5]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([1.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1,3],[2,4],[3,5],[4,6]], test.model.all_parameters['a'].data.numpy().tolist())
         test.trainModel(train_dataset='dataset', optimizer='SGD', lr=1, num_of_epochs=1, prediction_samples=0,closed_loop={'in1':'out2','in2':'out1'})
-        self.assertListEqual([[[83.0],[105.0]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[6.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[83.0],[105.0]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([6.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[-159.0, -227.0], [-254., -364.], [-77., -110.], [36., 52.]], test.model.all_parameters['a'].data.numpy().tolist())
         with self.assertRaises(ValueError):
             test.trainModel(train_dataset='dataset', optimizer='SGD', lr=1, num_of_epochs=1, prediction_samples=10,closed_loop={'in1':'out2','in2':'out1'})
@@ -1402,13 +1402,13 @@ class ModelyTrainingTest(unittest.TestCase):
             test.trainModel(train_dataset='dataset', optimizer='SGD', lr=1, num_of_epochs=1, prediction_samples=1,closed_loop={'in1':'out2','in2':'out1'})
         test.neuralizeModel(clear_model=True)
         test.trainModel(train_dataset='dataset', optimizer='SGD', lr=1, num_of_epochs=1, prediction_samples=0, minimize_gain={'error1':0},closed_loop={'in1':'out2','in2':'out1'})
-        self.assertListEqual([[[-1],[-5]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[1.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-1],[-5]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([1.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[-159.0, -227.0], [-254., -364.], [-77., -110.], [36., 52.]], test.model.all_parameters['a'].data.numpy().tolist())
         test.neuralizeModel(clear_model=True)
         test.trainModel(train_dataset='dataset', optimizer='SGD', lr=1, num_of_epochs=1, prediction_samples=0, minimize_gain={'error2':0},closed_loop={'in1':'out2','in2':'out1'})
-        self.assertListEqual([[[83.0],[105.0]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[6.0]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[83.0],[105.0]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([6.0], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[1,3],[2,4],[3,5],[4,6]], test.model.all_parameters['a'].data.numpy().tolist())
 
         test.neuralizeModel(clear_model=True)
@@ -1423,13 +1423,13 @@ class ModelyTrainingTest(unittest.TestCase):
         # Use a train_batch_size of 4
         # test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, prediction_samples=1, closed_loop={'in1':'out2','in2':'out1'}) # TODO Add this test
         test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, prediction_samples=0, closed_loop={'in1':'out2','in2':'out1'})
-        self.assertListEqual([[[20.0], [21.0]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[2.75]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[20.0], [21.0]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([2.75], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[23., 197.5], [-68.75, -94.75], [12., -76.5], [-70.75, -1.25]], test.model.all_parameters['a'].data.numpy().tolist())
         test.neuralizeModel(clear_model=True)
         test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, train_batch_size=4,closed_loop={'in1':'out2','in2':'out1'})
-        self.assertListEqual([[[20.0], [21.0]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[2.75]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[20.0], [21.0]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([2.75], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[23., 197.5], [-68.75, -94.75], [12., -76.5], [-70.75, -1.25]], test.model.all_parameters['a'].data.numpy().tolist())
 
         # Use a small batch but with a prediction sample of 3 = to 4 samples
@@ -1441,8 +1441,8 @@ class ModelyTrainingTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, train_batch_size=1, prediction_samples=4,closed_loop={'in1':'out2','in2':'out1'})
         test.trainModel(train_dataset='dataset3', optimizer='SGD', lr=1, num_of_epochs=1, train_batch_size=1, prediction_samples=3,closed_loop={'in1':'out2','in2':'out1'})
-        self.assertListEqual([[[-3010.5],[-5211.25]]],test.model.all_parameters['W'].data.numpy().tolist())
-        self.assertListEqual([[199.5]], test.model.all_parameters['b'].data.numpy().tolist())
+        self.assertListEqual([[-3010.5],[-5211.25]],test.model.all_parameters['W'].data.numpy().tolist())
+        self.assertListEqual([199.5], test.model.all_parameters['b'].data.numpy().tolist())
         self.assertListEqual([[252.75, 1172.5], [420.5, 1998.25], [-228.5, 627.5], [-626.75, 3036.5]], test.model.all_parameters['a'].data.numpy().tolist())
 
         # test.neuralizeModel(clear_model=True)
@@ -1467,13 +1467,13 @@ class ModelyTrainingTest(unittest.TestCase):
 
         feed = Input('control')
         input1 = Input('in1', dimensions=2)
-        W = Parameter('W', values=[[[0.1],[0.1]]])
-        b = Parameter('b', values=[[0.1]])
+        W = Parameter('W', values=[[0.1],[0.1]])
+        b = Parameter('b', values=[0.1])
         output1 = Output('out1', feed.sw(2)+Linear(W=W, b=b)(input1.sw(2)))
 
         input2 = Input('in2')
-        a = Parameter('a', values=[[0.1,0.3],[0.2,0.4],[0.3,0.5],[0.4,0.6]])
-        output2 = Output('out2', Fir(output_dimension=2,parameter=a)(input2.sw(4)))
+        a = Parameter('a', sw=4, values=[[0.1,0.3],[0.2,0.4],[0.3,0.5],[0.4,0.6]])
+        output2 = Output('out2', Fir(output_dimension=2,W=a)(input2.sw(4)))
 
         target1 = Input('target1')
         target2 = Input('target2', dimensions=2)
@@ -1490,13 +1490,13 @@ class ModelyTrainingTest(unittest.TestCase):
         NeuObj.clearNames()
         feed = Input('control')
         input1 = State('in1',dimensions=2)
-        W = Parameter('W', values=[[[0.1],[0.1]]])
-        b = Parameter('b', values=[[0.1]])
+        W = Parameter('W', values=[[0.1],[0.1]])
+        b = Parameter('b', values=[0.1])
         output1 = Output('out1', feed.sw(2) + Linear(W=W, b=b)(input1.sw(2)))
 
         input2 = State('in2')
-        a = Parameter('a', values=[[0.1,0.3],[0.2,0.4],[0.3,0.5],[0.4,0.6]])
-        output2 = Output('out2', Fir(output_dimension=2, parameter=a)(input2.sw(4)))
+        a = Parameter('a', sw=4, values=[[0.1,0.3],[0.2,0.4],[0.3,0.5],[0.4,0.6]])
+        output2 = Output('out2', Fir(output_dimension=2, W=a)(input2.sw(4)))
 
         target1 = Input('target1')
         target2 = Input('target2', dimensions=2)

@@ -74,7 +74,7 @@ print("------------------------EXAMPLE 4------------------------")
 def myFun(K1,K2,p1):
     import torch
     return torch.stack([K1,2*K1,3*K1,4*K1],dim=2).squeeze(-1)*p1+K2
-parfun = ParamFun(myFun, parameters_dimensions = {'p1':(1,4)})
+parfun = ParamFun(myFun, parameters_and_constants = {'p1':(1,4)})
 out = Output('out-4',parfun(x.last(),F.last()))
 example = Modely()
 example.addModel('out',out)
@@ -91,7 +91,7 @@ print("------------------------EXAMPLE 5------------------------")
 def myFun(K1,p1):
     return K1*p1
 K = Parameter('k', dimensions =  1, sw = 1,values=[[2.0]])
-parfun = ParamFun(myFun, parameters = [K] )
+parfun = ParamFun(myFun, parameters_and_constants = [K] )
 out = Output('out-5',parfun(x.sw(1)))
 example = Modely(visualizer=MPLVisualizer())
 example.addModel('out',out)
@@ -146,7 +146,7 @@ print("------------------------EXAMPLE 9------------------------")
 P1 = 7.0
 def myFun(K1,p1):
     return K1*p1
-parfun = ParamFun(myFun,constants=[Constant('r',values=P1)])
+parfun = ParamFun(myFun,parameters_and_constants=[Constant('r',values=P1)])
 out = Output('out-9',parfun(x.sw(4)))
 example = Modely()
 example.addModel('out',out)
@@ -159,7 +159,7 @@ print("------------------------EXAMPLE 10------------------------")
 P1 = 12.0
 def myFun(K1,p1):
     return K1*p1
-parfun = ParamFun(myFun,constants=[Constant('rr',values=P1)])
+parfun = ParamFun(myFun,parameters_and_constants=[Constant('rr',values=P1)])
 out = Output('out-10',parfun(x.sw(4)))
 example = Modely()
 example.addModel('out',out)
@@ -191,6 +191,18 @@ parfun = ParamFun(myFun, map_over_batch=True)
 p = Constant('co',values=[[2]])
 #out = Output('out-121',parfun(x.sw(4),p))
 out = Output('out-12',parfun(p,x.sw(4)))
+example = Modely()
+example.addModel('out',out)
+example.neuralizeModel(0.25)
+print(example({'x':[1,3,3,1]}))
+#
+
+print("------------------------EXAMPLE 13------------------------")
+# Example 13
+def myFun(inin, p1, p2, p3):
+    return inin * p1 + p2
+parfun = ParamFun(myFun,parameters_and_constants=[1,(1,1),3])
+out = Output('out-13',parfun(x.sw(4)))
 example = Modely()
 example.addModel('out',out)
 example.neuralizeModel(0.25)

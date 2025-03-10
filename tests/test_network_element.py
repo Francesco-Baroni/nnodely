@@ -182,7 +182,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
     def test_network_building_sw_and_tw(self):
         NeuObj.clearNames()
         input2 = Input('in2')
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             input2.sw(5)+input2.tw(0.05)
 
         rel1 = Fir(input2.sw([-4,2]))+Fir(input2.tw([-0.01,0]))
@@ -214,7 +214,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         test.addModel('fun',[fun1,fun2,fun15,fun25])
         test.neuralizeModel(0.01)
 
-        list_of_dimensions = [[1,1,1],[1,1,5],[1,3,1],[1,3,5]]
+        list_of_dimensions = [[1,1],[1,5],[3,1],[3,5]]
         for ind, (key, value) in enumerate({k:v for k,v in test.model.relation_forward.items() if 'Linear' in k}.items()):
             self.assertEqual(list_of_dimensions[ind],list(value.weights.shape))
 
@@ -222,7 +222,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         NeuObj.clearNames()
         x = Input('x')
         param = Parameter(name='a', sw=1)
-        rel1 = Fir(parameter=param)(Interpolation(x_points=[1.0, 2.0, 3.0, 4.0],y_points=[2.0, 4.0, 6.0, 8.0], mode='linear')(x.last()))
+        rel1 = Fir(W=param)(Interpolation(x_points=[1.0, 2.0, 3.0, 4.0],y_points=[2.0, 4.0, 6.0, 8.0], mode='linear')(x.last()))
         out = Output('out',rel1)
 
         test = Modely(seed = 1, visualizer=None)
@@ -377,9 +377,9 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
 
         K1 = Parameter('k1', dimensions =  1, sw = 1,values=[[2.0]])
         K2 = Parameter('k2', dimensions =  1, sw = 1,values=[[3.0]])
-        parfun = ParamFun(myFun, parameters=[K1,K2])
-        parfun2 = ParamFun(myFun, parameters=[K1,K2])
-        parfun3 = ParamFun(myFun, parameters=[K1,K2])
+        parfun = ParamFun(myFun, parameters_and_constants=[K1,K2])
+        parfun2 = ParamFun(myFun, parameters_and_constants=[K1,K2])
+        parfun3 = ParamFun(myFun, parameters_and_constants=[K1,K2])
         fuzzi = Fuzzify(centers=[0,1,2,3])
 
         linear_layer_in = Linear(output_dimension=3, W_init=init_constant, W_init_params={'value':0}, b_init=init_constant, b_init_params={'value':0}, b=False)
@@ -443,6 +443,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         # The output is 2 samples
         self.assertEqual({'out': [1.7170718908309937, 1.9410502910614014]}, example({'x': [-1, 0, 1, 2, 0]}))
         self.assertEqual({'out': [1.7170718908309937, 1.9410502910614014]}, example({'x': [[-1, 0, 1, 2], [0, 1, 2, 0]]}, sampled=True))
+
 
 if __name__ == '__main__':
     unittest.main()
