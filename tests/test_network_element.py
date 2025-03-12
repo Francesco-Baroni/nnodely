@@ -443,7 +443,3 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         # The output is 2 samples
         self.assertEqual({'out': [1.7170718908309937, 1.9410502910614014]}, example({'x': [-1, 0, 1, 2, 0]}))
         self.assertEqual({'out': [1.7170718908309937, 1.9410502910614014]}, example({'x': [[-1, 0, 1, 2], [0, 1, 2, 0]]}, sampled=True))
-
-
-if __name__ == '__main__':
-    unittest.main()

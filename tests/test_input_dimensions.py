@@ -436,5 +436,3 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         ## Clip the step to 0 
         test.trainModel(train_dataset='dataset', num_of_epochs=1, train_batch_size=10, step=-4, prediction_samples=20, shuffle_data=True)
         self.assertEqual(8 * 21, len(test.internals.keys()))
-if __name__ == '__main__':
-    unittest.main()

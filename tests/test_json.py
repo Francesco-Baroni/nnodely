@@ -626,5 +626,3 @@ class ModelyJsonTest(unittest.TestCase):
         self.assertEqual((1, 1, 3), np.array(results['out51']).shape)
 
 
-if __name__ == '__main__':
-    unittest.main()

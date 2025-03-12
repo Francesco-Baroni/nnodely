@@ -23,7 +23,3 @@ class TestDocumentation(unittest.TestCase):
         self.assertTrue(os.path.exists(docs_output_dir), "Output directory does not exist")
         self.assertTrue(os.path.isfile(os.path.join(docs_output_dir, 'index.html')),
                         "index.html not found in output directory")
-
-
-if __name__ == '__main__':
-    unittest.main()

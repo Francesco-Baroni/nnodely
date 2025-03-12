@@ -162,6 +162,3 @@ class ModelyTestVisualizer(unittest.TestCase):
     #     test.trainModel(optimizer='SGD', training_params=params)  # Train the traced model
     #     m.showFunctions(list(test.model_def['Functions'].keys()), xlim=[[-5, 5], [-1, 1]])
     #     m.closeFunctions()
-
-if __name__ == '__main__':
-    unittest.main()
