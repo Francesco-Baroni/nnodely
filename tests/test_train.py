@@ -16,15 +16,6 @@ sys.path.append(os.getcwd())
 data_folder = os.path.join(os.path.dirname(__file__), 'data/')
 
 class ModelyTrainingTest(unittest.TestCase):
-    def TestAlmostEqual(self, data1, data2, precision=4):
-        assert np.asarray(data1, dtype=np.float32).ndim == np.asarray(data2, dtype=np.float32).ndim, f'Inputs must have the same dimension! Received {type(data1)} and {type(data2)}'
-        if type(data1) == type(data2) == list:
-            self.assertEqual(len(data1), len(data2))
-            for pred, label in zip(data1, data2):
-                self.TestAlmostEqual(pred, label, precision=precision)
-        else:
-            self.assertAlmostEqual(data1, data2, places=precision)
-
     def test_training_values_fir(self):
         NeuObj.clearNames()
         input1 = Input('in1')
@@ -280,6 +271,3 @@ class ModelyTrainingTest(unittest.TestCase):
         ## Print the initial weights
         optimizer_defaults = {'weight_decay': 0.3,}
         example.trainModel(train_dataset='dataset', lr=0.01, num_of_epochs=2, optimizer_defaults=optimizer_defaults)
-
-if __name__ == '__main__':
-    unittest.main()

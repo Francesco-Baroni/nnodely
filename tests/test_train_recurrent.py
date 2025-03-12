@@ -1518,6 +1518,3 @@ class ModelyTrainingTest(unittest.TestCase):
         self.assertListEqual(test2.training['error1']['val'], test.training['error1']['val'])
         self.assertListEqual(test2.training['error2']['train'] , test.training['error2']['train'])
         self.assertListEqual(test2.training['error2']['val'], test.training['error2']['val'])
-
-if __name__ == '__main__':
-    unittest.main()

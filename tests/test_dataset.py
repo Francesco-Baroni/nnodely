@@ -599,7 +599,3 @@ class ModelyCreateDatasetTest(unittest.TestCase):
         self.assertListEqual(list(test.data['dataset']['x'].shape), [42, 6, 1])
         self.assertListEqual(list(test.data['dataset']['y'].shape), [42, 4, 1])
         self.assertListEqual(test.multifile['dataset'], [4, 18, 42])
-
-
-if __name__ == '__main__':
-    unittest.main()

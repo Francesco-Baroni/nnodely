@@ -1239,7 +1239,3 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         self.assertEqual((5,), np.array(result['out']).shape)
         self.assertEqual([14.0,3*14+2*3+2*1,50*3+14*2+3*1,181*3+50*2+14*1,0*3+0*2+5*1], result['out'])
 
-
-if __name__ == '__main__':
-    unittest.main()
-

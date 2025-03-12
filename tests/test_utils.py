@@ -23,6 +23,3 @@ class ModelyTrainingTest(unittest.TestCase):
 
         y = linear_interp(x,x_data,y_data)
         self.assertEqual(y.shape, x.shape)  # check that the output has the same shape as the input
-
-if __name__ == '__main__':
-    unittest.main()

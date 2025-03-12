@@ -131,8 +131,8 @@ class Pow(Stream, ToStream):
         (it is also possible to use the classical math operator '**')
 
         See also:
-            Official PyTorch Add documentation: 
-            `torch.add <https://pytorch.org/docs/stable/generated/torch.pow.html>`_
+            Official PyTorch pow documentation:
+            `torch.pow <https://pytorch.org/docs/stable/generated/torch.pow.html>`_
 
         :param input: the base of the power function
         :type obj: Tensor

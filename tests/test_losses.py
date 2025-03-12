@@ -169,6 +169,3 @@ class ModelyTrainingTest(unittest.TestCase):
 
     # def test_analysis_results_connect_state(self):
     #     pass
-
-if __name__ == '__main__':
-    unittest.main()

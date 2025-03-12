@@ -7,8 +7,8 @@ def init_constant(indexes, params_size, dict_param = {'value':1}):
     ----------
     dict_param : dict, optional
         Dictionary containing the initialization parameters. Default is {'value': 1}.
-        - value : int or float
-            The constant value to initialize the parameters with.
+            value : int or float
+                The constant value to initialize the parameters with.
     """
     return dict_param['value']
 
@@ -24,12 +24,12 @@ def init_negexp(indexes, params_size, dict_param = {'size_index':0, 'first_value
         List of sizes for each dimension of the parameters.
     dict_param : dict, optional
         Dictionary containing the initialization parameters. Default is {'size_index': 0, 'first_value': 1, 'lambda': 3}.
-        - size_index : int
-            The index of the dimension to apply the exponential function.
-        - first_value : int or float
-            The value at the start of the range.
-        - lambda : int or float
-            The decay rate parameter of the exponential function.
+            size_index : int
+                The index of the dimension to apply the exponential function.
+            first_value : int or float
+                The value at the start of the range.
+            lambda : int or float
+                The decay rate parameter of the exponential function.
     """
     import numpy as np
     size_index = dict_param['size_index']
@@ -49,14 +49,14 @@ def init_exp(indexes, params_size, dict_param = {'size_index':0, 'max_value':1, 
         List of sizes for each dimension of the parameters.
     dict_param : dict, optional
         Dictionary containing the initialization parameters. Default is {'size_index': 0, 'max_value': 1, 'lambda': 3, 'monotonicity': 'decreasing'}.
-        - size_index : int
-            The index of the dimension to apply the exponential function.
-        - max_value : int or float
-            The maximum value of the exponential function.
-        - lambda : int or float
-            The rate parameter of the exponential function.
-        - monotonicity : str
-            The monotonicity of the exponential function. Can be 'increasing' or 'decreasing'.
+            size_index : int
+                The index of the dimension to apply the exponential function.
+            max_value : int or float
+                The maximum value of the exponential function.
+            lambda : int or float
+                The rate parameter of the exponential function.
+            monotonicity : str
+                The monotonicity of the exponential function. Can be 'increasing' or 'decreasing'.
 
     Raises
     ------
@@ -90,12 +90,12 @@ def init_lin(indexes, params_size, dict_param = {'size_index':0, 'first_value':1
         List of sizes for each dimension of the parameters.
     dict_param : dict, optional
         Dictionary containing the initialization parameters. Default is {'size_index': 0, 'first_value': 1, 'last_value': 0}.
-        - size_index : int
-            The index of the dimension to apply the linear function.
-        - first_value : int or float
-            The value at the start of the range.
-        - last_value : int or float
-            The value at the end of the range.
+            size_index : int
+                The index of the dimension to apply the linear function.
+            first_value : int or float
+                The value at the start of the range.
+            last_value : int or float
+                The value at the end of the range.
     """
     size_index = dict_param['size_index']
     x = 0 if params_size[size_index]-1 == 0 else indexes[size_index]/(params_size[size_index]-1)

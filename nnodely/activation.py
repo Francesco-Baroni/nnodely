@@ -85,17 +85,17 @@ class Identity(Stream, ToStream):
 
 class Softmax(Stream, ToStream):
     """
-        Implement the Softmax relation function.
+    Implement the Softmax relation function.
 
-        See also:
-            Official PyTorch Softmax documentation: 
-            `torch.nn.Softmax <https://pytorch.org/docs/stable/generated/torch.nn.Softmax.html>`_
+    See also:
+        Official PyTorch Softmax documentation:
+        `torch.nn.Softmax <https://pytorch.org/docs/stable/generated/torch.nn.Softmax.html>`_
 
-        :param obj: The relation stream.
-        :type obj: Stream 
+    :param obj: The relation stream.
+    :type obj: Stream
 
-        Example:
-            >>> x = Softmax(x)
+    Example:
+        >>> x = Softmax(x)
     """
     @enforce_types
     def __init__(self, obj:Stream|Parameter|Constant|float|int) -> Stream:
@@ -106,22 +106,23 @@ class Softmax(Stream, ToStream):
         self.json['Relations'][self.name] = [softmax_relation_name, [obj.name]]
 
 class Sigmoid(Stream, ToStream):
-    """
-        Implement the Sigmoid relation function.
-        The Sigmoid function is defined as:
+    r"""
+    Implement the Sigmoid relation function.
+    The Sigmoid function is defined as:
 
-        see also:
-            Official PyTorch Softmax documentation:
-            `Sigmoid function <https://pytorch.org/docs/stable/generated/torch.nn.Sigmoid.html#torch.nn.Sigmoid>`_
+    see also:
+        Official PyTorch Softmax documentation:
+        `Sigmoid function <https://pytorch.org/docs/stable/generated/torch.nn.Sigmoid.html#torch.nn.Sigmoid>`_
 
-        :math:
-            \sigma(x) = \frac{1}{1 + e^{-x}}
+    .. math::
 
-        :param obj: The relation stream.
-        :type obj: Stream 
+        \sigma(x) = \frac{1}{1 + e^{-x}}
 
-        Example:
-            >>> x = Sigmoid(x)
+    :param obj: The relation stream.
+    :type obj: Stream
+
+    Example:
+        >>> x = Sigmoid(x)
     """
     @enforce_types
     def __init__(self, obj:Stream|Parameter|Constant|float|int) -> Stream:

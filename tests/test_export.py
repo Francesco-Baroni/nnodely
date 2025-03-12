@@ -329,8 +329,3 @@ class ModelyExportTest(unittest.TestCase):
 
         if os.path.exists(self.test.getWorkspace()):
             shutil.rmtree(self.test.getWorkspace())
-
-if __name__ == '__main__':
-    unittest.main()
-
-

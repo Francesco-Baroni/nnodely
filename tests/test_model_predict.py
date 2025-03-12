@@ -299,7 +299,7 @@ class ModelyPredictTest(unittest.TestCase):
         #[[0, 5], [1, 2], [2, 7], [3, 3]] * [[-1, -3], [0, 0], [1, -3], [2, 2]]
         self.assertEqual((2,4,2), np.array(results['mul2']).shape)
         self.TestAlmostEqual([[[1, 2], [0, 0], [1, 6], [4, 0]],[[0, -15], [0, 0], [2, -21], [6, 6]]], results['mul2'])
-    
+
     def test_single_in_window_offset_fir(self):
         NeuObj.clearNames()
         # The input must be scalar and the time dimension is compress to 1,
@@ -865,36 +865,37 @@ class ModelyPredictTest(unittest.TestCase):
     def test_initialization(self):
         NeuObj.clearNames()
         input = Input('in1')
-        W = Parameter('W', dimensions=(1,1), init=init_constant)
-        b = Parameter('b', dimensions=1, init=init_constant)
+        W = Parameter('W', dimensions=(1,1), init='init_constant')
+        b = Parameter('b', dimensions=1, init='init_constant')
         o = Output('out', Linear(W=W,b=b)(input.last()))
 
-        W5 = Parameter('W5', dimensions=(1,1), init=init_constant, init_params={'value':5})
-        b2 = Parameter('b2', dimensions=1, init=init_constant, init_params={'value':2})
+        W5 = Parameter('W5', dimensions=(1,1), init='init_constant', init_params={'value':5})
+        b2 = Parameter('b2', dimensions=1, init='init_constant', init_params={'value':2})
         o52 = Output('out52', Linear(W=W5,b=b2)(input.last()))
 
-        par = Parameter('par', dimensions=3, sw=2, init=init_constant)
+        par = Parameter('par', dimensions=3, sw=2, init='init_constant')
         opar = Output('outpar', Fir(W=par)(input.sw(2)))
 
-        par2 = Parameter('par2', dimensions=3, sw=2, init=init_constant, init_params={'value':2})
+        par2 = Parameter('par2', dimensions=3, sw=2, init='init_constant', init_params={'value':2})
         opar2 = Output('outpar2', Fir(W=par2)(input.sw(2)))
 
-        ol = Output('outl', Linear(output_dimension=1,b=True,W_init=init_constant,b_init=init_constant)(input.last()))
-        ol52 = Output('outl52', Linear(output_dimension=1,b=True,W_init=init_constant,b_init=init_constant,W_init_params={'value':5},b_init_params={'value':2})(input.last()))
-        ofpar = Output('outfpar', Fir(output_dimension=3,W_init=init_constant)(input.sw(2)))
-        ofpar2 = Output('outfpar2', Fir(output_dimension=3,W_init=init_constant,W_init_params={'value':2})(input.sw(2)))
+        ol = Output('outl', Linear(output_dimension=1,b=True,W_init='init_constant',b_init='init_constant')(input.last()))
+        ol52 = Output('outl52', Linear(output_dimension=1,b=True,W_init='init_constant',b_init='init_constant',W_init_params={'value':5},b_init_params={'value':2})(input.last()))
+        ofpar = Output('outfpar', Fir(output_dimension=3,W_init='init_constant')(input.sw(2)))
+        ofpar2 = Output('outfpar2', Fir(output_dimension=3,W_init='init_constant',W_init_params={'value':2})(input.sw(2)))
 
-        outnegexp = Output('outnegexp', Fir(output_dimension=3,W_init=init_negexp)(input.sw(2)))
-        outnegexp2 = Output('outnegexp2', Fir(output_dimension=3,W_init=init_negexp,W_init_params={'size_index':1, 'first_value':3, 'lambda':1})(input.sw(2)))
+        outnegexp = Output('outnegexp', Fir(output_dimension=3,W_init='init_negexp')(input.sw(2)))
+        outnegexp2 = Output('outnegexp2', Fir(output_dimension=3,W_init='init_negexp',W_init_params={'size_index':1, 'first_value':3, 'lambda':1})(input.sw(2)))
 
-        outexp = Output('outexp', Fir(output_dimension=3,W_init=init_exp)(input.sw(2)))
-        outexp2 = Output('outexp2', Fir(output_dimension=3,W_init=init_exp,W_init_params={'size_index':1, 'max_value':2, 'lambda':2, 'monotonicity':'increasing'})(input.sw(2)))
+        outexp = Output('outexp', Fir(output_dimension=3,W_init='init_exp')(input.sw(2)))
+        outexp2 = Output('outexp2', Fir(output_dimension=3,W_init='init_exp',W_init_params={'size_index':1, 'max_value':2, 'lambda':2, 'monotonicity':'increasing'})(input.sw(2)))
+        outexp2D = Output('outexp2D', Fir(output_dimension=3,W_init='init_exp',W_init_params={'size_index':1, 'max_value':2, 'lambda':2, 'monotonicity':'decreasing'})(input.sw(2)))
 
-        outlin = Output('outlin', Fir(output_dimension=3,W_init=init_lin)(input.sw(2)))
-        outlin2 = Output('outlin2', Fir(output_dimension=3,W_init=init_lin,W_init_params={'size_index':1, 'first_value':4, 'last_value':5})(input.sw(2)))
+        outlin = Output('outlin', Fir(output_dimension=3,W_init='init_lin')(input.sw(2)))
+        outlin2 = Output('outlin2', Fir(output_dimension=3,W_init='init_lin',W_init_params={'size_index':1, 'first_value':4, 'last_value':5})(input.sw(2)))
 
         n = Modely(visualizer=None,seed=1)
-        n.addModel('model',[o,o52,opar,opar2,ol,ol52,ofpar,ofpar2,outnegexp,outnegexp2,outexp,outexp2,outlin,outlin2])
+        n.addModel('model',[o,o52,opar,opar2,ol,ol52,ofpar,ofpar2,outnegexp,outnegexp2,outexp,outexp2,outexp2D,outlin,outlin2])
         n.neuralizeModel()
         results = n({'in1': [1, 1, 2]})
         self.assertEqual((2,), np.array(results['out']).shape)
@@ -926,6 +927,8 @@ class ModelyPredictTest(unittest.TestCase):
         self.TestAlmostEqual([[[1.0497870445251465,1.0497870445251465,1.0497870445251465]],[[1.099574089050293,1.099574089050293,1.099574089050293]]], results['outexp'])
         self.assertEqual((2,1,3), np.array(results['outexp2']).shape)
         self.TestAlmostEqual([[[0.5413411259651184,1.47151780128479,4]],[[0.81201171875,2.2072768211364746,6]]], results['outexp2'])
+        self.assertEqual((2,1,3), np.array(results['outexp2D']).shape)
+        self.TestAlmostEqual([[[4.0,1.47151780128479,0.5413411259651184]],[[6,2.2072768211364746,0.81201171875]]], results['outexp2D'])
 
         self.assertEqual((2,1,3), np.array(results['outlin']).shape)
         self.TestAlmostEqual([[[1,1,1]],[[1,1,1]]], results['outlin'])
@@ -1369,6 +1372,20 @@ class ModelyPredictTest(unittest.TestCase):
         results = test({'in1': [0, 1, 2]})
         self.assertEqual((3, 1, 6), np.array(results['out']).shape)
         self.assertEqual([[[1.0, 0.0, 0.0, 0.0, 0.0, 0.0]],[[0.0, 1.0, 0.0, 0.0, 0.0, 0.0]],[[0.0, 0.0, 1.0, 0.0, 0.0, 0.0]]], results['out'])
+
+        def fun(x):
+            import torch
+            return torch.sign(x)
+
+        fuz = Fuzzify(output_dimension=11, range=[-5, 5], functions=[fun,fun])(input.last())
+        out = Output('out2', fuz)
+        test.addModel('out2',[out])
+        test.neuralizeModel()
+        results = test({'in1': [0, 1, 2]})
+        self.assertEqual((3, 1, 11), np.array(results['out2']).shape)
+        self.assertEqual([[[1.0, 1.0, 1.0, 1.0, 1.0, 0.0, -1.0, -1.0, -1.0, -1.0, -1.0]],
+                                [[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, -1.0, -1.0, -1.0, -1.0]],
+                                [[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, -1.0, -1.0, -1.0]]], results['out2'])
 
     def test_sw_on_stream_sw_by_heand(self):
         NeuObj.clearNames()
@@ -1818,7 +1835,3 @@ class ModelyPredictTest(unittest.TestCase):
         self.TestAlmostEqual(results['in1_sm2'], inin_sm2)
         self.TestAlmostEqual(results['in1_sm2_2'], inin_sm2)
         self.TestAlmostEqual(results['in1_sm2_3'], inin_sm2)
-
-if __name__ == '__main__':
-    unittest.main()
-
