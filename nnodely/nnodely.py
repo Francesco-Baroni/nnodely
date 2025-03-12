@@ -1875,9 +1875,8 @@ class Modely:
         """
         Exports the neural network model to an ONNX file.
 
-        -----
         .. note::
-            The input_order must contain all the inputs and states of the model in the order that you want to export them.
+            The input_order may contain all the inputs and states of the model in the order that you want to export them.
 
         Parameters
         ----------
@@ -1932,7 +1931,6 @@ class Modely:
         """
         Run an inference session using an onnx model previously exported using the nnodely framework. 
 
-        -----
         .. note:: Feed-Forward ONNX model
             For feed-forward models, the onnx model expect all the inputs and states to have 3 dimensions. The first dimension is the batch size, the second is the time window and the third is the feature dimension.
         .. note:: Recurrent ONNX model

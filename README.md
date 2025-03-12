@@ -7,7 +7,7 @@
 [![Coverage Status](https://readthedocs.org/projects/nnodely/badge/?version=latest&style=default)](https://nnodely.readthedocs.io/en/latest/)
 
 <a name="readme-top"></a>
-## Model-structured neural network framework for the modeling and control of physical systems
+# Model-structured neural network framework for the modeling and control of physical systems
 
 Modeling, control, and estimation of physical systems are fundamental to a wide range of engineering applications. 
 However, integrating data-driven methods like neural networks into these domains presents significant challenges, 
@@ -18,7 +18,7 @@ MSNNs merge the flexibility of neural networks with structures grounded in physi
 providing a powerful tool for representing and managing complex physical systems. Moreover, a MSNN thanks to the reduced
 number of parameters needs fewer data for training and can be used in real-time applications.
 
-### Why use nnodely
+## Why use nnodely
 
 The framework's goal is to allow the users fast modeling and control of a any mechanical systems using 
 a hybrind approach between neural networks and physical models.
@@ -48,13 +48,13 @@ a Pytorch (nnodely independent) and ONNX export.
       <a href="#settingstarted">Getting Started</a>
     </li>
     <li>
-      <a href="#basicfunctionalities">Basic Functionalities</a>
+      <a href="#basicfunctionalities">Basic Example</a>
       <ul>
-        <li><a href="#structuredneuralmodel">Build the structured neural model</a></li>
-        <li><a href="#neuralizemodel">Neuralize the structured neural model</a></li>
+        <li><a href="#structuredneuralmodel">Build the neural model</a></li>
+        <li><a href="#neuralizemodel">Neuralize the neural model</a></li>
         <li><a href="#loaddataset">Load the dataset</a></li>
-        <li><a href="#trainmodel">Train the structured neural network</a></li>
-        <li><a href="#testmodel">Test the structured neural model</a></li>
+        <li><a href="#trainmodel">Train the neural model</a></li>
+        <li><a href="#testmodel">Test the neural model</a></li>
       </ul>
     </li>
     <li>
@@ -65,15 +65,14 @@ a Pytorch (nnodely independent) and ONNX export.
         <li><a href="#examplesfolder">examples folder</a></li>
       </ul>
     </li>
-    <li>
-      <a href="#license">License</a>
-    </li>
+    <li><a href="#license">License</a></li>
+    <li><a href="#references">References</a></li>
   </ol>
 </details>
 
 <!-- GETTING STARTED -->
 <a name="settingstarted"></a>
-### Getting Started
+## Getting Started
 You can install the nnodely framework from PyPI via:
   ```sh
   pip install nnodely
@@ -147,7 +146,7 @@ Our formulation is more general and can take into account the noise of the measu
 The estimator can also be seen as the composition of the force contributions due to the position and velocity of the mass plus the contribution of external forces.
 
 <a name="neuralizemodel"></a>
-### Neuralize the structured neural model
+### Neuralize the neural model
 Let's now try to train our observer using the data we have.
 We perform:
 ```python
@@ -189,7 +188,7 @@ mass_spring_damper.loadData(name='mass_spring_dataset', source=data_folder, form
 Finally, the dataset is loaded. **nnodely** loads all the files that are in a source folder.
 
 <a name="trainmodel"></a>
-### Train the structured neural network
+### Train the neural network
 Using the dataset created the training is performed on the model.
 
 ```python
@@ -197,7 +196,7 @@ mass_spring_damper.trainModel()
 ```
 
 <a name="testmodel"></a>
-### Test the structured neural model
+### Test the neural model
 In order to test the results we need to create a input, in this case is defined by:
 1. `x` with 5 sample because the sample time is 0.2 and the window of `x`is 1 second.
 2. `F` is one sample because only the last sample is needed.
@@ -285,6 +284,7 @@ This project is released under the license [License: MIT](https://opensource.org
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+<a name="references"></a>
 ## References
 <a id="1">[1]</a> 
 Mauro Da Lio, Daniele Bortoluzzi, Gastone Pietro Rosati Papini. (2019). 
@@ -316,3 +316,5 @@ and [[code extended]](https://github.com/tonegas/nnodely-applications/blob/main/
 Hector Perez-Villeda, Justus Piater, Matteo Saveriano. (2023).
 Learning and extrapolation of robotic skills using task-parameterized equation learner networks.
 Robotics and Autonomous Systems. https://doi.org/10.1016/j.robot.2022.104309
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>

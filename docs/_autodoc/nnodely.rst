@@ -10,7 +10,7 @@ Modely
 Model structured NN Inputs Outputs and Parameters
 =================================================
 
-input module
+Input module
 ------------
 
 .. automodule:: nnodely.input
@@ -27,7 +27,7 @@ input module
         :inherited-members:
         :exclude-members: count, resetCount
 
-output module
+Output module
 -------------
 
 .. automodule:: nnodely.output
@@ -39,7 +39,7 @@ output module
         :inherited-members:
         :exclude-members: count, resetCount, closedLoop, connect, tw, sw, z
 
-parameter module
+Parameter module
 ----------------
 
 .. automodule:: nnodely.parameter
@@ -50,23 +50,27 @@ parameter module
         :undoc-members:
         :no-inherited-members:
 
+    .. autoclass:: nnodely.parameter.SampleTime
+        :undoc-members:
+        :no-inherited-members:
+
     .. autoclass:: nnodely.parameter.Parameter
         :undoc-members:
         :no-inherited-members:
 
-initializer module
+Initializer module
 ^^^^^^^^^^^^^^^^^^
 
-.. automodule:: nnodely.initializer
-    :undoc-members:
-    :no-inherited-members:
+    .. automodule:: nnodely.initializer
+        :undoc-members:
+        :no-inherited-members:
 
-    .. autofunction:: nnodely.initializer.init_constant
-    .. autofunction:: nnodely.initializer.init_negexp
-    .. autofunction:: nnodely.initializer.init_exp
-    .. autofunction:: nnodely.initializer.init_lin
+        .. autofunction:: nnodely.initializer.init_constant
+        .. autofunction:: nnodely.initializer.init_negexp
+        .. autofunction:: nnodely.initializer.init_exp
+        .. autofunction:: nnodely.initializer.init_lin
 
-relation module
+Relation module
 ---------------
 
 .. automodule:: nnodely.relation
@@ -74,13 +78,13 @@ relation module
     :no-inherited-members:
 
     .. autoclass:: nnodely.relation.Stream
-        :undoc-members:
+        :members:
         :no-inherited-members:
 
 Model structured NN building blocks
 ===================================
 
-activation module
+Activation module
 -----------------
 
 .. automodule:: nnodely.activation
@@ -107,7 +111,7 @@ activation module
         :undoc-members:
         :no-inherited-members:
 
-arithmetic module
+Arithmetic module
 -----------------
 
 .. automodule:: nnodely.arithmetic
@@ -138,7 +142,7 @@ arithmetic module
         :undoc-members:
         :no-inherited-members:
 
-fir module
+Fir module
 ----------
 
 .. automodule:: nnodely.fir
@@ -149,7 +153,7 @@ fir module
         :undoc-members:
         :no-inherited-members:
 
-fuzzify module
+Fuzzify module
 --------------
 
 .. automodule:: nnodely.fuzzify
@@ -160,18 +164,18 @@ fuzzify module
         :undoc-members:
         :no-inherited-members:
 
-equationlearner module
-----------------------
+Equation Learner module
+-----------------------
 
 .. automodule:: nnodely.equationlearner
     :undoc-members:
     :no-inherited-members:
 
-    .. autoclass:: nnodely.localmodel.EquationLearner
+    .. autoclass:: nnodely.equationlearner.EquationLearner
         :undoc-members:
         :no-inherited-members:
 
-linear module
+Linear module
 -------------
 
 .. automodule:: nnodely.linear
@@ -183,7 +187,7 @@ linear module
         :no-inherited-members:
 
 
-localmodel module
+Localmodel module
 -----------------
 
 .. automodule:: nnodely.localmodel
@@ -194,7 +198,7 @@ localmodel module
         :undoc-members:
         :no-inherited-members:
 
-part module
+Part module
 -----------
 
 .. automodule:: nnodely.part
@@ -221,7 +225,7 @@ part module
         :undoc-members:
         :no-inherited-members:
 
-trigonometric module
+Trigonometric module
 --------------------
 
 .. automodule:: nnodely.trigonometric
@@ -252,8 +256,8 @@ trigonometric module
         :undoc-members:
         :no-inherited-members:
 
-parametricfunction module
--------------------------
+Parametric Function module
+--------------------------
 
 .. automodule:: nnodely.parametricfunction
     :undoc-members:

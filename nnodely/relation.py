@@ -109,6 +109,9 @@ class Relation():
         return Neg(self)
 
 class Stream(Relation):
+    """
+    Represents a stream of data inside the neural network. A Stream is automatically create when you operate over a Input, State, Parameter, or Constant object.
+    """
     count = 0
     @classmethod
     def resetCount(self):
