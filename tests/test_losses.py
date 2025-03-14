@@ -1,5 +1,6 @@
 import unittest, os, sys
 import numpy as np
+import torch
 
 from nnodely import *
 from nnodely.relation import NeuObj
@@ -164,8 +165,25 @@ class ModelyTrainingTest(unittest.TestCase):
         self.TestAlmostEqual(test.performance['validation_dataset_0.50']['error1']['mse'], test.training['error1']['val'][-1])
         self.TestAlmostEqual(test.performance['validation_dataset_0.50']['error2']['mse'], test.training['error2']['val'][-1])
 
-    # def test_analysis_results_connect(self):
-    #     pass
+    def test_categorical_crossentropy(self):
+        NeuObj.clearNames()
+        input1 = Input('in1')
+        target1 = Input('out1')
+        target2 = Input('out2', dimensions=5)
+        
+        k = Parameter('k',  values=[[0.1,0.1,0.1,0.1,0.6]])
+        linear = Linear(output_dimension=5, W=k, b=False)(input1.last())
+        output = Output('out', linear)
 
-    # def test_analysis_results_connect_state(self):
-    #     pass
+        test = Modely(visualizer=TextVisualizer(), seed=42, log_internal=True)
+        test.addModel('model', output)
+        test.addMinimize('error1', output, target1.last(), loss_function='cross_entropy')
+        test.addMinimize('error2', output, target2.last(), loss_function='cross_entropy')
+        test.neuralizeModel()
+        
+        dataset = {'in1': [1], 'out1': [4], 'out2':[[0.0,0.0,0.0,0.0,1.0]]}
+        test.loadData(name='dataset', source=dataset)
+        test.trainModel(optimizer='SGD', train_dataset='dataset', train_batch_size=1, num_of_epochs=1, lr=0.0)
+        loss = torch.nn.CrossEntropyLoss()
+        self.assertAlmostEqual(1.2314292192459106, loss(torch.tensor(test.prediction['dataset']['error1']['A']).squeeze(), torch.tensor(test.prediction['dataset']['error1']['B'], dtype=torch.long).squeeze()).item())
+        self.assertAlmostEqual(1.2314292192459106, loss(torch.tensor(test.prediction['dataset']['error2']['A']).squeeze(), torch.tensor(test.prediction['dataset']['error2']['B'], dtype=torch.float32).squeeze()).item())

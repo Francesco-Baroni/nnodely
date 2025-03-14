@@ -58,7 +58,7 @@ class Add(Stream, ToStream):
     @enforce_types
     def __init__(self, obj1:Stream|Parameter|Constant|int|float, obj2:Stream|Parameter|Constant|int|float) -> Stream:
         obj1, obj2 = aritmetic_cheks(self, obj1, obj2, 'addition operators (+)')
-        super().__init__(add_relation_name + str(Stream.count),merge(obj1.json,obj2.json),obj1.dim)
+        super().__init__(add_relation_name + str(Stream.count),merge(obj1.json,obj2.json),merge(obj1.dim,obj2.dim,False))
         self.json['Relations'][self.name] = [add_relation_name,[obj1.name,obj2.name]]
 
 ## TODO: check the scalar dimension, helpful for the offset
@@ -80,7 +80,7 @@ class Sub(Stream, ToStream):
     @enforce_types
     def __init__(self, obj1:Stream|Parameter|Constant|int|float, obj2:Stream|Parameter|Constant|int|float) -> Stream:
         obj1, obj2 = aritmetic_cheks(self, obj1, obj2, 'subtraction operators (-)')
-        super().__init__(sub_relation_name + str(Stream.count),merge(obj1.json,obj2.json),obj1.dim)
+        super().__init__(sub_relation_name + str(Stream.count),merge(obj1.json,obj2.json),merge(obj1.dim,obj2.dim,False))
         self.json['Relations'][self.name] = [sub_relation_name,[obj1.name,obj2.name]]
 
 class Mul(Stream, ToStream):
@@ -101,7 +101,7 @@ class Mul(Stream, ToStream):
     @enforce_types
     def __init__(self, obj1:Stream|Parameter|Constant|int|float, obj2:Stream|Parameter|Constant|int|float) -> Stream:
         obj1, obj2 = aritmetic_cheks(self, obj1, obj2, 'multiplication operators (*)')
-        super().__init__(mul_relation_name + str(Stream.count),merge(obj1.json,obj2.json),obj1.dim)
+        super().__init__(mul_relation_name + str(Stream.count),merge(obj1.json,obj2.json),merge(obj1.dim,obj2.dim,False))
         self.json['Relations'][self.name] = [mul_relation_name,[obj1.name,obj2.name]]
 
 class Div(Stream, ToStream):
@@ -122,7 +122,7 @@ class Div(Stream, ToStream):
     @enforce_types
     def __init__(self, obj1:Stream|Parameter|Constant|int|float, obj2:Stream|Parameter|Constant|int|float) -> Stream:
         obj1, obj2 = aritmetic_cheks(self, obj1, obj2, 'division operators (/) ')
-        super().__init__(div_relation_name + str(Stream.count),merge(obj1.json,obj2.json),obj1.dim)
+        super().__init__(div_relation_name + str(Stream.count),merge(obj1.json,obj2.json),merge(obj1.dim,obj2.dim,False))
         self.json['Relations'][self.name] = [div_relation_name,[obj1.name,obj2.name]]
 
 class Pow(Stream, ToStream):
@@ -147,7 +147,7 @@ class Pow(Stream, ToStream):
     @enforce_types
     def __init__(self, obj1:Stream|Parameter|Constant|int|float, obj2:Stream|Parameter|Constant|int|float) -> Stream:
         obj1, obj2 = aritmetic_cheks(self, obj1, obj2, 'pow operators (**)')
-        super().__init__(pow_relation_name + str(Stream.count),merge(obj1.json,obj2.json),obj1.dim)
+        super().__init__(pow_relation_name + str(Stream.count),merge(obj1.json,obj2.json),merge(obj1.dim,obj2.dim,False))
         self.json['Relations'][self.name] = [pow_relation_name,[obj1.name,obj2.name]]
 
 class Neg(Stream, ToStream):

@@ -118,7 +118,7 @@ class Linear(NeuObj, AutoToStream):
             W_json = Parameter(name=self.Wname, dimensions=self.output_dimension, init=W_init, init_params=W_init_params).json
         self.json = merge(self.json,W_json)
 
-        if self.b is not None:
+        if self.b is not None and self.b is not False:
             if type(self.b) is Parameter:
                 check('tw' not in self.b.dim and 'sw' not in self.b.dim, TypeError, f'The "bias" must no have a time dimensions but got {self.b.dim}.')
                 check(type(self.b.dim['dim']) is int, TypeError, 'The "b" dimensions must be an integer.')
