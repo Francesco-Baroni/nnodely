@@ -524,6 +524,12 @@ class Modely:
                 dim = state['dim']
                 self.states[key] = torch.zeros(size=(batch, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
 
+    def __addInfo(self):
+        total_params = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
+        self.model_def['Info']['num_parameters'] = total_params
+        from nnodely import __version__
+        self.model_def['Info']['nnodely_version'] = __version__
+
     def neuralizeModel(self, sample_time = None, clear_model = False, model_def = None):
         """
         Neuralizes the model, preparing it for inference and training. This method creates a neural network model starting from the model definition.
@@ -565,6 +571,7 @@ class Modely:
 
         self.model_def.setBuildWindow(sample_time)
         self.model = Model(self.model_def.json)
+        self.__addInfo()
 
         input_ns_backward = {key:value['ns'][0] for key, value in (self.model_def['Inputs']|self.model_def['States']).items()}
         input_ns_forward = {key:value['ns'][1] for key, value in (self.model_def['Inputs']|self.model_def['States']).items()}
@@ -1637,7 +1644,7 @@ class Modely:
                         p2 = p3 = 0.0
                 log_likelihood = p1+p2+p3
                 #print(f"{key} log likelihood second mode:{log_likelihood} = {p1}+{p2}+{p3} first mode: {log_likelihood_first}")
-                total_params = sum(p.numel() for p in self.model.parameters() if p.requires_grad) #TODO to be check the number is doubled
+                total_params = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
                 #print(f"{key} total_params:{total_params}")
                 aic = - 2 * log_likelihood + 2 * total_params
                 #print(f"{key} aic:{aic}")
