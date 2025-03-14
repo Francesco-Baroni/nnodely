@@ -877,7 +877,7 @@ class ModelyPredictTest(unittest.TestCase):
         opar = Output('outpar', Fir(W=par)(input.sw(2)))
 
         par2 = Parameter('par2', dimensions=3, sw=2, init='init_constant', init_params={'value':2})
-        opar2 = Output('outpar2', Fir(W=par2)(input.sw(2)))
+        opar2 = Output('outpar2', Fir(W=par2, b=False)(input.sw(2)))
 
         ol = Output('outl', Linear(output_dimension=1,b=True,W_init='init_constant',b_init='init_constant')(input.last()))
         ol52 = Output('outl52', Linear(output_dimension=1,b=True,W_init='init_constant',b_init='init_constant',W_init_params={'value':5},b_init_params={'value':2})(input.last()))
