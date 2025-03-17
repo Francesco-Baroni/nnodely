@@ -1835,3 +1835,44 @@ class ModelyPredictTest(unittest.TestCase):
         self.TestAlmostEqual(results['in1_sm2'], inin_sm2)
         self.TestAlmostEqual(results['in1_sm2_2'], inin_sm2)
         self.TestAlmostEqual(results['in1_sm2_3'], inin_sm2)
+
+    def test_derivate_wrt_input(self):
+        NeuObj.clearNames()
+        x = Input('x')
+
+        x_last = x.last()
+
+        def parametric_fun(x, a, b, c, d):
+            import torch
+            return x ** 3 * a + x ** 2 * b + torch.sin(x) * c + d
+
+        def dx_parametric_fun(x, a, b, c, d):
+            import torch
+            return (3 * x ** 2 * a) + (2 * x * b) + c * torch.cos(x)
+
+        fun = ParamFun(parametric_fun,['a','b','c','d'])(x_last)
+        approx_y = Output('out', fun)
+        approx_dy_dx = Output('d_out', Derivate(fun, x_last))
+
+        test = Modely(visualizer=None, seed=12)
+
+        test.addModel('model', [approx_dy_dx, approx_y])
+        test.neuralizeModel()
+        results = test({'x':[1,2]})
+        self.assertEqual(results['out'][0], parametric_fun(torch.tensor(1), test.model.all_parameters['a'],
+                                                            test.model.all_parameters['b'],
+                                                            test.model.all_parameters['c'],
+                                                            test.model.all_parameters['d']).detach().numpy().tolist()[0])
+        self.assertEqual(results['d_out'][0], dx_parametric_fun(torch.tensor(1), test.model.all_parameters['a'],
+                                                            test.model.all_parameters['b'],
+                                                            test.model.all_parameters['c'],
+                                                            test.model.all_parameters['d']).detach().numpy().tolist()[0])
+        self.assertAlmostEqual(results['out'][1], parametric_fun(torch.tensor(2), test.model.all_parameters['a'],
+                                                            test.model.all_parameters['b'],
+                                                            test.model.all_parameters['c'],
+                                                            test.model.all_parameters['d']).detach().numpy().tolist()[0],places=5)
+        self.assertAlmostEqual(results['d_out'][1], dx_parametric_fun(torch.tensor(2), test.model.all_parameters['a'],
+                                                            test.model.all_parameters['b'],
+                                                            test.model.all_parameters['c'],
+                                                            test.model.all_parameters['d']).detach().numpy().tolist()[0],places=5)
+

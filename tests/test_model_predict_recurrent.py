@@ -374,32 +374,32 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         self.assertEqual(result['out_x'], [15.0])
         self.assertEqual(result['out_y'], [0.0])
         self.assertEqual(result['out_z'], [0.0])
-        self.assertEqual(test.states['y'].numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [0.0]]])
-        self.assertEqual(test.states['z'].numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [0.0]]])
+        self.assertEqual(test.states['y'].detach().numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [0.0]]])
+        self.assertEqual(test.states['z'].detach().numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [0.0]]])
         ## 1 sample prediction with state variables all initialized
         result = test(inputs={'x':[1,2,3,4,5], 'y':[1,2,3,4,5], 'z':[1,2,3,4,5]})
         self.assertEqual(result['out'], [90.0])
         self.assertEqual(result['out_x'], [15.0])
         self.assertEqual(result['out_y'], [30.0])
         self.assertEqual(result['out_z'], [45.0])
-        self.assertEqual(test.states['y'].numpy().tolist(), [[[2.0], [3.0], [4.0], [5.0], [30.0]]])
-        self.assertEqual(test.states['z'].numpy().tolist(), [[[2.0], [3.0], [4.0], [5.0], [45.0]]])
+        self.assertEqual(test.states['y'].detach().numpy().tolist(), [[[2.0], [3.0], [4.0], [5.0], [30.0]]])
+        self.assertEqual(test.states['z'].detach().numpy().tolist(), [[[2.0], [3.0], [4.0], [5.0], [45.0]]])
         ## clear state of y
         test.resetStates({'y'})
-        self.assertEqual(test.states['y'].numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [0.0]]])
-        self.assertEqual(test.states['z'].numpy().tolist(), [[[2.0], [3.0], [4.0], [5.0], [45.0]]])
+        self.assertEqual(test.states['y'].detach().numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [0.0]]])
+        self.assertEqual(test.states['z'].detach().numpy().tolist(), [[[2.0], [3.0], [4.0], [5.0], [45.0]]])
         ## multi-sample prediction with states initialized as many times as they have values
         result = test(inputs={'x':[1,2,3,4,5,6,7,8,9], 'y':[1,2,3,4,5,6,7], 'z':[1,2,3,4,5,6]})
         self.assertEqual(result['out'], [90.0, 120.0, 309.0, 1101.0, 4155.0])
         self.assertEqual(result['out_x'], [15.0, 20.0, 25.0, 30.0, 35.0])
         self.assertEqual(result['out_y'], [30.0, 40.0, 50.0, 144.0, 424.0])
         self.assertEqual(result['out_z'], [45.0, 60.0, 234.0, 927.0, 3696.0])
-        self.assertEqual(test.states['y'].numpy().tolist(), [[[6.0], [7.0], [50.0], [144.0], [424.0]]])
-        self.assertEqual(test.states['z'].numpy().tolist(), [[[6.0], [60.0], [234.0], [927.0], [3696.0]]])
+        self.assertEqual(test.states['y'].detach().numpy().tolist(), [[[6.0], [7.0], [50.0], [144.0], [424.0]]])
+        self.assertEqual(test.states['z'].detach().numpy().tolist(), [[[6.0], [60.0], [234.0], [927.0], [3696.0]]])
         ## Clear all states
         test.resetStates()
-        self.assertEqual(test.states['y'].numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [0.0]]])
-        self.assertEqual(test.states['z'].numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [0.0]]])
+        self.assertEqual(test.states['y'].detach().numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [0.0]]])
+        self.assertEqual(test.states['z'].detach().numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [0.0]]])
 
     def test_predict_values_and_states_3states_more_window_closed_loop_predict(self):
         NeuObj.clearNames()
@@ -472,8 +472,8 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         self.assertEqual(result['out_x'], [15.0])
         self.assertEqual(result['out_y'], [30.0])
         self.assertEqual(result['out_z'], [45.0])
-        self.assertEqual(test.states['y'].numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [15.0]]])
-        self.assertEqual(test.states['z'].numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [15.0]]])
+        self.assertEqual(test.states['y'].detach().numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [15.0]]])
+        self.assertEqual(test.states['z'].detach().numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [15.0]]])
         # Replace insead of rolling
         # self.assertEqual(test.model.states['y'].numpy().tolist(), [[[0.0], [0.0], [0.0], [15.0], [0.0]]])
         # self.assertEqual(test.model.states['z'].numpy().tolist(), [[[0.0], [0.0], [0.0], [15.0], [0.0]]])
@@ -484,8 +484,8 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         self.assertEqual(result['out'], [160.0])
         self.assertEqual(result['out_y'], [58.0])
         self.assertEqual(result['out_z'], [87.0])
-        self.assertEqual(test.states['y'].numpy().tolist(), [[[2.0], [3.0], [4.0], [5.0], [15.0]]])
-        self.assertEqual(test.states['z'].numpy().tolist(), [[[2.0], [3.0], [4.0], [5.0], [15.0]]])
+        self.assertEqual(test.states['y'].detach().numpy().tolist(), [[[2.0], [3.0], [4.0], [5.0], [15.0]]])
+        self.assertEqual(test.states['z'].detach().numpy().tolist(), [[[2.0], [3.0], [4.0], [5.0], [15.0]]])
         # Replace instead of rolling
         #(1+2+3+4+5)+(1+2+3+4+(1+2+3+4+5))*2+(1+2+3+4+(1+2+3+4+5))*3
         # self.assertEqual(result['out'], [140.0])
@@ -495,8 +495,8 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         # self.assertEqual(test.model.states['z'].numpy().tolist(), [[[2.0], [3.0], [4.0], [15.0], [1.0]]])
         ## clear state of y
         test.resetStates({'y'})
-        self.assertEqual(test.states['y'].numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [0.0]]])
-        self.assertEqual(test.states['z'].numpy().tolist(), [[[2.0], [3.0], [4.0], [5.0], [15.0]]])
+        self.assertEqual(test.states['y'].detach().numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [0.0]]])
+        self.assertEqual(test.states['z'].detach().numpy().tolist(), [[[2.0], [3.0], [4.0], [5.0], [15.0]]])
         # # Replace insead of rolling
         # ## clear state of y
         # test.resetStates({'y'})
@@ -508,8 +508,8 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         self.assertEqual(result['out_y'], [2*(2+3+4+5+15), 2*(3+4+5+6+20), 2*(4+5+6+7+25), 2*(5+6+7+25+30), 2*(6+7+25+30+35)])
         self.assertEqual(result['out_z'], [3*(2+3+4+5+15), 3*(3+4+5+6+20), 3*(4+5+6+20+25), 3*(5+6+20+25+30), 3*(6+20+25+30+35)])
         self.assertEqual(result['out'], [sum(x) for x in zip(result['out_x'],result['out_y'],result['out_z'])])
-        self.assertEqual(test.states['y'].numpy().tolist(), [[[6.0], [7.0], [25.0], [30.0], [35.0]]])
-        self.assertEqual(test.states['z'].numpy().tolist(), [[[6.0], [20.0], [25.0], [30.0], [35.0]]])
+        self.assertEqual(test.states['y'].detach().numpy().tolist(), [[[6.0], [7.0], [25.0], [30.0], [35.0]]])
+        self.assertEqual(test.states['z'].detach().numpy().tolist(), [[[6.0], [20.0], [25.0], [30.0], [35.0]]])
         # Replace instead of rolling
         # self.assertEqual(result['out_y'], [2*(1+2+3+4+15), 2*(2+3+4+5+20), 2*(3+4+5+6+25), 2*(4+5+6+25+30), 2*(5+6+25+30+35)])
         # self.assertEqual(result['out_z'], [3*(1+2+3+4+15), 3*(2+3+4+5+20), 3*(3+4+5+20+25), 3*(4+5+20+25+30), 3*(5+20+25+30+35)])
@@ -518,8 +518,8 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         # self.assertEqual(test.model.states['z'].numpy().tolist(), [[[20.0], [25.0], [30.0], [35.0], [5.0]]])
         ## Clear all states
         test.resetStates()
-        self.assertEqual(test.states['y'].numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [0.0]]])
-        self.assertEqual(test.states['z'].numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [0.0]]])
+        self.assertEqual(test.states['y'].detach().numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [0.0]]])
+        self.assertEqual(test.states['z'].detach().numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [0.0]]])
 
     def test_predict_values_and_states_2states_more_window_connect_predict(self):
         NeuObj.clearNames()
@@ -727,9 +727,9 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         test.neuralizeModel(0.01)
 
         result = test(inputs={'x_state':[1, 2, 3]})
-        self.assertEqual(test.states['x_state'].numpy().tolist(), [[[2.],[3.],[6.]]])
+        self.assertEqual(test.states['x_state'].detach().numpy().tolist(), [[[2.],[3.],[6.]]])
         result = test()
-        self.assertEqual(test.states['x_state'].numpy().tolist(), [[[3.],[6.],[11.]]])
+        self.assertEqual(test.states['x_state'].detach().numpy().tolist(), [[[3.],[6.],[11.]]])
 
     def test_predict_values_linear_and_fir_2models_same_window_connect(self):
         NeuObj.clearNames()

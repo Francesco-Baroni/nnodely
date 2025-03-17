@@ -277,7 +277,8 @@ class Modely:
             result_dict[key] = []
 
         ## Inference
-        with torch.inference_mode():
+        #TODO capire se può essere sostituita in qualche modo with torch.inference_mode():
+        if True:
             self.model.eval()
             ## Update with virtual states
             if prediction_samples is not None:
@@ -290,7 +291,7 @@ class Modely:
             for idx in range(window_dim):
                 ## Get mandatory data inputs
                 for key in mandatory_inputs:
-                    X[key] = inputs[key][idx:idx+1] if sampled else inputs[key][:, idx:idx + self.input_n_samples[key]]
+                    X[key] = inputs[key][idx:idx+1].clone().detach().requires_grad_(True) if sampled else inputs[key][:, idx:idx + self.input_n_samples[key]].clone().detach().requires_grad_(True)
                 ## reset states
                 if count == 0 or prediction_samples=='auto':
                     count = prediction_samples
@@ -1432,7 +1433,7 @@ class Modely:
 
     def __Train(self, data, n_samples, batch_size, loss_gains, shuffle=True, train=True):
         check((n_samples - batch_size + 1) > 0, ValueError,
-              f"The number of available sample are (n_samples_train - train_batch_size + 1) = {n_samples - batch_size + 1}.")
+              f"The number of available sample are (n_samples_tqrain - train_batch_size + 1) = {n_samples - batch_size + 1}.")
         if shuffle:
             randomize = torch.randperm(n_samples)
             data = {key: val[randomize] for key, val in data.items()}
@@ -1440,7 +1441,7 @@ class Modely:
         aux_losses = torch.zeros([len(self.model_def['Minimizers']),n_samples//batch_size])
         for idx in range(0, (n_samples - batch_size + 1), batch_size):
             ## Build the input tensor
-            XY = {key: val[idx:idx+batch_size] for key, val in data.items()}
+            XY = {key: val[idx:idx+batch_size].clone().detach().requires_grad_(True) for key, val in data.items()}
             ## Reset gradient
             if train:
                 self.optimizer.zero_grad()
@@ -1464,7 +1465,8 @@ class Modely:
 
     def resultAnalysis(self, dataset, data = None, minimize_gain = {}, closed_loop = {}, connect = {},  prediction_samples = None, step = 0, batch_size = None):
         import warnings
-        with torch.inference_mode():
+        #TODO capire se può essere sostituita in qualche modo with torch.inference_mode():
+        if True:
             ## Init model for retults analysis
             self.model.eval()
             self.performance[dataset] = {}
@@ -1560,8 +1562,8 @@ class Modely:
 
                         ## Loss Calculation
                         for key, value in self.model_def['Minimizers'].items():
-                            A[key][horizon_idx].append(minimize_out[value['A']])
-                            B[key][horizon_idx].append(minimize_out[value['B']])
+                            A[key][horizon_idx].append(minimize_out[value['A']].detach().numpy())
+                            B[key][horizon_idx].append(minimize_out[value['B']].detach().numpy())
                             loss = losses[key](minimize_out[value['A']], minimize_out[value['B']])
                             loss = (loss * minimize_gain[key]) if key in minimize_gain.keys() else loss  ## Multiply by the gain if necessary
                             horizon_losses[key].append(loss)
@@ -1596,14 +1598,14 @@ class Modely:
 
                 for idx in range(0, (n_samples - batch_size + 1), batch_size):
                     ## Build the input tensor
-                    XY = {key: val[idx:idx + batch_size] for key, val in data.items()}
+                    XY = {key: val[idx:idx + batch_size].clone().detach().requires_grad_(True) for key, val in data.items()}
 
                     ## Model Forward
                     _, minimize_out, _, _ = self.model(XY)  ## Forward pass
                     ## Loss Calculation
                     for key, value in self.model_def['Minimizers'].items():
-                        A[key].append(minimize_out[value['A']].numpy())
-                        B[key].append(minimize_out[value['B']].numpy())
+                        A[key].append(minimize_out[value['A']].detach().numpy())
+                        B[key].append(minimize_out[value['B']].detach().numpy())
                         loss = losses[key](minimize_out[value['A']], minimize_out[value['B']])
                         loss = (loss * minimize_gain[key]) if key in minimize_gain.keys() else loss
                         total_losses[key].append(loss.detach().numpy())
