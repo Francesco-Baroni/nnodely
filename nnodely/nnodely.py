@@ -299,7 +299,7 @@ class Modely:
                         ## if prediction_samples is 'auto' and i have enough samples
                         ## if prediction_samples is NOT 'auto' but i have enough extended window (with zeros)
                         if (key in inputs.keys() and prediction_samples == 'auto' and idx < num_of_windows[key]) or (key in inputs.keys() and prediction_samples != 'auto' and idx < inputs[key].shape[1]):
-                            X[key] = inputs[key][idx:idx+1].clone() if sampled else inputs[key][:, idx:idx + self.input_n_samples[key]].clone()
+                            X[key] = inputs[key][idx:idx+1].clone() if sampled else inputs[key][:, idx:idx + self.input_n_samples[key]].clone().detach().requires_grad_(True)
                         ## if im in the first reset
                         ## if i have a state in memory
                         ## if i have prediction_samples = 'auto' and not enough samples
@@ -308,7 +308,7 @@ class Modely:
                         else: ## if i have no samples and no states
                             window_size = self.input_n_samples[key]
                             dim = self.model_def['Inputs'][key]['dim'] if key in model_inputs else self.model_def['States'][key]['dim']
-                            X[key] = torch.zeros(size=(1, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
+                            X[key] = torch.zeros(size=(1, window_size, dim), dtype=TORCH_DTYPE, requires_grad=True)
                             self.states[key] = X[key]
                     first = False
                 else:
@@ -1372,17 +1372,17 @@ class Modely:
             for key in non_mandatory_inputs:
                 if key in data.keys():
                 ## with data
-                    X[key] = data[key][idxs]
+                    X[key] = data[key][idxs].clone().detach().requires_grad_(True)
                 else: ## with zeros
                     window_size = self.input_n_samples[key]
                     dim = self.model_def['Inputs'][key]['dim'] if key in model_inputs else self.model_def['States'][key]['dim']
-                    X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
+                    X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=True)
                     self.states[key] = X[key]
 
             for horizon_idx in range(prediction_samples + 1):
                 ## Get data 
                 for key in mandatory_inputs:
-                    X[key] = data[key][[idx+horizon_idx for idx in idxs]]
+                    X[key] = data[key][[idx+horizon_idx for idx in idxs]].clone().detach().requires_grad_(True)
                 ## Forward pass
                 out, minimize_out, out_closed_loop, out_connect = self.model(X)
 
@@ -1546,17 +1546,17 @@ class Modely:
                     for key in non_mandatory_inputs:
                         if key in data.keys(): # and len(data[key]) >= (idx + self.input_n_samples[key]): 
                         ## with data
-                            X[key] = data[key][idxs]
+                            X[key] = data[key][idxs].clone().detach().requires_grad_(True)
                         else: ## with zeros
                             window_size = self.input_n_samples[key]
                             dim = self.model_def['Inputs'][key]['dim'] if key in model_inputs else self.model_def['States'][key]['dim']
-                            X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
+                            X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=True)
                             self.states[key] = X[key]
 
                     for horizon_idx in range(prediction_samples + 1):
                         ## Get data 
                         for key in mandatory_inputs:
-                            X[key] = data[key][[idx+horizon_idx for idx in idxs]]
+                            X[key] = data[key][[idx+horizon_idx for idx in idxs]].clone().detach().requires_grad_(True)
                         ## Forward pass
                         out, minimize_out, out_closed_loop, out_connect = self.model(X)
 
