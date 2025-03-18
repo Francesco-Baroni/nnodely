@@ -1518,3 +1518,41 @@ class ModelyTrainingTest(unittest.TestCase):
         self.assertListEqual(test2.training['error1']['val'], test.training['error1']['val'])
         self.assertListEqual(test2.training['error2']['train'] , test.training['error2']['train'])
         self.assertListEqual(test2.training['error2']['val'], test.training['error2']['val'])
+
+    def test_train_derivate_wrt_input_closed_loop(self):
+        NeuObj.clearNames()
+        x = Input('x')
+        y = State('y')
+        x_last = x.last()
+        y_last = y.last()
+
+        p=Parameter('fir',sw=1,values=[[-0.5]])
+        fun = Sin(x_last) + Fir(W=p)(x_last) + Cos(y_last)
+        out_der = Derivate(fun, x_last) + Derivate(fun, y_last)
+        out_der.closedLoop(y)
+        out = Output('out', out_der)
+
+        m = Modely(visualizer=None)
+        m.addModel('model', [out])
+        m.addMinimize('error', out, x.next())
+        m.neuralizeModel()
+        print(m({'x': [1, 2, 3, 4, 5], 'y': [1, 2]}, closed_loop={'x': 'out'}, num_of_samples=10))
+
+        K = -0.5
+
+        def fun_data(x, y, K):
+            return K + np.cos(x) - np.sin(y)
+
+        x_data, y_data = [], []
+        x = 0.0
+        y = 0.0
+        for i in range(100):
+            x = y = fun_data(x, y, K)
+            x_data.append(x)
+            y_data.append(y)
+
+        dataset = {'x': x_data, 'y': y_data}
+        m.loadData('dataset', dataset)
+        m.trainModel(lr=0.7, num_of_epochs=100,  prediction_samples=7, closed_loop={'x': 'out'})
+        print(m.model.all_parameters['fir'])
+

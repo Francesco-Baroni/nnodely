@@ -1239,3 +1239,54 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         self.assertEqual((5,), np.array(result['out']).shape)
         self.assertEqual([14.0,3*14+2*3+2*1,50*3+14*2+3*1,181*3+50*2+14*1,0*3+0*2+5*1], result['out'])
 
+    def test_derivate_wrt_input_closed_loop(self):
+        log.setAllLevel(logging.WARNING)
+        NeuObj.clearNames()
+        x = State('x')
+        y = State('y')
+        x_last = x.last()
+        y_last = y.last()
+        x_next = x.next()
+        x_sw = x.sw([2,3])
+
+        p=Parameter('fir',sw=1,values=[[-0.5]])
+        fun = Sin(x_last) + Fir(W=p)(x_last) + Cos(y_last)
+        fun.closedLoop(y)
+        fun.closedLoop(x)
+        out = Output('out', fun)
+        #out_der = Derivate(fun, x_last) + Derivate(fun, y_last)
+        # out_der.closedLoop(y)
+        # out_der.closedLoop(x)
+        # out = Output('out', out_der)
+
+        m = Modely(visualizer=TextVisualizer())
+        m.addModel('model', [out])
+        m.addMinimize('error', out, x_next)
+        m.neuralizeModel()
+
+        K = -0.5
+
+        def fun_data(x, y, K):
+            return K + np.cos(x) - np.sin(y)
+
+        def fun_data2(x, y, K):
+            return K*x + np.sin(x) + np.cos(y)
+
+        x_data, y_data = [], []
+        x = -0.2
+        y = 0.5
+        for i in range(100):
+            x = y = fun_data2(x, y, K)
+            x_data.append(x)
+            y_data.append(y)
+
+        print(m({'x': [-0.2], 'y': [0.5]}, num_of_samples=10, prediction_samples=10)['out'])
+        print([a.tolist() for a in x_data[0:10]])
+        print([a.tolist() for a in y_data[0:10]])
+        log.setAllLevel(logging.CRITICAL)
+
+        #
+        # dataset = {'x': x_data, 'y': y_data}
+        # m.loadData('dataset', dataset)
+        # m.trainModel(lr=0.7, num_of_epochs=100,  prediction_samples=7, closed_loop={'x': 'out'})
+        # print(m.model.all_parameters['fir'])
