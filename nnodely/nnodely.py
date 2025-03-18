@@ -341,7 +341,7 @@ class Modely:
         
         return result_dict
     
-    def clearTags():
+    def clearTags(self,):
         relation.NeuObj_names = []
 
     def getSamples(self, dataset, index = None, window=1):
@@ -1734,6 +1734,7 @@ class Modely:
         self.exporter.loadTorchModel(self.model, name, model_folder)
 
     def saveModel(self, name = 'net', model_path = None, models = None):
+        ## TODO: Add tests passing the attribute 'models'
         """
         Saves the neural network model definition in a json file.
 
@@ -1762,7 +1763,7 @@ class Modely:
             if name == 'net':
                 name += '_' + '_'.join(models)
             model_def = ModelDef()
-            model_def.update(model_dict = {key: self.model_dict[key] for key in models if key in self.model_dict})
+            model_def.update(model_dict = {key: self.model_def.model_dict[key] for key in models if key in self.model_def.model_dict})
             model_def.setBuildWindow(self.model_def['Info']['SampleTime'])
             model_def.updateParameters(self.model)
         else:
@@ -1832,7 +1833,7 @@ class Modely:
             if name == 'net':
                 name += '_' + '_'.join(models)
             model_def = ModelDef()
-            model_def.update(model_dict = {key: self.model_dict[key] for key in models if key in self.model_dict})
+            model_def.update(model_dict = {key: self.model_def.model_dict[key] for key in models if key in self.model_def.model_dict})
             model_def.setBuildWindow(self.model_def['Info']['SampleTime'])
             model_def.updateParameters(self.model)
             model = Model(model_def.json)
