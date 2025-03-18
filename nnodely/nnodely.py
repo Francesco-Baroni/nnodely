@@ -218,10 +218,13 @@ class Modely:
             window_dim = num_of_samples
             for key in inputs.keys():
                 input_dim = self.model_def['Inputs'][key]['dim'] if key in model_inputs else self.model_def['States'][key]['dim']
+                new_samples = num_of_samples - (len(inputs[key]) - self.input_n_samples[key] + 1)
                 if input_dim > 1:
-                    inputs[key] += [[0 for _ in range(input_dim)] for _ in range(num_of_samples - (len(inputs[key]) - self.input_n_samples[key] + 1))]
+                    log.warning(f'The variable {key} is filled with {new_samples} samples equal to zeros.')
+                    inputs[key] += [[0 for _ in range(input_dim)] for _ in range(new_samples)]
                 else:
-                    inputs[key] += [0 for _ in range(num_of_samples - (len(inputs[key]) - self.input_n_samples[key] + 1))]
+                    log.warning(f'The variable {key} is filled with {new_samples} samples equal to zeros.')
+                    inputs[key] += [0 for _ in range(new_samples)]
         elif inputs:
             windows = []
             for key in inputs.keys():
@@ -279,7 +282,7 @@ class Modely:
         ## Inference
         #TODO capire se può essere sostituita in qualche modo with torch.inference_mode():
         if True:
-            self.model.eval()
+            #self.model.eval()
             ## Update with virtual states
             if prediction_samples is not None:
                 self.model.update(closed_loop=closed_loop, connect=connect)
@@ -299,12 +302,12 @@ class Modely:
                         ## if prediction_samples is 'auto' and i have enough samples
                         ## if prediction_samples is NOT 'auto' but i have enough extended window (with zeros)
                         if (key in inputs.keys() and prediction_samples == 'auto' and idx < num_of_windows[key]) or (key in inputs.keys() and prediction_samples != 'auto' and idx < inputs[key].shape[1]):
-                            X[key] = inputs[key][idx:idx+1].clone() if sampled else inputs[key][:, idx:idx + self.input_n_samples[key]].clone().detach().requires_grad_(True)
+                            X[key] = inputs[key][idx:idx+1].clone().detach().requires_grad_(True) if sampled else inputs[key][:, idx:idx + self.input_n_samples[key]].clone().detach().requires_grad_(True)
                         ## if im in the first reset
                         ## if i have a state in memory
                         ## if i have prediction_samples = 'auto' and not enough samples
                         elif (key in self.states.keys() and (first or prediction_samples == 'auto')) and (prediction_samples == 'auto' or prediction_samples == None):
-                            X[key] = self.states[key]
+                            X[key] = self.states[key].clone().detach().requires_grad_(True)
                         else: ## if i have no samples and no states
                             window_size = self.input_n_samples[key]
                             dim = self.model_def['Inputs'][key]['dim'] if key in model_inputs else self.model_def['States'][key]['dim']
@@ -330,9 +333,11 @@ class Modely:
                         shift = val.shape[1]  ## take the output time dimension
                         X[key] = torch.roll(X[key], shifts=-1, dims=1) ## Roll the time window
                         X[key][:, -shift:, :] = val ## substitute with the predicted value
+                        X[key] = X[key].detach().requires_grad_(True)
                         self.states[key] = X[key]
                     for key, val in out_connect.items():
                         X[key] = val
+                        X[key] = X[key].detach().requires_grad_(True)
                         self.states[key] = X[key]
 
         ## Remove virtual states
@@ -1384,6 +1389,7 @@ class Modely:
                 for key in mandatory_inputs:
                     X[key] = data[key][[idx+horizon_idx for idx in idxs]].clone().detach().requires_grad_(True)
                 ## Forward pass
+                print(X)
                 out, minimize_out, out_closed_loop, out_connect = self.model(X)
 
                 if self.log_internal and train:
@@ -1400,10 +1406,10 @@ class Modely:
                     shift = val.shape[1]  ## take the output time dimension
                     X[key] = torch.roll(X[key], shifts=-1, dims=1) ## Roll the time window
                     X[key][:, -shift:, :] = val ## substitute with the predicted value
-                    self.states[key] = X[key].clone()
+                    self.states[key] = X[key].detach().clone()
                 for key, value in out_connect.items():
                     X[key] = value
-                    self.states[key] = X[key].clone()
+                    self.states[key] = X[key].detach().clone()
 
                 if self.log_internal and train:
                     internals_dict['state'] = self.states
@@ -1573,10 +1579,10 @@ class Modely:
                             shift = val.shape[1]  ## take the output time dimension
                             X[key] = torch.roll(X[key], shifts=-1, dims=1) ## Roll the time window
                             X[key][:, -shift:, :] = val ## substitute with the predicted value
-                            self.states[key] = X[key].clone()
+                            self.states[key] = X[key].detach().clone()
                         for key, value in out_connect.items():
                             X[key] = value
-                            self.states[key] = X[key].clone()
+                            self.states[key] = X[key].detach().clone()
 
                     ## Calculate the total loss
                     for key in self.model_def['Minimizers'].keys():
