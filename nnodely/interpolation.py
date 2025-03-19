@@ -29,6 +29,10 @@ class Interpolation(NeuObj):
 
     Examples
     --------
+    .. image:: https://colab.research.google.com/assets/colab-badge.svg
+        :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/interpolation.ipynb
+        :alt: Open in Colab
+
     Example - basic usage:
         >>> x_points = [1.0, 2.0, 3.0, 4.0]
         >>> y_points = [1.0, 4.0, 9.0, 16.0]
