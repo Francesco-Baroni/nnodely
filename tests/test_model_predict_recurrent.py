@@ -374,32 +374,32 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         self.assertEqual(result['out_x'], [15.0])
         self.assertEqual(result['out_y'], [0.0])
         self.assertEqual(result['out_z'], [0.0])
-        self.assertEqual(test.states['y'].numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [0.0]]])
-        self.assertEqual(test.states['z'].numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [0.0]]])
+        self.assertEqual(test.states['y'].detach().numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [0.0]]])
+        self.assertEqual(test.states['z'].detach().numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [0.0]]])
         ## 1 sample prediction with state variables all initialized
         result = test(inputs={'x':[1,2,3,4,5], 'y':[1,2,3,4,5], 'z':[1,2,3,4,5]})
         self.assertEqual(result['out'], [90.0])
         self.assertEqual(result['out_x'], [15.0])
         self.assertEqual(result['out_y'], [30.0])
         self.assertEqual(result['out_z'], [45.0])
-        self.assertEqual(test.states['y'].numpy().tolist(), [[[2.0], [3.0], [4.0], [5.0], [30.0]]])
-        self.assertEqual(test.states['z'].numpy().tolist(), [[[2.0], [3.0], [4.0], [5.0], [45.0]]])
+        self.assertEqual(test.states['y'].detach().numpy().tolist(), [[[2.0], [3.0], [4.0], [5.0], [30.0]]])
+        self.assertEqual(test.states['z'].detach().numpy().tolist(), [[[2.0], [3.0], [4.0], [5.0], [45.0]]])
         ## clear state of y
         test.resetStates({'y'})
-        self.assertEqual(test.states['y'].numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [0.0]]])
-        self.assertEqual(test.states['z'].numpy().tolist(), [[[2.0], [3.0], [4.0], [5.0], [45.0]]])
+        self.assertEqual(test.states['y'].detach().numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [0.0]]])
+        self.assertEqual(test.states['z'].detach().numpy().tolist(), [[[2.0], [3.0], [4.0], [5.0], [45.0]]])
         ## multi-sample prediction with states initialized as many times as they have values
         result = test(inputs={'x':[1,2,3,4,5,6,7,8,9], 'y':[1,2,3,4,5,6,7], 'z':[1,2,3,4,5,6]})
         self.assertEqual(result['out'], [90.0, 120.0, 309.0, 1101.0, 4155.0])
         self.assertEqual(result['out_x'], [15.0, 20.0, 25.0, 30.0, 35.0])
         self.assertEqual(result['out_y'], [30.0, 40.0, 50.0, 144.0, 424.0])
         self.assertEqual(result['out_z'], [45.0, 60.0, 234.0, 927.0, 3696.0])
-        self.assertEqual(test.states['y'].numpy().tolist(), [[[6.0], [7.0], [50.0], [144.0], [424.0]]])
-        self.assertEqual(test.states['z'].numpy().tolist(), [[[6.0], [60.0], [234.0], [927.0], [3696.0]]])
+        self.assertEqual(test.states['y'].detach().numpy().tolist(), [[[6.0], [7.0], [50.0], [144.0], [424.0]]])
+        self.assertEqual(test.states['z'].detach().numpy().tolist(), [[[6.0], [60.0], [234.0], [927.0], [3696.0]]])
         ## Clear all states
         test.resetStates()
-        self.assertEqual(test.states['y'].numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [0.0]]])
-        self.assertEqual(test.states['z'].numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [0.0]]])
+        self.assertEqual(test.states['y'].detach().numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [0.0]]])
+        self.assertEqual(test.states['z'].detach().numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [0.0]]])
 
     def test_predict_values_and_states_3states_more_window_closed_loop_predict(self):
         NeuObj.clearNames()
@@ -472,8 +472,8 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         self.assertEqual(result['out_x'], [15.0])
         self.assertEqual(result['out_y'], [30.0])
         self.assertEqual(result['out_z'], [45.0])
-        self.assertEqual(test.states['y'].numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [15.0]]])
-        self.assertEqual(test.states['z'].numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [15.0]]])
+        self.assertEqual(test.states['y'].detach().numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [15.0]]])
+        self.assertEqual(test.states['z'].detach().numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [15.0]]])
         # Replace insead of rolling
         # self.assertEqual(test.model.states['y'].numpy().tolist(), [[[0.0], [0.0], [0.0], [15.0], [0.0]]])
         # self.assertEqual(test.model.states['z'].numpy().tolist(), [[[0.0], [0.0], [0.0], [15.0], [0.0]]])
@@ -484,8 +484,8 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         self.assertEqual(result['out'], [160.0])
         self.assertEqual(result['out_y'], [58.0])
         self.assertEqual(result['out_z'], [87.0])
-        self.assertEqual(test.states['y'].numpy().tolist(), [[[2.0], [3.0], [4.0], [5.0], [15.0]]])
-        self.assertEqual(test.states['z'].numpy().tolist(), [[[2.0], [3.0], [4.0], [5.0], [15.0]]])
+        self.assertEqual(test.states['y'].detach().numpy().tolist(), [[[2.0], [3.0], [4.0], [5.0], [15.0]]])
+        self.assertEqual(test.states['z'].detach().numpy().tolist(), [[[2.0], [3.0], [4.0], [5.0], [15.0]]])
         # Replace instead of rolling
         #(1+2+3+4+5)+(1+2+3+4+(1+2+3+4+5))*2+(1+2+3+4+(1+2+3+4+5))*3
         # self.assertEqual(result['out'], [140.0])
@@ -495,8 +495,8 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         # self.assertEqual(test.model.states['z'].numpy().tolist(), [[[2.0], [3.0], [4.0], [15.0], [1.0]]])
         ## clear state of y
         test.resetStates({'y'})
-        self.assertEqual(test.states['y'].numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [0.0]]])
-        self.assertEqual(test.states['z'].numpy().tolist(), [[[2.0], [3.0], [4.0], [5.0], [15.0]]])
+        self.assertEqual(test.states['y'].detach().numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [0.0]]])
+        self.assertEqual(test.states['z'].detach().numpy().tolist(), [[[2.0], [3.0], [4.0], [5.0], [15.0]]])
         # # Replace insead of rolling
         # ## clear state of y
         # test.resetStates({'y'})
@@ -508,8 +508,8 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         self.assertEqual(result['out_y'], [2*(2+3+4+5+15), 2*(3+4+5+6+20), 2*(4+5+6+7+25), 2*(5+6+7+25+30), 2*(6+7+25+30+35)])
         self.assertEqual(result['out_z'], [3*(2+3+4+5+15), 3*(3+4+5+6+20), 3*(4+5+6+20+25), 3*(5+6+20+25+30), 3*(6+20+25+30+35)])
         self.assertEqual(result['out'], [sum(x) for x in zip(result['out_x'],result['out_y'],result['out_z'])])
-        self.assertEqual(test.states['y'].numpy().tolist(), [[[6.0], [7.0], [25.0], [30.0], [35.0]]])
-        self.assertEqual(test.states['z'].numpy().tolist(), [[[6.0], [20.0], [25.0], [30.0], [35.0]]])
+        self.assertEqual(test.states['y'].detach().numpy().tolist(), [[[6.0], [7.0], [25.0], [30.0], [35.0]]])
+        self.assertEqual(test.states['z'].detach().numpy().tolist(), [[[6.0], [20.0], [25.0], [30.0], [35.0]]])
         # Replace instead of rolling
         # self.assertEqual(result['out_y'], [2*(1+2+3+4+15), 2*(2+3+4+5+20), 2*(3+4+5+6+25), 2*(4+5+6+25+30), 2*(5+6+25+30+35)])
         # self.assertEqual(result['out_z'], [3*(1+2+3+4+15), 3*(2+3+4+5+20), 3*(3+4+5+20+25), 3*(4+5+20+25+30), 3*(5+20+25+30+35)])
@@ -518,8 +518,8 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         # self.assertEqual(test.model.states['z'].numpy().tolist(), [[[20.0], [25.0], [30.0], [35.0], [5.0]]])
         ## Clear all states
         test.resetStates()
-        self.assertEqual(test.states['y'].numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [0.0]]])
-        self.assertEqual(test.states['z'].numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [0.0]]])
+        self.assertEqual(test.states['y'].detach().numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [0.0]]])
+        self.assertEqual(test.states['z'].detach().numpy().tolist(), [[[0.0], [0.0], [0.0], [0.0], [0.0]]])
 
     def test_predict_values_and_states_2states_more_window_connect_predict(self):
         NeuObj.clearNames()
@@ -727,9 +727,9 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         test.neuralizeModel(0.01)
 
         result = test(inputs={'x_state':[1, 2, 3]})
-        self.assertEqual(test.states['x_state'].numpy().tolist(), [[[2.],[3.],[6.]]])
+        self.assertEqual(test.states['x_state'].detach().numpy().tolist(), [[[2.],[3.],[6.]]])
         result = test()
-        self.assertEqual(test.states['x_state'].numpy().tolist(), [[[3.],[6.],[11.]]])
+        self.assertEqual(test.states['x_state'].detach().numpy().tolist(), [[[3.],[6.],[11.]]])
 
     def test_predict_values_linear_and_fir_2models_same_window_connect(self):
         NeuObj.clearNames()
@@ -1239,3 +1239,82 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         self.assertEqual((5,), np.array(result['out']).shape)
         self.assertEqual([14.0,3*14+2*3+2*1,50*3+14*2+3*1,181*3+50*2+14*1,0*3+0*2+5*1], result['out'])
 
+    def test_derivate_wrt_input_closed_loop(self):
+        NeuObj.clearNames()
+        x = State('x')
+        y = Input('y')
+        x_last = x.last()
+        y_last = y.last()
+
+        p=Parameter('fir',sw=1,values=[[-0.5]])
+
+        fun = Sin(x_last) + Fir(W=p)(x_last) + Cos(y_last)
+        out_der = Derivate(fun, x_last) + Derivate(fun, y_last)
+        out_der.closedLoop(x)
+        out = Output('out', out_der)
+
+        m = Modely(visualizer=None)
+        m.addModel('model', [out])
+        m.neuralizeModel()
+
+        K = -0.5
+
+        def fun_data(x, y, K):
+            return K + np.cos(x) - np.sin(y)
+
+        x_data, y_data = [], []
+        x = -0.2
+        y = 0.5
+        for i in range(100):
+            x = y = fun_data(x, y, K)
+            x_data.append(x)
+            y_data.append(y)
+
+        result = m({'x': [-0.2], 'y': [0.5]}, closed_loop={'y':'out'}, num_of_samples=10, prediction_samples=10)
+        self.TestAlmostEqual([a.tolist() for a in x_data[0:10]],result['out'])
+
+    def test_derivate_wrt_input_connect(self):
+        NeuObj.clearNames()
+        x = Input('x')
+        y = Input('y')
+        x_last = x.last()
+        y_last = y.last()
+        p1 = Parameter('p1', sw=1, values=[[-0.5]])
+        fun = Sin(x_last) + Fir(W=p1)(x_last) + Cos(y_last)
+        out_der = Derivate(fun, x_last) + Derivate(fun, y_last)
+
+        x2 = State('x2')
+        y2 = Input('y2')
+        x2_last = x2.last()
+        y2_last = y2.last()
+        p2 = Parameter('p2', sw=1, values=[[3]])
+        fun2 = Sin(x2_last) + Fir(W=p2)(x2_last) + Cos(y2_last)
+        out_der2 = Derivate(fun2, x2_last) + Derivate(fun2, y2_last)
+        out_der.connect(x2)
+
+        out1 = Output('out1', out_der)
+        out2 = Output('out2', out_der2)
+
+        m = Modely(visualizer=None)
+        m.addModel('model', [out1,out2])
+        m.neuralizeModel()
+
+        K1 = -0.5
+        K2 = 3
+
+        def fun_data(x, y, K):
+            return K + np.cos(x) - np.sin(y)
+
+        def fun_data2(x, y, K1, K2):
+            return K2 + np.cos(fun_data(x,y,K1)) - np.sin(fun_data(x,y,K1))
+
+        x_data, y_data = [], []
+        x = [-0.2, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        y = [0.5, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        for (xi,yi) in zip(x,y):
+            r = fun_data2(xi, yi, K1, K2)
+            x_data.append(r)
+            y_data.append(r)
+
+        result = m({'x': [-0.2], 'y': [0.5]}, connect={'y2':'out1'}, num_of_samples=10, prediction_samples=10)
+        self.TestAlmostEqual([a.tolist() for a in x_data[0:10]],result['out2'])

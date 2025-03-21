@@ -1,4 +1,4 @@
-import unittest, os, sys
+import unittest, os, sys, torch
 import numpy as np
 
 from nnodely import *
@@ -240,6 +240,7 @@ class ModelyTrainingTest(unittest.TestCase):
         self.assertListEqual(test.model.all_parameters['b3'].data.numpy().tolist(), [[-5],[-5],[-5],[-5],[-5]])
 
     def test_train_equation_learner(self):
+        # TODO aggiungi la verifica dei parametri
         NeuObj.clearNames()
         def func(x):
             return np.cos(x) + np.sin(x)
@@ -271,3 +272,43 @@ class ModelyTrainingTest(unittest.TestCase):
         ## Print the initial weights
         optimizer_defaults = {'weight_decay': 0.3,}
         example.trainModel(train_dataset='dataset', lr=0.01, num_of_epochs=2, optimizer_defaults=optimizer_defaults)
+
+    def test_train_derivate_wrt_input(self):
+        NeuObj.clearNames()
+        x = Input('x')
+        dy_dx_target = Input('dy_dx')
+
+        x_last = x.last()
+
+        def parametric_fun(x, a, b, c, d):
+            import torch
+            return x ** 3 * a + x ** 2 * b + torch.sin(x) * c + d
+
+        def dx_parametric_fun(x, a, b, c, d):
+            import torch
+            return (3 * x ** 2 * a) + (2 * x * b) + c * torch.cos(x)
+
+        fun = ParamFun(parametric_fun,['a','b','c','d'])(x_last)
+        approx_dy_dx = Output('d_out', Derivate(fun, x_last))
+
+        test = Modely(visualizer=None, seed=12)
+
+        # Create the target functions
+        data_x = torch.rand(10) * 200 - 100
+        data_a = 0.02
+        data_b = -0.03
+        data_c = 2.02
+        data_d = -1.05
+        dataset = {'x': data_x, 'dy_dx': dx_parametric_fun(data_x, data_a, data_b, data_c, data_d)}
+
+        # d y_approx / d x == dy_dx
+        # Se x era una time window and dy_dx dovrà essere una time window
+        test.addModel('model', [approx_dy_dx])
+        test.addMinimize('sob_err', approx_dy_dx, dy_dx_target.last())
+        test.neuralizeModel()
+        test.loadData('data', dataset)
+        test.trainModel(num_of_epochs=1000, lr=0.3)
+        self.assertAlmostEqual(test.model.all_parameters['a'].detach().numpy().tolist()[0], data_a, places=4)
+        self.assertAlmostEqual(test.model.all_parameters['b'].detach().numpy().tolist()[0], data_b, places=4)
+        self.assertAlmostEqual(test.model.all_parameters['c'].detach().numpy().tolist()[0], data_c, places=4)
+        #The value data_d is not match because the derivative does not depend on it
