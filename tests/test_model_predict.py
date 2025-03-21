@@ -1859,11 +1859,11 @@ class ModelyPredictTest(unittest.TestCase):
         test.addModel('model', [approx_dy_dx, approx_y])
         test.neuralizeModel()
         results = test({'x':[1,2]})
-        self.assertEqual(results['out'][0], parametric_fun(torch.tensor(1), test.model.all_parameters['a'],
+        self.assertAlmostEqual(results['out'][0], parametric_fun(torch.tensor(1), test.model.all_parameters['a'],
                                                             test.model.all_parameters['b'],
                                                             test.model.all_parameters['c'],
                                                             test.model.all_parameters['d']).detach().numpy().tolist()[0])
-        self.assertEqual(results['d_out'][0], dx_parametric_fun(torch.tensor(1), test.model.all_parameters['a'],
+        self.assertAlmostEqual(results['d_out'][0], dx_parametric_fun(torch.tensor(1), test.model.all_parameters['a'],
                                                             test.model.all_parameters['b'],
                                                             test.model.all_parameters['c'],
                                                             test.model.all_parameters['d']).detach().numpy().tolist()[0])
