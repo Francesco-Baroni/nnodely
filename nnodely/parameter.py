@@ -36,6 +36,10 @@ class Constant(NeuObj, Relation):
 
     Example
     -------
+    .. image:: https://colab.research.google.com/assets/colab-badge.svg
+        :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/parameter.ipynb
+        :alt: Open in Colab
+
     Example - passing a custom scalar value -> g.dim = {'dim': 1}:
 
         >>> g = Constant('gravity',values=9.81)
@@ -134,6 +138,9 @@ class Parameter(NeuObj, Relation):
 
     Examples
     --------
+    .. image:: https://colab.research.google.com/assets/colab-badge.svg
+        :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/parameter.ipynb
+        :alt: Open in Colab
 
     Example - basic usage:
         >>> k = Parameter('k', dimensions=3, tw=4)
