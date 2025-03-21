@@ -1,5 +1,6 @@
 import unittest, os, sys
 import numpy as np
+from pygments.unistring import xid_start
 
 from nnodely import *
 from nnodely.relation import NeuObj
@@ -1521,38 +1522,93 @@ class ModelyTrainingTest(unittest.TestCase):
 
     def test_train_derivate_wrt_input_closed_loop(self):
         NeuObj.clearNames()
-        x = Input('x')
-        y = State('y')
+        x = State('x')
+        x_target = Input('x_target')
+        y = Input('y')
         x_last = x.last()
         y_last = y.last()
 
         p=Parameter('fir',sw=1,values=[[-0.5]])
+
         fun = Sin(x_last) + Fir(W=p)(x_last) + Cos(y_last)
         out_der = Derivate(fun, x_last) + Derivate(fun, y_last)
-        out_der.closedLoop(y)
+        out_der.closedLoop(x)
         out = Output('out', out_der)
 
-        m = Modely(visualizer=None)
+        m = Modely(visualizer=None, seed=7)
         m.addModel('model', [out])
-        m.addMinimize('error', out, x.next())
+        m.addMinimize('error', out, x_target.next())
         m.neuralizeModel()
-        print(m({'x': [1, 2, 3, 4, 5], 'y': [1, 2]}, closed_loop={'x': 'out'}, num_of_samples=10))
 
-        K = -0.5
+        K = 0
 
         def fun_data(x, y, K):
             return K + np.cos(x) - np.sin(y)
 
         x_data, y_data = [], []
-        x = 0.0
-        y = 0.0
+        x = -0.2
+        y = 0.5
         for i in range(100):
             x = y = fun_data(x, y, K)
             x_data.append(x)
             y_data.append(y)
 
-        dataset = {'x': x_data, 'y': y_data}
+        dataset = {'x': x_data, 'y': y_data, 'x_target': x_data}
         m.loadData('dataset', dataset)
-        m.trainModel(lr=0.7, num_of_epochs=100,  prediction_samples=7, closed_loop={'x': 'out'})
-        print(m.model.all_parameters['fir'])
+        m.trainModel(lr=0.4, num_of_epochs=200, closed_loop={'y': 'out'}, prediction_samples=9)
+        result = m({'x': [-0.2], 'y': [0.5]}, closed_loop={'y':'out'}, num_of_samples=10, prediction_samples=10)
+        self.assertAlmostEqual([a.tolist() for a in x_data[0:10]],result['out'])
 
+    def test_train_derivate_wrt_input_connect(self):
+        NeuObj.clearNames()
+        x = Input('x')
+        y = Input('y')
+        x_last = x.last()
+        y_last = y.last()
+        p1 = Parameter('p1', sw=1, values=[[0]])
+        fun = Sin(x_last) + Fir(W=p1)(x_last) + Cos(y_last)
+        out_der = Derivate(fun, x_last) + Derivate(fun, y_last)
+
+        x2 = State('x2')
+        y2 = Input('y2')
+        x2_last = x2.last()
+        y2_last = y2.last()
+        p2 = Parameter('p2', sw=1, values=[[0]])
+        fun2 = Sin(x2_last) + Fir(W=p2)(x2_last) + Cos(y2_last)
+        out_der2 = Derivate(fun2, x2_last) + Derivate(fun2, y2_last)
+        out_der.connect(x2)
+
+        out1 = Output('out1', out_der)
+        out2 = Output('out2', out_der2)
+
+        target = Input('target')
+
+        m = Modely(visualizer=None, seed=5)
+        m.addModel('model', [out1,out2])
+        m.addMinimize('error', out_der2, target.last())
+        m.neuralizeModel()
+
+        K1 = -0.5
+        K2 = 3
+
+        def fun_data(x, y, K):
+            return K + np.cos(x) - np.sin(y)
+
+        def fun_data2(x, y, K1, K2):
+            return K2 + np.cos(fun_data(x,y,K1)) - np.sin(fun_data(x,y,K1))
+
+        target = []
+        import numpy as np
+        x = np.random.rand(100)
+        y = np.random.rand(100)
+        for (xi,yi) in zip(x,y):
+            r = fun_data2(xi, yi, K1, K2)
+            target.append(r)
+
+
+        dataset = {'x': x.tolist(), 'y': y.tolist(), 'target': target}
+        m.loadData('dataset', dataset)
+        m.trainModel(lr=0.3, num_of_epochs=200, connect={'y2': 'out1'}, prediction_samples=9)
+
+        result = m({'x': x.tolist(), 'y': y.tolist()}, connect={'y2':'out1'}, num_of_samples=10, prediction_samples=10)
+        self.assertAlmostEqual([a.tolist() for a in target[0:10]],result['out2'])

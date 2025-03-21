@@ -193,8 +193,8 @@ class Modely:
 
         ## Check closed loop integrity
         for close_in, close_out in closed_loop.items():
-            check(close_in in self.model_def['Inputs'], ValueError, f'the tag {close_in} is not an input variable.')
-            check(close_out in self.model_def['Outputs'], ValueError, f'the tag {close_out} is not an output of the network')
+            check(close_in in self.model_def['Inputs'], ValueError, f'the tag "{close_in}" is not an input variable.')
+            check(close_out in self.model_def['Outputs'], ValueError, f'the tag "{close_out}" is not an output of the network')
 
         ## List of keys
         model_inputs = list(self.model_def['Inputs'].keys())
@@ -1354,7 +1354,7 @@ class Modely:
             log.warning(f"The step ({step}) is greater than the number of available samples ({len(list_of_batch_indexes)-batch_size}). The step is set to the maximum number.", stacklevel=5)
             step = len(list_of_batch_indexes)-batch_size
         ## Loss vector 
-        check((batch_size+step)>0, ValueError, f"The batch_size+step must be greater than 0.")
+        check((batch_size+step)>0, ValueError, f"The sum of batch_size={batch_size} and step={step} must be greater than 0.")
         aux_losses = torch.zeros([len(self.model_def['Minimizers']), round(len(list_of_batch_indexes)/(batch_size+step))])
 
         ## Update with virtual states
@@ -1389,7 +1389,6 @@ class Modely:
                 for key in mandatory_inputs:
                     X[key] = data[key][[idx+horizon_idx for idx in idxs]].clone().detach().requires_grad_(True)
                 ## Forward pass
-                print(X)
                 out, minimize_out, out_closed_loop, out_connect = self.model(X)
 
                 if self.log_internal and train:
