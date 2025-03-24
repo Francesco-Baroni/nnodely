@@ -325,14 +325,7 @@ class Modely:
 
                 ## Update closed_loop and connect
                 if prediction_samples:
-                    for key, val in out_closed_loop.items():
-                        shift = val.shape[1]  ## take the output time dimension
-                        X[key] = torch.roll(X[key], shifts=-1, dims=1) ## Roll the time window
-                        X[key][:, -shift:, :] = val ## substitute with the predicted value
-                        self.states[key] = X[key]
-                    for key, val in out_connect.items():
-                        X[key] = val
-                        self.states[key] = X[key]
+                    self.__updateState(X, out_closed_loop, out_connect)
 
         ## Remove virtual states
         for key in (connect.keys() | closed_loop.keys()):
@@ -1231,6 +1224,16 @@ class Modely:
                   f"The number of available sample are (n_samples_train ({n_samples_train}) - train_batch_size ({train_batch_size}) - prediction_samples ({prediction_samples}) + 1) = {n_samples_train - train_batch_size - prediction_samples + 1}.")
             update_per_epochs = (n_samples_train - train_batch_size - prediction_samples + 1)//(train_batch_size + step) + 1
             unused_samples = n_samples_train - list_of_batch_indexes[-1] - train_batch_size - prediction_samples
+
+            model_inputs = list(self.model_def['Inputs'].keys())
+            state_closed_loop = [key for key, value in self.model_def['States'].items() if 'closedLoop' in value.keys()] + list(closed_loop.keys())
+            state_connect = [key for key, value in self.model_def['States'].items() if 'connect' in value.keys()] + list(connect.keys())
+            non_mandatory_inputs = state_closed_loop + state_connect 
+            mandatory_inputs = list(set(model_inputs) - set(non_mandatory_inputs))
+            
+            list_of_batch_indexes_train, train_step = self.__get_batch_indexes(train_dataset_name, n_samples_train, prediction_samples, train_batch_size, step, type='train')
+            if n_samples_val > 0:
+                list_of_batch_indexes_val, val_step = self.__get_batch_indexes(val_dataset_name, n_samples_val, prediction_samples, val_batch_size, step, type='val')
         else:
             update_per_epochs =  (n_samples_train - train_batch_size)/train_batch_size + 1
             unused_samples = n_samples_train - update_per_epochs * train_batch_size
@@ -1255,7 +1258,7 @@ class Modely:
             ## TRAIN
             self.model.train()
             if recurrent_train:
-                losses = self.__recurrentTrain(XY_train, n_samples_train, train_dataset_name, train_batch_size, minimize_gain, closed_loop, connect, prediction_samples, step, shuffle=shuffle_data, train=True)
+                losses = self.__recurrentTrain(XY_train, list_of_batch_indexes_train, train_batch_size, minimize_gain, closed_loop, connect, prediction_samples, train_step, non_mandatory_inputs, mandatory_inputs, model_inputs, shuffle=shuffle_data, train=True)
             else:
                 losses = self.__Train(XY_train, n_samples_train, train_batch_size, minimize_gain, shuffle=shuffle_data, train=True)
             ## save the losses
@@ -1266,7 +1269,7 @@ class Modely:
                 ## VALIDATION
                 self.model.eval()
                 if recurrent_train:
-                    losses = self.__recurrentTrain(XY_val, n_samples_val, val_dataset_name, val_batch_size, minimize_gain, closed_loop, connect, prediction_samples, step, shuffle=False, train=False)
+                    losses = self.__recurrentTrain(XY_val, list_of_batch_indexes_val, val_batch_size, minimize_gain, closed_loop, connect, prediction_samples, val_step, non_mandatory_inputs, mandatory_inputs, model_inputs, shuffle=False, train=False)
                 else:
                     losses = self.__Train(XY_val, n_samples_val, val_batch_size, minimize_gain, shuffle=False, train=False)
                 ## save the losses
@@ -1316,54 +1319,64 @@ class Modely:
         ## Get trained model from torch and set the model_def
         self.model_def.updateParameters(self.model)
 
-    def __recurrentTrain(self, data, n_samples, dataset_name, batch_size, loss_gains, closed_loop, connect, prediction_samples, step, shuffle=False, train=True):
-        model_inputs = list(self.model_def['Inputs'].keys())
-        state_closed_loop = [key for key, value in self.model_def['States'].items() if 'closedLoop' in value.keys()] + list(closed_loop.keys())
-        state_connect = [key for key, value in self.model_def['States'].items() if 'connect' in value.keys()] + list(connect.keys())
-        non_mandatory_inputs = state_closed_loop + state_connect 
-        mandatory_inputs = list(set(model_inputs) - set(non_mandatory_inputs))
-
-        n_available_samples = n_samples - prediction_samples 
-        list_of_batch_indexes = list(range(n_available_samples))
-
-        ## Remove forbidden indexes in case of a multi-file dataset
-        if dataset_name in self.multifile.keys(): ## Multi-file Dataset
-            if n_samples == self.run_training_params['n_samples_train']: ## Training
+    def __get_batch_indexes(self, dataset_name, n_samples, prediction_samples, batch_size, step, type='train'):
+        available_samples = n_samples - prediction_samples
+        batch_indexes = list(range(available_samples))
+        if dataset_name in self.multifile.keys():
+            if type == 'train':
                 start_idx, end_idx = 0, n_samples
-            elif n_samples == self.run_training_params['n_samples_val']: ## Validation
+            elif type == 'val':
                 start_idx, end_idx = self.run_training_params['n_samples_train'], self.run_training_params['n_samples_train'] + n_samples
-            else: ## Test
+            elif type == 'test':
                 start_idx, end_idx = self.run_training_params['n_samples_train'] + self.run_training_params['n_samples_val'], self.run_training_params['n_samples_train'] + self.run_training_params['n_samples_val'] + n_samples
+            
             forbidden_idxs = []
             for i in self.multifile[dataset_name]:
                 if i < end_idx and i > start_idx:
                     forbidden_idxs.extend(range(i-prediction_samples, i, 1))
-            list_of_batch_indexes = [idx for idx in list_of_batch_indexes if idx not in forbidden_idxs]
+            batch_indexes = [idx for idx in batch_indexes if idx not in forbidden_idxs]
 
         ## Clip the step 
-        if step < 0: ## clip the step to zero
-            log.warning(f"The step is negative ({step}). The step is set to zero.", stacklevel=5)
-            step = 0
-        if step > (len(list_of_batch_indexes)-batch_size): ## Clip the step to the maximum number of samples
-            log.warning(f"The step ({step}) is greater than the number of available samples ({len(list_of_batch_indexes)-batch_size}). The step is set to the maximum number.", stacklevel=5)
-            step = len(list_of_batch_indexes)-batch_size
+        clipped_step = copy.deepcopy(step)
+        if clipped_step < 0: ## clip the step to zero
+            log.warning(f"The step is negative ({clipped_step}). The step is set to zero.", stacklevel=5)
+            clipped_step = 0
+        if clipped_step > (len(batch_indexes)-batch_size): ## Clip the step to the maximum number of samples
+            log.warning(f"The step ({clipped_step}) is greater than the number of available samples ({len(batch_indexes)-batch_size}). The step is set to the maximum number.", stacklevel=5)
+            clipped_step = len(batch_indexes)-batch_size
         ## Loss vector 
-        check((batch_size+step)>0, ValueError, f"The batch_size+step must be greater than 0.")
-        aux_losses = torch.zeros([len(self.model_def['Minimizers']), round(len(list_of_batch_indexes)/(batch_size+step))])
+        check((batch_size+clipped_step)>0, ValueError, f"The sum of batch_size={batch_size} and the step={clipped_step} must be greater than 0.")
 
+        return batch_indexes, clipped_step
+    
+    def __updateState(self, X, out_closed_loop, out_connect):
+        ## Update
+        for key, val in out_closed_loop.items():
+            shift = val.shape[1]  ## take the output time dimension
+            X[key] = torch.roll(X[key], shifts=-1, dims=1) ## Roll the time window
+            X[key][:, -shift:, :] = val ## substitute with the predicted value
+            self.states[key] = X[key].clone()
+        for key, value in out_connect.items():
+            X[key] = value
+            self.states[key] = X[key].clone()
+
+
+    def __recurrentTrain(self, data, batch_indexes, batch_size, loss_gains, closed_loop, connect, prediction_samples, step, non_mandatory_inputs, mandatory_inputs, model_inputs, shuffle=False, train=True):
+        indexes = copy.deepcopy(batch_indexes)
+        aux_losses = torch.zeros([len(self.model_def['Minimizers']), round(len(indexes)/(batch_size+step))])
         ## Update with virtual states
         self.model.update(closed_loop=closed_loop, connect=connect)
         X = {}
         batch_val = 0
-        while len(list_of_batch_indexes) >= batch_size:
-            idxs = random.sample(list_of_batch_indexes, batch_size) if shuffle else list_of_batch_indexes[:batch_size]
+        while len(indexes) >= batch_size:
+            idxs = random.sample(indexes, batch_size) if shuffle else indexes[:batch_size]
             for num in idxs:
-                list_of_batch_indexes.remove(num)
+                indexes.remove(num)
             if step > 0:
-                if len(list_of_batch_indexes) >= step:
-                    step_idxs = random.sample(list_of_batch_indexes, step) if shuffle else list_of_batch_indexes[:step]
+                if len(indexes) >= step:
+                    step_idxs = random.sample(indexes, step) if shuffle else indexes[:step]
                     for num in step_idxs:
-                        list_of_batch_indexes.remove(num)
+                        indexes.remove(num)
             if train:
                 self.optimizer.zero_grad() ## Reset the gradient
             ## Reset 
@@ -1395,14 +1408,7 @@ class Modely:
                     horizon_losses[ind].append(loss)
 
                 ## Update
-                for key, val in out_closed_loop.items():
-                    shift = val.shape[1]  ## take the output time dimension
-                    X[key] = torch.roll(X[key], shifts=-1, dims=1) ## Roll the time window
-                    X[key][:, -shift:, :] = val ## substitute with the predicted value
-                    self.states[key] = X[key].clone()
-                for key, value in out_connect.items():
-                    X[key] = value
-                    self.states[key] = X[key].clone()
+                self.__updateState(X, out_closed_loop, out_connect)
 
                 if self.log_internal and train:
                     internals_dict['state'] = self.states
@@ -1431,8 +1437,7 @@ class Modely:
         return aux_losses
 
     def __Train(self, data, n_samples, batch_size, loss_gains, shuffle=True, train=True):
-        check((n_samples - batch_size + 1) > 0, ValueError,
-              f"The number of available sample are (n_samples_train - train_batch_size + 1) = {n_samples - batch_size + 1}.")
+        check((n_samples - batch_size + 1) > 0, ValueError, f"The number of available sample are (n_samples_train - train_batch_size + 1) = {n_samples - batch_size + 1}.")
         if shuffle:
             randomize = torch.randperm(n_samples)
             data = {key: val[randomize] for key, val in data.items()}
@@ -1567,14 +1572,7 @@ class Modely:
                             horizon_losses[key].append(loss)
 
                         ## Update
-                        for key, val in out_closed_loop.items():
-                            shift = val.shape[1]  ## take the output time dimension
-                            X[key] = torch.roll(X[key], shifts=-1, dims=1) ## Roll the time window
-                            X[key][:, -shift:, :] = val ## substitute with the predicted value
-                            self.states[key] = X[key].clone()
-                        for key, value in out_connect.items():
-                            X[key] = value
-                            self.states[key] = X[key].clone()
+                        self.__updateState(X, out_closed_loop, out_connect)
 
                     ## Calculate the total loss
                     for key in self.model_def['Minimizers'].keys():
