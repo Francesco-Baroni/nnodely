@@ -238,7 +238,7 @@ class SampleTime():
     name = 'SampleTime'
     g = Constant(name, values=0)
     def __new__(cls):
-        SampleTime.g.dim = {'dim': 1, 'sw': 1}
+        SampleTime.g.dim = {'dim': 1}
         SampleTime.g.json['Constants'][SampleTime.name] = copy.deepcopy(SampleTime.g.dim)
         SampleTime.g.json['Constants'][SampleTime.name]['values'] = SampleTime.name
         return SampleTime.g

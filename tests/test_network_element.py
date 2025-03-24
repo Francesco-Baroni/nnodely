@@ -443,3 +443,38 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         # The output is 2 samples
         self.assertEqual({'out': [1.7170718908309937, 1.9410502910614014]}, example({'x': [-1, 0, 1, 2, 0]}))
         self.assertEqual({'out': [1.7170718908309937, 1.9410502910614014]}, example({'x': [[-1, 0, 1, 2], [0, 1, 2, 0]]}, sampled=True))
+
+    def test_arithmetic(self):
+        NeuObj.clearNames()
+        y = Input('y', dimensions=10)
+
+        k = Parameter('k', dimensions=1)
+        rel1 = y.last() + (5 * y.last())
+        rel2 = y.last() - (5 * y.last())
+        rel3 = y.last() + (k * y.last())
+        rel4 = y.last() - (k * y.last())
+        rel5 = y.last() * (5 * y.last())
+        rel6 = y.last() / (5 * y.last())
+        rel7 = y.last() * (k * y.last())
+        rel8 = y.last() / (k * y.last())
+
+        out = Output('out', rel1)
+        out2 = Output('out2', rel2)
+        out3 = Output('out3', rel3)
+        out4 = Output('out4', rel4)
+        out5 = Output('out5', rel5)
+        out6 = Output('out6', rel6)
+        out7 = Output('out7', rel7)
+        out8 = Output('out8', rel8)
+        example = Modely(visualizer=None, seed=42)
+        example.addModel('out', [out,out2,out3,out4,out5,out6,out7,out8])
+        example.neuralizeModel(0.25)
+
+        self.assertEqual(rel1.dim['dim'], 10)
+        self.assertEqual(rel2.dim['dim'], 10)
+        self.assertEqual(rel3.dim['dim'], 10)
+        self.assertEqual(rel4.dim['dim'], 10)
+        self.assertEqual(rel5.dim['dim'], 10)
+        self.assertEqual(rel6.dim['dim'], 10)
+        self.assertEqual(rel7.dim['dim'], 10)
+        self.assertEqual(rel8.dim['dim'], 10)

@@ -1046,6 +1046,7 @@ class Modely:
             >>> mass_spring_damper.trainModel(splits=[70,20,10], prediction_samples=10, training_params = params)
         """
         check(self.data_loaded, RuntimeError, 'There is no data loaded! The Training will stop.')
+        check('Models' in self.model_def.json, RuntimeError, 'There are no models to train. Load a model using the addModel function.')
         check(list(self.model.parameters()), RuntimeError, 'There are no modules with learnable parameters! The Training will stop.')
 
         ## Get running parameter from dict
@@ -1238,7 +1239,7 @@ class Modely:
             update_per_epochs = (n_samples_train - train_batch_size - prediction_samples + 1)//(train_batch_size + step) + 1
             unused_samples = n_samples_train - list_of_batch_indexes[-1] - train_batch_size - prediction_samples
         else:
-            update_per_epochs =  (n_samples_train - train_batch_size)/train_batch_size + 1
+            update_per_epochs =  (n_samples_train - train_batch_size)//train_batch_size + 1
             unused_samples = n_samples_train - update_per_epochs * train_batch_size
 
         self.run_training_params['update_per_epochs'] = update_per_epochs
