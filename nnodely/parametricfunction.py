@@ -55,6 +55,9 @@ class ParamFun(NeuObj):
 
     Example
     -------
+    .. image:: https://colab.research.google.com/assets/colab-badge.svg
+        :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/parametric_functions.ipynb
+        :alt: Open in Colab
         >>> input1 = Input('input1')
         >>> input2 = Input('input2')
 

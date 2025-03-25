@@ -49,6 +49,9 @@ class Part(Stream, ToStream):
 
     Example
     -------
+    .. image:: https://colab.research.google.com/assets/colab-badge.svg
+    :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/partitioning.ipynb
+    :alt: Open in Colab
         >>> x = Input('x', dimensions=3).last()
         >>> relation = Part(x, 0, 1)
 
@@ -96,6 +99,9 @@ class Select(Stream, ToStream):
 
     Example
     -------
+    .. image:: https://colab.research.google.com/assets/colab-badge.svg
+    :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/partitioning.ipynb
+    :alt: Open in Colab
         >>> x = Input('x', dimensions=3).last()
         >>> relation = Select(x, 1)
 
@@ -130,6 +136,10 @@ class Concatenate(Stream, ToStream):
         :type obj: Tensor
 
         Example:
+        --------
+        .. image:: https://colab.research.google.com/assets/colab-badge.svg
+        :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/partitioning.ipynb
+        :alt: Open in Colab
             >>> cat = Concatenate(relation1, relation2)
     """
     @enforce_types
@@ -183,6 +193,9 @@ class SamplePart(Stream, ToStream):
 
     Example
     -------
+    .. image:: https://colab.research.google.com/assets/colab-badge.svg
+    :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/partitioning.ipynb
+    :alt: Open in Colab
         >>> x = Input('x').sw(3)
         >>> relation = SamplePart(x, 0, 1)
 
@@ -250,6 +263,9 @@ class SampleSelect(Stream, ToStream):
 
     Example
     -------
+    .. image:: https://colab.research.google.com/assets/colab-badge.svg
+    :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/partitioning.ipynb
+    :alt: Open in Colab
         >>> x = Input('x').sw(3)
         >>> relation = SampleSelect(x, 1)
 
@@ -301,6 +317,9 @@ class TimePart(Stream, ToStream):
 
     Example
     -------
+    .. image:: https://colab.research.google.com/assets/colab-badge.svg
+    :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/partitioning.ipynb
+    :alt: Open in Colab
         >>> x = Input('x').sw(10)
         >>> time_part = TimePart(x, i=0, j=5)
 
@@ -374,6 +393,10 @@ class TimeConcatenate(Stream, ToStream):
         :type obj: Tensor
 
         Example:
+        --------
+        .. image:: https://colab.research.google.com/assets/colab-badge.svg
+        :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/partitioning.ipynb
+        :alt: Open in Colab
             >>> cat = TimeConcatenate(relation1, relation2)
     """
     @enforce_types
