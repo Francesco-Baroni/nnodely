@@ -264,7 +264,7 @@ This operation is presented in [[1]](#1).
 3. __localmodel.py__ this file contains the logic for build a local model. This operation is presented in [[1]](#1), [[3]](#3), [[4]](#4) and [[5]](#5).
 4. __parametricfunction.py__ are the user custom function. The function can use the pytorch syntax. A parametric function is presented in [[3]](#3), [[4]](#4), [[5]](#5).
 5. __equationlearner.py__ contains the logic for the equation learner. The equation learner is used for learn a relation input outpur following a list of activation functions. The first implementation is presented in [[6]](#6).
-6. __timeoperation.py__ contains the time operation functions. The time operation are used for extract a time window from a signal.
+6. __timeoperation.py__ contains the time operation functions. The time operation are used for extract a time window from a signal. The derivative operation can be used to implement Physics-informed neural network [[7]](#7) Sobolev learning [[8]](#8).
 
 <a name="testsfolder"></a>
 ### Tests Folder
@@ -316,5 +316,16 @@ and [[code extended]](https://github.com/tonegas/nnodely-applications/blob/main/
 Hector Perez-Villeda, Justus Piater, Matteo Saveriano. (2023).
 Learning and extrapolation of robotic skills using task-parameterized equation learner networks.
 Robotics and Autonomous Systems. https://doi.org/10.1016/j.robot.2022.104309
+
+<a id="7">[7]</a> 
+M. Raissi. P. Perdikaris b, G.E. Karniadakis a. (2019).
+Physics-informed neural networks: A deep learning framework for solving forward and inverse problems involving nonlinear partial differential equations
+Journal of Computational Physics. https://doi.org/10.1016/j.jcp.2018.10.045 (look the [[example Burger's equation]](https://github.com/tonegas/nnodely-applications/blob/main/pinn/pinn_Burgers_equation.ipynb))
+
+<a id="8">[8]</a> 
+Wojciech Marian Czarnecki, Simon Osindero, Max Jaderberg, Grzegorz Świrszcz, Razvan Pascanu. (2017).
+Sobolev Training for Neural Networks.
+arXiv. https://doi.org/10.48550/arXiv.1706.04859 (look the [[code]](https://github.com/tonegas/nnodely-applications/blob/main/sobolev/Sobolev_learning.ipynb))
+
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
