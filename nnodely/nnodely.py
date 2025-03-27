@@ -395,12 +395,13 @@ class Modely:
         state_list_in : list of State
             The list of input states to connect to.
 
-        Example
-        -------
+        Examples
+        --------
         .. image:: https://colab.research.google.com/assets/colab-badge.svg
-        :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/states.ipynb
-        :alt: Open in Colab
-        Example usage:
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/states.ipynb
+            :alt: Open in Colab
+
+        Example:
             >>> model = Modely()
             >>> x = Input('x')
             >>> y = State('y')
@@ -420,12 +421,13 @@ class Modely:
         state_list_in : list of State
             The list of input states to connect to.
 
-        Example
-        -------
+        Examples
+        --------
         .. image:: https://colab.research.google.com/assets/colab-badge.svg
-        :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/states.ipynb
-        :alt: Open in Colab
-        Example usage:
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/states.ipynb
+            :alt: Open in Colab
+
+        Example:
             >>> model = Modely()
             >>> x = Input('x')
             >>> y = State('y')

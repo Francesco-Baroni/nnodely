@@ -34,8 +34,8 @@ class Constant(NeuObj, Relation):
     json : dict
         A dictionary containing the configuration of the constant.
 
-    Example
-    -------
+    Examples
+    --------
     .. image:: https://colab.research.google.com/assets/colab-badge.svg
         :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/parameter.ipynb
         :alt: Open in Colab
