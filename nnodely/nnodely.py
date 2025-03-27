@@ -45,6 +45,7 @@ class Modely:
                  visualizer:str|Visualizer|None = 'Standard',
                  exporter:str|Exporter|None = 'Standard',
                  seed:int|None = None,
+                 device:str = 'cpu',
                  workspace:str|None = None,
                  log_internal:bool = False,
                  save_history:bool = False):
@@ -65,6 +66,16 @@ class Modely:
             self.exporter = exporter
         else:
             self.exporter = Exporter()
+
+        # Set the device
+        if device == 'gpu':
+            if torch.cuda.is_available():
+                self.device = torch.device("cuda")
+            else:
+                log.warning(f'The GPU device is not available [cuda:{torch.cuda.is_available()}] ..switching to CPU device')
+                self.device = torch.device("cpu")
+        else:
+            self.device = torch.device("cpu")
 
         ## Set the random seed for reproducibility
         if seed is not None:
@@ -395,11 +406,12 @@ class Modely:
         state_list_in : list of State
             The list of input states to connect to.
 
-        Example
-        -------
+        Examples
+        --------
         .. image:: https://colab.research.google.com/assets/colab-badge.svg
-        :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/states.ipynb
-        :alt: Open in Colab
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/states.ipynb
+            :alt: Open in Colab
+
         Example usage:
             >>> model = Modely()
             >>> x = Input('x')
@@ -420,11 +432,12 @@ class Modely:
         state_list_in : list of State
             The list of input states to connect to.
 
-        Example
-        -------
+        Examples
+        --------
         .. image:: https://colab.research.google.com/assets/colab-badge.svg
-        :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/states.ipynb
-        :alt: Open in Colab
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/states.ipynb
+            :alt: Open in Colab
+
         Example usage:
             >>> model = Modely()
             >>> x = Input('x')
@@ -559,6 +572,15 @@ class Modely:
             >>> model = Modely(name='example_model')
             >>> model.neuralizeModel(sample_time=0.1, clear_model=True)
         """
+        ## Test the cuda versione
+        print('cuda version: ', torch.version.cuda)  # Deve stampare la versione di CUDA compatibile
+        print('cuda enabled: ', torch.backends.cudnn.enabled)  # Deve essere True
+        print('using device:', self.device)
+        print('is cuda available:', torch.cuda.is_available())
+        print('cuda device count:', torch.cuda.device_count())
+        print('current cuda device:', torch.cuda.current_device())
+        print('cuda device name:', torch.cuda.get_device_name(0))
+        
         if model_def is not None:
             check(sample_time == None, ValueError, 'The sample_time must be None if a model_def is provided')
             check(clear_model == False, ValueError, 'The clear_model must be False if a model_def is provided')
@@ -573,7 +595,7 @@ class Modely:
             check("connect" in state.keys() or  'closedLoop' in state.keys(), KeyError, f'The connect or closed loop missing for state "{key}"')
 
         self.model_def.setBuildWindow(sample_time)
-        self.model = Model(self.model_def.json)
+        self.model = Model(self.model_def.json).to(self.device)
         self.__addInfo()
 
         input_ns_backward = {key:value['ns'][0] for key, value in (self.model_def['Inputs']|self.model_def['States']).items()}
