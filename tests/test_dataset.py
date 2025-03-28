@@ -599,3 +599,59 @@ class ModelyCreateDatasetTest(unittest.TestCase):
         self.assertListEqual(list(test.data['dataset']['x'].shape), [42, 6, 1])
         self.assertListEqual(list(test.data['dataset']['y'].shape), [42, 4, 1])
         self.assertListEqual(test.multifile['dataset'], [4, 18, 42])
+
+    def test_dataframe_multidimensional(self):
+        import pandas as pd
+        NeuObj.clearNames()
+        x = Input('x', dimensions=4)
+        y = Input('y', dimensions=3)
+        k = Input('k', dimensions=2)
+        w = Input('w')
+
+        out = Output('out', Fir(Linear(Linear(3)(x.tw(0.02)) + y.tw(0.02))))
+        out2 = Output('out2', Fir(Linear(k.last() + Fir(2)(w.tw(0.05,offset=-0.02)))))
+
+        test = Modely(visualizer=None)
+        test.addMinimize('out', out, out2)
+        test.neuralizeModel(0.01)
+
+        # Create a DataFrame with random values for each input
+        df = pd.DataFrame({
+            'x': [np.array([1.0,2.0,3.0,4.0]) for _ in range(10)],
+            'y': [np.array([5.0,6.0,7.0]) for _ in range(10)],
+            'k': [np.array([8.0,9.0]) for _ in range(10)],
+            'w': np.array([10.0,11.0,12.0,13.0,14.0,15.0,16.0,17.0,18.0,19.0])})
+
+        test.loadData(name='dataset', source=df)
+        self.assertEqual((6, 2, 4),test.data['dataset']['x'].shape)
+        self.assertEqual((6, 2, 3),test.data['dataset']['y'].shape)
+        self.assertEqual((6, 1, 2),test.data['dataset']['k'].shape)
+        self.assertEqual((6, 5, 1),test.data['dataset']['w'].shape)
+
+    def test_dataframe_single_dimension(self):
+        import pandas as pd
+        NeuObj.clearNames()
+        x = Input('x')
+        y = Input('y')
+        k = Input('k')
+        w = Input('w')
+
+        out = Output('out', Fir(x.tw(0.02) + y.tw(0.02)))
+        out2 = Output('out2', Fir(k.last()) + Fir(w.tw(0.05,offset=-0.02)))
+
+        test = Modely(visualizer=None)
+        test.addMinimize('out', out, out2)
+        test.neuralizeModel(0.01)
+
+        # Create a DataFrame with random values for each input
+        df = pd.DataFrame({
+            'x': np.linspace(1,100,100, dtype=np.float32),
+            'y': np.linspace(1,100,100, dtype=np.float32),
+            'k': np.linspace(1,100,100, dtype=np.float32),
+            'w': np.linspace(1,100,100, dtype=np.float32)})
+
+        test.loadData(name='dataset', source=df)
+        self.assertEqual((96, 2, 1),test.data['dataset']['x'].shape)
+        self.assertEqual((96, 2, 1),test.data['dataset']['y'].shape)
+        self.assertEqual((96, 1, 1),test.data['dataset']['k'].shape)
+        self.assertEqual((96, 5, 1),test.data['dataset']['w'].shape)

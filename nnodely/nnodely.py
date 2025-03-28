@@ -723,7 +723,7 @@ class Modely:
             ## Check if the inputs are correct
             #assert set(model_inputs).issubset(source.keys()), f'The dataset is missing some inputs. Inputs needed for the model: {model_inputs}'
 
-            # Merge a list of
+            # Merge a list of inputs into a single dictionary
             for key in model_inputs:
                 if key not in source.keys():
                     continue
@@ -744,6 +744,38 @@ class Modely:
                 if self.data[name][key].ndim > 3:
                     self.data[name][key] = np.squeeze(self.data[name][key], axis=1)
                 num_of_samples[key] = self.data[name][key].shape[0]
+
+        elif isinstance(source, pd.DataFrame):  ## we have a crafted dataset
+            self.file_count = 1
+
+            ## Check if the inputs are correct
+            # assert set(model_inputs).issubset(source.columns), f'The dataset is missing some inputs. \nInputs needed for the model: {model_inputs} \nDataset columns: {source.columns}'
+            
+            processed_data = {}
+            for key in model_inputs:
+                if key not in source.columns:
+                    continue
+
+                processed_data[key] = []  ## Initialize the dataset
+                back, forw = input_ns_backward[key], input_ns_forward[key]
+
+                for idx in range(len(source) - max_n_samples + 1):
+                    window = source[key].iloc[idx + (max_samples_backward - back):idx + (max_samples_backward + forw)]
+                    processed_data[key].append(window.to_numpy())
+
+            ## Convert lists to numpy arrays
+            for key in processed_data:
+                processed_data[key] = np.stack(processed_data[key])
+                if json_inputs[key]['dim'] > 1:
+                    processed_data[key] = np.array(processed_data[key].tolist(), dtype=np.float64)
+                if processed_data[key].ndim == 2:  ## Add the sample dimension
+                    processed_data[key] = np.expand_dims(processed_data[key], axis=-1)
+                if processed_data[key].ndim > 3:
+                    processed_data[key] = np.squeeze(processed_data[key], axis=1)
+                num_of_samples[key] = processed_data[key].shape[0]
+            
+            self.data[name] = processed_data
+
 
         # Check dim of the samples
         check(len(set(num_of_samples.values())) == 1, ValueError,
