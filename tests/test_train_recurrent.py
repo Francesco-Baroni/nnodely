@@ -1520,6 +1520,19 @@ class ModelyTrainingTest(unittest.TestCase):
         self.assertListEqual(test2.training['error2']['train'] , test.training['error2']['train'])
         self.assertListEqual(test2.training['error2']['val'], test.training['error2']['val'])
 
+        test2 = Modely(visualizer=None, seed=42, log_internal=True)
+        test2.addModel('model', [output1, output2])
+        test2.addMinimize('error1', output1, target1.sw(2))
+        test2.addMinimize('error2', output2, target2.last())
+        test2.addClosedLoop(output1, input2)
+        test2.addClosedLoop(output2, input1)
+        test2.neuralizeModel()
+        test2.loadData(name='dataset', source=dataset)
+        test2.trainModel(splits=[100,0,0], train_batch_size=1, step=10, optimizer='SGD', lr=0.001, num_of_epochs=1, prediction_samples=3)
+
+        self.assertEqual(len(test2.internals.keys()), (3+1)*((26+10)//(10+1)))
+        #self.assertEqual(test2.internals)
+
     def test_train_derivate_wrt_input_closed_loop(self):
         NeuObj.clearNames()
         x = State('x')

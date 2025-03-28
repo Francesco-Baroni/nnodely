@@ -1244,7 +1244,7 @@ class Modely:
             del self.run_training_params['early_stopping_params']
 
         ## Create the train, validation and test loss dictionaries
-        train_losses, val_losses, test_losses = {}, {}, {}
+        train_losses, val_losses = {}, {}
         for key in self.model_def['Minimizers'].keys():
             train_losses[key] = []
             if n_samples_val > 0:
@@ -1408,7 +1408,7 @@ class Modely:
 
     def __recurrentTrain(self, data, batch_indexes, batch_size, loss_gains, closed_loop, connect, prediction_samples, step, non_mandatory_inputs, mandatory_inputs, model_inputs, shuffle=False, train=True):
         indexes = copy.deepcopy(batch_indexes)
-        aux_losses = torch.zeros([len(self.model_def['Minimizers']), round(len(indexes)/(batch_size+step))])
+        aux_losses = torch.zeros([len(self.model_def['Minimizers']), round((len(indexes)+step)/(batch_size+step))])
         ## Update with virtual states
         self.model.update(closed_loop=closed_loop, connect=connect)
         X = {}
@@ -1422,6 +1422,8 @@ class Modely:
                     step_idxs = random.sample(indexes, step) if shuffle else indexes[:step]
                     for num in step_idxs:
                         indexes.remove(num)
+                else:
+                    indexes = []
             if train:
                 self.optimizer.zero_grad() ## Reset the gradient
             ## Reset 
