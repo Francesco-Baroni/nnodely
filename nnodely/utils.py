@@ -186,3 +186,10 @@ def count_gradient_operations(grad_fn):
         count += 1
         nodes.extend(next_fn[0] for next_fn in node.next_functions if next_fn[0] is not None)
     return count
+
+def check_memory(X):
+    for key in X.keys():
+        count = count_gradient_operations(X[key].grad_fn)
+        if count > 0:
+            print(f"var {key}= {count}")
+            assert(count == 0)

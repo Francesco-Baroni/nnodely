@@ -13,7 +13,8 @@ from nnodely.exporter import Exporter, StandardExporter
 from nnodely.modeldef import ModelDef
 from nnodely.relation import NeuObj
 
-from nnodely.utils import check, argmax_dict, argmin_dict, tensor_to_list, TORCH_DTYPE, NP_DTYPE
+from nnodely.utils import check, argmax_dict, argmin_dict, tensor_to_list, TORCH_DTYPE, NP_DTYPE, \
+    count_gradient_operations, check_memory
 
 from nnodely.logger import logging, nnLogger
 log = nnLogger(__name__, logging.INFO)
@@ -309,7 +310,7 @@ class Modely:
                 for key in mandatory_inputs:
                     X[key] = inputs[key][idx:idx+1] if sampled else inputs[key][:, idx:idx + self.input_n_samples[key]]
                     if 'type' in json_inputs[key].keys():
-                        X[key].requires_grad = True
+                        X[key] = X[key].requires_grad_(True)
                 ## reset states
                 if count == 0 or prediction_samples=='auto':
                     count = prediction_samples
@@ -329,9 +330,13 @@ class Modely:
                             X[key] = torch.zeros(size=(1, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
                             self.states[key] = X[key]
                         if 'type' in json_inputs[key].keys():
-                            X[key].requires_grad = True
+                            X[key] = X[key].requires_grad_(True)
                     first = False
                 else:
+                    # Remove the gradient of the previous forward
+                    for key in X.keys():
+                        if 'type' in json_inputs[key].keys():
+                            X[key] = X[key].detach().requires_grad_(True)
                     count -= 1
                 ## Forward pass
                 result, _, out_closed_loop, out_connect = self.model(X)
@@ -1314,17 +1319,14 @@ class Modely:
 
         ## Set the gradient to true if necessary
         json_inputs = self.model_def['Inputs'] | self.model_def['States']
-        for key in XY_train:
+        for key in json_inputs.keys():
             if 'type' in json_inputs[key]:
-                XY_train[key].requires_grad = True
-        if XY_val:
-            for key in XY_val:
-                if 'type' in json_inputs[key]:
-                    XY_val[key].requires_grad = True
-        if XY_test:
-            for key in XY_test:
-                if 'type' in json_inputs[key]:
-                    XY_test[key].requires_grad = True
+                if key in XY_train:
+                    XY_train[key].requires_grad_(True)
+                if key in XY_val:
+                    XY_val[key].requires_grad_(True)
+                if key in XY_test:
+                    XY_test[key].requires_grad_(True)
 
         ## Select the model
         select_model = self.__get_parameter(select_model = select_model)
@@ -1436,18 +1438,14 @@ class Modely:
     
     def __updateState(self, X, out_closed_loop, out_connect):
         ## Update
-        from nnodely.utils import count_gradient_operations
         for key, val in out_closed_loop.items():
             shift = val.shape[1]  ## take the output time dimension
             X[key] = torch.roll(X[key], shifts=-1, dims=1) ## Roll the time window
             X[key][:, -shift:, :] = val ## substitute with the predicted value
-            #print(f" variable {key} count = {count_gradient_operations(X[key].grad_fn)}")
             self.states[key] = X[key].clone().detach()
-            #print(f" variable {key} count = {count_gradient_operations(self.states[key].grad_fn)}")
         for key, value in out_connect.items():
             X[key] = value
             self.states[key] = X[key].clone().detach()
-
 
     def __recurrentTrain(self, data, batch_indexes, batch_size, loss_gains, closed_loop, connect, prediction_samples, step, non_mandatory_inputs, mandatory_inputs, shuffle=False, train=True):
         indexes = copy.deepcopy(batch_indexes)
@@ -1624,7 +1622,7 @@ class Modely:
                             forbidden_idxs.extend(range(i-prediction_samples, i, 1))
                     list_of_batch_indexes = [idx for idx in list_of_batch_indexes if idx not in forbidden_idxs]
 
-                ## Clip the step 
+                ## Clip the step
                 if step < 0: ## clip the step to zero
                     log.warning(f"The step is negative ({step}). The step is set to zero.", stacklevel=5)
                     step = 0
@@ -1641,25 +1639,30 @@ class Modely:
                         list_of_batch_indexes.remove(num)
                     if step > 0:
                         if len(list_of_batch_indexes) >= step:
-                            step_idxs = list_of_batch_indexes[:step]
+                            step_idxs =  list_of_batch_indexes[:step]
                             for num in step_idxs:
                                 list_of_batch_indexes.remove(num)
+                        else:
+                            list_of_batch_indexes = []
                     ## Reset 
                     horizon_losses = {key: [] for key in self.model_def['Minimizers'].keys()}
                     for key in non_mandatory_inputs:
-                        if key in data.keys(): # and len(data[key]) >= (idx + self.input_n_samples[key]): 
-                        ## with data
-                            X[key] = data[key][idxs].clone().detach().requires_grad_(True)
-                        else: ## with zeros
+                        if key in data.keys():
+                            ## with data
+                            X[key] = data[key][idxs]
+                        else:  ## with zeros
                             window_size = self.input_n_samples[key]
-                            dim = self.model_def['Inputs'][key]['dim'] if key in model_inputs else self.model_def['States'][key]['dim']
-                            X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=True)
+                            dim = json_inputs[key]['dim']
+                            if 'type' in json_inputs[key]:
+                                X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=True)
+                            else:
+                                X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
                             self.states[key] = X[key]
 
                     for horizon_idx in range(prediction_samples + 1):
                         ## Get data 
                         for key in mandatory_inputs:
-                            X[key] = data[key][[idx+horizon_idx for idx in idxs]].clone().detach().requires_grad_(True)
+                            X[key] = data[key][[idx+horizon_idx for idx in idxs]]
                         ## Forward pass
                         out, minimize_out, out_closed_loop, out_connect = self.model(X)
 
@@ -1694,7 +1697,7 @@ class Modely:
 
                 for idx in range(0, (n_samples - batch_size + 1), batch_size):
                     ## Build the input tensor
-                    XY = {key: val[idx:idx + batch_size].clone().detach().requires_grad_(True) for key, val in data.items()}
+                    XY = {key: val[idx:idx + batch_size] for key, val in data.items()}
 
                     ## Model Forward
                     _, minimize_out, _, _ = self.model(XY)  ## Forward pass

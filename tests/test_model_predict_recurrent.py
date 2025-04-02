@@ -1273,6 +1273,9 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         result = m({'x': [-0.2], 'y': [0.5]}, closed_loop={'y':'out'}, num_of_samples=10, prediction_samples=10)
         self.TestAlmostEqual([a.tolist() for a in x_data[0:10]],result['out'])
 
+        result = m({'x': [-0.2], 'y': [0.5]}, closed_loop={'y':'out'}, num_of_samples=10, prediction_samples='auto')
+        self.TestAlmostEqual([a.tolist() for a in x_data[0:10]],result['out'])
+
     def test_derivate_wrt_input_connect(self):
         NeuObj.clearNames()
         x = Input('x')
@@ -1295,7 +1298,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         out1 = Output('out1', out_der)
         out2 = Output('out2', out_der2)
 
-        m = Modely(visualizer=TextVisualizer())
+        m = Modely(visualizer=None)
         m.addModel('model', [out1,out2])
         m.neuralizeModel()
 
@@ -1318,3 +1321,6 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
 
         result = m({'x': [-0.2], 'y': [0.5]}, connect={'y2':'out1'}, num_of_samples=10, prediction_samples=10)
         self.TestAlmostEqual([a.tolist() for a in x_data[0:10]],result['out2'])
+
+        result = m({'x': [-0.2], 'y': [0.5]}, connect={'y2': 'out1'}, num_of_samples=10, prediction_samples='auto')
+        self.TestAlmostEqual([a.tolist() for a in x_data[0:10]], result['out2'])
