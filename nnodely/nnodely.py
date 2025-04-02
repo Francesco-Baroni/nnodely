@@ -770,9 +770,12 @@ class Modely:
                 if type(source.index) is pd.DatetimeIndex:
                     source = source.resample(f"{int(self.model_def.sample_time * 1e9)}ns").interpolate(method="linear")
                 elif 'time' in source.columns:
-                    if ptypes.is_datetime64_any_dtype(source['time']):
+                    if not ptypes.is_datetime64_any_dtype(source['time']):
                         source['time'] = pd.to_datetime(source['time'], unit='s')
-                    source = source.resample(f"{int(self.model_def.sample_time * 1e9)}ns", on='time').interpolate(method="linear")
+                    source = source.set_index('time', drop=True)
+                    source = source.resample(f"{int(self.model_def.sample_time * 1e9)}ns").interpolate(method="linear")
+                else:
+                    raise TypeError("No time column found in the DataFrame. Please provide a time column for resampling.")
 
             processed_data = {}
             for key in model_inputs:

@@ -678,11 +678,25 @@ class ModelyCreateDatasetTest(unittest.TestCase):
             'y': np.linspace(1,10,10, dtype=np.float32),
             'k': np.linspace(1,10,10, dtype=np.float32),
             'w': np.linspace(1,10,10, dtype=np.float32)})
+
+        test.loadData(name='dataset1', source=df, resampling=True)
+        self.assertEqual((12, 2, 1),test.data['dataset1']['x'].shape)
+        self.assertEqual((12, 2, 1),test.data['dataset1']['y'].shape)
+        self.assertEqual((12, 1, 1),test.data['dataset1']['k'].shape)
+        self.assertEqual((12, 5, 1),test.data['dataset1']['w'].shape)
+
         df['time'] = pd.to_datetime(df['time'], unit='s')
         df = df.set_index('time', drop=True)
+        test.loadData(name='dataset2', source=df, resampling=True)
+        self.assertEqual((12, 2, 1),test.data['dataset2']['x'].shape)
+        self.assertEqual((12, 2, 1),test.data['dataset2']['y'].shape)
+        self.assertEqual((12, 1, 1),test.data['dataset2']['k'].shape)
+        self.assertEqual((12, 5, 1),test.data['dataset2']['w'].shape)
 
-        test.loadData(name='dataset', source=df, resampling=True)
-        self.assertEqual((12, 2, 1),test.data['dataset']['x'].shape)
-        self.assertEqual((12, 2, 1),test.data['dataset']['y'].shape)
-        self.assertEqual((12, 1, 1),test.data['dataset']['k'].shape)
-        self.assertEqual((12, 5, 1),test.data['dataset']['w'].shape)
+        df2 = pd.DataFrame({
+            'x': np.linspace(1,10,10, dtype=np.float32),
+            'y': np.linspace(1,10,10, dtype=np.float32),
+            'k': np.linspace(1,10,10, dtype=np.float32),
+            'w': np.linspace(1,10,10, dtype=np.float32)})
+        with self.assertRaises(TypeError):
+            test.loadData(name='dataset3', source=df2, resampling=True)
