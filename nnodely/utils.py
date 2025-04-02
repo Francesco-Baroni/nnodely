@@ -175,3 +175,14 @@ def argmax_dict(iterable: dict):
 
 def argmin_dict(iterable: dict):
     return min(iterable.items(), key=lambda x: x[1])
+
+def count_gradient_operations(grad_fn):
+    count = 0
+    if grad_fn is None:
+        return count
+    nodes = [grad_fn]
+    while nodes:
+        node = nodes.pop()
+        count += 1
+        nodes.extend(next_fn[0] for next_fn in node.next_functions if next_fn[0] is not None)
+    return count
