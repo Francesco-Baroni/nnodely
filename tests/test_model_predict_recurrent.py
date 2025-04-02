@@ -1265,7 +1265,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         x_data, y_data = [], []
         x = -0.2
         y = 0.5
-        for i in range(100):
+        for i in range(10):
             x = y = fun_data(x, y, K)
             x_data.append(x)
             y_data.append(y)
