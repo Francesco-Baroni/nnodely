@@ -1295,7 +1295,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         out1 = Output('out1', out_der)
         out2 = Output('out2', out_der2)
 
-        m = Modely(visualizer=None)
+        m = Modely(visualizer=TextVisualizer())
         m.addModel('model', [out1,out2])
         m.neuralizeModel()
 

@@ -2,6 +2,7 @@
 import random, torch, copy, os
 import numpy as np
 import pandas as pd
+import pandas.api.types as ptypes
 
 # nnodely packages
 from nnodely.visualizer import TextVisualizer, Visualizer
@@ -10,7 +11,7 @@ from nnodely.model import Model
 from nnodely.optimizer import Optimizer, SGD, Adam
 from nnodely.exporter import Exporter, StandardExporter
 from nnodely.modeldef import ModelDef
-from nnodely import relation
+from nnodely.relation import NeuObj
 
 from nnodely.utils import check, argmax_dict, argmin_dict, tensor_to_list, TORCH_DTYPE, NP_DTYPE
 
@@ -199,6 +200,7 @@ class Modely:
         ## List of keys
         model_inputs = list(self.model_def['Inputs'].keys())
         model_states = list(self.model_def['States'].keys())
+        json_inputs = self.model_def['Inputs'] | self.model_def['States']
         state_closed_loop = [key for key, value in self.model_def['States'].items() if 'closedLoop' in value.keys()] + list(closed_loop.keys())
         state_connect = [key for key, value in self.model_def['States'].items() if 'connect' in value.keys()] + list(connect.keys())
         extra_inputs = list(set(list(inputs.keys())) - set(model_inputs) - set(model_states))
@@ -258,8 +260,8 @@ class Modely:
                 inputs[key] = np.zeros(shape=(self.input_n_samples[key] + window_dim - 1, self.model_def['Inputs'][key]['dim']),dtype=NP_DTYPE).tolist()
 
         ## Transform inputs in 3D Tensors
-        for key, val in inputs.items():
-            input_dim = self.model_def['Inputs'][key]['dim'] if key in model_inputs else self.model_def['States'][key]['dim']
+        for key in inputs.keys():
+            input_dim = json_inputs[key]['dim']
             inputs[key] = torch.from_numpy(np.array(inputs[key])).to(TORCH_DTYPE)
 
             if input_dim > 1:
@@ -280,9 +282,12 @@ class Modely:
             result_dict[key] = []
 
         ## Inference
-        #TODO capire se può essere sostituita in qualche modo with torch.inference_mode():
-        if True:
-            #self.model.eval()
+        calculate_grad = False
+        for key, value in json_inputs.items():
+            if 'type' in value.keys():
+                calculate_grad = True
+                break
+        with torch.enable_grad() if calculate_grad else torch.inference_mode():
             ## Update with virtual states
             if prediction_samples is not None:
                 self.model.update(closed_loop=closed_loop, connect=connect)
@@ -294,7 +299,9 @@ class Modely:
             for idx in range(window_dim):
                 ## Get mandatory data inputs
                 for key in mandatory_inputs:
-                    X[key] = inputs[key][idx:idx+1].clone().detach().requires_grad_(True) if sampled else inputs[key][:, idx:idx + self.input_n_samples[key]].clone().detach().requires_grad_(True)
+                    X[key] = inputs[key][idx:idx+1] if sampled else inputs[key][:, idx:idx + self.input_n_samples[key]]
+                    if 'type' in json_inputs[key].keys():
+                        X[key].requires_grad = True
                 ## reset states
                 if count == 0 or prediction_samples=='auto':
                     count = prediction_samples
@@ -302,17 +309,19 @@ class Modely:
                         ## if prediction_samples is 'auto' and i have enough samples
                         ## if prediction_samples is NOT 'auto' but i have enough extended window (with zeros)
                         if (key in inputs.keys() and prediction_samples == 'auto' and idx < num_of_windows[key]) or (key in inputs.keys() and prediction_samples != 'auto' and idx < inputs[key].shape[1]):
-                            X[key] = inputs[key][idx:idx+1].clone().detach().requires_grad_(True) if sampled else inputs[key][:, idx:idx + self.input_n_samples[key]].clone().detach().requires_grad_(True)
+                            X[key] = inputs[key][idx:idx+1] if sampled else inputs[key][:, idx:idx + self.input_n_samples[key]]
                         ## if im in the first reset
                         ## if i have a state in memory
                         ## if i have prediction_samples = 'auto' and not enough samples
                         elif (key in self.states.keys() and (first or prediction_samples == 'auto')) and (prediction_samples == 'auto' or prediction_samples == None):
-                            X[key] = self.states[key].clone().detach().requires_grad_(True)
+                            X[key] = self.states[key]
                         else: ## if i have no samples and no states
                             window_size = self.input_n_samples[key]
-                            dim = self.model_def['Inputs'][key]['dim'] if key in model_inputs else self.model_def['States'][key]['dim']
-                            X[key] = torch.zeros(size=(1, window_size, dim), dtype=TORCH_DTYPE, requires_grad=True)
+                            dim = json_inputs[key]['dim']
+                            X[key] = torch.zeros(size=(1, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
                             self.states[key] = X[key]
+                        if 'type' in json_inputs[key].keys():
+                            X[key].requires_grad = True
                     first = False
                 else:
                     count -= 1
@@ -339,7 +348,7 @@ class Modely:
         return result_dict
     
     def clearTags(self,):
-        relation.NeuObj_names = []
+        NeuObj.clearNames()
 
     def getSamples(self, dataset, index = None, window=1):
         """
@@ -594,7 +603,7 @@ class Modely:
         self.visualizer.showModelInputWindow()
         self.visualizer.showBuiltModel()
 
-    def loadData(self, name, source, format=None, skiplines=0, delimiter=',', header=None):
+    def loadData(self, name, source, format=None, skiplines=0, delimiter=',', header=None, resampling=False):
         """
         Loads data into the model. The data can be loaded from a directory path containing the csv files or from a crafted dataset.
 
@@ -748,9 +757,15 @@ class Modely:
         elif isinstance(source, pd.DataFrame):  ## we have a crafted dataset
             self.file_count = 1
 
-            ## Check if the inputs are correct
-            # assert set(model_inputs).issubset(source.columns), f'The dataset is missing some inputs. \nInputs needed for the model: {model_inputs} \nDataset columns: {source.columns}'
-            
+            ## Resampling if the time column is provided (must be a Datetime object)
+            if resampling:
+                if type(source.index) is pd.DatetimeIndex:
+                    source = source.resample(f"{int(self.model_def.sample_time * 1e9)}ns").interpolate(method="linear")
+                elif 'time' in source.columns:
+                    if ptypes.is_datetime64_any_dtype(source['time']):
+                        source['time'] = pd.to_datetime(source['time'], unit='s')
+                    source = source.resample(f"{int(self.model_def.sample_time * 1e9)}ns", on='time').interpolate(method="linear")
+
             processed_data = {}
             for key in model_inputs:
                 if key not in source.columns:
@@ -1286,6 +1301,20 @@ class Modely:
         self.run_training_params['update_per_epochs'] = update_per_epochs
         self.run_training_params['unused_samples'] = unused_samples
 
+        ## Set the gradient to true if necessary
+        json_inputs = self.model_def['Inputs'] | self.model_def['States']
+        for key in XY_train:
+            if 'type' in json_inputs[key]:
+                XY_train[key].requires_grad = True
+        if XY_val:
+            for key in XY_val:
+                if 'type' in json_inputs[key]:
+                    XY_val[key].requires_grad = True
+        if XY_test:
+            for key in XY_test:
+                if 'type' in json_inputs[key]:
+                    XY_test[key].requires_grad = True
+
         ## Select the model
         select_model = self.__get_parameter(select_model = select_model)
         select_model_params = self.__get_parameter(select_model_params = select_model_params)
@@ -1408,6 +1437,7 @@ class Modely:
 
     def __recurrentTrain(self, data, batch_indexes, batch_size, loss_gains, closed_loop, connect, prediction_samples, step, non_mandatory_inputs, mandatory_inputs, model_inputs, shuffle=False, train=True):
         indexes = copy.deepcopy(batch_indexes)
+        json_inputs = self.model_def['States'] | self.model_def['Inputs']
         aux_losses = torch.zeros([len(self.model_def['Minimizers']), round((len(indexes)+step)/(batch_size+step))])
         ## Update with virtual states
         self.model.update(closed_loop=closed_loop, connect=connect)
@@ -1431,17 +1461,20 @@ class Modely:
             for key in non_mandatory_inputs:
                 if key in data.keys():
                 ## with data
-                    X[key] = data[key][idxs].clone().detach().requires_grad_(True)
+                    X[key] = data[key][idxs]
                 else: ## with zeros
                     window_size = self.input_n_samples[key]
-                    dim = self.model_def['Inputs'][key]['dim'] if key in model_inputs else self.model_def['States'][key]['dim']
-                    X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=True)
+                    dim = json_inputs[key]['dim']
+                    if 'type' in json_inputs[key]:
+                        X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=True)
+                    else:
+                        X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
                     self.states[key] = X[key]
 
             for horizon_idx in range(prediction_samples + 1):
                 ## Get data 
                 for key in mandatory_inputs:
-                    X[key] = data[key][[idx+horizon_idx for idx in idxs]].clone().detach().requires_grad_(True)
+                    X[key] = data[key][[idx+horizon_idx for idx in idxs]]
                 ## Forward pass
                 out, minimize_out, out_closed_loop, out_connect = self.model(X)
 
@@ -1492,7 +1525,7 @@ class Modely:
         aux_losses = torch.zeros([len(self.model_def['Minimizers']),n_samples//batch_size])
         for idx in range(0, (n_samples - batch_size + 1), batch_size):
             ## Build the input tensor
-            XY = {key: val[idx:idx+batch_size].clone().detach().requires_grad_(True) for key, val in data.items()}
+            XY = {key: val[idx:idx+batch_size] for key, val in data.items()}
             ## Reset gradient
             if train:
                 self.optimizer.zero_grad()
