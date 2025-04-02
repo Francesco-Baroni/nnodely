@@ -307,7 +307,7 @@ class Modely:
             for idx in range(window_dim):
                 ## Get mandatory data inputs
                 for key in mandatory_inputs:
-                    X[key] = inputs[key][idx:idx+1] if sampled else inputs[key][:, idx:idx + self.input_n_samples[key]].clone().detach()
+                    X[key] = inputs[key][idx:idx+1] if sampled else inputs[key][:, idx:idx + self.input_n_samples[key]]
                     if 'type' in json_inputs[key].keys():
                         X[key].requires_grad = True
                 ## reset states
@@ -317,7 +317,7 @@ class Modely:
                         ## if prediction_samples is 'auto' and i have enough samples
                         ## if prediction_samples is NOT 'auto' but i have enough extended window (with zeros)
                         if (key in inputs.keys() and prediction_samples == 'auto' and idx < num_of_windows[key]) or (key in inputs.keys() and prediction_samples != 'auto' and idx < inputs[key].shape[1]):
-                            X[key] = inputs[key][idx:idx+1] if sampled else inputs[key][:, idx:idx + self.input_n_samples[key]].clone()
+                            X[key] = inputs[key][idx:idx+1] if sampled else inputs[key][:, idx:idx + self.input_n_samples[key]]
                         ## if im in the first reset
                         ## if i have a state in memory
                         ## if i have prediction_samples = 'auto' and not enough samples
@@ -327,7 +327,7 @@ class Modely:
                             window_size = self.input_n_samples[key]
                             dim = json_inputs[key]['dim']
                             X[key] = torch.zeros(size=(1, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
-                            self.states[key] = X[key].clone()
+                            self.states[key] = X[key]
                         if 'type' in json_inputs[key].keys():
                             X[key].requires_grad = True
                     first = False
@@ -1436,11 +1436,14 @@ class Modely:
     
     def __updateState(self, X, out_closed_loop, out_connect):
         ## Update
+        from nnodely.utils import count_gradient_operations
         for key, val in out_closed_loop.items():
             shift = val.shape[1]  ## take the output time dimension
             X[key] = torch.roll(X[key], shifts=-1, dims=1) ## Roll the time window
             X[key][:, -shift:, :] = val ## substitute with the predicted value
+            #print(f" variable {key} count = {count_gradient_operations(X[key].grad_fn)}")
             self.states[key] = X[key].clone().detach()
+            #print(f" variable {key} count = {count_gradient_operations(self.states[key].grad_fn)}")
         for key, value in out_connect.items():
             X[key] = value
             self.states[key] = X[key].clone().detach()
