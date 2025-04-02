@@ -141,6 +141,14 @@ class Modely:
         random.seed(seed)  ## set the random module seed
         np.random.seed(seed)  ## set the numpy seed
 
+    def count_operations(self, grad_fn):
+        count = 0
+        nodes = [grad_fn]
+        while nodes:
+            node = nodes.pop()
+            count += 1
+            nodes.extend(next_fn[0] for next_fn in node.next_functions if next_fn[0] is not None)
+        return count
 
     def __call__(self, inputs={}, sampled=False, closed_loop={}, connect={}, prediction_samples='auto', num_of_samples=None): ##, align_input=False):
         """
@@ -299,7 +307,7 @@ class Modely:
             for idx in range(window_dim):
                 ## Get mandatory data inputs
                 for key in mandatory_inputs:
-                    X[key] = inputs[key][idx:idx+1] if sampled else inputs[key][:, idx:idx + self.input_n_samples[key]]
+                    X[key] = inputs[key][idx:idx+1] if sampled else inputs[key][:, idx:idx + self.input_n_samples[key]].clone().detach()
                     if 'type' in json_inputs[key].keys():
                         X[key].requires_grad = True
                 ## reset states
@@ -309,7 +317,7 @@ class Modely:
                         ## if prediction_samples is 'auto' and i have enough samples
                         ## if prediction_samples is NOT 'auto' but i have enough extended window (with zeros)
                         if (key in inputs.keys() and prediction_samples == 'auto' and idx < num_of_windows[key]) or (key in inputs.keys() and prediction_samples != 'auto' and idx < inputs[key].shape[1]):
-                            X[key] = inputs[key][idx:idx+1] if sampled else inputs[key][:, idx:idx + self.input_n_samples[key]]
+                            X[key] = inputs[key][idx:idx+1] if sampled else inputs[key][:, idx:idx + self.input_n_samples[key]].clone()
                         ## if im in the first reset
                         ## if i have a state in memory
                         ## if i have prediction_samples = 'auto' and not enough samples
@@ -319,7 +327,7 @@ class Modely:
                             window_size = self.input_n_samples[key]
                             dim = json_inputs[key]['dim']
                             X[key] = torch.zeros(size=(1, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
-                            self.states[key] = X[key]
+                            self.states[key] = X[key].clone()
                         if 'type' in json_inputs[key].keys():
                             X[key].requires_grad = True
                     first = False
@@ -1332,7 +1340,7 @@ class Modely:
             ## TRAIN
             self.model.train()
             if recurrent_train:
-                losses = self.__recurrentTrain(XY_train, list_of_batch_indexes_train, train_batch_size, minimize_gain, closed_loop, connect, prediction_samples, train_step, non_mandatory_inputs, mandatory_inputs, model_inputs, shuffle=shuffle_data, train=True)
+                losses = self.__recurrentTrain(XY_train, list_of_batch_indexes_train, train_batch_size, minimize_gain, closed_loop, connect, prediction_samples, train_step, non_mandatory_inputs, mandatory_inputs, shuffle=shuffle_data, train=True)
             else:
                 losses = self.__Train(XY_train, n_samples_train, train_batch_size, minimize_gain, shuffle=shuffle_data, train=True)
             ## save the losses
@@ -1343,7 +1351,7 @@ class Modely:
                 ## VALIDATION
                 self.model.eval()
                 if recurrent_train:
-                    losses = self.__recurrentTrain(XY_val, list_of_batch_indexes_val, val_batch_size, minimize_gain, closed_loop, connect, prediction_samples, val_step, non_mandatory_inputs, mandatory_inputs, model_inputs, shuffle=False, train=False)
+                    losses = self.__recurrentTrain(XY_val, list_of_batch_indexes_val, val_batch_size, minimize_gain, closed_loop, connect, prediction_samples, val_step, non_mandatory_inputs, mandatory_inputs, shuffle=False, train=False)
                 else:
                     losses = self.__Train(XY_val, n_samples_val, val_batch_size, minimize_gain, shuffle=False, train=False)
                 ## save the losses
@@ -1429,13 +1437,13 @@ class Modely:
             shift = val.shape[1]  ## take the output time dimension
             X[key] = torch.roll(X[key], shifts=-1, dims=1) ## Roll the time window
             X[key][:, -shift:, :] = val ## substitute with the predicted value
-            self.states[key] = X[key].clone()
+            self.states[key] = X[key].clone().detach()
         for key, value in out_connect.items():
             X[key] = value
-            self.states[key] = X[key].clone()
+            self.states[key] = X[key].clone().detach()
 
 
-    def __recurrentTrain(self, data, batch_indexes, batch_size, loss_gains, closed_loop, connect, prediction_samples, step, non_mandatory_inputs, mandatory_inputs, model_inputs, shuffle=False, train=True):
+    def __recurrentTrain(self, data, batch_indexes, batch_size, loss_gains, closed_loop, connect, prediction_samples, step, non_mandatory_inputs, mandatory_inputs, shuffle=False, train=True):
         indexes = copy.deepcopy(batch_indexes)
         json_inputs = self.model_def['States'] | self.model_def['Inputs']
         aux_losses = torch.zeros([len(self.model_def['Minimizers']), round((len(indexes)+step)/(batch_size+step))])
@@ -1549,8 +1557,13 @@ class Modely:
 
     def resultAnalysis(self, dataset, data = None, minimize_gain = {}, closed_loop = {}, connect = {},  prediction_samples = None, step = 0, batch_size = None):
         import warnings
-        #TODO capire se può essere sostituita in qualche modo with torch.inference_mode():
-        if True:
+        json_inputs = self.model_def['Inputs'] | self.model_def['States']
+        calculate_grad = False
+        for key, value in json_inputs.items():
+            if 'type' in value.keys():
+                calculate_grad = True
+                break
+        with torch.enable_grad() if calculate_grad else torch.inference_mode():
             ## Init model for retults analysis
             self.model.eval()
             self.performance[dataset] = {}
