@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import copy
 
 import numpy as np
@@ -139,7 +141,7 @@ class Stream(Relation):
         return self.__str__()
 
     @enforce_types
-    def tw(self, tw:float|int|list, offset:float|int|None = None) -> "Stream":
+    def tw(self, tw:float|int|list, offset:float|int|None = None) -> Stream:
         """
         Selects a time window on Stream. It is possible to create a smaller or bigger time window on the stream.
         The Time Window must be in the past not in the future.
@@ -166,7 +168,7 @@ class Stream(Relation):
         return Stream(win_state.name, merge(win_state.json, out_connect.json), win_state.dim,0 )
 
     @enforce_types
-    def sw(self, sw:int|list, offset:int|None = None) -> "Stream":
+    def sw(self, sw:int|list, offset:int|None = None) -> Stream:
         """
         Selects a sample window on Stream. It is possible to create a smaller or bigger window on the stream.
         The Sample Window must be in the past not in the future.
@@ -193,7 +195,7 @@ class Stream(Relation):
         return Stream(win_state.name, merge(win_state.json, out_connect.json), win_state.dim,0 )
 
     @enforce_types
-    def z(self, delay:int|float) -> "Stream":
+    def z(self, delay:int|float) -> Stream:
         """
         Considering the Zeta transform notation. The function is used to delay a Stream.
         The value of the delay can be only positive.
@@ -213,7 +215,7 @@ class Stream(Relation):
         return self.sw([-self.dim['sw']-delay,-delay])
 
     @enforce_types
-    def delay(self, delay:int|float) -> "Stream":
+    def delay(self, delay:int|float) -> Stream:
         """
         The function is used to delay a Stream.
         The value of the delay can be only positive.
@@ -233,7 +235,7 @@ class Stream(Relation):
         return self.tw([-self.dim['tw']-delay,-delay])
 
     @enforce_types
-    def s(self, order:int, method:str = 'ForwardEuler') -> "Stream":
+    def s(self, order:int, init:Stream|None = None, method:str = 'ForwardEuler') -> Stream:
         """
         Considering the Laplace transform notation. The function is used to operate an integral or derivate operation on a Stream.
         The order of the integral or the derivative operation is indicated by the order parameter.
@@ -254,13 +256,13 @@ class Stream(Relation):
         check(order != 0, ValueError, "The order must be a positive or negative integer not a zero")
         if order > 0:
             for i in range(order):
-                o = Derivate(self, method = method)
+                o = Derivate(self, init = init, method = method)
         elif order < 0:
             for i in range(-order):
                 o = Integrate(self, method = method)
         return o
 
-    def connect(self, obj) -> "Stream":
+    def connect(self, obj:"State") -> Stream:
         """
         Connects the current stream to a given state object.
 
@@ -290,7 +292,7 @@ class Stream(Relation):
         self.json['States'][obj.name]['connect'] = self.name
         return Stream(self.name, self.json, self.dim,0 )
 
-    def closedLoop(self, obj) -> "Stream":
+    def closedLoop(self, obj:"State", init:Stream|None = None) -> Stream:
         """
         Creates a closed loop connection with a given state object.
 
@@ -319,6 +321,8 @@ class Stream(Relation):
               KeyError,
               f"The state variable {obj.name} is already connected.")
         self.json['States'][obj.name]['closedLoop'] = self.name
+        if init is not None:
+            self.json['States'][obj.name]['init'] = init.name
         return Stream(self.name, self.json, self.dim,0 )
 
 class ToStream():

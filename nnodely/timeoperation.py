@@ -18,15 +18,16 @@ class Integrate(Stream, ToStream):
     method : is the integration method
     """
     @enforce_types
-    def __init__(self, obj:Stream, method:str = 'ForwardEuler') -> Stream:
+    def __init__(self, obj:Stream, init:Stream|None = None, method:str = 'ForwardEuler') -> Stream:
         from nnodely.input import State, ClosedLoop
         from nnodely.parameter import SampleTime
-        s = State(obj.name + "_int" + str(NeuObj.count), dimensions=obj.dim['dim'])
+        name_str = obj.name + "_int" + str(NeuObj.count)
+        s = State(name_str, dimensions=obj.dim['dim'])
         if method == 'ForwardEuler':
-            new_s = s.last()  + obj * SampleTime()
+            new_s = s.last() + obj * SampleTime()
         else:
             raise ValueError(f"The method '{method}' is not supported yet")
-        out_connect = ClosedLoop(new_s, s)
+        out_connect = ClosedLoop(new_s, s, init)
         super().__init__(new_s.name, merge(new_s.json, out_connect.json), new_s.dim)
 
 class Derivate(Stream, ToStream):
@@ -38,7 +39,7 @@ class Derivate(Stream, ToStream):
     method : is the derivative method
     """
     @enforce_types
-    def __init__(self, output:Stream, input:Stream = None, method:str = 'ForwardEuler') -> Stream:
+    def __init__(self, output:Stream, input:Stream = None, init:Stream|None = None, method:str = 'ForwardEuler') -> Stream:
         from nnodely.input import State, ClosedLoop
         from nnodely.parameter import SampleTime
         if input is None:
@@ -47,7 +48,7 @@ class Derivate(Stream, ToStream):
                 new_s = (output - s.last()) / SampleTime()
             else:
                 raise ValueError(f"The method '{method}' is not supported yet")
-            out_connect = ClosedLoop(output, s)
+            out_connect = ClosedLoop(output, s, init)
             super().__init__(new_s.name,merge(new_s.json, out_connect.json), new_s.dim)
         else:
             super().__init__(der_relation_name + str(Stream.count), merge(output.json,input.json), input.dim)

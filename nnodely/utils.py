@@ -1,12 +1,11 @@
-import copy, torch, inspect
-from collections import OrderedDict
+import copy, torch, inspect, keyword
 
 import numpy as np
 
 from pprint import pformat
 from functools import wraps
 from typing import get_type_hints
-import keyword
+from collections import OrderedDict
 
 from nnodely.logger import logging, nnLogger
 log = nnLogger(__name__, logging.CRITICAL)
@@ -28,21 +27,24 @@ def enforce_types(func):
         sig = OrderedDict(inspect.signature(func).parameters)
         if len(sig) != len(args):
             var_type = None
+            var_type2 = None
             for ind, arg in enumerate(args):
                 if ind < len(list(sig.values())) and list(sig.values())[ind].kind == inspect.Parameter.VAR_POSITIONAL:
                     var_name = list(sig.keys())[ind]
                     var_type = sig.pop(var_name)
+                    var_type2 = hints.pop(var_name)
                 if var_type:
                     sig[var_name+str(ind)] = var_type
+                    hints[var_name+str(ind)] = var_type2
 
         all_args.update(dict(zip(sig, args)))
         if 'self' in sig.keys():
             sig.pop('self')
 
         for arg_name, arg in all_args.items():
-            if (arg_name in hints.keys() or arg_name in sig.keys()) and not isinstance(arg,sig[arg_name].annotation):
+            if (arg_name in hints.keys() or arg_name in sig.keys()) and not isinstance(arg,hints[arg_name]):
                 raise TypeError(
-                    f"In Function or Class {func} Expected argument '{arg}' to be of type {sig[arg_name].annotation}, but got {type(arg)}")
+                    f"In Function or Class {func} Expected argument '{arg}' to be of type {hints[arg_name]}, but got {type(arg)}")
 
         # for arg, arg_type in hints.items():
         #     if arg in all_args and not isinstance(all_args[arg], arg_type):

@@ -246,10 +246,6 @@ closedloop_name = 'closedLoop'
 class Connect(Stream, ToStream):
     @enforce_types
     def __init__(self, obj1:Stream, obj2:State) -> Stream:
-        check(type(obj1) is Stream, TypeError,
-              f"The {obj1} must be a Stream and not a {type(obj1)}.")
-        check(type(obj2) is State, TypeError,
-              f"The {obj2} must be a State and not a {type(obj2)}.")
         super().__init__(obj1.name,merge(obj1.json, obj2.json),obj1.dim)
         check(closedloop_name not in self.json['States'][obj2.name] or connect_name not in self.json['States'][obj2.name],
               KeyError,f"The state variable {obj2.name} is already connected.")
@@ -257,12 +253,13 @@ class Connect(Stream, ToStream):
 
 class ClosedLoop(Stream, ToStream):
     @enforce_types
-    def __init__(self, obj1:Stream, obj2: State) -> Stream:
-        check(type(obj1) is Stream, TypeError,
-              f"The {obj1} must be a Stream and not a {type(obj1)}.")
-        check(type(obj2) is State, TypeError,
-              f"The {obj2} must be a State and not a {type(obj2)}.")
-        super().__init__(obj1.name, merge(obj1.json, obj2.json), obj1.dim)
+    def __init__(self, obj1:Stream, obj2:State, init:Stream|None=None) -> Stream:
+        if init is None:
+            super().__init__(obj1.name, merge(obj1.json, obj2.json), obj1.dim)
+        else:
+            super().__init__(obj1.name, merge(obj1.json, merge(obj2.json,init.json)), obj1.dim)
         check(closedloop_name not in self.json['States'][obj2.name] or connect_name not in self.json['States'][obj2.name],
               KeyError, f"The state variable {obj2.name} is already connected.")
         self.json['States'][obj2.name][closedloop_name] = obj1.name
+        if init is not None:
+            self.json['States'][obj2.name]['init'] = init.nameq
