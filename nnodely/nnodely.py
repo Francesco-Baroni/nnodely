@@ -13,8 +13,7 @@ from nnodely.exporter import Exporter, StandardExporter
 from nnodely.modeldef import ModelDef
 from nnodely.relation import NeuObj
 
-from nnodely.utils import check, argmax_dict, argmin_dict, tensor_to_list, TORCH_DTYPE, NP_DTYPE, \
-    count_gradient_operations, check_memory
+from nnodely.utils import check, argmax_dict, argmin_dict, tensor_to_list, TORCH_DTYPE, NP_DTYPE, check_gradient_operations
 
 from nnodely.logger import logging, nnLogger
 log = nnLogger(__name__, logging.INFO)
@@ -1491,6 +1490,8 @@ class Modely:
                 out, minimize_out, out_closed_loop, out_connect = self.model(X)
 
                 if self.log_internal and train:
+                    assert(check_gradient_operations(self.states)==0)
+                    assert(check_gradient_operations(data) == 0)
                     internals_dict = {'XY':tensor_to_list(X),'out':out,'param':self.model.all_parameters,'closedLoop':self.model.closed_loop_update,'connect':self.model.connect_update}
 
                 ## Loss Calculation
