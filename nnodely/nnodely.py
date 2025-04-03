@@ -1606,29 +1606,16 @@ class Modely:
                     for horizon_idx in range(prediction_samples + 1):
                         A[key].append([])
                         B[key].append([])
-                
+
                 list_of_batch_indexes = list(range(n_samples - prediction_samples))
                 ## Remove forbidden indexes in case of a multi-file dataset
                 if dataset in self.multifile.keys(): ## Multi-file Dataset
                     if n_samples == self.run_training_params['n_samples_train']: ## Training
-                        start_idx, end_idx = 0, n_samples
+                        list_of_batch_indexes, step = self.__get_batch_indexes(dataset, n_samples, prediction_samples, batch_size, step, type='train')
                     elif n_samples == self.run_training_params['n_samples_val']: ## Validation
-                        start_idx, end_idx = self.run_training_params['n_samples_train'], self.run_training_params['n_samples_train'] + n_samples
-                    else: ## Test
-                        start_idx, end_idx = self.run_training_params['n_samples_train'] + self.run_training_params['n_samples_val'], self.run_training_params['n_samples_train'] + self.run_training_params['n_samples_val'] + n_samples
-                    forbidden_idxs = []
-                    for i in self.multifile[dataset]:
-                        if i < end_idx and i > start_idx:
-                            forbidden_idxs.extend(range(i-prediction_samples, i, 1))
-                    list_of_batch_indexes = [idx for idx in list_of_batch_indexes if idx not in forbidden_idxs]
-
-                ## Clip the step
-                if step < 0: ## clip the step to zero
-                    log.warning(f"The step is negative ({step}). The step is set to zero.", stacklevel=5)
-                    step = 0
-                if step > (len(list_of_batch_indexes)-batch_size): ## Clip the step to the maximum number of samples
-                    log.warning(f"The step ({step}) is greater than the number of available samples ({len(list_of_batch_indexes)-batch_size}). The step is set to the maximum number.", stacklevel=5)
-                    step = len(list_of_batch_indexes)-batch_size
+                        list_of_batch_indexes, step = self.__get_batch_indexes(dataset, n_samples, prediction_samples, batch_size, step, type='val')
+                    else:
+                        list_of_batch_indexes, step = self.__get_batch_indexes(dataset, n_samples, prediction_samples, batch_size, step, type='test')
 
                 X = {}
                 ## Update with virtual states
