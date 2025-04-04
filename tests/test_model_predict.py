@@ -1413,6 +1413,8 @@ class ModelyPredictTest(unittest.TestCase):
         test.addModel('out_A',  [out_aux,out1])
         test.neuralizeModel()
         results = test({'in1': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]}, connect={'state': 'out_aux'})
+        with self.assertRaises(ValueError):
+            test({'in1': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]}, connect={'out_aux': 'state'})
         self.assertEqual((4, 3), np.array(results['out1']).shape)
         self.assertEqual([[4.0, 5.0, 6.0], [5.0, 6.0, 7.0], [6.0, 7.0, 8.0], [7.0, 8.0, 9.0]], results['out1'])
 

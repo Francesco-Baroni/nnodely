@@ -19,6 +19,9 @@ from nnodely.logger import logging, nnLogger
 log = nnLogger(__name__, logging.INFO)
 
 
+def clearNames():
+    NeuObj.clearNames()
+
 class Modely:
     """
     Create the main object, the nnodely object, that will be used to create the network, train and export it.
@@ -205,7 +208,7 @@ class Modely:
         check(self.neuralized, RuntimeError, "The network is not neuralized.")
 
         ## Check closed loop integrity
-        for close_in, close_out in closed_loop.items():
+        for close_in, close_out in (closed_loop | connect).items():
             check(close_in in self.model_def['Inputs'], ValueError, f'the tag "{close_in}" is not an input variable.')
             check(close_out in self.model_def['Outputs'], ValueError, f'the tag "{close_out}" is not an output of the network')
 
@@ -362,9 +365,6 @@ class Modely:
                 del self.states[key]
         
         return result_dict
-    
-    def clearTags(self,):
-        NeuObj.clearNames()
 
     def getSamples(self, dataset, index = None, window=1):
         """

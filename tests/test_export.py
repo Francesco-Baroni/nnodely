@@ -24,7 +24,7 @@ class ModelyExportTest(unittest.TestCase):
 
     def __init__(self, *args, **kwargs):
         super(ModelyExportTest, self).__init__(*args, **kwargs)
-        NeuObj.clearNames()
+        clearNames()
 
         self.result_path = './results'
         self.test = Modely(visualizer=None, seed=42, workspace=self.result_path)
