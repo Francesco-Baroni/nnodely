@@ -47,13 +47,18 @@ class ModelyTestVisualizer(unittest.TestCase):
         def fuzzyfun(x):
             return torch.sin(x)
 
+        def fuzzyfunth(x):
+            return torch.tanh(x)
+
         fuzzy = Fuzzify(output_dimension=4, range=[0, 4], functions=fuzzyfun)(x.tw(1))
         fuzzyTriang = Fuzzify(centers=[1, 2, 3, 7])(x.tw(1))
+        fuzzyRect = Fuzzify(centers=[1, 2, 3, 7], functions='Rectangular')(x.tw(1))
+        fuzzyList = Fuzzify(centers=[1, 3, 2, 7], functions=[fuzzyfun,fuzzyfunth])(x.tw(1))
 
         self.out = Output('out', Fir(parfun_x(x.tw(1)) + parfun_y(y.tw(1), c_v)))
         self.out2 = Output('out2', Add(w, x.tw(1)) + Add(t, y.tw(1)) + Add(w, c))
         self.out3 = Output('out3', Add(fir_w, fir_t))
-        self.out4 = Output('out4', Linear(output_dimension=1)(fuzzy+fuzzyTriang))
+        self.out4 = Output('out4', Linear(output_dimension=1)(fuzzy+fuzzyTriang+fuzzyRect+fuzzyList))
         self.out5 = Output('out5', Fir(time_part) + Fir(sample_select))
         self.out6 = Output('out6', LocalModel(output_function=Fir())(x.tw(1), fuzzy))
         self.out7 = Output('out7', parfun_zz(z.last()))
@@ -126,6 +131,7 @@ class ModelyTestVisualizer(unittest.TestCase):
         m.closeFunctions()
 
     def test_export_mplvisualizer2(self):
+        clearNames(['x', 'F'])
         x = Input('x')
         F = Input('F')
         def myFun(K1, K2, p1, p2):

@@ -19,8 +19,8 @@ from nnodely.logger import logging, nnLogger
 log = nnLogger(__name__, logging.INFO)
 
 
-def clearNames():
-    NeuObj.clearNames()
+def clearNames(names:str|None = None):
+    NeuObj.clearNames(names)
 
 class Modely:
     """
