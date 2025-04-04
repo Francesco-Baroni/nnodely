@@ -144,15 +144,6 @@ class Modely:
         random.seed(seed)  ## set the random module seed
         np.random.seed(seed)  ## set the numpy seed
 
-    def count_operations(self, grad_fn):
-        count = 0
-        nodes = [grad_fn]
-        while nodes:
-            node = nodes.pop()
-            count += 1
-            nodes.extend(next_fn[0] for next_fn in node.next_functions if next_fn[0] is not None)
-        return count
-
     def __call__(self, inputs={}, sampled=False, closed_loop={}, connect={}, prediction_samples='auto', num_of_samples=None): ##, align_input=False):
         """
         Performs inference on the model.
