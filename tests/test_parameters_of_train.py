@@ -255,6 +255,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         # print('test after train: ', test(inputs={'x': [100, 101, 102, 103, 104], 'y': [200, 202, 204, 206, 208]}))
 
     def test_build_dataset_batch(self):
+        NeuObj.clearNames()
         input1 = Input('in1')
         output = Input('out')
         rel1 = Fir(input1.tw(0.05))
@@ -273,6 +274,10 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         training_params['test_batch_size'] = 1
         training_params['lr'] = 0.1
         training_params['num_of_epochs'] = 5
+        with self.assertRaises(RuntimeError):
+            test.trainModel(splits=[70,20,10],training_params = training_params)
+        test.addModel('out',rel1)
+        test.neuralizeModel(0.01)
         test.trainModel(splits=[70,20,10],training_params = training_params)
 
         # 15 lines in the dataset
@@ -305,6 +310,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
 
         test = Modely(visualizer=None)
         test.addMinimize('out', output.z(-1), rel1)
+        test.addModel('model', rel1)
         test.neuralizeModel(0.01)
 
         data_struct = ['x','F','x2','y2','','A1x','A1y','B1x','B1y','','A2x','A2y','B2x','out','','x3','in1','in2','time']
@@ -349,6 +355,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
 
         test = Modely(visualizer=None)
         test.addMinimize('out', output.next(), rel1)
+        test.addModel('model', rel1)
         test.neuralizeModel(0.01)
 
         data_struct = ['x', 'F', 'x2', 'y2', '', 'A1x', 'A1y', 'B1x', 'B1y', '', 'A2x', 'A2y', 'B2x', 'out', '', 'x3',
@@ -396,6 +403,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
 
         test = Modely(visualizer=None)
         test.addMinimize('out', output.z(-1), rel1)
+        test.addModel('model', rel1)
         test.neuralizeModel(0.01)
 
         data_struct = ['x', 'F', 'x2', 'y2', '', 'A1x', 'A1y', 'B1x', 'B1y', '', 'A2x', 'A2y', 'B2x', 'out', '', 'x3',
@@ -443,6 +451,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
 
         test = Modely(visualizer=None)
         test.addMinimize('out', output.next(), rel1)
+        test.addModel('model', rel1)
         test.neuralizeModel(0.01)
 
         x_size = 20
@@ -556,6 +565,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
 
         test = Modely(visualizer=None)
         test.addMinimize('out', out, out2)
+        test.addModel('model', out)
         test.neuralizeModel(0.01)
 
         data_folder = os.path.join(os.path.dirname(__file__), 'vector_data/')

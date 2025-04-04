@@ -2,8 +2,14 @@ import torch.nn as nn
 import torch
 
 from nnodely.relation import Stream, NeuObj, ToStream
-from nnodely.utils import merge, enforce_types
+from nnodely.utils import merge, enforce_types, get_inputs, check
 from nnodely.model import Model
+from nnodely.fixstepsolver import Euler, Trapezoidal
+
+SOLVERS = {
+    'euler': Euler,
+    'trapezoidal': Trapezoidal
+}
 
 # Binary operators
 int_relation_name = 'Integrate'
@@ -18,16 +24,14 @@ class Integrate(Stream, ToStream):
     method : is the integration method
     """
     @enforce_types
-    def __init__(self, obj:Stream, method:str = 'ForwardEuler') -> Stream:
+    def __init__(self, output:Stream, *, method:str = 'euler') -> Stream:
         from nnodely.input import State, ClosedLoop
-        from nnodely.parameter import SampleTime
-        s = State(obj.name + "_int" + str(NeuObj.count), dimensions=obj.dim['dim'])
-        if method == 'ForwardEuler':
-            new_s = s.last()  + obj * SampleTime()
-        else:
-            raise ValueError(f"The method '{method}' is not supported yet")
-        out_connect = ClosedLoop(new_s, s)
-        super().__init__(new_s.name, merge(new_s.json, out_connect.json), new_s.dim)
+        s = State(output.name + "_int" + str(NeuObj.count), dimensions=output.dim['dim'])
+        check(method in SOLVERS, ValueError, f"The method '{method}' is not supported yet")
+        solver = SOLVERS[method]()
+        new_s = s.last() + solver.integrate(output)
+        out = ClosedLoop(new_s, s)
+        super().__init__(new_s.name, out.json, new_s.dim)
 
 class Derivate(Stream, ToStream):
     """
@@ -38,20 +42,22 @@ class Derivate(Stream, ToStream):
     method : is the derivative method
     """
     @enforce_types
-    def __init__(self, output:Stream, input:Stream = None, method:str = 'ForwardEuler') -> Stream:
-        from nnodely.input import State, ClosedLoop
-        from nnodely.parameter import SampleTime
+    def __init__(self, output:Stream, input:Stream = None, *, method:str = 'euler') -> Stream:
         if input is None:
-            s = State(output.name + "_der" + str(NeuObj.count), dimensions=output.dim['dim'])
-            if method == 'ForwardEuler':
-                new_s = (output - s.last()) / SampleTime()
-            else:
-                raise ValueError(f"The method '{method}' is not supported yet")
-            out_connect = ClosedLoop(output, s)
-            super().__init__(new_s.name,merge(new_s.json, out_connect.json), new_s.dim)
+            check(method in SOLVERS, ValueError, f"The method '{method}' is not supported yet")
+            solver = SOLVERS[method]()
+            output_dt = solver.derivate(output)
+            super().__init__(output_dt.name, output_dt.json, output_dt.dim)
         else:
             super().__init__(der_relation_name + str(Stream.count), merge(output.json,input.json), input.dim)
             self.json['Relations'][self.name] = [der_relation_name, [output.name, input.name]]
+            grad_inputs = []
+            get_inputs(self.json, input.name, grad_inputs)
+            for i in grad_inputs:
+                if i in self.json['Inputs']:
+                    self.json['Inputs'][i]['type'] = 'derivate'
+                elif i in self.json['States']:
+                    self.json['States'][i]['type'] = 'derivate'
 
 
 class Derivate_Layer(nn.Module):

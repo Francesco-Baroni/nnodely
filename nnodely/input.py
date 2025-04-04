@@ -9,6 +9,10 @@ class InputState(NeuObj):
     """
     Represents an Input or State in the neural network model.
 
+    .. image:: https://colab.research.google.com/assets/colab-badge.svg
+        :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/states.ipynb
+        :alt: Open in Colab
+
     Parameters
     ----------
     json_name : str
@@ -196,7 +200,7 @@ class InputState(NeuObj):
         return self.z(-1)
 
     @enforce_types
-    def s(self, order:int,  method:str = 'ForwardEuler') -> Stream:
+    def s(self, order:int,  method:str = 'euler') -> Stream:
         """
         Considering the Laplace transform notation. The function is used to operate an integral or derivate operation on the input.
         The order of the integral or the derivative operation is indicated by the order parameter.

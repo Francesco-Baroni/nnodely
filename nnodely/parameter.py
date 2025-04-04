@@ -34,8 +34,12 @@ class Constant(NeuObj, Relation):
     json : dict
         A dictionary containing the configuration of the constant.
 
-    Example
-    -------
+    Examples
+    --------
+    .. image:: https://colab.research.google.com/assets/colab-badge.svg
+        :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/parameter.ipynb
+        :alt: Open in Colab
+
     Example - passing a custom scalar value -> g.dim = {'dim': 1}:
 
         >>> g = Constant('gravity',values=9.81)
@@ -134,6 +138,9 @@ class Parameter(NeuObj, Relation):
 
     Examples
     --------
+    .. image:: https://colab.research.google.com/assets/colab-badge.svg
+        :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/parameter.ipynb
+        :alt: Open in Colab
 
     Example - basic usage:
         >>> k = Parameter('k', dimensions=3, tw=4)
@@ -231,7 +238,7 @@ class SampleTime():
     name = 'SampleTime'
     g = Constant(name, values=0)
     def __new__(cls):
-        SampleTime.g.dim = {'dim': 1, 'sw': 1}
+        SampleTime.g.dim = {'dim': 1}
         SampleTime.g.json['Constants'][SampleTime.name] = copy.deepcopy(SampleTime.g.dim)
         SampleTime.g.json['Constants'][SampleTime.name]['values'] = SampleTime.name
         return SampleTime.g

@@ -46,6 +46,12 @@ class Fuzzify(NeuObj):
     json : dict
         A dictionary containing the configuration of the Fuzzify relation.
 
+    Examples
+    --------
+    .. image:: https://colab.research.google.com/assets/colab-badge.svg
+        :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/fuzzify.ipynb
+        :alt: Open in Colab
+        
     Example - basic usage:
         >>> x = Input('x')
         >>> fuz = Fuzzify(output_dimension=5, range=[1,5])

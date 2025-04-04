@@ -53,8 +53,13 @@ class ParamFun(NeuObj):
     json : dict
         A dictionary containing the configuration of the function.
 
-    Example
-    -------
+    Examples
+    --------
+    .. image:: https://colab.research.google.com/assets/colab-badge.svg
+        :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/parametric_functions.ipynb
+        :alt: Open in Colab
+
+    Example: 
         >>> input1 = Input('input1')
         >>> input2 = Input('input2')
 

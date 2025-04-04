@@ -126,7 +126,7 @@ class ModelyTrainingTest(unittest.TestCase):
         rel1 = Fir(W=param)(Interpolation(x_points=[1.0, 2.0, 3.0, 4.0],y_points=[2.0, 4.0, 6.0, 8.0], mode='linear')(x.last()))
         out = Output('out',rel1)
 
-        test = Modely(visualizer=None, seed=1)
+        test = Modely(visualizer=TextVisualizer(), seed=1)
         test.addModel('fun',[out])
         test.addMinimize('error', out, x.last())
         test.neuralizeModel(0.01)
@@ -263,7 +263,7 @@ class ModelyTrainingTest(unittest.TestCase):
         eq2 = equation_learner2(eq1)
         out = Output('eq2', eq2)
 
-        example = Modely(visualizer=TextVisualizer())
+        example = Modely(visualizer=None)
         example.addModel('model',[out])
         example.addMinimize('error', out, y.last())
         example.neuralizeModel()

@@ -34,7 +34,9 @@ def aritmetic_cheks(self, obj1, obj2, name):
               f"For {name} the time window must match or None but they were {window_obj1}={obj1.dim[window_obj1]} and {window_obj2}={obj2.dim[window_obj2]}.")
     check(obj1.dim['dim'] == obj2.dim['dim'] or obj1.dim == {'dim':1} or obj2.dim == {'dim':1}, ValueError,
           f"For {name} the dimension of {obj1.name} = {obj1.dim} must be the same of {obj2.name} = {obj2.dim}.")
-    return obj1, obj2
+    dim = obj1.dim | obj2.dim
+    dim['dim'] = max(obj1.dim['dim'], obj2.dim['dim'])
+    return obj1, obj2, dim
 
 class Add(Stream, ToStream):
     """
@@ -57,8 +59,8 @@ class Add(Stream, ToStream):
     """
     @enforce_types
     def __init__(self, obj1:Stream|Parameter|Constant|int|float, obj2:Stream|Parameter|Constant|int|float) -> Stream:
-        obj1, obj2 = aritmetic_cheks(self, obj1, obj2, 'addition operators (+)')
-        super().__init__(add_relation_name + str(Stream.count),merge(obj1.json,obj2.json),merge(obj1.dim,obj2.dim,False))
+        obj1, obj2, dim = aritmetic_cheks(self, obj1, obj2, 'addition operators (+)')
+        super().__init__(add_relation_name + str(Stream.count),merge(obj1.json,obj2.json),dim)
         self.json['Relations'][self.name] = [add_relation_name,[obj1.name,obj2.name]]
 
 ## TODO: check the scalar dimension, helpful for the offset
@@ -79,8 +81,8 @@ class Sub(Stream, ToStream):
     """
     @enforce_types
     def __init__(self, obj1:Stream|Parameter|Constant|int|float, obj2:Stream|Parameter|Constant|int|float) -> Stream:
-        obj1, obj2 = aritmetic_cheks(self, obj1, obj2, 'subtraction operators (-)')
-        super().__init__(sub_relation_name + str(Stream.count),merge(obj1.json,obj2.json),merge(obj1.dim,obj2.dim,False))
+        obj1, obj2, dim = aritmetic_cheks(self, obj1, obj2, 'subtraction operators (-)')
+        super().__init__(sub_relation_name + str(Stream.count),merge(obj1.json,obj2.json),dim)
         self.json['Relations'][self.name] = [sub_relation_name,[obj1.name,obj2.name]]
 
 class Mul(Stream, ToStream):
@@ -100,8 +102,8 @@ class Mul(Stream, ToStream):
     """
     @enforce_types
     def __init__(self, obj1:Stream|Parameter|Constant|int|float, obj2:Stream|Parameter|Constant|int|float) -> Stream:
-        obj1, obj2 = aritmetic_cheks(self, obj1, obj2, 'multiplication operators (*)')
-        super().__init__(mul_relation_name + str(Stream.count),merge(obj1.json,obj2.json),merge(obj1.dim,obj2.dim,False))
+        obj1, obj2, dim = aritmetic_cheks(self, obj1, obj2, 'multiplication operators (*)')
+        super().__init__(mul_relation_name + str(Stream.count),merge(obj1.json,obj2.json),dim)
         self.json['Relations'][self.name] = [mul_relation_name,[obj1.name,obj2.name]]
 
 class Div(Stream, ToStream):
@@ -121,8 +123,8 @@ class Div(Stream, ToStream):
     """
     @enforce_types
     def __init__(self, obj1:Stream|Parameter|Constant|int|float, obj2:Stream|Parameter|Constant|int|float) -> Stream:
-        obj1, obj2 = aritmetic_cheks(self, obj1, obj2, 'division operators (/) ')
-        super().__init__(div_relation_name + str(Stream.count),merge(obj1.json,obj2.json),merge(obj1.dim,obj2.dim,False))
+        obj1, obj2, dim = aritmetic_cheks(self, obj1, obj2, 'division operators (/) ')
+        super().__init__(div_relation_name + str(Stream.count),merge(obj1.json,obj2.json),dim)
         self.json['Relations'][self.name] = [div_relation_name,[obj1.name,obj2.name]]
 
 class Pow(Stream, ToStream):
@@ -146,8 +148,8 @@ class Pow(Stream, ToStream):
     """
     @enforce_types
     def __init__(self, obj1:Stream|Parameter|Constant|int|float, obj2:Stream|Parameter|Constant|int|float) -> Stream:
-        obj1, obj2 = aritmetic_cheks(self, obj1, obj2, 'pow operators (**)')
-        super().__init__(pow_relation_name + str(Stream.count),merge(obj1.json,obj2.json),merge(obj1.dim,obj2.dim,False))
+        obj1, obj2, dim = aritmetic_cheks(self, obj1, obj2, 'pow operators (**)')
+        super().__init__(pow_relation_name + str(Stream.count),merge(obj1.json,obj2.json),dim)
         self.json['Relations'][self.name] = [pow_relation_name,[obj1.name,obj2.name]]
 
 class Neg(Stream, ToStream):

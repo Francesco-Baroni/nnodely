@@ -1265,12 +1265,15 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         x_data, y_data = [], []
         x = -0.2
         y = 0.5
-        for i in range(100):
+        for i in range(10):
             x = y = fun_data(x, y, K)
             x_data.append(x)
             y_data.append(y)
 
         result = m({'x': [-0.2], 'y': [0.5]}, closed_loop={'y':'out'}, num_of_samples=10, prediction_samples=10)
+        self.TestAlmostEqual([a.tolist() for a in x_data[0:10]],result['out'])
+
+        result = m({'x': [-0.2], 'y': [0.5]}, closed_loop={'y':'out'}, num_of_samples=10, prediction_samples='auto')
         self.TestAlmostEqual([a.tolist() for a in x_data[0:10]],result['out'])
 
     def test_derivate_wrt_input_connect(self):
@@ -1318,3 +1321,6 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
 
         result = m({'x': [-0.2], 'y': [0.5]}, connect={'y2':'out1'}, num_of_samples=10, prediction_samples=10)
         self.TestAlmostEqual([a.tolist() for a in x_data[0:10]],result['out2'])
+
+        result = m({'x': [-0.2], 'y': [0.5]}, connect={'y2': 'out1'}, num_of_samples=10, prediction_samples='auto')
+        self.TestAlmostEqual([a.tolist() for a in x_data[0:10]], result['out2'])

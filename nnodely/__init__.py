@@ -36,7 +36,7 @@ from nnodely.timeoperation import Integrate, Derivate
 from nnodely.interpolation import Interpolation
 
 # Main nnodely classes
-from nnodely.nnodely import nnodely, Modely
+from nnodely.nnodely import nnodely, Modely, clearNames
 from nnodely.visualizer import Visualizer, TextVisualizer, MPLVisualizer, MPLNotebookVisualizer
 from nnodely.optimizer import Optimizer, SGD, Adam
 from nnodely.exporter import Exporter, StandardExporter

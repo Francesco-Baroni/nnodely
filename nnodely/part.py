@@ -47,8 +47,13 @@ class Part(Stream, ToStream):
     json : dict
         A dictionary containing the configuration of the part.
 
-    Example
-    -------
+    Examples
+    --------
+    .. image:: https://colab.research.google.com/assets/colab-badge.svg
+        :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/partitioning.ipynb
+        :alt: Open in Colab
+
+    Example:
         >>> x = Input('x', dimensions=3).last()
         >>> relation = Part(x, 0, 1)
 
@@ -94,8 +99,13 @@ class Select(Stream, ToStream):
     json : dict
         A dictionary containing the configuration of the selection.
 
-    Example
-    -------
+    Examples
+    --------
+    .. image:: https://colab.research.google.com/assets/colab-badge.svg
+        :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/partitioning.ipynb
+        :alt: Open in Colab
+
+    Example:
         >>> x = Input('x', dimensions=3).last()
         >>> relation = Select(x, 1)
 
@@ -128,6 +138,12 @@ class Concatenate(Stream, ToStream):
         :type obj: Tensor
         :param input2: the second relation to concatenate
         :type obj: Tensor
+
+        Examples
+        --------
+        .. image:: https://colab.research.google.com/assets/colab-badge.svg
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/partitioning.ipynb
+            :alt: Open in Colab
 
         Example:
             >>> cat = Concatenate(relation1, relation2)
@@ -181,8 +197,13 @@ class SamplePart(Stream, ToStream):
     json : dict
         A dictionary containing the configuration of the part.
 
-    Example
-    -------
+    Examples
+    --------
+    .. image:: https://colab.research.google.com/assets/colab-badge.svg
+        :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/partitioning.ipynb
+        :alt: Open in Colab
+
+    Example:
         >>> x = Input('x').sw(3)
         >>> relation = SamplePart(x, 0, 1)
 
@@ -248,8 +269,13 @@ class SampleSelect(Stream, ToStream):
     json : dict
         A dictionary containing the configuration of the selection.
 
-    Example
-    -------
+    Examples
+    --------
+    .. image:: https://colab.research.google.com/assets/colab-badge.svg
+        :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/partitioning.ipynb
+        :alt: Open in Colab
+
+    Example:
         >>> x = Input('x').sw(3)
         >>> relation = SampleSelect(x, 1)
 
@@ -299,8 +325,13 @@ class TimePart(Stream, ToStream):
     json : dict
         A dictionary containing the configuration of the part.
 
-    Example
-    -------
+    Examples
+    --------
+    .. image:: https://colab.research.google.com/assets/colab-badge.svg
+        :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/partitioning.ipynb
+        :alt: Open in Colab
+
+    Example:
         >>> x = Input('x').sw(10)
         >>> time_part = TimePart(x, i=0, j=5)
 
@@ -372,6 +403,12 @@ class TimeConcatenate(Stream, ToStream):
         :type obj: Tensor
         :param input2: the second relation to concatenate
         :type obj: Tensor
+
+        Examples
+        --------
+        .. image:: https://colab.research.google.com/assets/colab-badge.svg
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/partitioning.ipynb
+            :alt: Open in Colab
 
         Example:
             >>> cat = TimeConcatenate(relation1, relation2)

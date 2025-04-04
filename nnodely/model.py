@@ -34,14 +34,6 @@ class Model(nn.Module):
         self.input_n_samples = {key:value['ntot'] for key, value in (model_def['Inputs']|model_def['States']).items()}
         self.minimizers_keys = [self.minimizers[key]['A'] for key in self.minimizers] + [self.minimizers[key]['B'] for key in self.minimizers]
 
-        #print('inputs: ',self.inputs)
-        #print('outputs: ',self.outputs)
-        #print('relations: ',self.relations)
-        #print('params: ',self.params)
-        #print('constants: ',self.constants)
-        #print('sample_time: ',self.sample_time)
-        #print('states: ',self.states)
-
         ## Build the network
         self.all_parameters = {}
         self.all_constants = {}
