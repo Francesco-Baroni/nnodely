@@ -30,7 +30,7 @@ class CustomLoss(nn.Module):
     def forward(self, inA, inB):
         if self.loss_type == 'cross_entropy':
             inB = inB.squeeze().float() if inA.shape == inB.shape else inB.squeeze().long()
-            inA = inA.squeeze().requires_grad_(True)
+            inA = inA.squeeze()
         res = self.loss(inA,inB)
         if self.loss_type == 'rmse':
             res = torch.sqrt(res)

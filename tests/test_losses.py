@@ -175,7 +175,7 @@ class ModelyTrainingTest(unittest.TestCase):
         linear = Linear(output_dimension=5, W=k, b=False)(input1.last())
         output = Output('out', linear)
 
-        test = Modely(visualizer=TextVisualizer(), seed=42, log_internal=True)
+        test = Modely(visualizer=None, seed=42, log_internal=True)
         test.addModel('model', output)
         test.addMinimize('error1', output, target1.last(), loss_function='cross_entropy')
         test.addMinimize('error2', output, target2.last(), loss_function='cross_entropy')

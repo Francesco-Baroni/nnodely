@@ -235,7 +235,7 @@ class Stream(Relation):
         return self.tw([-self.dim['tw']-delay,-delay])
 
     @enforce_types
-    def s(self, order:int, init:Stream|None = None, method:str = 'ForwardEuler') -> Stream:
+    def s(self, order:int, init:Stream|None = None,  method:str = 'euler') -> "Stream":
         """
         Considering the Laplace transform notation. The function is used to operate an integral or derivate operation on a Stream.
         The order of the integral or the derivative operation is indicated by the order parameter.
@@ -244,6 +244,8 @@ class Stream(Relation):
         ----------
         order : int
             Order of the Laplace transform
+        init: Stream|None
+            Initial condition for the integral operation. Default is None.
         method : str, optional
             Integration or derivation method
 
@@ -259,7 +261,7 @@ class Stream(Relation):
                 o = Derivate(self, init = init, method = method)
         elif order < 0:
             for i in range(-order):
-                o = Integrate(self, method = method)
+                o = Integrate(self, init = init, method = method)
         return o
 
     def connect(self, obj:"State") -> Stream:

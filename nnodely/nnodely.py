@@ -2,6 +2,7 @@
 import random, torch, copy, os
 import numpy as np
 import pandas as pd
+import pandas.api.types as ptypes
 
 # nnodely packages
 from nnodely.visualizer import TextVisualizer, Visualizer
@@ -10,13 +11,16 @@ from nnodely.model import Model
 from nnodely.optimizer import Optimizer, SGD, Adam
 from nnodely.exporter import Exporter, StandardExporter
 from nnodely.modeldef import ModelDef
-from nnodely import relation
+from nnodely.relation import NeuObj
 
-from nnodely.utils import check, argmax_dict, argmin_dict, tensor_to_list, TORCH_DTYPE, NP_DTYPE
+from nnodely.utils import check, argmax_dict, argmin_dict, tensor_to_list, TORCH_DTYPE, NP_DTYPE, check_gradient_operations
 
 from nnodely.logger import logging, nnLogger
 log = nnLogger(__name__, logging.INFO)
 
+
+def clearNames(names:str|None = None):
+    NeuObj.clearNames(names)
 
 class Modely:
     """
@@ -140,6 +144,14 @@ class Modely:
         random.seed(seed)  ## set the random module seed
         np.random.seed(seed)  ## set the numpy seed
 
+    def count_operations(self, grad_fn):
+        count = 0
+        nodes = [grad_fn]
+        while nodes:
+            node = nodes.pop()
+            count += 1
+            nodes.extend(next_fn[0] for next_fn in node.next_functions if next_fn[0] is not None)
+        return count
 
     def __call__(self, inputs={}, sampled=False, closed_loop={}, connect={}, prediction_samples='auto', num_of_samples=None): ##, align_input=False):
         """
@@ -172,8 +184,12 @@ class Modely:
         ValueError
             If an input variable is not in the model definition or if an output variable is not in the model definition.
 
-        Example
-        -------
+        Examples
+        --------
+        .. image:: https://colab.research.google.com/assets/colab-badge.svg
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/inference.ipynb
+            :alt: Open in Colab
+
         Example usage:
             >>> model = Modely()
             >>> x = Input('x')
@@ -192,13 +208,14 @@ class Modely:
         check(self.neuralized, RuntimeError, "The network is not neuralized.")
 
         ## Check closed loop integrity
-        for close_in, close_out in closed_loop.items():
+        for close_in, close_out in (closed_loop | connect).items():
             check(close_in in self.model_def['Inputs'], ValueError, f'the tag "{close_in}" is not an input variable.')
             check(close_out in self.model_def['Outputs'], ValueError, f'the tag "{close_out}" is not an output of the network')
 
         ## List of keys
         model_inputs = list(self.model_def['Inputs'].keys())
         model_states = list(self.model_def['States'].keys())
+        json_inputs = self.model_def['Inputs'] | self.model_def['States']
         state_closed_loop = [key for key, value in self.model_def['States'].items() if 'closedLoop' in value.keys()] + list(closed_loop.keys())
         state_connect = [key for key, value in self.model_def['States'].items() if 'connect' in value.keys()] + list(connect.keys())
         extra_inputs = list(set(list(inputs.keys())) - set(model_inputs) - set(model_states))
@@ -258,8 +275,8 @@ class Modely:
                 inputs[key] = np.zeros(shape=(self.input_n_samples[key] + window_dim - 1, self.model_def['Inputs'][key]['dim']),dtype=NP_DTYPE).tolist()
 
         ## Transform inputs in 3D Tensors
-        for key, val in inputs.items():
-            input_dim = self.model_def['Inputs'][key]['dim'] if key in model_inputs else self.model_def['States'][key]['dim']
+        for key in inputs.keys():
+            input_dim = json_inputs[key]['dim']
             inputs[key] = torch.from_numpy(np.array(inputs[key])).to(TORCH_DTYPE)
 
             if input_dim > 1:
@@ -280,9 +297,12 @@ class Modely:
             result_dict[key] = []
 
         ## Inference
-        #TODO capire se può essere sostituita in qualche modo with torch.inference_mode():
-        if True:
-            #self.model.eval()
+        calculate_grad = False
+        for key, value in json_inputs.items():
+            if 'type' in value.keys():
+                calculate_grad = True
+                break
+        with torch.enable_grad() if calculate_grad else torch.inference_mode():
             ## Update with virtual states
             if prediction_samples is not None:
                 self.model.update(closed_loop=closed_loop, connect=connect)
@@ -294,7 +314,9 @@ class Modely:
             for idx in range(window_dim):
                 ## Get mandatory data inputs
                 for key in mandatory_inputs:
-                    X[key] = inputs[key][idx:idx+1].clone().detach().requires_grad_(True) if sampled else inputs[key][:, idx:idx + self.input_n_samples[key]].clone().detach().requires_grad_(True)
+                    X[key] = inputs[key][idx:idx+1] if sampled else inputs[key][:, idx:idx + self.input_n_samples[key]]
+                    if 'type' in json_inputs[key].keys():
+                        X[key] = X[key].requires_grad_(True)
                 ## reset states
                 if count == 0 or prediction_samples=='auto':
                     count = prediction_samples
@@ -302,19 +324,25 @@ class Modely:
                         ## if prediction_samples is 'auto' and i have enough samples
                         ## if prediction_samples is NOT 'auto' but i have enough extended window (with zeros)
                         if (key in inputs.keys() and prediction_samples == 'auto' and idx < num_of_windows[key]) or (key in inputs.keys() and prediction_samples != 'auto' and idx < inputs[key].shape[1]):
-                            X[key] = inputs[key][idx:idx+1].clone().detach().requires_grad_(True) if sampled else inputs[key][:, idx:idx + self.input_n_samples[key]].clone().detach().requires_grad_(True)
+                            X[key] = inputs[key][idx:idx+1] if sampled else inputs[key][:, idx:idx + self.input_n_samples[key]]
                         ## if im in the first reset
                         ## if i have a state in memory
                         ## if i have prediction_samples = 'auto' and not enough samples
                         elif (key in self.states.keys() and (first or prediction_samples == 'auto')) and (prediction_samples == 'auto' or prediction_samples == None):
-                            X[key] = self.states[key].clone().detach().requires_grad_(True)
+                            X[key] = self.states[key]
                         else: ## if i have no samples and no states
                             window_size = self.input_n_samples[key]
-                            dim = self.model_def['Inputs'][key]['dim'] if key in model_inputs else self.model_def['States'][key]['dim']
-                            X[key] = torch.zeros(size=(1, window_size, dim), dtype=TORCH_DTYPE, requires_grad=True)
+                            dim = json_inputs[key]['dim']
+                            X[key] = torch.zeros(size=(1, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
                             self.states[key] = X[key]
+                        if 'type' in json_inputs[key].keys():
+                            X[key] = X[key].requires_grad_(True)
                     first = False
                 else:
+                    # Remove the gradient of the previous forward
+                    for key in X.keys():
+                        if 'type' in json_inputs[key].keys():
+                            X[key] = X[key].detach().requires_grad_(True)
                     count -= 1
                 ## Forward pass
                 result, _, out_closed_loop, out_connect = self.model(X)
@@ -337,9 +365,6 @@ class Modely:
                 del self.states[key]
         
         return result_dict
-    
-    def clearTags(self,):
-        relation.NeuObj_names = []
 
     def getSamples(self, dataset, index = None, window=1):
         """
@@ -364,8 +389,12 @@ class Modely:
         ValueError
             If the dataset is not loaded.
 
-        Example
-        -------
+        Examples
+        --------
+        .. image:: https://colab.research.google.com/assets/colab-badge.svg
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/dataset.ipynb
+            :alt: Open in Colab
+
         Example usage:
             >>> model = Modely()
             >>> model.loadData('dataset_name')
@@ -398,7 +427,7 @@ class Modely:
         Examples
         --------
         .. image:: https://colab.research.google.com/assets/colab-badge.svg
-            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/states.ipynb
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/states.ipynb
             :alt: Open in Colab
 
         Example:
@@ -424,7 +453,7 @@ class Modely:
         Examples
         --------
         .. image:: https://colab.research.google.com/assets/colab-badge.svg
-            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/states.ipynb
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/states.ipynb
             :alt: Open in Colab
 
         Example:
@@ -594,7 +623,7 @@ class Modely:
         self.visualizer.showModelInputWindow()
         self.visualizer.showBuiltModel()
 
-    def loadData(self, name, source, format=None, skiplines=0, delimiter=',', header=None):
+    def loadData(self, name, source, format=None, skiplines=0, delimiter=',', header=None, resampling=False):
         """
         Loads data into the model. The data can be loaded from a directory path containing the csv files or from a crafted dataset.
 
@@ -619,8 +648,12 @@ class Modely:
             If the network is not neuralized.
             If the delimiter is not valid.
 
-        Example
-        -------
+        Examples
+        --------
+        .. image:: https://colab.research.google.com/assets/colab-badge.svg
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/dataset.ipynb
+            :alt: Open in Colab
+        
         Example - load data from files:
             >>> x = Input('x')
             >>> y = Input('y')
@@ -748,9 +781,18 @@ class Modely:
         elif isinstance(source, pd.DataFrame):  ## we have a crafted dataset
             self.file_count = 1
 
-            ## Check if the inputs are correct
-            # assert set(model_inputs).issubset(source.columns), f'The dataset is missing some inputs. \nInputs needed for the model: {model_inputs} \nDataset columns: {source.columns}'
-            
+            ## Resampling if the time column is provided (must be a Datetime object)
+            if resampling:
+                if type(source.index) is pd.DatetimeIndex:
+                    source = source.resample(f"{int(self.model_def.sample_time * 1e9)}ns").interpolate(method="linear")
+                elif 'time' in source.columns:
+                    if not ptypes.is_datetime64_any_dtype(source['time']):
+                        source['time'] = pd.to_datetime(source['time'], unit='s')
+                    source = source.set_index('time', drop=True)
+                    source = source.resample(f"{int(self.model_def.sample_time * 1e9)}ns").interpolate(method="linear")
+                else:
+                    raise TypeError("No time column found in the DataFrame. Please provide a time column for resampling.")
+
             processed_data = {}
             for key in model_inputs:
                 if key not in source.columns:
@@ -801,8 +843,12 @@ class Modely:
         dataset_name : str or None, optional
             The name of the dataset to filter. If None, all datasets are filtered. Default is None.
 
-        Example
-        -------
+        Examples
+        --------
+        .. image:: https://colab.research.google.com/assets/colab-badge.svg
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/dataset.ipynb
+            :alt: Open in Colab
+
         Example usage:
             >>> model = Modely()
             >>> model.loadData('dataset_name', 'path/to/data')
@@ -1039,8 +1085,12 @@ class Modely:
         ValueError
             If an input or output variable is not in the model definition.
 
-        Example
-        -------
+        Examples
+        --------
+        .. image:: https://colab.research.google.com/assets/colab-badge.svg
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/training.ipynb
+            :alt: Open in Colab
+
         Example - basic feed-forward training:
             >>> x = Input('x')
             >>> F = Input('F')
@@ -1286,6 +1336,17 @@ class Modely:
         self.run_training_params['update_per_epochs'] = update_per_epochs
         self.run_training_params['unused_samples'] = unused_samples
 
+        ## Set the gradient to true if necessary
+        json_inputs = self.model_def['Inputs'] | self.model_def['States']
+        for key in json_inputs.keys():
+            if 'type' in json_inputs[key]:
+                if key in XY_train:
+                    XY_train[key].requires_grad_(True)
+                if key in XY_val:
+                    XY_val[key].requires_grad_(True)
+                if key in XY_test:
+                    XY_test[key].requires_grad_(True)
+
         ## Select the model
         select_model = self.__get_parameter(select_model = select_model)
         select_model_params = self.__get_parameter(select_model_params = select_model_params)
@@ -1303,7 +1364,7 @@ class Modely:
             ## TRAIN
             self.model.train()
             if recurrent_train:
-                losses = self.__recurrentTrain(XY_train, list_of_batch_indexes_train, train_batch_size, minimize_gain, closed_loop, connect, prediction_samples, train_step, non_mandatory_inputs, mandatory_inputs, model_inputs, shuffle=shuffle_data, train=True)
+                losses = self.__recurrentTrain(XY_train, list_of_batch_indexes_train, train_batch_size, minimize_gain, closed_loop, connect, prediction_samples, train_step, non_mandatory_inputs, mandatory_inputs, shuffle=shuffle_data, train=True)
             else:
                 losses = self.__Train(XY_train, n_samples_train, train_batch_size, minimize_gain, shuffle=shuffle_data, train=True)
             ## save the losses
@@ -1314,7 +1375,7 @@ class Modely:
                 ## VALIDATION
                 self.model.eval()
                 if recurrent_train:
-                    losses = self.__recurrentTrain(XY_val, list_of_batch_indexes_val, val_batch_size, minimize_gain, closed_loop, connect, prediction_samples, val_step, non_mandatory_inputs, mandatory_inputs, model_inputs, shuffle=False, train=False)
+                    losses = self.__recurrentTrain(XY_val, list_of_batch_indexes_val, val_batch_size, minimize_gain, closed_loop, connect, prediction_samples, val_step, non_mandatory_inputs, mandatory_inputs, shuffle=False, train=False)
                 else:
                     losses = self.__Train(XY_val, n_samples_val, val_batch_size, minimize_gain, shuffle=False, train=False)
                 ## save the losses
@@ -1400,14 +1461,14 @@ class Modely:
             shift = val.shape[1]  ## take the output time dimension
             X[key] = torch.roll(X[key], shifts=-1, dims=1) ## Roll the time window
             X[key][:, -shift:, :] = val ## substitute with the predicted value
-            self.states[key] = X[key].clone()
+            self.states[key] = X[key].clone().detach()
         for key, value in out_connect.items():
             X[key] = value
-            self.states[key] = X[key].clone()
+            self.states[key] = X[key].clone().detach()
 
-
-    def __recurrentTrain(self, data, batch_indexes, batch_size, loss_gains, closed_loop, connect, prediction_samples, step, non_mandatory_inputs, mandatory_inputs, model_inputs, shuffle=False, train=True):
+    def __recurrentTrain(self, data, batch_indexes, batch_size, loss_gains, closed_loop, connect, prediction_samples, step, non_mandatory_inputs, mandatory_inputs, shuffle=False, train=True):
         indexes = copy.deepcopy(batch_indexes)
+        json_inputs = self.model_def['States'] | self.model_def['Inputs']
         aux_losses = torch.zeros([len(self.model_def['Minimizers']), round((len(indexes)+step)/(batch_size+step))])
         ## Update with virtual states
         self.model.update(closed_loop=closed_loop, connect=connect)
@@ -1431,21 +1492,26 @@ class Modely:
             for key in non_mandatory_inputs:
                 if key in data.keys():
                 ## with data
-                    X[key] = data[key][idxs].clone().detach().requires_grad_(True)
+                    X[key] = data[key][idxs]
                 else: ## with zeros
                     window_size = self.input_n_samples[key]
-                    dim = self.model_def['Inputs'][key]['dim'] if key in model_inputs else self.model_def['States'][key]['dim']
-                    X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=True)
+                    dim = json_inputs[key]['dim']
+                    if 'type' in json_inputs[key]:
+                        X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=True)
+                    else:
+                        X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
                     self.states[key] = X[key]
 
             for horizon_idx in range(prediction_samples + 1):
                 ## Get data 
                 for key in mandatory_inputs:
-                    X[key] = data[key][[idx+horizon_idx for idx in idxs]].clone().detach().requires_grad_(True)
+                    X[key] = data[key][[idx+horizon_idx for idx in idxs]]
                 ## Forward pass
                 out, minimize_out, out_closed_loop, out_connect = self.model(X)
 
                 if self.log_internal and train:
+                    assert(check_gradient_operations(self.states)==0)
+                    assert(check_gradient_operations(data) == 0)
                     internals_dict = {'XY':tensor_to_list(X),'out':out,'param':self.model.all_parameters,'closedLoop':self.model.closed_loop_update,'connect':self.model.connect_update}
 
                 ## Loss Calculation
@@ -1492,7 +1558,7 @@ class Modely:
         aux_losses = torch.zeros([len(self.model_def['Minimizers']),n_samples//batch_size])
         for idx in range(0, (n_samples - batch_size + 1), batch_size):
             ## Build the input tensor
-            XY = {key: val[idx:idx+batch_size].clone().detach().requires_grad_(True) for key, val in data.items()}
+            XY = {key: val[idx:idx+batch_size] for key, val in data.items()}
             ## Reset gradient
             if train:
                 self.optimizer.zero_grad()
@@ -1516,8 +1582,13 @@ class Modely:
 
     def resultAnalysis(self, dataset, data = None, minimize_gain = {}, closed_loop = {}, connect = {},  prediction_samples = None, step = 0, batch_size = None):
         import warnings
-        #TODO capire se può essere sostituita in qualche modo with torch.inference_mode():
-        if True:
+        json_inputs = self.model_def['Inputs'] | self.model_def['States']
+        calculate_grad = False
+        for key, value in json_inputs.items():
+            if 'type' in value.keys():
+                calculate_grad = True
+                break
+        with torch.enable_grad() if calculate_grad else torch.inference_mode():
             ## Init model for retults analysis
             self.model.eval()
             self.performance[dataset] = {}
@@ -1556,29 +1627,16 @@ class Modely:
                     for horizon_idx in range(prediction_samples + 1):
                         A[key].append([])
                         B[key].append([])
-                
+
                 list_of_batch_indexes = list(range(n_samples - prediction_samples))
                 ## Remove forbidden indexes in case of a multi-file dataset
                 if dataset in self.multifile.keys(): ## Multi-file Dataset
                     if n_samples == self.run_training_params['n_samples_train']: ## Training
-                        start_idx, end_idx = 0, n_samples
+                        list_of_batch_indexes, step = self.__get_batch_indexes(dataset, n_samples, prediction_samples, batch_size, step, type='train')
                     elif n_samples == self.run_training_params['n_samples_val']: ## Validation
-                        start_idx, end_idx = self.run_training_params['n_samples_train'], self.run_training_params['n_samples_train'] + n_samples
-                    else: ## Test
-                        start_idx, end_idx = self.run_training_params['n_samples_train'] + self.run_training_params['n_samples_val'], self.run_training_params['n_samples_train'] + self.run_training_params['n_samples_val'] + n_samples
-                    forbidden_idxs = []
-                    for i in self.multifile[dataset]:
-                        if i < end_idx and i > start_idx:
-                            forbidden_idxs.extend(range(i-prediction_samples, i, 1))
-                    list_of_batch_indexes = [idx for idx in list_of_batch_indexes if idx not in forbidden_idxs]
-
-                ## Clip the step 
-                if step < 0: ## clip the step to zero
-                    log.warning(f"The step is negative ({step}). The step is set to zero.", stacklevel=5)
-                    step = 0
-                if step > (len(list_of_batch_indexes)-batch_size): ## Clip the step to the maximum number of samples
-                    log.warning(f"The step ({step}) is greater than the number of available samples ({len(list_of_batch_indexes)-batch_size}). The step is set to the maximum number.", stacklevel=5)
-                    step = len(list_of_batch_indexes)-batch_size
+                        list_of_batch_indexes, step = self.__get_batch_indexes(dataset, n_samples, prediction_samples, batch_size, step, type='val')
+                    else:
+                        list_of_batch_indexes, step = self.__get_batch_indexes(dataset, n_samples, prediction_samples, batch_size, step, type='test')
 
                 X = {}
                 ## Update with virtual states
@@ -1589,25 +1647,30 @@ class Modely:
                         list_of_batch_indexes.remove(num)
                     if step > 0:
                         if len(list_of_batch_indexes) >= step:
-                            step_idxs = list_of_batch_indexes[:step]
+                            step_idxs =  list_of_batch_indexes[:step]
                             for num in step_idxs:
                                 list_of_batch_indexes.remove(num)
+                        else:
+                            list_of_batch_indexes = []
                     ## Reset 
                     horizon_losses = {key: [] for key in self.model_def['Minimizers'].keys()}
                     for key in non_mandatory_inputs:
-                        if key in data.keys(): # and len(data[key]) >= (idx + self.input_n_samples[key]): 
-                        ## with data
-                            X[key] = data[key][idxs].clone().detach().requires_grad_(True)
-                        else: ## with zeros
+                        if key in data.keys():
+                            ## with data
+                            X[key] = data[key][idxs]
+                        else:  ## with zeros
                             window_size = self.input_n_samples[key]
-                            dim = self.model_def['Inputs'][key]['dim'] if key in model_inputs else self.model_def['States'][key]['dim']
-                            X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=True)
+                            dim = json_inputs[key]['dim']
+                            if 'type' in json_inputs[key]:
+                                X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=True)
+                            else:
+                                X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
                             self.states[key] = X[key]
 
                     for horizon_idx in range(prediction_samples + 1):
                         ## Get data 
                         for key in mandatory_inputs:
-                            X[key] = data[key][[idx+horizon_idx for idx in idxs]].clone().detach().requires_grad_(True)
+                            X[key] = data[key][[idx+horizon_idx for idx in idxs]]
                         ## Forward pass
                         out, minimize_out, out_closed_loop, out_connect = self.model(X)
 
@@ -1642,7 +1705,7 @@ class Modely:
 
                 for idx in range(0, (n_samples - batch_size + 1), batch_size):
                     ## Build the input tensor
-                    XY = {key: val[idx:idx + batch_size].clone().detach().requires_grad_(True) for key, val in data.items()}
+                    XY = {key: val[idx:idx + batch_size] for key, val in data.items()}
 
                     ## Model Forward
                     _, minimize_out, _, _ = self.model(XY)  ## Forward pass
@@ -1733,8 +1796,12 @@ class Modely:
         RuntimeError
             If the model is not neuralized.
 
-        Example
-        -------
+        Examples
+        --------
+        .. image:: https://colab.research.google.com/assets/colab-badge.svg
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/export.ipynb
+            :alt: Open in Colab
+
         Example usage:
             >>> model = Modely()
             >>> model.neuralizeModel()
@@ -1769,8 +1836,12 @@ class Modely:
         RuntimeError
             If the model is not neuralized.
 
-        Example
-        -------
+        Examples
+        --------
+        .. image:: https://colab.research.google.com/assets/colab-badge.svg
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/export.ipynb
+            :alt: Open in Colab
+
         Example usage:
             >>> model = Modely()
             >>> model.neuralizeModel()
@@ -1798,8 +1869,12 @@ class Modely:
         RuntimeError
             If the network has not been defined.
 
-        Example
-        -------
+        Examples
+        --------
+        .. image:: https://colab.research.google.com/assets/colab-badge.svg
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/export.ipynb
+            :alt: Open in Colab
+
         Example usage:
             >>> model = Modely()
             >>> model.neuralizeModel()
@@ -1833,8 +1908,12 @@ class Modely:
         RuntimeError
             If there is an error loading the network.
 
-        Example
-        -------
+        Examples
+        --------
+        .. image:: https://colab.research.google.com/assets/colab-badge.svg
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/export.ipynb
+            :alt: Open in Colab
+
         Example usage:
             >>> model = Modely()
             >>> model.loadModel(name='example_model', model_folder='path/to/load')
@@ -1868,8 +1947,12 @@ class Modely:
             If the model is traced and cannot be exported to Python.
             If the model is not neuralized.
 
-        Example
-        -------
+        Examples
+        --------
+        .. image:: https://colab.research.google.com/assets/colab-badge.svg
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/export.ipynb
+            :alt: Open in Colab
+
         Example usage:
             >>> model = Modely(name='example_model')
             >>> model.neuralizeModel()
@@ -1910,8 +1993,12 @@ class Modely:
         RuntimeError
             If there is an error loading the network.
 
-        Example
-        -------
+        Examples
+        --------
+        .. image:: https://colab.research.google.com/assets/colab-badge.svg
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/export.ipynb
+            :alt: Open in Colab
+
         Example usage:
             >>> model = Modely()
             >>> model.importPythonModel(name='example_model', model_folder='path/to/import')
@@ -1953,8 +2040,12 @@ class Modely:
             If the model is not neuralized.
             If the model is loaded and not created.
 
-        Example
-        -------
+        Examples
+        --------
+        .. image:: https://colab.research.google.com/assets/colab-badge.svg
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/export.ipynb
+            :alt: Open in Colab
+
         Example usage:
             >>> input1 = Input('input1').last()
             >>> input2 = Input('input2').last()
@@ -2005,15 +2096,19 @@ class Modely:
             If the shape of the inputs are not equals to the ones defined in the onnx model.
             If the batch size is not equal for all the inputs and states.
 
-        Example
-        -------
-        feed-forward Example:
+        Examples
+        --------
+        .. image:: https://colab.research.google.com/assets/colab-badge.svg
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/export.ipynb
+            :alt: Open in Colab
+
+        Example - Feed-Forward:
             >>> x = Input('x')
  
             >>> onnx_model_path = path/to/net.onnx
             >>> dummy_input = {'x':np.ones(shape=(3, 1, 1)).astype(np.float32)}
             >>> predictions = Modely().onnxInference(dummy_input, onnx_model_path)
-        Recurrent Example:
+        Example - Recurrent:
             >>> x = Input('x')
             >>> y = State('y')
  
@@ -2035,8 +2130,12 @@ class Modely:
         model_folder : str or None, optional
             The folder to save the exported report file. Default is None.
 
-        Example
-        -------
+        Examples
+        --------
+        .. image:: https://colab.research.google.com/assets/colab-badge.svg
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/export.ipynb
+            :alt: Open in Colab
+            
         Example usage:
             >>> model = Modely()
             >>> model.neuralizeModel()

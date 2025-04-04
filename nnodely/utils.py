@@ -18,6 +18,15 @@ ForbiddenTags = keyword.kwlist
 def get_window(obj):
     return 'tw' if 'tw' in obj.dim else ('sw' if 'sw' in obj.dim else None)
 
+def get_inputs(json, relation, inputs):
+    # Get all the inputs needed to compute a specific relation from the json graph
+    for rel in json['Relations'][relation][1]:
+        if rel in (json['Inputs'] | json['States']): ## find an input
+            return inputs.append(rel)
+        else: ## another relation
+            return get_inputs(json, rel, inputs) ## recursive call to find the inputs of the relation
+
+
 def enforce_types(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -168,3 +177,20 @@ def argmax_dict(iterable: dict):
 
 def argmin_dict(iterable: dict):
     return min(iterable.items(), key=lambda x: x[1])
+
+def count_gradient_operations(grad_fn):
+    count = 0
+    if grad_fn is None:
+        return count
+    nodes = [grad_fn]
+    while nodes:
+        node = nodes.pop()
+        count += 1
+        nodes.extend(next_fn[0] for next_fn in node.next_functions if next_fn[0] is not None)
+    return count
+
+def check_gradient_operations(X:dict):
+    count = 0
+    for key in X.keys():
+        count += count_gradient_operations(X[key].grad_fn)
+    return count

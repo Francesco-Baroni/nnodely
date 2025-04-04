@@ -10,7 +10,7 @@ class InputState(NeuObj):
     Represents an Input or State in the neural network model.
 
     .. image:: https://colab.research.google.com/assets/colab-badge.svg
-        :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/states.ipynb
+        :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/states.ipynb
         :alt: Open in Colab
 
     Parameters
@@ -200,7 +200,7 @@ class InputState(NeuObj):
         return self.z(-1)
 
     @enforce_types
-    def s(self, order:int,  method:str = 'ForwardEuler') -> Stream:
+    def s(self, order:int,  method:str = 'euler') -> Stream:
         """
         Considering the Laplace transform notation. The function is used to operate an integral or derivate operation on the input.
         The order of the integral or the derivative operation is indicated by the order parameter.
@@ -253,7 +253,7 @@ class Connect(Stream, ToStream):
 
 class ClosedLoop(Stream, ToStream):
     @enforce_types
-    def __init__(self, obj1:Stream, obj2:State, init:Stream|None=None) -> Stream:
+    def __init__(self, obj1:Stream, obj2:State, *, init:Stream|None=None) -> Stream:
         if init is None:
             super().__init__(obj1.name, merge(obj1.json, obj2.json), obj1.dim)
         else:

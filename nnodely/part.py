@@ -50,7 +50,7 @@ class Part(Stream, ToStream):
     Examples
     --------
     .. image:: https://colab.research.google.com/assets/colab-badge.svg
-        :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/partitioning.ipynb
+        :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/partitioning.ipynb
         :alt: Open in Colab
 
     Example:
@@ -102,7 +102,7 @@ class Select(Stream, ToStream):
     Examples
     --------
     .. image:: https://colab.research.google.com/assets/colab-badge.svg
-        :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/partitioning.ipynb
+        :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/partitioning.ipynb
         :alt: Open in Colab
 
     Example:
@@ -142,7 +142,7 @@ class Concatenate(Stream, ToStream):
         Examples
         --------
         .. image:: https://colab.research.google.com/assets/colab-badge.svg
-            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/partitioning.ipynb
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/partitioning.ipynb
             :alt: Open in Colab
 
         Example:
@@ -200,7 +200,7 @@ class SamplePart(Stream, ToStream):
     Examples
     --------
     .. image:: https://colab.research.google.com/assets/colab-badge.svg
-        :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/partitioning.ipynb
+        :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/partitioning.ipynb
         :alt: Open in Colab
 
     Example:
@@ -272,7 +272,7 @@ class SampleSelect(Stream, ToStream):
     Examples
     --------
     .. image:: https://colab.research.google.com/assets/colab-badge.svg
-        :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/partitioning.ipynb
+        :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/partitioning.ipynb
         :alt: Open in Colab
 
     Example:
@@ -328,7 +328,7 @@ class TimePart(Stream, ToStream):
     Examples
     --------
     .. image:: https://colab.research.google.com/assets/colab-badge.svg
-        :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/partitioning.ipynb
+        :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/partitioning.ipynb
         :alt: Open in Colab
 
     Example:
@@ -407,7 +407,7 @@ class TimeConcatenate(Stream, ToStream):
         Examples
         --------
         .. image:: https://colab.research.google.com/assets/colab-badge.svg
-            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/partitioning.ipynb
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/partitioning.ipynb
             :alt: Open in Colab
 
         Example:

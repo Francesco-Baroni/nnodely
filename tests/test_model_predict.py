@@ -1413,6 +1413,8 @@ class ModelyPredictTest(unittest.TestCase):
         test.addModel('out_A',  [out_aux,out1])
         test.neuralizeModel()
         results = test({'in1': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]}, connect={'state': 'out_aux'})
+        with self.assertRaises(ValueError):
+            test({'in1': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]}, connect={'out_aux': 'state'})
         self.assertEqual((4, 3), np.array(results['out1']).shape)
         self.assertEqual([[4.0, 5.0, 6.0], [5.0, 6.0, 7.0], [6.0, 7.0, 8.0], [7.0, 8.0, 9.0]], results['out1'])
 
@@ -1830,6 +1832,71 @@ class ModelyPredictTest(unittest.TestCase):
 
         inin_sm = [0.14, 0.15, 0.17, 0.20, 0.24, 0.29, 0.35, 0.42, 0.50, 0.59]
         inin_sm2 = [0.0014, 0.0029, 0.0046, 0.0066, 0.0090, 0.0119, 0.0154, 0.0196, 0.0246, 0.0305]
+        self.TestAlmostEqual(results['in1_sm'], inin_sm)
+        self.TestAlmostEqual(results['in1_sm_2'], inin_sm)
+        self.TestAlmostEqual(results['in1_sm2'], inin_sm2)
+        self.TestAlmostEqual(results['in1_sm2_2'], inin_sm2)
+        self.TestAlmostEqual(results['in1_sm2_3'], inin_sm2)
+
+    def test_integrate_derivate_trapezoidal(self):
+        NeuObj.clearNames()
+        input = Input('in1')
+
+        in1_s = Output('in1_s', input.s(1,method='trapezoidal'))
+        in1_s2 = Output('in1_s2', input.s(2,method='trapezoidal'))
+        in1_s2_2 = Output('in1_s2_2', Derivate(input.s(1,method='trapezoidal'),method='trapezoidal'))
+        in1_s2_3 = Output('in1_s2_3', input.s(1,method='trapezoidal').s(1,method='trapezoidal'))
+        in1_s_2 = Output('in1_s_2', input.s(2,method='trapezoidal').s(-1,method='trapezoidal'))
+
+        in1_sm = Output('in1_sm', input.s(-1,method='trapezoidal'))
+        in1_sm2 = Output('in1_sm2', input.s(-2,method='trapezoidal'))
+        in1_sm2_2 = Output('in1_sm2_2', Integrate(input.s(-1,method='trapezoidal'),method='trapezoidal'))
+        in1_sm2_3 = Output('in1_sm2_3', input.s(-1,method='trapezoidal').s(-1,method='trapezoidal'))
+        in1_sm_2 = Output('in1_sm_2', input.s(-2,method='trapezoidal').s(1,method='trapezoidal'))
+
+        in1_1 = Output('in1_1', Integrate(input.s(1,method='trapezoidal'),method='trapezoidal'))
+        in1_2 = Output('in1_2', Integrate(Integrate(input.s(2,method='trapezoidal'),method='trapezoidal'),method='trapezoidal'))
+        in1_3 = Output('in1_3', Integrate(Integrate(Derivate(input.s(1,method='trapezoidal'),method='trapezoidal'),method='trapezoidal'),method='trapezoidal'))
+
+        in1_1_2 = Output('in1_1_2', Derivate(input.s(-1,method='trapezoidal'),method='trapezoidal'))
+        in1_2_2 = Output('in1_2_2', Derivate(Derivate(input.s(-2,method='trapezoidal'),method='trapezoidal'),method='trapezoidal'))
+        in1_3_2 = Output('in1_3_2', Derivate(Derivate(Integrate(input.s(-1,method='trapezoidal'),method='trapezoidal'),method='trapezoidal'),method='trapezoidal'))
+
+        test = Modely(visualizer=None)
+        test.addModel('out_A', [in1_s, in1_s2, in1_s2_2, in1_s2_3, in1_s_2, in1_sm, in1_sm2, in1_sm2_2, in1_sm2_3, in1_sm_2, in1_1, in1_2, in1_3, in1_1_2, in1_2_2, in1_3_2])
+        test.neuralizeModel(1)
+        inin = {'in1': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]}
+        results = test(inin)
+        self.assertEqual(results['in1_1'], inin['in1'])
+        self.assertEqual(results['in1_2'], inin['in1'])
+        self.assertEqual(results['in1_3'], inin['in1'])
+        self.assertEqual(results['in1_1_2'], inin['in1'])
+        self.assertEqual(results['in1_2_2'], inin['in1'])
+        self.assertEqual(results['in1_3_2'], inin['in1'])
+
+        inin_sm = [7., 14.5, 16., 18.5, 22., 26.5, 32., 38.5, 46., 54.5]
+        inin_sm2 = [  3.5 ,  14.25,  29.5 ,  46.75,  67.  ,  91.25, 120.5 , 155.75, 198.  , 248.25]
+        self.assertEqual(results['in1_sm'], inin_sm)
+        self.assertEqual(results['in1_sm_2'], inin_sm)
+        self.assertEqual(results['in1_sm2'], inin_sm2)
+        self.assertEqual(results['in1_sm2_2'], inin_sm2)
+        self.assertEqual(results['in1_sm2_3'], inin_sm2)
+
+        test = Modely(visualizer=None)
+        test.addModel('out_A',
+                      [in1_s, in1_s2, in1_s2_2, in1_s2_3, in1_s_2, in1_sm, in1_sm2, in1_sm2_2, in1_sm2_3, in1_sm_2, in1_1, in1_2, in1_3, in1_1_2, in1_2_2, in1_3_2])
+        test.neuralizeModel(0.01)
+        inin = {'in1': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]}
+        results = test(inin)
+        self.TestAlmostEqual(results['in1_1'], inin['in1'], precision=4)
+        self.TestAlmostEqual(results['in1_2'], inin['in1'], precision=4)
+        self.TestAlmostEqual(results['in1_3'], inin['in1'], precision=4)
+        self.TestAlmostEqual(results['in1_1_2'], inin['in1'], precision=4)
+        self.TestAlmostEqual(results['in1_2_2'], inin['in1'], precision=3)
+        self.TestAlmostEqual(results['in1_3_2'], inin['in1'], precision=3)
+
+        inin_sm = [ 0.07 , 0.145, 0.16 , 0.185, 0.22 , 0.265, 0.32 , 0.385, 0.46 , 0.545]
+        inin_sm2 = [0.00035 , 0.001425, 0.00295 , 0.004675, 0.0067  , 0.009125, 0.01205 , 0.015575, 0.0198  , 0.024825]
         self.TestAlmostEqual(results['in1_sm'], inin_sm)
         self.TestAlmostEqual(results['in1_sm_2'], inin_sm)
         self.TestAlmostEqual(results['in1_sm2'], inin_sm2)
