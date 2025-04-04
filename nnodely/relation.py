@@ -233,7 +233,7 @@ class Stream(Relation):
         return self.tw([-self.dim['tw']-delay,-delay])
 
     @enforce_types
-    def s(self, order:int, method:str = 'ForwardEuler') -> "Stream":
+    def s(self, order:int, method:str = 'euler') -> "Stream":
         """
         Considering the Laplace transform notation. The function is used to operate an integral or derivate operation on a Stream.
         The order of the integral or the derivative operation is indicated by the order parameter.
