@@ -185,7 +185,7 @@ class Modely:
         Examples
         --------
         .. image:: https://colab.research.google.com/assets/colab-badge.svg
-            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/inference.ipynb
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/inference.ipynb
             :alt: Open in Colab
 
         Example usage:
@@ -393,7 +393,7 @@ class Modely:
         Examples
         --------
         .. image:: https://colab.research.google.com/assets/colab-badge.svg
-            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/dataset.ipynb
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/dataset.ipynb
             :alt: Open in Colab
 
         Example usage:
@@ -428,7 +428,7 @@ class Modely:
         Examples
         --------
         .. image:: https://colab.research.google.com/assets/colab-badge.svg
-            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/states.ipynb
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/states.ipynb
             :alt: Open in Colab
 
         Example:
@@ -454,7 +454,7 @@ class Modely:
         Examples
         --------
         .. image:: https://colab.research.google.com/assets/colab-badge.svg
-            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/states.ipynb
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/states.ipynb
             :alt: Open in Colab
 
         Example:
@@ -652,7 +652,7 @@ class Modely:
         Examples
         --------
         .. image:: https://colab.research.google.com/assets/colab-badge.svg
-            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/dataset.ipynb
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/dataset.ipynb
             :alt: Open in Colab
         
         Example - load data from files:
@@ -847,7 +847,7 @@ class Modely:
         Examples
         --------
         .. image:: https://colab.research.google.com/assets/colab-badge.svg
-            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/dataset.ipynb
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/dataset.ipynb
             :alt: Open in Colab
 
         Example usage:
@@ -1089,7 +1089,7 @@ class Modely:
         Examples
         --------
         .. image:: https://colab.research.google.com/assets/colab-badge.svg
-            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/training.ipynb
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/training.ipynb
             :alt: Open in Colab
 
         Example - basic feed-forward training:
@@ -1798,7 +1798,7 @@ class Modely:
         Examples
         --------
         .. image:: https://colab.research.google.com/assets/colab-badge.svg
-            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/export.ipynb
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/export.ipynb
             :alt: Open in Colab
 
         Example usage:
@@ -1838,7 +1838,7 @@ class Modely:
         Examples
         --------
         .. image:: https://colab.research.google.com/assets/colab-badge.svg
-            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/export.ipynb
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/export.ipynb
             :alt: Open in Colab
 
         Example usage:
@@ -1871,7 +1871,7 @@ class Modely:
         Examples
         --------
         .. image:: https://colab.research.google.com/assets/colab-badge.svg
-            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/export.ipynb
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/export.ipynb
             :alt: Open in Colab
 
         Example usage:
@@ -1910,7 +1910,7 @@ class Modely:
         Examples
         --------
         .. image:: https://colab.research.google.com/assets/colab-badge.svg
-            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/export.ipynb
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/export.ipynb
             :alt: Open in Colab
 
         Example usage:
@@ -1949,7 +1949,7 @@ class Modely:
         Examples
         --------
         .. image:: https://colab.research.google.com/assets/colab-badge.svg
-            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/export.ipynb
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/export.ipynb
             :alt: Open in Colab
 
         Example usage:
@@ -1995,7 +1995,7 @@ class Modely:
         Examples
         --------
         .. image:: https://colab.research.google.com/assets/colab-badge.svg
-            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/export.ipynb
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/export.ipynb
             :alt: Open in Colab
 
         Example usage:
@@ -2042,7 +2042,7 @@ class Modely:
         Examples
         --------
         .. image:: https://colab.research.google.com/assets/colab-badge.svg
-            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/export.ipynb
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/export.ipynb
             :alt: Open in Colab
 
         Example usage:
@@ -2098,7 +2098,7 @@ class Modely:
         Examples
         --------
         .. image:: https://colab.research.google.com/assets/colab-badge.svg
-            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/export.ipynb
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/export.ipynb
             :alt: Open in Colab
 
         Example - Feed-Forward:
@@ -2132,7 +2132,7 @@ class Modely:
         Examples
         --------
         .. image:: https://colab.research.google.com/assets/colab-badge.svg
-            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/export.ipynb
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/export.ipynb
             :alt: Open in Colab
             
         Example usage:

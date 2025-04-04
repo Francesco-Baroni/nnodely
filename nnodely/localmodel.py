@@ -35,7 +35,7 @@ class LocalModel(NeuObj):
     Examples
     --------
     .. image:: https://colab.research.google.com/assets/colab-badge.svg
-        :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/localmodel.ipynb
+        :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/localmodel.ipynb
         :alt: Open in Colab
 
     Example - basic usage:

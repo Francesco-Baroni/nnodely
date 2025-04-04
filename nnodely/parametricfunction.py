@@ -56,7 +56,7 @@ class ParamFun(NeuObj):
     Examples
     --------
     .. image:: https://colab.research.google.com/assets/colab-badge.svg
-        :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/parametric_functions.ipynb
+        :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/parametric_functions.ipynb
         :alt: Open in Colab
 
     Example: 
