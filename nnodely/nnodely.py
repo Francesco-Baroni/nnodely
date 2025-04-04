@@ -182,8 +182,12 @@ class Modely:
         ValueError
             If an input variable is not in the model definition or if an output variable is not in the model definition.
 
-        Example
-        -------
+        Examples
+        --------
+        .. image:: https://colab.research.google.com/assets/colab-badge.svg
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/inference.ipynb
+            :alt: Open in Colab
+
         Example usage:
             >>> model = Modely()
             >>> x = Input('x')
@@ -386,8 +390,12 @@ class Modely:
         ValueError
             If the dataset is not loaded.
 
-        Example
-        -------
+        Examples
+        --------
+        .. image:: https://colab.research.google.com/assets/colab-badge.svg
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/dataset.ipynb
+            :alt: Open in Colab
+
         Example usage:
             >>> model = Modely()
             >>> model.loadData('dataset_name')
@@ -641,8 +649,12 @@ class Modely:
             If the network is not neuralized.
             If the delimiter is not valid.
 
-        Example
-        -------
+        Examples
+        --------
+        .. image:: https://colab.research.google.com/assets/colab-badge.svg
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/dataset.ipynb
+            :alt: Open in Colab
+        
         Example - load data from files:
             >>> x = Input('x')
             >>> y = Input('y')
@@ -832,8 +844,12 @@ class Modely:
         dataset_name : str or None, optional
             The name of the dataset to filter. If None, all datasets are filtered. Default is None.
 
-        Example
-        -------
+        Examples
+        --------
+        .. image:: https://colab.research.google.com/assets/colab-badge.svg
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/dataset.ipynb
+            :alt: Open in Colab
+
         Example usage:
             >>> model = Modely()
             >>> model.loadData('dataset_name', 'path/to/data')
@@ -1070,8 +1086,12 @@ class Modely:
         ValueError
             If an input or output variable is not in the model definition.
 
-        Example
-        -------
+        Examples
+        --------
+        .. image:: https://colab.research.google.com/assets/colab-badge.svg
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/training.ipynb
+            :alt: Open in Colab
+
         Example - basic feed-forward training:
             >>> x = Input('x')
             >>> F = Input('F')
@@ -1775,8 +1795,12 @@ class Modely:
         RuntimeError
             If the model is not neuralized.
 
-        Example
-        -------
+        Examples
+        --------
+        .. image:: https://colab.research.google.com/assets/colab-badge.svg
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/export.ipynb
+            :alt: Open in Colab
+
         Example usage:
             >>> model = Modely()
             >>> model.neuralizeModel()
@@ -1811,8 +1835,12 @@ class Modely:
         RuntimeError
             If the model is not neuralized.
 
-        Example
-        -------
+        Examples
+        --------
+        .. image:: https://colab.research.google.com/assets/colab-badge.svg
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/export.ipynb
+            :alt: Open in Colab
+
         Example usage:
             >>> model = Modely()
             >>> model.neuralizeModel()
@@ -1840,8 +1868,12 @@ class Modely:
         RuntimeError
             If the network has not been defined.
 
-        Example
-        -------
+        Examples
+        --------
+        .. image:: https://colab.research.google.com/assets/colab-badge.svg
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/export.ipynb
+            :alt: Open in Colab
+
         Example usage:
             >>> model = Modely()
             >>> model.neuralizeModel()
@@ -1875,8 +1907,12 @@ class Modely:
         RuntimeError
             If there is an error loading the network.
 
-        Example
-        -------
+        Examples
+        --------
+        .. image:: https://colab.research.google.com/assets/colab-badge.svg
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/export.ipynb
+            :alt: Open in Colab
+
         Example usage:
             >>> model = Modely()
             >>> model.loadModel(name='example_model', model_folder='path/to/load')
@@ -1910,8 +1946,12 @@ class Modely:
             If the model is traced and cannot be exported to Python.
             If the model is not neuralized.
 
-        Example
-        -------
+        Examples
+        --------
+        .. image:: https://colab.research.google.com/assets/colab-badge.svg
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/export.ipynb
+            :alt: Open in Colab
+
         Example usage:
             >>> model = Modely(name='example_model')
             >>> model.neuralizeModel()
@@ -1952,8 +1992,12 @@ class Modely:
         RuntimeError
             If there is an error loading the network.
 
-        Example
-        -------
+        Examples
+        --------
+        .. image:: https://colab.research.google.com/assets/colab-badge.svg
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/export.ipynb
+            :alt: Open in Colab
+
         Example usage:
             >>> model = Modely()
             >>> model.importPythonModel(name='example_model', model_folder='path/to/import')
@@ -1995,8 +2039,12 @@ class Modely:
             If the model is not neuralized.
             If the model is loaded and not created.
 
-        Example
-        -------
+        Examples
+        --------
+        .. image:: https://colab.research.google.com/assets/colab-badge.svg
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/export.ipynb
+            :alt: Open in Colab
+
         Example usage:
             >>> input1 = Input('input1').last()
             >>> input2 = Input('input2').last()
@@ -2047,15 +2095,19 @@ class Modely:
             If the shape of the inputs are not equals to the ones defined in the onnx model.
             If the batch size is not equal for all the inputs and states.
 
-        Example
-        -------
-        feed-forward Example:
+        Examples
+        --------
+        .. image:: https://colab.research.google.com/assets/colab-badge.svg
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/export.ipynb
+            :alt: Open in Colab
+
+        Example - Feed-Forward:
             >>> x = Input('x')
  
             >>> onnx_model_path = path/to/net.onnx
             >>> dummy_input = {'x':np.ones(shape=(3, 1, 1)).astype(np.float32)}
             >>> predictions = Modely().onnxInference(dummy_input, onnx_model_path)
-        Recurrent Example:
+        Example - Recurrent:
             >>> x = Input('x')
             >>> y = State('y')
  
@@ -2077,8 +2129,12 @@ class Modely:
         model_folder : str or None, optional
             The folder to save the exported report file. Default is None.
 
-        Example
-        -------
+        Examples
+        --------
+        .. image:: https://colab.research.google.com/assets/colab-badge.svg
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/develop/examples/export.ipynb
+            :alt: Open in Colab
+            
         Example usage:
             >>> model = Modely()
             >>> model.neuralizeModel()
