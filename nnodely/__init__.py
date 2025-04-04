@@ -39,7 +39,7 @@ from nnodely.interpolation import Interpolation
 from nnodely.nnodely import nnodely, Modely, clearNames
 from nnodely.visualizer import Visualizer, TextVisualizer, MPLVisualizer, MPLNotebookVisualizer
 from nnodely.optimizer import Optimizer, SGD, Adam
-from nnodely.exporter import Exporter, StandardExporter
+from nnodely.exporter import StandardExporter
 
 # Support functions
 from nnodely.initializer import init_negexp, init_lin, init_constant, init_exp

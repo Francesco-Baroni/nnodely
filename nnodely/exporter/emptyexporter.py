@@ -4,7 +4,7 @@ from datetime import datetime
 
 from nnodely.visualizer import  Visualizer
 
-class Exporter():
+class EmptyExporter():
 
     def __init__(self, workspace = None, visualizer = None, save_history = False):
         # Export parameters
