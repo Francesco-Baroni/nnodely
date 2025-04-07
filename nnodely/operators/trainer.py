@@ -7,7 +7,6 @@ from nnodely.basic.model import Model
 from nnodely.basic.optimizer import Optimizer, SGD, Adam
 from nnodely.basic.loss import CustomLoss
 from nnodely.support.utils import tensor_to_list, check, log, TORCH_DTYPE, check_gradient_operations, enforce_types
-from nnodely.operators.memory import Memory
 from nnodely.basic.relation import Stream
 from nnodely.layers.output import Output
 
