@@ -61,7 +61,7 @@ class Modely(Network, Trainer, Loader, Validator, Exporter):
             self.visualizer = visualizer
         else:
             self.visualizer = Visualizer()
-        self.visualizer.set_n4m(self)
+        self.visualizer.setModely(self)
 
         ## Set the random seed for reproducibility
         if seed is not None:

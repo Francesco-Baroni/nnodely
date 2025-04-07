@@ -89,8 +89,8 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         test.addModel('fun',fun)
         test.neuralizeModel(0.01)
 
-        self.assertEqual(test.max_n_samples, 8) # 5 samples + 3 samples of the horizon
-        self.assertEqual({'in2': 8} , test.input_n_samples)
+        self.assertEqual(test._max_n_samples, 8) # 5 samples + 3 samples of the horizon
+        self.assertEqual({'in2': 8} , test._input_n_samples)
         
         list_of_dimensions = {'Fir2':[5,1], 'Fir5':[4,1], 'Fir8':[6,1], 'Fir11':[3,1], 'Fir14':[3,1]}
         for  key, value in {k:v for k,v in test.model.relation_forward.items() if 'Fir' in k}.items():

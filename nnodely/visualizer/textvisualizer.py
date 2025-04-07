@@ -40,49 +40,49 @@ class TextVisualizer(Visualizer):
     def showMinimize(self,variable_name):
         if self.verbose >= 2:
             self.__title(f" Minimize Error of {variable_name} between"
-                         f" {self.n4m.model_def['Minimizers'][variable_name]['A']} and"
-                         f" {self.n4m.model_def['Minimizers'][variable_name]['B']} with {self.n4m.model_def['Minimizers'][variable_name]['loss']} ")
+                         f" {self.modely.model_def['Minimizers'][variable_name]['A']} and"
+                         f" {self.modely.model_def['Minimizers'][variable_name]['B']} with {self.modely.model_def['Minimizers'][variable_name]['loss']} ")
             self.__line()
 
     def showModelInputWindow(self):
         if self.verbose >= 2:
             input_ns_backward = {key: value['ns'][0] for key, value in
-                                 (self.n4m.model_def['Inputs'] | self.n4m.model_def['States']).items()}
+                                 (self.modely.model_def['Inputs'] | self.modely.model_def['States']).items()}
             input_ns_forward = {key: value['ns'][1] for key, value in
-                                (self.n4m.model_def['Inputs'] | self.n4m.model_def['States']).items()}
+                                (self.modely.model_def['Inputs'] | self.modely.model_def['States']).items()}
             self.__title(" nnodely Model Input Windows ")
-            #self.__paramjson("time_window_backward:",self.n4m.input_tw_backward)
-            #self.__paramjson("time_window_forward:",self.n4m.input_tw_forward)
+            #self.__paramjson("time_window_backward:",self.modely.input_tw_backward)
+            #self.__paramjson("time_window_forward:",self.modely.input_tw_forward)
             self.__paramjson("sample_window_backward:", input_ns_backward)
             self.__paramjson("sample_window_forward:", input_ns_forward)
-            self.__paramjson("input_n_samples:", self.n4m.input_n_samples)
-            self.__param("max_samples [backw, forw]:", f"[{self.n4m.model_def['Info']['ns'][0]},{self.n4m.model_def['Info']['ns'][1]}]")
-            self.__param("max_samples total:",f"{self.n4m.max_n_samples}")
+            self.__paramjson("input_n_samples:", self.modely._input_n_samples)
+            self.__param("max_samples [backw, forw]:", f"[{self.modely.model_def['Info']['ns'][0]},{self.modely.model_def['Info']['ns'][1]}]")
+            self.__param("max_samples total:",f"{self.modely._max_n_samples}")
             self.__line()
 
     def showModelRelationSamples(self):
         if self.verbose >= 2:
             self.__title(" nnodely Model Relation Samples ")
-            self.__paramjson("Relation_samples:", self.n4m.relation_samples)
+            self.__paramjson("Relation_samples:", self.modely.relation_samples)
             self.__line()
 
     def showBuiltModel(self):
         if self.verbose >= 2:
             self.__title(" nnodely Built Model ")
-            print(color(pformat(self.n4m.model),GREEN))
+            print(color(pformat(self.modely.model),GREEN))
             self.__line()
 
     def showWeights(self, weights = None):
         self.__title(" nnodely Models Weights ")
-        for key, param in self.n4m.model.all_parameters.items():
+        for key, param in self.modely.model.all_parameters.items():
             if weights is None or key in weights:
                 self.__paramjson(key,param.tolist())
         self.__line()
 
     def showWeightsInTrain(self, batch = None, epoch = None, weights = None):
         if self.verbose >= 2:
-            par = self.n4m.run_training_params
-            dim = len(self.n4m.model_def['Minimizers'])
+            par = self.modely.run_training_params
+            dim = len(self.modely.model_def['Minimizers'])
             COLOR = BLUE
             if epoch is not None:
                 print(color('|' + (f"{epoch + 1}/{par['num_of_epochs']}").center(10, ' ') + '|',COLOR), end='')
@@ -92,7 +92,7 @@ class TextVisualizer(Visualizer):
                 print(color('|' + (f"{batch + 1}").center(10, ' ') + '|', COLOR), end='')
                 print(color((f' Params end batch {batch + 1} ').center(20 * (dim + 1) - 1, '-') + '|', COLOR))
 
-            for key, param in self.n4m.model.all_parameters.items():
+            for key, param in self.modely.model.all_parameters.items():
                 if weights is None or key in weights:
                     print(color('|' + (f"{key}").center(10, ' ') + '|', COLOR), end='')
                     print(color((f'{param.tolist()}').center(20 * (dim + 1) - 1, ' ') + '|', COLOR))
@@ -104,30 +104,30 @@ class TextVisualizer(Visualizer):
         if self.verbose >= 1:
             self.__title(" nnodely Model Dataset ")
             self.__param("Dataset Name:", name)
-            self.__param("Number of files:", f'{self.n4m.file_count}')
-            self.__param("Total number of samples:", f'{self.n4m.num_of_samples[name]}')
-            for key in self.n4m.model_def['Inputs'].keys():
-                if key in self.n4m.data[name].keys():
-                    self.__param(f"Shape of {key}:", f'{self.n4m.data[name][key].shape}')
+            self.__param("Number of files:", f'{self.modely.file_count}')
+            self.__param("Total number of samples:", f'{self.modely.num_of_samples[name]}')
+            for key in self.modely.model_def['Inputs'].keys():
+                if key in self.modely.data[name].keys():
+                    self.__param(f"Shape of {key}:", f'{self.modely.data[name][key].shape}')
             self.__line()
 
     def showStartTraining(self):
         if self.verbose >= 1:
-            par = self.n4m.run_training_params
-            dim = len(self.n4m.model_def['Minimizers'])
-            self.__title(" nnodely Training ", 12+(len(self.n4m.model_def['Minimizers'])+1)*20)
+            par = self.modely.run_training_params
+            dim = len(self.modely.model_def['Minimizers'])
+            self.__title(" nnodely Training ", 12+(len(self.modely.model_def['Minimizers'])+1)*20)
             print(color('|'+(f'Epoch').center(10,' ')+'|'),end='')
-            for key in self.n4m.model_def['Minimizers'].keys():
+            for key in self.modely.model_def['Minimizers'].keys():
                 print(color((f'{key}').center(19, ' ') + '|'), end='')
             print(color((f'Total').center(19, ' ') + '|'))
 
             print(color('|' + (f' ').center(10, ' ') + '|'), end='')
-            for key in self.n4m.model_def['Minimizers'].keys():
+            for key in self.modely.model_def['Minimizers'].keys():
                 print(color((f'Loss').center(19, ' ') + '|'),end='')
             print(color((f'Loss').center(19, ' ') + '|'))
 
             print(color('|' + (f' ').center(10, ' ') + '|'), end='')
-            for key in self.n4m.model_def['Minimizers'].keys():
+            for key in self.modely.model_def['Minimizers'].keys():
                 if par['n_samples_val']:
                     print(color((f'train').center(9, ' ') + '|'),end='')
                     print(color((f'val').center(9, ' ') + '|'),end='')
@@ -144,15 +144,15 @@ class TextVisualizer(Visualizer):
     def showTraining(self, epoch, train_losses, val_losses):
         if self.verbose >= 1:
             eng = lambda val: np.format_float_scientific(val, precision=3)
-            par = self.n4m.run_training_params
+            par = self.modely.run_training_params
             show_epoch = 1 if par['num_of_epochs'] <= 20 else 10
-            dim = len(self.n4m.model_def['Minimizers'])
+            dim = len(self.modely.model_def['Minimizers'])
             if epoch < par['num_of_epochs']:
                 print('', end='\r')
                 print('|' + (f"{epoch + 1}/{par['num_of_epochs']}").center(10, ' ') + '|', end='')
                 train_loss = []
                 val_loss = []
-                for key in self.n4m.model_def['Minimizers'].keys():
+                for key in self.modely.model_def['Minimizers'].keys():
                     train_loss.append(train_losses[key][epoch])
                     if val_losses:
                         val_loss.append(val_losses[key][epoch])
@@ -170,7 +170,7 @@ class TextVisualizer(Visualizer):
                 if (epoch + 1) % show_epoch == 0:
                     print('', end='\r')
                     print(color('|' + (f"{epoch + 1}/{par['num_of_epochs']}").center(10, ' ') + '|'), end='')
-                    for key in self.n4m.model_def['Minimizers'].keys():
+                    for key in self.modely.model_def['Minimizers'].keys():
                         if val_losses:
                             print(color((f'{eng(train_losses[key][epoch])}').center(9, ' ') + '|'), end='')
                             print(color((f'{eng(val_losses[key][epoch])}').center(9, ' ') + '|'), end='')
@@ -195,7 +195,7 @@ class TextVisualizer(Visualizer):
     def showTrainParams(self):
         if self.verbose >= 1:
             self.__title(" nnodely Model Train Parameters ")
-            par = self.n4m.run_training_params
+            par = self.modely.run_training_params
             batch_size = par['train_batch_size']
             n_samples = par['n_samples_train']
             n_update = par['update_per_epochs']
@@ -241,17 +241,17 @@ class TextVisualizer(Visualizer):
             self.__paramjson('minimizers:', par['minimizers'])
 
             self.__param("optimizer:", par['optimizer'])
-            self.__paramjson("optimizer defaults:",self.n4m.run_training_params['optimizer_defaults'])
-            if self.n4m.run_training_params['optimizer_params'] is not None:
-                self.__paramjson("optimizer params:", self.n4m.run_training_params['optimizer_params'])
+            self.__paramjson("optimizer defaults:",self.modely.run_training_params['optimizer_defaults'])
+            if self.modely.run_training_params['optimizer_params'] is not None:
+                self.__paramjson("optimizer params:", self.modely.run_training_params['optimizer_params'])
 
             self.__line()
 
     def showResult(self, name_data):
         eng = lambda val: np.format_float_scientific(val, precision=3)
         if self.verbose >= 1:
-            dim_loss = len(max(self.n4m.model_def['Minimizers'].keys(),key=len))
-            loss_type_list = set([value["loss"] for ind, (key, value) in enumerate(self.n4m.model_def['Minimizers'].items())])
+            dim_loss = len(max(self.modely.model_def['Minimizers'].keys(),key=len))
+            loss_type_list = set([value["loss"] for ind, (key, value) in enumerate(self.modely.model_def['Minimizers'].items())])
             self.__title(f" nnodely Model Results for {name_data} ", dim_loss + 2 + (len(loss_type_list) + 2) * 20)
             print(color('|' + (f'Loss').center(dim_loss, ' ') + '|'), end='')
             for loss in loss_type_list:
@@ -266,27 +266,27 @@ class TextVisualizer(Visualizer):
             print(color((f'lower better').center(19, ' ') + '|'))
 
             print(color('|' + (f'').center(dim_loss + 20 * (len(loss_type_list) + 2), '-') + '|'))
-            for ind, (key, value) in enumerate(self.n4m.model_def['Minimizers'].items()):
+            for ind, (key, value) in enumerate(self.modely.model_def['Minimizers'].items()):
                 print(color('|'+(f'{key}').center(dim_loss, ' ') + '|'), end='')
                 for loss in list(loss_type_list):
                     if value["loss"] == loss:
-                        print(color((f'{eng(self.n4m.performance[name_data][key][value["loss"]])}').center(19, ' ') + '|'), end='')
+                        print(color((f'{eng(self.modely.performance[name_data][key][value["loss"]])}').center(19, ' ') + '|'), end='')
                     else:
                         print(color((f' ').center(19, ' ') + '|'), end='')
-                print(color((f'{eng(self.n4m.performance[name_data][key]["fvu"]["total"])}').center(19, ' ') + '|'), end='')
-                print(color((f'{eng(self.n4m.performance[name_data][key]["aic"]["value"])}').center(19, ' ') + '|'))
+                print(color((f'{eng(self.modely.performance[name_data][key]["fvu"]["total"])}').center(19, ' ') + '|'), end='')
+                print(color((f'{eng(self.modely.performance[name_data][key]["aic"]["value"])}').center(19, ' ') + '|'))
 
             print(color('|' + (f'').center(dim_loss + 20 * (len(loss_type_list) + 2), '-') + '|'))
             print(color('|'+(f'Total').center(dim_loss, ' ') + '|'), end='')
-            print(color((f'{eng(self.n4m.performance[name_data]["total"]["mean_error"])}').center(len(loss_type_list)*20-1, ' ') + '|'), end='')
-            print(color((f'{eng(self.n4m.performance[name_data]["total"]["fvu"])}').center(19, ' ') + '|'), end='')
-            print(color((f'{eng(self.n4m.performance[name_data]["total"]["aic"])}').center(19, ' ') + '|'))
+            print(color((f'{eng(self.modely.performance[name_data]["total"]["mean_error"])}').center(len(loss_type_list)*20-1, ' ') + '|'), end='')
+            print(color((f'{eng(self.modely.performance[name_data]["total"]["fvu"])}').center(19, ' ') + '|'), end='')
+            print(color((f'{eng(self.modely.performance[name_data]["total"]["aic"])}').center(19, ' ') + '|'))
 
             print(color('|' + (f'').center(dim_loss + 20 * (len(loss_type_list) + 2), '-') + '|'))
 
         if self.verbose >= 2:
             self.__title(" Detalied Results ")
-            print(color(pformat(self.n4m.performance), GREEN))
+            print(color(pformat(self.modely.performance), GREEN))
             self.__line()
 
     def saveModel(self, name, path):

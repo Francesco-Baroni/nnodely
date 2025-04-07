@@ -16,8 +16,8 @@ class Visualizer():
     def __init__(self):
         pass
 
-    def set_n4m(self, n4m):
-        self.n4m = n4m
+    def setModely(self, modely):
+        self.modely = modely
 
     def showModel(self, model):
         pass

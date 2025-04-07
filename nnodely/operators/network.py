@@ -153,12 +153,14 @@ class Network(Memory):
         self.model = Model(self.model_def.json)
         self.__addInfo()
 
-        input_ns_backward = {key:value['ns'][0] for key, value in (self.model_def['Inputs']|self.model_def['States']).items()}
-        input_ns_forward = {key:value['ns'][1] for key, value in (self.model_def['Inputs']|self.model_def['States']).items()}
-        self.input_n_samples = {}
+        self._input_ns_backward = {key:value['ns'][0] for key, value in (self.model_def['Inputs']|self.model_def['States']).items()}
+        self._input_ns_forward = {key:value['ns'][1] for key, value in (self.model_def['Inputs']|self.model_def['States']).items()}
+        self._max_samples_backward = max(self._input_ns_backward.values())
+        self._max_samples_forward = max(self._input_ns_forward.values())
+        self._input_n_samples = {}
         for key, value in (self.model_def['Inputs'] | self.model_def['States']).items():
-            self.input_n_samples[key] = input_ns_backward[key] + input_ns_forward[key]
-        self.max_n_samples = max(input_ns_backward.values()) + max(input_ns_forward.values())
+            self._input_n_samples[key] = self._input_ns_backward[key] + self._input_ns_forward[key]
+        self._max_n_samples = max(self._input_ns_backward.values()) + max(self._input_ns_forward.values())
 
         ## Initialize States
         self.resetStates()
@@ -250,7 +252,7 @@ class Network(Memory):
 
         ## Get the number of data windows for each input/state
         num_of_windows = {key: len(value) for key, value in inputs.items()} if sampled else {
-            key: len(value) - self.input_n_samples[key] + 1 for key, value in inputs.items()}
+            key: len(value) - self._input_n_samples[key] + 1 for key, value in inputs.items()}
 
         ## Get the maximum inference window
         if num_of_samples:
@@ -258,7 +260,7 @@ class Network(Memory):
             for key in inputs.keys():
                 input_dim = self.model_def['Inputs'][key]['dim'] if key in model_inputs else \
                 self.model_def['States'][key]['dim']
-                new_samples = num_of_samples - (len(inputs[key]) - self.input_n_samples[key] + 1)
+                new_samples = num_of_samples - (len(inputs[key]) - self._input_n_samples[key] + 1)
                 if input_dim > 1:
                     log.warning(f'The variable {key} is filled with {new_samples} samples equal to zeros.')
                     inputs[key] += [[0 for _ in range(input_dim)] for _ in range(new_samples)]
@@ -300,7 +302,7 @@ class Network(Memory):
             log.warning(f'Inputs not provided: {missing_inputs}. Autofilling with zeros..')
             for key in missing_inputs:
                 inputs[key] = np.zeros(
-                    shape=(self.input_n_samples[key] + window_dim - 1, self.model_def['Inputs'][key]['dim']),
+                    shape=(self._input_n_samples[key] + window_dim - 1, self.model_def['Inputs'][key]['dim']),
                     dtype=NP_DTYPE).tolist()
 
         ## Transform inputs in 3D Tensors
@@ -346,7 +348,7 @@ class Network(Memory):
                 ## Get mandatory data inputs
                 for key in mandatory_inputs:
                     X[key] = inputs[key][idx:idx + 1] if sampled else inputs[key][:,
-                                                                      idx:idx + self.input_n_samples[key]]
+                                                                      idx:idx + self._input_n_samples[key]]
                     if 'type' in json_inputs[key].keys():
                         X[key] = X[key].requires_grad_(True)
                 ## reset states
@@ -358,18 +360,18 @@ class Network(Memory):
                         if (key in inputs.keys() and prediction_samples == 'auto' and idx < num_of_windows[key]) or (
                                 key in inputs.keys() and prediction_samples != 'auto' and idx < inputs[key].shape[1]):
                             X[key] = inputs[key][idx:idx + 1] if sampled else inputs[key][:,
-                                                                              idx:idx + self.input_n_samples[key]]
+                                                                              idx:idx + self._input_n_samples[key]]
                         ## if im in the first reset
                         ## if i have a state in memory
                         ## if i have prediction_samples = 'auto' and not enough samples
-                        elif (key in self.states.keys() and (first or prediction_samples == 'auto')) and (
+                        elif (key in self._states.keys() and (first or prediction_samples == 'auto')) and (
                                 prediction_samples == 'auto' or prediction_samples == None):
-                            X[key] = self.states[key]
+                            X[key] = self._states[key]
                         else:  ## if i have no samples and no states
-                            window_size = self.input_n_samples[key]
+                            window_size = self._input_n_samples[key]
                             dim = json_inputs[key]['dim']
                             X[key] = torch.zeros(size=(1, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
-                            self.states[key] = X[key]
+                            self._states[key] = X[key]
                         if 'type' in json_inputs[key].keys():
                             X[key] = X[key].requires_grad_(True)
                     first = False
@@ -395,9 +397,7 @@ class Network(Memory):
                     self._updateState(X, out_closed_loop, out_connect)
 
         ## Remove virtual states
-        for key in (connect.keys() | closed_loop.keys()):
-            if key in self.states.keys():
-                del self.states[key]
+        self._removeVirtualStates(connect, closed_loop)
 
         return result_dict
 

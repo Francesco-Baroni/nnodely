@@ -190,12 +190,6 @@ class Loader:
             log.warning(f'Dataset named {name} already loaded! overriding the existing one..')
         self.data[name] = {}
 
-        input_ns_backward = {key: value['ns'][0] for key, value in json_inputs.items()}
-        input_ns_forward = {key: value['ns'][1] for key, value in json_inputs.items()}
-        max_samples_backward = max(input_ns_backward.values())
-        max_samples_forward = max(input_ns_forward.values())
-        max_n_samples = max_samples_backward + max_samples_forward
-
         num_of_samples = {}
         if type(source) is str:  ## we have a directory path containing the files
             ## collect column indexes
@@ -243,15 +237,15 @@ class Loader:
                     continue
                 if self.file_count > 1:
                     self.multifile[name].append(
-                        (self.multifile[name][-1] + (len(df) - max_n_samples + 1)) if self.multifile[name] else len(
-                            df) - max_n_samples + 1)
+                        (self.multifile[name][-1] + (len(df) - self._max_n_samples + 1)) if self.multifile[name] else len(
+                            df) - self._max_n_samples + 1)
                 ## Cycle through all the windows
                 for key, idxs in format_idx.items():
-                    back, forw = input_ns_backward[key], input_ns_forward[key]
+                    back, forw = self._input_ns_backward[key], self._input_ns_forward[key]
                     ## Save as numpy array the data
                     data = df.iloc[:, idxs[0]:idxs[1]].to_numpy()
                     self.data[name][key] += [data[i - back:i + forw] for i in
-                                             range(max_samples_backward, len(df) - max_samples_forward + 1)]
+                                             range(self._max_samples_backward, len(df) - self._max_samples_forward + 1)]
 
             ## Stack the files
             for key in format_idx.keys():
@@ -271,10 +265,10 @@ class Loader:
 
                 self.data[name][key] = []  ## Initialize the dataset
 
-                back, forw = input_ns_backward[key], input_ns_forward[key]
-                for idx in range(len(source[key]) - max_n_samples + 1):
+                back, forw = self._input_ns_backward[key], self._input_ns_forward[key]
+                for idx in range(len(source[key]) - self._max_n_samples + 1):
                     self.data[name][key].append(
-                        source[key][idx + (max_samples_backward - back):idx + (max_samples_backward + forw)])
+                        source[key][idx + (self._max_samples_backward - back):idx + (self._max_samples_backward + forw)])
 
             ## Stack the files
             for key in model_inputs:
@@ -309,10 +303,10 @@ class Loader:
                     continue
 
                 processed_data[key] = []  ## Initialize the dataset
-                back, forw = input_ns_backward[key], input_ns_forward[key]
+                back, forw = self._input_ns_backward[key], self._input_ns_forward[key]
 
-                for idx in range(len(source) - max_n_samples + 1):
-                    window = source[key].iloc[idx + (max_samples_backward - back):idx + (max_samples_backward + forw)]
+                for idx in range(len(source) - self._max_n_samples + 1):
+                    window = source[key].iloc[idx + (self._max_samples_backward - back):idx + (self._max_samples_backward + forw)]
                     processed_data[key].append(window.to_numpy())
 
             ## Convert lists to numpy arrays

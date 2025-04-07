@@ -94,13 +94,13 @@ class Validator(Memory):
                             ## with data
                             X[key] = data[key][idxs]
                         else:  ## with zeros
-                            window_size = self.input_n_samples[key]
+                            window_size = self._input_n_samples[key]
                             dim = json_inputs[key]['dim']
                             if 'type' in json_inputs[key]:
                                 X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=True)
                             else:
                                 X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
-                            self.states[key] = X[key]
+                            self._states[key] = X[key]
 
                     for horizon_idx in range(prediction_samples + 1):
                         ## Get data
@@ -199,9 +199,7 @@ class Validator(Memory):
                 self.prediction[dataset][key]['B'] = B_np.tolist()
 
             ## Remove virtual states
-            for key in (connect.keys() | closed_loop.keys()):
-                if key in self.states.keys():
-                    del self.states[key]
+            self._removeVirtualStates(connect, closed_loop)
 
             self.performance[dataset]['total'] = {}
             self.performance[dataset]['total']['mean_error'] = np.mean([value for key,value in total_losses.items()])

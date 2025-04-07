@@ -717,14 +717,15 @@ class Trainer(Memory):
                     ## with data
                     X[key] = data[key][idxs]
                 else:  ## with zeros
-                    window_size = self.input_n_samples[key]
+                    window_size = self._input_n_samples[key]
                     dim = json_inputs[key]['dim']
                     if 'type' in json_inputs[key]:
                         X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=True)
                     else:
                         X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE,
                                              requires_grad=False)
-                    self.states[key] = X[key]
+                    self._states[key] = X[key]
+
 
             for horizon_idx in range(prediction_samples + 1):
                 ## Get data
@@ -734,7 +735,7 @@ class Trainer(Memory):
                 out, minimize_out, out_closed_loop, out_connect = self.model(X)
 
                 if self.log_internal and train:
-                    assert (check_gradient_operations(self.states) == 0)
+                    assert (check_gradient_operations(self._states) == 0)
                     assert (check_gradient_operations(data) == 0)
                     internals_dict = {'XY': tensor_to_list(X), 'out': out, 'param': self.model.all_parameters,
                                       'closedLoop': self.model.closed_loop_update, 'connect': self.model.connect_update}
@@ -750,7 +751,7 @@ class Trainer(Memory):
                 self._updateState(X, out_closed_loop, out_connect)
 
                 if self.log_internal and train:
-                    internals_dict['state'] = self.states
+                    internals_dict['state'] = self._states
                     self.__save_internal('inout_' + str(batch_val) + '_' + str(horizon_idx), internals_dict)
 
             ## Calculate the total loss
@@ -768,9 +769,7 @@ class Trainer(Memory):
             batch_val += 1
 
         ## Remove virtual states
-        for key in (connect.keys() | closed_loop.keys()):
-            if key in self.states.keys():
-                del self.states[key]
+        self._removeVirtualStates(connect, closed_loop)
 
         ## return the losses
         return aux_losses

@@ -57,14 +57,14 @@ class MPLVisualizer(TextVisualizer):
                 self.process_training[key] = {}
 
             self.process_training = {}
-            for key in self.n4m.model_def['Minimizers'].keys():
+            for key in self.modely.model_def['Minimizers'].keys():
                 self.process_training[key] = subprocess.Popen(['python', self.training_visualizer_script], stdin=subprocess.PIPE, text=True)
 
-        num_of_epochs = self.n4m.run_training_params['num_of_epochs']
-        train_dataset = self.n4m.run_training_params['train_dataset']
-        validation_dataset = self.n4m.run_training_params['validation_dataset']
+        num_of_epochs = self.modely.run_training_params['num_of_epochs']
+        train_dataset = self.modely.run_training_params['train_dataset']
+        validation_dataset = self.modely.run_training_params['validation_dataset']
         if epoch+1 <= num_of_epochs:
-            for key in self.n4m.model_def['Minimizers'].keys():
+            for key in self.modely.model_def['Minimizers'].keys():
                 if val_losses:
                     val_loss = val_losses[key][epoch]
                 else:
@@ -80,30 +80,30 @@ class MPLVisualizer(TextVisualizer):
                     log.warning("The visualizer process has been closed.")
 
         if epoch+1 == num_of_epochs:
-            for key in self.n4m.model_def['Minimizers'].keys():
+            for key in self.modely.model_def['Minimizers'].keys():
                 self.process_training[key].stdin.close()
 
     def showResult(self, name_data):
         super().showResult(name_data)
-        check(name_data in self.n4m.performance, ValueError, f"Results not available for {name_data}.")
+        check(name_data in self.modely.performance, ValueError, f"Results not available for {name_data}.")
         if name_data in self.process_results:
-            for key in self.n4m.model_def['Minimizers'].keys():
+            for key in self.modely.model_def['Minimizers'].keys():
                 if key in self.process_results[name_data] and self.process_results[name_data][key].poll() is None:
                     self.process_results[name_data][key].terminate()
                     self.process_results[name_data][key].wait()
                 self.process_results[name_data][key] = None
         self.process_results[name_data] = {}
 
-        for key in self.n4m.model_def['Minimizers'].keys():
+        for key in self.modely.model_def['Minimizers'].keys():
             # Start the data visualizer process
             self.process_results[name_data][key] = subprocess.Popen(['python', self.time_series_visualizer_script], stdin=subprocess.PIPE,
                                                     text=True)
             data = {"name_data": name_data,
                     "key": key,
-                    "performance": self.n4m.performance[name_data][key],
-                    "prediction_A": self.n4m.prediction[name_data][key]['A'],
-                    "prediction_B": self.n4m.prediction[name_data][key]['B'],
-                    "sample_time": self.n4m.model_def['Info']["SampleTime"]}
+                    "performance": self.modely.performance[name_data][key],
+                    "prediction_A": self.modely.prediction[name_data][key]['A'],
+                    "prediction_B": self.modely.prediction[name_data][key]['B'],
+                    "sample_time": self.modely.model_def['Info']["SampleTime"]}
             try:
                 # Send data to the visualizer process
                 self.process_results[name_data][key].stdin.write(f"{json.dumps(data)}\n")
@@ -117,14 +117,14 @@ class MPLVisualizer(TextVisualizer):
         pass
 
     def showFunctions(self, functions = None, xlim = None, num_points = 1000):
-        check(self.n4m.neuralized, ValueError, "The model has not been neuralized.")
-        for key, value in self.n4m.model_def['Functions'].items():
+        check(self.modely.neuralized, ValueError, "The model has not been neuralized.")
+        for key, value in self.modely.model_def['Functions'].items():
             if key in functions:
                 if key in self.process_function and self.process_function[key].poll() is None:
                     self.process_function[key].terminate()
                     self.process_function[key].wait()
 
-                if 'functions' in self.n4m.model_def['Functions'][key]:
+                if 'functions' in self.modely.model_def['Functions'][key]:
                     x, activ_fun = return_fuzzify(value, xlim, num_points)
                     data = {"name": key,
                             "x": x,
@@ -135,8 +135,8 @@ class MPLVisualizer(TextVisualizer):
                                                                   stdin=subprocess.PIPE,
                                                                   text=True)
                 elif 'code':
-                    model_def = ModelDef(self.n4m.model_def)
-                    model_def.updateParameters(self.n4m.model)
+                    model_def = ModelDef(self.modely.model_def)
+                    model_def.updateParameters(self.modely.model)
                     function_inputs = return_standard_inputs(value, model_def, xlim, num_points)
                     function_output, function_input_list = return_function(value, function_inputs)
 
@@ -180,7 +180,7 @@ class MPLVisualizer(TextVisualizer):
 
     def closeTraining(self, minimizer = None):
         if minimizer is None:
-            for key in self.n4m.model_def['Minimizers'].keys():
+            for key in self.modely.model_def['Minimizers'].keys():
                 if key in self.process_training and self.process_training[key].poll() is None:
                     self.process_training[key].terminate()
                     self.process_training[key].wait()
