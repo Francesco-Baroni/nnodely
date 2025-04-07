@@ -6,7 +6,7 @@ from nnodely.basic.loss import CustomLoss
 from nnodely.support.utils import  check, TORCH_DTYPE, enforce_types
 from nnodely.operators.memory import Memory
 
-class Validator(Memory):
+class Validator():
     def __init__(self):
         check(type(self) is not Validator, TypeError, "Validator class cannot be instantiated directly")
 

@@ -11,7 +11,7 @@ from nnodely.operators.memory import Memory
 from nnodely.basic.relation import Stream
 from nnodely.layers.output import Output
 
-class Trainer(Memory):
+class Trainer():
     def __init__(self):
         check(type(self) is not Trainer, TypeError, "Trainer class cannot be instantiated directly")
         # Training Parameters

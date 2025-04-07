@@ -8,6 +8,7 @@ from nnodely.operators.trainer import Trainer
 from nnodely.operators.loader import Loader
 from nnodely.operators.validator import Validator
 from nnodely.operators.exporter import Exporter
+from nnodely.operators.memory import Memory
 
 # nnodely packages
 from nnodely.visualizer import TextVisualizer, Visualizer
@@ -23,7 +24,7 @@ log = nnLogger(__name__, logging.INFO)
 def clearNames(names:str|None = None):
     NeuObj.clearNames(names)
 
-class Modely(Network, Trainer, Loader, Validator, Exporter):
+class Modely(Memory, Network, Trainer, Loader, Validator, Exporter):
     """
     Create the main object, the nnodely object, that will be used to create the network, train and export it.
 
@@ -78,6 +79,7 @@ class Modely(Network, Trainer, Loader, Validator, Exporter):
         self._neuralized = False
         self._traced = False
 
+        Memory.__init__(self)
         Network.__init__(self)
         Loader.__init__(self)
         Trainer.__init__(self)

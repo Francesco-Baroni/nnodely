@@ -5,12 +5,11 @@ import numpy as np
 from nnodely.basic.modeldef import ModelDef
 from nnodely.basic.model import Model
 from nnodely.support.utils import check, log, TORCH_DTYPE, NP_DTYPE, argmax_dict, argmin_dict, enforce_types
-from nnodely.operators.memory import Memory
 from nnodely.basic.relation import Stream
 from nnodely.layers.input import State
 from nnodely.layers.output import Output
 
-class Network(Memory):
+class Network():
     def __init__(self):
         check(type(self) is not Network, TypeError, "Network class cannot be instantiated directly")
 
