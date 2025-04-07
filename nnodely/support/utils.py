@@ -16,6 +16,17 @@ NP_DTYPE = np.float32
 
 ForbiddenTags = keyword.kwlist
 
+class ReadOnlyDict:
+    def __init__(self, data):
+        self._data = data
+
+    def __getitem__(self, key):
+        return self._data[key]
+
+    def __len__(self):
+        return len(self._data)
+
+
 def get_window(obj):
     return 'tw' if 'tw' in obj.dim else ('sw' if 'sw' in obj.dim else None)
 

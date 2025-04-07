@@ -15,12 +15,6 @@ class Memory:
         self._max_samples_forward = None
         self._max_n_samples = 0
 
-    def __getitem__(self, key):
-        if key in self._states.keys():
-            return self._states[key].detach().numpy().tolist()
-        else:
-            raise KeyError(f"Key {key} not found in states")
-
     def _removeVirtualStates(self, connect, closed_loop):
         for key in (connect.keys() | closed_loop.keys()):
             if key in self._states.keys():

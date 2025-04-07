@@ -141,7 +141,7 @@ class Model(nn.Module):
         self.network_output_predictions = set(self.outputs.values())
 
         ## list of network minimization outputs
-        self.network_output_minimizers = [] 
+        self.network_output_minimizers = []
         for _,value in self.minimizers.items():
             self.network_output_minimizers.append(self.outputs[value['A']]) if value['A'] in self.outputs.keys() else self.network_output_minimizers.append(value['A'])
             self.network_output_minimizers.append(self.outputs[value['B']]) if value['B'] in self.outputs.keys() else self.network_output_minimizers.append(value['B'])
@@ -170,7 +170,7 @@ class Model(nn.Module):
                             layer_inputs.append(self.all_constants[key])
                         elif key in available_states: ## relation that takes a state
                             layer_inputs.append(kwargs[key])
-                        elif key in available_inputs:  ## relation that takes inputs 
+                        elif key in available_inputs:  ## relation that takes inputs
                             layer_inputs.append(kwargs[key])
                         elif key in self.all_parameters.keys(): ## relation that takes parameters
                             layer_inputs.append(self.all_parameters[key])
@@ -197,7 +197,7 @@ class Model(nn.Module):
         minimize_dict = {}
         for key in self.minimizers_keys:
             minimize_dict[key] = result_dict[self.outputs[key]] if key in self.outputs.keys() else result_dict[key]
-                
+
         return output_dict, minimize_dict, closed_loop_update_dict, connect_update_dict
 
 

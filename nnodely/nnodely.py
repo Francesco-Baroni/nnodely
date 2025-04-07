@@ -14,7 +14,7 @@ from nnodely.visualizer import TextVisualizer, Visualizer
 from nnodely.basic.modeldef import ModelDef
 from nnodely.basic.relation import NeuObj
 
-from nnodely.support.utils import TORCH_DTYPE
+from nnodely.support.utils import ReadOnlyDict
 
 from nnodely.support.logger import logging, nnLogger
 log = nnLogger(__name__, logging.INFO)
@@ -83,6 +83,18 @@ class Modely(Network, Trainer, Loader, Validator, Exporter):
         Trainer.__init__(self)
         Validator.__init__(self)
         Exporter.__init__(self, exporter, workspace, save_history)
+
+    @property
+    def parameters(self):
+        return ReadOnlyDict(self.model.all_parameters)
+
+    @property
+    def constants(self):
+        return ReadOnlyDict(self.model.all_constants)
+
+    @property
+    def states(self):
+        return {key:value.detach().numpy().tolist() for key,value in self._states.items()}
 
     def resetSeed(self, seed):
         """
