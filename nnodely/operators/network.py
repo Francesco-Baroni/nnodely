@@ -2,9 +2,9 @@ import copy, torch
 
 import numpy as np
 
-from nnodely.modeldef import ModelDef
-from nnodely.model import Model
-from nnodely.utils import check, log, TORCH_DTYPE, NP_DTYPE, argmax_dict, argmin_dict
+from nnodely.basic.modeldef import ModelDef
+from nnodely.basic.model import Model
+from nnodely.support.utils import check, log, TORCH_DTYPE, NP_DTYPE, argmax_dict, argmin_dict
 from nnodely.operators.memory import Memory
 
 class Network(Memory):

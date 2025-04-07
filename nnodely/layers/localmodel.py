@@ -2,9 +2,9 @@ import inspect
 
 from collections.abc import Callable
 
-from nnodely.relation import NeuObj, Stream
-from nnodely.part import Select
-from nnodely.utils import check, enforce_types
+from nnodely.basic.relation import NeuObj, Stream
+from nnodely.layers.part import Select
+from nnodely.support.utils import check, enforce_types
 
 localmodel_relation_name = 'LocalModel'
 

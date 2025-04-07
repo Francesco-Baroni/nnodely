@@ -1,9 +1,9 @@
 import copy
 
-from nnodely.relation import NeuObj, Stream, ToStream
-from nnodely.utils import check, merge, enforce_types
-from nnodely.part import SamplePart, TimePart
-from nnodely.timeoperation import Derivate, Integrate
+from nnodely.basic.relation import NeuObj, Stream, ToStream
+from nnodely.support.utils import check, merge, enforce_types
+from nnodely.layers.part import SamplePart, TimePart
+from nnodely.layers.timeoperation import Derivate, Integrate
 
 class InputState(NeuObj):
     """

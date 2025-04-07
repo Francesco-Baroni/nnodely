@@ -1,6 +1,6 @@
 import torch.nn as nn
 import torch
-from nnodely.utils import check
+from nnodely.support.utils import check
 
 available_losses = ['mse', 'rmse', 'mae', 'cross_entropy']
 

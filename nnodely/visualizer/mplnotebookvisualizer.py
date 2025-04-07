@@ -1,9 +1,9 @@
 import matplotlib.pyplot as plt
 
 from nnodely.visualizer.textvisualizer import TextVisualizer
-from nnodely.fuzzify import return_fuzzify
-from nnodely.parametricfunction import return_standard_inputs, return_function
-from nnodely.utils import check
+from nnodely.layers.fuzzify import return_fuzzify
+from nnodely.layers.parametricfunction import return_standard_inputs, return_function
+from nnodely.support.utils import check
 from mplplots import plots
 
 class MPLNotebookVisualizer(TextVisualizer):

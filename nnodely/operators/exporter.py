@@ -1,8 +1,8 @@
 from nnodely.exporter.standardexporter import StandardExporter
 from nnodely.exporter.emptyexporter import EmptyExporter
-from nnodely.model import Model
-from nnodely.modeldef import ModelDef
-from nnodely.utils import check
+from nnodely.basic.model import Model
+from nnodely.basic.modeldef import ModelDef
+from nnodely.support.utils import check
 
 class Exporter:
     def __init__(self, exporter, workspace, save_history):

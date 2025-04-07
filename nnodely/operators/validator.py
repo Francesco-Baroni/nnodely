@@ -2,8 +2,8 @@ import torch
 
 import numpy as np
 
-from nnodely.loss import CustomLoss
-from nnodely.utils import  check, TORCH_DTYPE
+from nnodely.support.loss import CustomLoss
+from nnodely.support.utils import  check, TORCH_DTYPE
 from nnodely.operators.memory import Memory
 
 class Validator(Memory):

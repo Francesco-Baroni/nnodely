@@ -4,12 +4,12 @@ import torch.nn as nn
 
 from collections.abc import Callable
 
-from nnodely.relation import NeuObj, Stream, AutoToStream
-from nnodely.model import Model
-from nnodely.parameter import Parameter
-from nnodely.utils import check, merge, enforce_types
+from nnodely.basic.relation import NeuObj, Stream, AutoToStream
+from nnodely.basic.model import Model
+from nnodely.layers.parameter import Parameter
+from nnodely.support.utils import check, merge, enforce_types
 
-from nnodely.logger import logging, nnLogger
+from nnodely.support.logger import logging, nnLogger
 log = nnLogger(__name__, logging.WARNING)
 
 linear_relation_name = 'Linear'

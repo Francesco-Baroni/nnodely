@@ -13,16 +13,16 @@ Model structured NN Inputs Outputs and Parameters
 Input module
 ------------
 
-.. automodule:: nnodely.input
+.. automodule:: nnodely.layers.input
     :no-undoc-members:
     :no-inherited-members:
 
-    .. autoclass:: nnodely.input.Input
+    .. autoclass:: nnodely.layers.input.Input
         :undoc-members:
         :inherited-members:
         :exclude-members: count, resetCount
 
-    .. autoclass:: nnodely.input.State
+    .. autoclass:: nnodely.layers.input.State
         :undoc-members:
         :inherited-members:
         :exclude-members: count, resetCount
@@ -30,11 +30,11 @@ Input module
 Output module
 -------------
 
-.. automodule:: nnodely.output
+.. automodule:: nnodely.layers.output
     :no-undoc-members:
     :no-inherited-members:
 
-    .. autoclass:: nnodely.output.Output
+    .. autoclass:: nnodely.layers.output.Output
         :undoc-members:
         :inherited-members:
         :exclude-members: count, resetCount, closedLoop, connect, tw, sw, z
@@ -42,42 +42,42 @@ Output module
 Parameter module
 ----------------
 
-.. automodule:: nnodely.parameter
+.. automodule:: nnodely.layers.parameter
     :undoc-members:
     :no-inherited-members:
 
-    .. autoclass:: nnodely.parameter.Constant
+    .. autoclass:: nnodely.layers.parameter.Constant
         :undoc-members:
         :no-inherited-members:
 
-    .. autoclass:: nnodely.parameter.SampleTime
+    .. autoclass:: nnodely.layers.parameter.SampleTime
         :undoc-members:
         :no-inherited-members:
 
-    .. autoclass:: nnodely.parameter.Parameter
+    .. autoclass:: nnodely.layers.parameter.Parameter
         :undoc-members:
         :no-inherited-members:
 
 Initializer module
 ^^^^^^^^^^^^^^^^^^
 
-    .. automodule:: nnodely.initializer
+    .. automodule:: nnodely.support.initializer
         :undoc-members:
         :no-inherited-members:
 
-        .. autofunction:: nnodely.initializer.init_constant
-        .. autofunction:: nnodely.initializer.init_negexp
-        .. autofunction:: nnodely.initializer.init_exp
-        .. autofunction:: nnodely.initializer.init_lin
+        .. autofunction:: nnodely.support.initializer.init_constant
+        .. autofunction:: nnodely.support.initializer.init_negexp
+        .. autofunction:: nnodely.support.initializer.init_exp
+        .. autofunction:: nnodely.support.initializer.init_lin
 
 Relation module
 ---------------
 
-.. automodule:: nnodely.relation
+.. automodule:: nnodely.basic.relation
     :undoc-members:
     :no-inherited-members:
 
-    .. autoclass:: nnodely.relation.Stream
+    .. autoclass:: nnodely.basic.relation.Stream
         :members:
         :no-inherited-members:
 
@@ -87,69 +87,69 @@ Model structured NN building blocks
 Activation module
 -----------------
 
-.. automodule:: nnodely.activation
+.. automodule:: nnodely.layers.activation
     :undoc-members:
     :no-inherited-members:
 
-    .. autoclass:: nnodely.activation.Relu
+    .. autoclass:: nnodely.layers.activation.Relu
         :undoc-members:
         :no-inherited-members:
 
-    .. autoclass:: nnodely.activation.ELU
+    .. autoclass:: nnodely.layers.activation.ELU
         :undoc-members:
         :no-inherited-members:
 
-    .. autoclass:: nnodely.activation.Sigmoid
+    .. autoclass:: nnodely.layers.activation.Sigmoid
         :undoc-members:
         :no-inherited-members:
 
-    .. autoclass:: nnodely.activation.Softmax
+    .. autoclass:: nnodely.layers.activation.Softmax
         :undoc-members:
         :no-inherited-members:
 
-    .. autoclass:: nnodely.activation.Identity
+    .. autoclass:: nnodely.layers.activation.Identity
         :undoc-members:
         :no-inherited-members:
 
 Arithmetic module
 -----------------
 
-.. automodule:: nnodely.arithmetic
+.. automodule:: nnodely.layers.arithmetic
     :undoc-members:
     :no-inherited-members:
 
-    .. autoclass:: nnodely.arithmetic.Add
+    .. autoclass:: nnodely.layers.arithmetic.Add
         :undoc-members:
         :no-inherited-members:
 
-    .. autoclass:: nnodely.arithmetic.Sub
+    .. autoclass:: nnodely.layers.arithmetic.Sub
         :undoc-members:
         :no-inherited-members:
 
-    .. autoclass:: nnodely.arithmetic.Mul
+    .. autoclass:: nnodely.layers.arithmetic.Mul
         :undoc-members:
         :no-inherited-members:
 
-    .. autoclass:: nnodely.arithmetic.Div
+    .. autoclass:: nnodely.layers.arithmetic.Div
         :undoc-members:
         :no-inherited-members:
 
-    .. autoclass:: nnodely.arithmetic.Pow
+    .. autoclass:: nnodely.layers.arithmetic.Pow
         :undoc-members:
         :no-inherited-members:
 
-    .. autoclass:: nnodely.arithmetic.Neg
+    .. autoclass:: nnodely.layers.arithmetic.Neg
         :undoc-members:
         :no-inherited-members:
 
 Fir module
 ----------
 
-.. automodule:: nnodely.fir
+.. automodule:: nnodely.layers.fir
     :undoc-members:
     :no-inherited-members:
 
-    .. autoclass:: nnodely.fir.Fir
+    .. autoclass:: nnodely.layers.fir.Fir
         :undoc-members:
         :no-inherited-members:
 
@@ -157,33 +157,33 @@ Fir module
 Fuzzify module
 --------------
 
-.. automodule:: nnodely.fuzzify
+.. automodule:: nnodely.layers.fuzzify
     :undoc-members:
     :no-inherited-members:
 
-    .. autoclass:: nnodely.fuzzify.Fuzzify
+    .. autoclass:: nnodely.layers.fuzzify.Fuzzify
         :undoc-members:
         :no-inherited-members:
 
 Equation Learner module
 -----------------------
 
-.. automodule:: nnodely.equationlearner
+.. automodule:: nnodely.layers.equationlearner
     :undoc-members:
     :no-inherited-members:
 
-    .. autoclass:: nnodely.equationlearner.EquationLearner
+    .. autoclass:: nnodely.layers.equationlearner.EquationLearner
         :undoc-members:
         :no-inherited-members:
 
 Linear module
 -------------
 
-.. automodule:: nnodely.linear
+.. automodule:: nnodely.layers.linear
     :undoc-members:
     :no-inherited-members:
 
-    .. autoclass:: nnodely.linear.Linear
+    .. autoclass:: nnodely.layers.linear.Linear
         :undoc-members:
         :no-inherited-members:
 
@@ -191,80 +191,80 @@ Linear module
 Localmodel module
 -----------------
 
-.. automodule:: nnodely.localmodel
+.. automodule:: nnodely.layers.localmodel
     :undoc-members:
     :no-inherited-members:
 
-    .. autoclass:: nnodely.localmodel.LocalModel
+    .. autoclass:: nnodely.layers.localmodel.LocalModel
         :undoc-members:
         :no-inherited-members:
 
 Part module
 -----------
 
-.. automodule:: nnodely.part
+.. automodule:: nnodely.layers.part
     :undoc-members:
     :no-inherited-members:
 
-    .. autoclass:: nnodely.part.Part
+    .. autoclass:: nnodely.layers.part.Part
         :undoc-members:
         :no-inherited-members:
 
-    .. autoclass:: nnodely.part.Select
+    .. autoclass:: nnodely.layers.part.Select
         :undoc-members:
         :no-inherited-members:
 
-    .. autoclass:: nnodely.part.SamplePart
+    .. autoclass:: nnodely.layers.part.SamplePart
         :undoc-members:
         :no-inherited-members:
 
-    .. autoclass:: nnodely.part.SampleSelect
+    .. autoclass:: nnodely.layers.part.SampleSelect
         :undoc-members:
         :no-inherited-members:
 
-    .. autoclass:: nnodely.part.TimePart
+    .. autoclass:: nnodely.layers.part.TimePart
         :undoc-members:
         :no-inherited-members:
 
 Trigonometric module
 --------------------
 
-.. automodule:: nnodely.trigonometric
+.. automodule:: nnodely.layers.trigonometric
     :undoc-members:
     :no-inherited-members:
 
-    .. autoclass:: nnodely.trigonometric.Sin
+    .. autoclass:: nnodely.layers.trigonometric.Sin
         :undoc-members:
         :no-inherited-members:
 
-    .. autoclass:: nnodely.trigonometric.Cos
+    .. autoclass:: nnodely.layers.trigonometric.Cos
         :undoc-members:
         :no-inherited-members:
 
-    .. autoclass:: nnodely.trigonometric.Tan
+    .. autoclass:: nnodely.layers.trigonometric.Tan
         :undoc-members:
         :no-inherited-members:
 
-    .. autoclass:: nnodely.trigonometric.Tanh
+    .. autoclass:: nnodely.layers.trigonometric.Tanh
         :undoc-members:
         :no-inherited-members:
 
-    .. autoclass:: nnodely.trigonometric.Cosh
+    .. autoclass:: nnodely.layers.trigonometric.Cosh
         :undoc-members:
         :no-inherited-members:
 
-    .. autoclass:: nnodely.trigonometric.Sech
+    .. autoclass:: nnodely.layers.trigonometric.Sech
         :undoc-members:
         :no-inherited-members:
 
 Parametric Function module
 --------------------------
 
-.. automodule:: nnodely.parametricfunction
+.. automodule:: nnodely.layers.parametricfunction
     :undoc-members:
     :no-inherited-members:
 
-    .. autoclass:: nnodely.parametricfunction.ParamFun
+    .. autoclass:: nnodely.layers.parametricfunction.ParamFun
         :undoc-members:
         :no-inherited-members:
 
@@ -274,16 +274,16 @@ Training
 optimizer module
 ----------------
 
-.. automodule:: nnodely.optimizer
+.. automodule:: nnodely.support.optimizer
     :no-undoc-members:
     :no-inherited-members:
 
-    .. autoclass:: nnodely.optimizer.SGD
+    .. autoclass:: nnodely.support.optimizer.SGD
         :undoc-members:
         :inherited-members:
         :exclude-members: add_option_to_params, replace_key_with_params, get_torch_optimizer
 
-    .. autoclass:: nnodely.optimizer.Adam
+    .. autoclass:: nnodely.support.optimizer.Adam
         :undoc-members:
         :inherited-members:
         :exclude-members: add_option_to_params, replace_key_with_params, get_torch_optimizer
@@ -291,14 +291,14 @@ optimizer module
 earlystopping module
 --------------------
 
-.. automodule:: nnodely.earlystopping
+.. automodule:: nnodely.support.earlystopping
     :undoc-members:
     :no-inherited-members:
 
-    .. autofunction:: nnodely.earlystopping.early_stop_patience
-    .. autofunction:: nnodely.earlystopping.select_best_model
-    .. autofunction:: nnodely.earlystopping.mean_stopping
-    .. autofunction:: nnodely.earlystopping.standard_early_stopping
+    .. autofunction:: nnodely.support.earlystopping.early_stop_patience
+    .. autofunction:: nnodely.support.earlystopping.select_best_model
+    .. autofunction:: nnodely.support.earlystopping.mean_stopping
+    .. autofunction:: nnodely.support.earlystopping.standard_early_stopping
 
 Additional information
 ======================

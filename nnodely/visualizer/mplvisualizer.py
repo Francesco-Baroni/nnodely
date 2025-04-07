@@ -1,12 +1,12 @@
 import subprocess, json, os, importlib
 
 from nnodely.visualizer.textvisualizer import TextVisualizer
-from nnodely.fuzzify import return_fuzzify
-from nnodely.parametricfunction import return_standard_inputs, return_function
-from nnodely.utils import check
-from nnodely.modeldef import ModelDef
+from nnodely.layers.fuzzify import return_fuzzify
+from nnodely.layers.parametricfunction import return_standard_inputs, return_function
+from nnodely.support.utils import check
+from nnodely.basic.modeldef import ModelDef
 
-from nnodely.logger import logging, nnLogger
+from nnodely.support.logger import logging, nnLogger
 log = nnLogger(__name__, logging.INFO)
 
 def get_library_path(library_name):

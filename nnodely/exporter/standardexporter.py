@@ -3,9 +3,9 @@ import os, torch
 from nnodely.exporter.emptyexporter import EmptyExporter
 from nnodely.exporter.reporter import Reporter
 from nnodely.exporter.export import save_model, load_model, export_python_model, export_pythononnx_model, export_onnx_model, import_python_model, import_onnx_model, onnx_inference
-from nnodely.utils import check
+from nnodely.support.utils import check
 
-from nnodely.logger import logging, nnLogger
+from nnodely.support.logger import logging, nnLogger
 log = nnLogger(__name__, logging.CRITICAL)
 
 class StandardExporter(EmptyExporter):

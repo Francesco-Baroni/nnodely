@@ -1,10 +1,10 @@
 import torch.nn as nn
 import torch
 
-from nnodely.relation import Stream, NeuObj, ToStream
-from nnodely.utils import merge, enforce_types, get_inputs, check
-from nnodely.model import Model
-from nnodely.fixstepsolver import Euler, Trapezoidal
+from nnodely.basic.relation import Stream, NeuObj, ToStream
+from nnodely.support.utils import merge, enforce_types, get_inputs, check
+from nnodely.basic.model import Model
+from nnodely.support.fixstepsolver import Euler, Trapezoidal
 
 SOLVERS = {
     'euler': Euler,
@@ -25,7 +25,7 @@ class Integrate(Stream, ToStream):
     """
     @enforce_types
     def __init__(self, output:Stream, *, method:str = 'euler') -> Stream:
-        from nnodely.input import State, ClosedLoop
+        from nnodely.layers.input import State, ClosedLoop
         s = State(output.name + "_int" + str(NeuObj.count), dimensions=output.dim['dim'])
         check(method in SOLVERS, ValueError, f"The method '{method}' is not supported yet")
         solver = SOLVERS[method]()

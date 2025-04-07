@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import pandas.api.types as ptypes
 
-from nnodely.utils import check, log
+from nnodely.support.utils import check, log
 
 class Loader:
     def __init__(self):

@@ -1,6 +1,6 @@
 import  torch
 
-from nnodely.utils import  TORCH_DTYPE, check
+from nnodely.support.utils import  TORCH_DTYPE, check
 
 class Memory:
     def __init__(self):

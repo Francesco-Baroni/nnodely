@@ -8,7 +8,7 @@ from functools import wraps
 from typing import get_type_hints
 import keyword
 
-from nnodely.logger import logging, nnLogger
+from nnodely.support.logger import logging, nnLogger
 log = nnLogger(__name__, logging.CRITICAL)
 
 TORCH_DTYPE = torch.float32

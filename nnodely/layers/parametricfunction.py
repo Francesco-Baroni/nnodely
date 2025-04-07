@@ -6,12 +6,12 @@ import numpy as np
 from typing import Union
 from collections.abc import Callable
 
-from nnodely.relation import NeuObj, Stream, toStream
-from nnodely.model import Model
-from nnodely.parameter import Parameter, Constant
-from nnodely.utils import check, merge, enforce_types
+from nnodely.basic.relation import NeuObj, Stream, toStream
+from nnodely.basic.model import Model
+from nnodely.layers.parameter import Parameter, Constant
+from nnodely.support.utils import check, merge, enforce_types
 
-from nnodely.logger import logging, nnLogger
+from nnodely.support.logger import logging, nnLogger
 log = nnLogger(__name__, logging.WARNING)
 
 

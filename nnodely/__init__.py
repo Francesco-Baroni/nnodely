@@ -17,29 +17,29 @@ else:
           f'<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
 
 # Network input, outputs and parameters
-from nnodely.input import Input, State, Connect, ClosedLoop
-from nnodely.parameter import Parameter, Constant, SampleTime
-from nnodely.output import Output
+from nnodely.layers.input import Input, State, Connect, ClosedLoop
+from nnodely.layers.parameter import Parameter, Constant, SampleTime
+from nnodely.layers.output import Output
 
 # Network elements
-from nnodely.activation import Relu, ELU, Softmax, Sigmoid, Identity
-from nnodely.fir import Fir
-from nnodely.linear import Linear
-from nnodely.arithmetic import Add, Sum, Sub, Mul, Div, Pow, Neg
-from nnodely.trigonometric import Sin, Cos, Tan, Cosh, Tanh, Sech
-from nnodely.parametricfunction import ParamFun
-from nnodely.fuzzify import Fuzzify
-from nnodely.part import  Part, Select, Concatenate, SamplePart, SampleSelect, TimePart, TimeConcatenate
-from nnodely.localmodel import LocalModel
-from nnodely.equationlearner import EquationLearner
-from nnodely.timeoperation import Integrate, Derivate
-from nnodely.interpolation import Interpolation
+from nnodely.layers.activation import Relu, ELU, Softmax, Sigmoid, Identity
+from nnodely.layers.fir import Fir
+from nnodely.layers.linear import Linear
+from nnodely.layers.arithmetic import Add, Sum, Sub, Mul, Div, Pow, Neg
+from nnodely.layers.trigonometric import Sin, Cos, Tan, Cosh, Tanh, Sech
+from nnodely.layers.parametricfunction import ParamFun
+from nnodely.layers.fuzzify import Fuzzify
+from nnodely.layers.part import  Part, Select, Concatenate, SamplePart, SampleSelect, TimePart, TimeConcatenate
+from nnodely.layers.localmodel import LocalModel
+from nnodely.layers.equationlearner import EquationLearner
+from nnodely.layers.timeoperation import Integrate, Derivate
+from nnodely.layers.interpolation import Interpolation
 
 # Main nnodely classes
 from nnodely.nnodely import nnodely, Modely, clearNames
 from nnodely.visualizer import Visualizer, TextVisualizer, MPLVisualizer, MPLNotebookVisualizer
-from nnodely.optimizer import Optimizer, SGD, Adam
 from nnodely.exporter import StandardExporter
 
 # Support functions
-from nnodely.initializer import init_negexp, init_lin, init_constant, init_exp
+from nnodely.support.optimizer import Optimizer, SGD, Adam
+from nnodely.support.initializer import init_negexp, init_lin, init_constant, init_exp

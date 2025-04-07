@@ -1,4 +1,4 @@
-from nnodely.logger import logging, nnLogger
+from nnodely.support.logger import logging, nnLogger
 log = nnLogger(__name__, logging.INFO)
 
 RESET_SEQ = "\033[0m"

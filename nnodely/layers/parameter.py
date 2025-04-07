@@ -3,8 +3,8 @@ import numpy as np
 
 from collections.abc import Callable
 
-from nnodely.relation import NeuObj, Relation
-from nnodely.utils import check, enforce_types, NP_DTYPE
+from nnodely.basic.relation import NeuObj, Relation
+from nnodely.support.utils import check, enforce_types, NP_DTYPE
 
 
 def is_numpy_float(var):

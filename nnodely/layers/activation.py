@@ -2,9 +2,9 @@ import torch
 import torch.nn as nn
 
 from nnodely import Parameter, Constant
-from nnodely.relation import Stream, ToStream, toStream
-from nnodely.model import Model
-from nnodely.utils import check, enforce_types
+from nnodely.basic.relation import Stream, ToStream, toStream
+from nnodely.basic.model import Model
+from nnodely.support.utils import check, enforce_types
 
 
 relu_relation_name = 'Relu'

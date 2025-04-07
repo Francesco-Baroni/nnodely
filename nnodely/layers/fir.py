@@ -4,13 +4,13 @@ import torch.nn as nn
 
 from collections.abc import Callable
 
-from nnodely.relation import NeuObj, Stream, AutoToStream
-from nnodely.utils import check, merge, enforce_types, TORCH_DTYPE
-from nnodely.model import Model
-from nnodely.parameter import Parameter
-from nnodely.input import Input
+from nnodely.basic.relation import NeuObj, Stream, AutoToStream
+from nnodely.basic.model import Model
+from nnodely.layers.parameter import Parameter
+from nnodely.layers.input import Input
+from nnodely.support.utils import check, merge, enforce_types, TORCH_DTYPE
 
-from nnodely.logger import logging, nnLogger
+from nnodely.support.logger import logging, nnLogger
 log = nnLogger(__name__, logging.WARNING)
 
 fir_relation_name = 'Fir'

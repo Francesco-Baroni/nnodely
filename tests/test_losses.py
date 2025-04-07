@@ -3,8 +3,8 @@ import numpy as np
 import torch
 
 from nnodely import *
-from nnodely.relation import NeuObj
-from nnodely.logger import logging, nnLogger
+from nnodely.basic.relation import NeuObj
+from nnodely.support.logger import logging, nnLogger
 
 log = nnLogger(__name__, logging.CRITICAL)
 log.setAllLevel(logging.CRITICAL)

@@ -2,8 +2,8 @@ import  os, unittest, torch, shutil
 import numpy as np
 
 from nnodely import *
-from nnodely.relation import NeuObj
-from nnodely.logger import logging, nnLogger
+from nnodely.basic.relation import NeuObj
+from nnodely.support.logger import logging, nnLogger
 
 log = nnLogger(__name__, logging.CRITICAL)
 log.setAllLevel(logging.CRITICAL)

@@ -1,8 +1,8 @@
 from pprint import pformat
 
-from nnodely.relation import Stream, NeuObj
+from nnodely.basic.relation import Stream, NeuObj
 
-from nnodely.logger import logging, nnLogger
+from nnodely.support.logger import logging, nnLogger
 log = nnLogger(__name__, logging.CRITICAL)
 
 class Output(NeuObj):

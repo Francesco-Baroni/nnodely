@@ -1,10 +1,10 @@
 import torch
 import torch.nn as nn
 
-from nnodely.relation import ToStream, Stream, toStream
-from nnodely.model import Model
-from nnodely.utils import check, enforce_types
-from nnodely.parameter import Parameter, Constant
+from nnodely.basic.relation import ToStream, Stream, toStream
+from nnodely.basic.model import Model
+from nnodely.support.utils import check, enforce_types
+from nnodely.layers.parameter import Parameter, Constant
 
 sin_relation_name = 'Sin'
 cos_relation_name = 'Cos'

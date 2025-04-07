@@ -2,12 +2,11 @@ import copy
 
 import numpy as np
 
-from nnodely.input import closedloop_name, connect_name
-from nnodely.utils import check, merge
-from nnodely.relation import MAIN_JSON, Stream
-from nnodely.output import Output
+from nnodely.support.utils import check, merge
+from nnodely.basic.relation import MAIN_JSON, Stream
+from nnodely.layers.output import Output
 
-from nnodely.logger import logging, nnLogger
+from nnodely.support.logger import logging, nnLogger
 log = nnLogger(__name__, logging.INFO)
 
 class ModelDef():
@@ -96,7 +95,7 @@ class ModelDef():
 
 
     def __update_state(self, stream_out, state_list_in, UpdateState):
-        from nnodely.input import  State
+        from nnodely.layers.input import  State
         if type(state_list_in) is not list:
             state_list_in = [state_list_in]
         for state_in in state_list_in:
@@ -112,12 +111,12 @@ class ModelDef():
             self.__update_state_dict[state_in.name] = UpdateState(stream_out, state_in)
 
     def addConnect(self, stream_out, state_list_in):
-        from nnodely.input import Connect
+        from nnodely.layers.input import Connect
         self.__update_state(stream_out, state_list_in, Connect)
         self.update()
 
     def addClosedLoop(self, stream_out, state_list_in):
-        from nnodely.input import ClosedLoop
+        from nnodely.layers.input import ClosedLoop
         self.__update_state(stream_out, state_list_in, ClosedLoop)
         self.update()
 

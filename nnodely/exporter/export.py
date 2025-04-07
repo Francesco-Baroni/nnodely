@@ -69,7 +69,7 @@ def export_python_model(model_def, model, model_path):
         file.write("import torch\n\n")
 
         ## write the connect wrap function
-        file.write(f"def {package_name}_model_connect(data_in, rel):\n")
+        file.write(f"def {package_name}_basic_model_connect(data_in, rel):\n")
         file.write("    virtual = torch.cat((data_in[:, 1:, :], data_in[:, :1, :]), dim=1)\n")
         file.write("    max_dim = min(rel.size(1), data_in.size(1))\n")
         file.write("    virtual[:, -max_dim:, :] = rel[:, -max_dim:, :]\n")
@@ -79,7 +79,7 @@ def export_python_model(model_def, model, model_path):
             if 'Fuzzify' in name:
                 if 'slicing' not in saved_functions:
                     #file.write("@torch.fx.wrap\n")
-                    file.write(f"def {package_name}_fuzzify_slicing(res, i, x):\n")
+                    file.write(f"def {package_name}_layers_fuzzify_slicing(res, i, x):\n")
                     file.write("    res[:, :, i:i+1] = x\n\n")
                     saved_functions.append('slicing')
 
@@ -90,7 +90,7 @@ def export_python_model(model_def, model, model_path):
                         if fun_code != 'Rectangular' and fun_code != 'Triangular':
                             if function_name[i] not in saved_functions:
                                 fun_code = fun_code.replace(f'def {function_name[i]}',
-                                                            f'def {package_name}_fuzzify_{function_name[i]}')
+                                                            f'def {package_name}_layers_fuzzify_{function_name[i]}')
                                 #file.write("@torch.fx.wrap\n")
                                 file.write(fun_code)
                                 file.write("\n")
@@ -99,7 +99,7 @@ def export_python_model(model_def, model, model_path):
                     if (function_name != 'Rectangular') and (function_name != 'Triangular') and (
                             function_name not in saved_functions):
                         function_code = function_code.replace(f'def {function_name}',
-                                                              f'def {package_name}_fuzzify_{function_name}')
+                                                              f'def {package_name}_layers_fuzzify_{function_name}')
                         #file.write("@torch.fx.wrap\n")
                         file.write(function_code)
                         file.write("\n")
@@ -111,7 +111,7 @@ def export_python_model(model_def, model, model_path):
                 # torch.fx.wrap(self.model_def['Functions'][name]['name'])
                 if function_name not in saved_functions:
                     code = model_def['Functions'][name]['code']
-                    code = code.replace(f'def {function_name}', f'def {package_name}_parametricfunction_{function_name}')
+                    code = code.replace(f'def {function_name}', f'def {package_name}_layers_parametricfunction_{function_name}')
                     file.write(code)
                     file.write("\n")
                     saved_functions.append(function_name)
@@ -231,7 +231,7 @@ def export_python_model(model_def, model, model_path):
             file.write("                results[key].append(out[key])\n")
             file.write("            for key, val in closed_loop.items():\n")
             file.write("                shift = val.size(1)\n")
-            file.write("                self.states[key] = nnodely_model_connect(self.states[key], val)\n")
+            file.write("                self.states[key] = nnodely_basic_model_connect(self.states[key], val)\n")
             file.write("            for key, value in connect.items():\n") 
             file.write("                self.states[key] = value\n")
             file.write("        return results\n")
@@ -329,7 +329,7 @@ def export_pythononnx_model(model_def, model_path, model_onnx_path, input_order=
             #    file.write(f"            results_{outputs_order[0]}.append(out)\n")
             for idx, key in enumerate(closed_loop_states):
                 file.write(f"            shift = closed_loop[{idx}].size(1)\n")
-                file.write(f"            {key} = nnodely_model_connect({key}, closed_loop[{idx}])\n")
+                file.write(f"            {key} = nnodely_basic_model_connect({key}, closed_loop[{idx}])\n")
             for idx, key in enumerate(connect_states):
                 file.write(f"            {key} = connect[{idx}]\n")
             for idx, key in enumerate(model_outputs):

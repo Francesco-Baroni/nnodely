@@ -1,10 +1,10 @@
 import copy, torch, random
 
-from nnodely.modeldef import ModelDef
-from nnodely.model import Model
-from nnodely.optimizer import Optimizer, SGD, Adam
-from nnodely.loss import CustomLoss
-from nnodely.utils import tensor_to_list, check, log, TORCH_DTYPE, check_gradient_operations
+from nnodely.basic.modeldef import ModelDef
+from nnodely.basic.model import Model
+from nnodely.support.optimizer import Optimizer, SGD, Adam
+from nnodely.support.loss import CustomLoss
+from nnodely.support.utils import tensor_to_list, check, log, TORCH_DTYPE, check_gradient_operations
 from nnodely.operators.memory import Memory
 
 class Trainer(Memory):

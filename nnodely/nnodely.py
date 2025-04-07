@@ -11,12 +11,12 @@ from nnodely.operators.exporter import Exporter
 
 # nnodely packages
 from nnodely.visualizer import TextVisualizer, Visualizer
-from nnodely.modeldef import ModelDef
-from nnodely.relation import NeuObj
+from nnodely.basic.modeldef import ModelDef
+from nnodely.basic.relation import NeuObj
 
-from nnodely.utils import TORCH_DTYPE
+from nnodely.support.utils import TORCH_DTYPE
 
-from nnodely.logger import logging, nnLogger
+from nnodely.support.logger import logging, nnLogger
 log = nnLogger(__name__, logging.INFO)
 
 

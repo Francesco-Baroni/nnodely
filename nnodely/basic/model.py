@@ -1,6 +1,6 @@
 from itertools import product
-from nnodely.utils import TORCH_DTYPE
-from nnodely import initializer
+from nnodely.support.utils import TORCH_DTYPE
+from nnodely.support import initializer
 import numpy as np
 
 import torch.nn as nn
