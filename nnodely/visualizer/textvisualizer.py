@@ -104,11 +104,11 @@ class TextVisualizer(Visualizer):
         if self.verbose >= 1:
             self.__title(" nnodely Model Dataset ")
             self.__param("Dataset Name:", name)
-            self.__param("Number of files:", f'{self.modely.file_count}')
-            self.__param("Total number of samples:", f'{self.modely.num_of_samples[name]}')
+            self.__param("Number of files:", f'{self.modely._file_count}')
+            self.__param("Total number of samples:", f'{self.modely._num_of_samples[name]}')
             for key in self.modely.model_def['Inputs'].keys():
-                if key in self.modely.data[name].keys():
-                    self.__param(f"Shape of {key}:", f'{self.modely.data[name][key].shape}')
+                if key in self.modely._data[name].keys():
+                    self.__param(f"Shape of {key}:", f'{self.modely._data[name][key].shape}')
             self.__line()
 
     def showStartTraining(self):
@@ -210,7 +210,7 @@ class TextVisualizer(Visualizer):
                 self.__info("└>(n_samples-batch_size)/batch_size+1")
 
             if par['shuffle_data']:
-                self.__param('shuffle data:', str(par['shuffle_data']))
+                self.__param('shuffle _data:', str(par['shuffle_data']))
 
             if 'early_stopping' in par:
                 self.__param('early stopping:', par['early_stopping'])

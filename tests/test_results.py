@@ -15,7 +15,7 @@ sys.path.append(os.getcwd())
 # in closed loop and states cases
 # in connect and states cases
 
-data_folder = os.path.join(os.path.dirname(__file__), 'data/')
+data_folder = os.path.join(os.path.dirname(__file__), '_data/')
 
 class ModelyTrainingTest(unittest.TestCase):
     def test_analysis_results(self):

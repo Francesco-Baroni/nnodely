@@ -1038,7 +1038,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         # 0 means that every sample the state is reset or with zero or with the input but the connect works
         # 1 means that for 1 sample the network use the inside value
 
-        # num_of_samples is the numer of sample return from the call if the input is missing is filled with zero
+        # _num_of_samples is the numer of sample return from the call if the input is missing is filled with zero
         # default value = 'auto' means that the network choose the best number of samples to generate
         # at least one sample is generate if the network is called without values
         # or the maximum number of samples if it is called without aligned_input = True
@@ -1066,16 +1066,16 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         #
         # Case predict M samples using the dataset or inputs
         # the states are reset only if the input is present. if the input are not present are fill with zero. it is used a rolling window for the input
-        #   test(dataset, num_of_samples=M)
+        #   test(dataset, _num_of_samples=M)
         #
         # Case predict M samples using the dataset or inputs
         # the states are reset every prediction_sample using inputs or zeros. if the input are not present are fill with zero. it is used a rolling window for the input
-        #   test(dataset, prediction_sample=N, num_of_samples=M)
+        #   test(dataset, prediction_sample=N, _num_of_samples=M)
         #
         # Cases with aligned_input=True
-        # If the input are messing the network return an arror.
+        # If the input are messing the network return an error.
         # The number of the input or states max be equal.
-        # The num_of_samples must be less than the number of sample of the data.
+        # The _num_of_samples must be less than the number of sample of the data.
         # The states are reset only if the input is present.
         # The network predict the same sample of training.
         # Case with no inputs test(aligned_input=True) the output is the same of before.
@@ -1087,11 +1087,11 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
 
         # Case predict fewer samples using the dataset
         # The states are reset only if the input is present.
-        #   test(dataset, num_of_samples=M, aligned_input=True)
+        #   test(dataset, _num_of_samples=M, aligned_input=True)
 
         # Case predict fewer samples and reset every prediction_sample
         # The states are reset only if the input is present.
-        #   test(dataset, prediction_sample=N, num_of_samples=M, aligned_input=True)
+        #   test(dataset, prediction_sample=N, _num_of_samples=M, aligned_input=True)
 
     def test_parameters_predict_closed_loop_perdict(self):
         NeuObj.clearNames()

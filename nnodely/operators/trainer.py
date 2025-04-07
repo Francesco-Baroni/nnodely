@@ -316,7 +316,7 @@ class Trainer(Memory):
             >>> params = {'num_of_epochs': 100,'train_batch_size': 128,'lr':0.001}
             >>> mass_spring_damper.trainModel(splits=[70,20,10], prediction_samples=10, training_params = params)
         """
-        check(self.data_loaded, RuntimeError, 'There is no data loaded! The Training will stop.')
+        check(self._data_loaded, RuntimeError, 'There is no _data loaded! The Training will stop.')
         check('Models' in self.model_def.json, RuntimeError,
               'There are no models to train. Load a model using the addModel function.')
         check(list(self.model.parameters()), RuntimeError,
@@ -381,14 +381,14 @@ class Trainer(Memory):
             check(splits[0] > 0, ValueError, 'The training split cannot be zero.')
 
             ## Get the dataset name
-            dataset = list(self.data.keys())[0]  ## take the dataset name
+            dataset = list(self._data.keys())[0]  ## take the dataset name
             train_dataset_name = val_dataset_name = test_dataset_name = dataset
 
             ## Collect the split sizes
             train_size = splits[0] / 100.0
             val_size = splits[1] / 100.0
             test_size = 1 - (train_size + val_size)
-            num_of_samples = self.num_of_samples[dataset]
+            num_of_samples = self._num_of_samples[dataset]
             n_samples_train = round(num_of_samples * train_size)
             if splits[1] == 0:
                 n_samples_test = num_of_samples - n_samples_train
@@ -399,7 +399,7 @@ class Trainer(Memory):
 
             ## Split into train, validation and test
             XY_train, XY_val, XY_test = {}, {}, {}
-            for key, samples in self.data[dataset].items():
+            for key, samples in self._data[dataset].items():
                 if val_size == 0.0 and test_size == 0.0:  ## we have only training set
                     XY_train[key] = torch.from_numpy(samples).to(TORCH_DTYPE)
                 elif val_size == 0.0 and test_size != 0.0:  ## we have only training and test set
@@ -419,7 +419,7 @@ class Trainer(Memory):
             test_dataset = self.__get_parameter(test_dataset=f"test_{dataset}_{test_size:0.2f}")
         else:  ## Multi-Dataset
             ## Get the names of the datasets
-            datasets = list(self.data.keys())
+            datasets = list(self._data.keys())
             validation_dataset = self.__get_parameter(validation_dataset=validation_dataset)
             test_dataset = self.__get_parameter(test_dataset=test_dataset)
             train_dataset_name, val_dataset_name, test_dataset_name = train_dataset, validation_dataset, test_dataset
@@ -436,15 +436,15 @@ class Trainer(Memory):
 
             ## Split into train, validation and test
             XY_train, XY_val, XY_test = {}, {}, {}
-            n_samples_train = self.num_of_samples[train_dataset]
-            XY_train = {key: torch.from_numpy(val).to(TORCH_DTYPE) for key, val in self.data[train_dataset].items()}
+            n_samples_train = self._num_of_samples[train_dataset]
+            XY_train = {key: torch.from_numpy(val).to(TORCH_DTYPE) for key, val in self._data[train_dataset].items()}
             if validation_dataset in datasets:
-                n_samples_val = self.num_of_samples[validation_dataset]
+                n_samples_val = self._num_of_samples[validation_dataset]
                 XY_val = {key: torch.from_numpy(val).to(TORCH_DTYPE) for key, val in
-                          self.data[validation_dataset].items()}
+                          self._data[validation_dataset].items()}
             if test_dataset in datasets:
-                n_samples_test = self.num_of_samples[test_dataset]
-                XY_test = {key: torch.from_numpy(val).to(TORCH_DTYPE) for key, val in self.data[test_dataset].items()}
+                n_samples_test = self._num_of_samples[test_dataset]
+                XY_test = {key: torch.from_numpy(val).to(TORCH_DTYPE) for key, val in self._data[test_dataset].items()}
 
         for key in XY_train.keys():
             assert n_samples_train == XY_train[key].shape[
@@ -654,7 +654,7 @@ class Trainer(Memory):
     def __get_batch_indexes(self, dataset_name, n_samples, prediction_samples, batch_size, step, type='train'):
         available_samples = n_samples - prediction_samples
         batch_indexes = list(range(available_samples))
-        if dataset_name in self.multifile.keys():
+        if dataset_name in self._multifile.keys():
             if type == 'train':
                 start_idx, end_idx = 0, n_samples
             elif type == 'val':
@@ -666,7 +666,7 @@ class Trainer(Memory):
                                          'n_samples_val'] + n_samples
 
             forbidden_idxs = []
-            for i in self.multifile[dataset_name]:
+            for i in self._multifile[dataset_name]:
                 if i < end_idx and i > start_idx:
                     forbidden_idxs.extend(range(i - prediction_samples, i, 1))
             batch_indexes = [idx for idx in batch_indexes if idx not in forbidden_idxs]

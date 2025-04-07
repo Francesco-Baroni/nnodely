@@ -42,8 +42,8 @@ class Validator(Memory):
                 recurrent = True
 
             if data is None:
-                check(dataset in self.data.keys(), ValueError, f'The dataset {dataset} is not loaded!')
-                data = {key: torch.from_numpy(val).to(TORCH_DTYPE) for key, val in self.data[dataset].items()}
+                check(dataset in self._data.keys(), ValueError, f'The dataset {dataset} is not loaded!')
+                data = {key: torch.from_numpy(val).to(TORCH_DTYPE) for key, val in self._data[dataset].items()}
             n_samples = len(data[list(data.keys())[0]])
 
             if recurrent:
@@ -65,7 +65,7 @@ class Validator(Memory):
 
                 list_of_batch_indexes = list(range(n_samples - prediction_samples))
                 ## Remove forbidden indexes in case of a multi-file dataset
-                if dataset in self.multifile.keys(): ## Multi-file Dataset
+                if dataset in self._multifile.keys(): ## Multi-file Dataset
                     if n_samples == self.run_training_params['n_samples_train']: ## Training
                         list_of_batch_indexes, step = self.__get_batch_indexes(dataset, n_samples, prediction_samples, batch_size, step, type='train')
                     elif n_samples == self.run_training_params['n_samples_val']: ## Validation

@@ -15,7 +15,7 @@ sys.path.append(os.getcwd())
 # Test the looses comparison between closed loop and states
 # Test the looses comparison between connect and states
 
-data_folder = os.path.join(os.path.dirname(__file__), 'data/')
+data_folder = os.path.join(os.path.dirname(__file__), '_data/')
 
 class ModelyTrainingTest(unittest.TestCase):
     def TestAlmostEqual(self, data1, data2, precision=4):

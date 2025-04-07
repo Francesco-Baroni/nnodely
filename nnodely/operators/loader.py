@@ -11,13 +11,14 @@ class Loader:
         check(type(self) is not Loader, TypeError, "Loader class cannot be instantiated directly")
 
         # Dataaset Parameters
-        self.data_loaded = False
-        self.file_count = 0
-        self.num_of_samples = {}
-        self.data = {}
-        self.n_datasets = 0
-        self.datasets_loaded = set()
-        self.multifile = {}
+        self.__n_datasets = 0
+        self.__datasets_loaded = set()
+
+        self._data_loaded = False
+        self._file_count = 0
+        self._num_of_samples = {}
+        self._data = {}
+        self._multifile = {}
 
     def getSamples(self, dataset, index = None, window=1):
         """
@@ -54,14 +55,14 @@ class Loader:
             >>> samples = model.getSamples('dataset_name', index=10, window=5)
         """
         if index is None:
-            index = random.randint(0, self.num_of_samples[dataset] - window)
-        check(self.data_loaded, ValueError, 'The Dataset must first be loaded using <loadData> function!')
-        if self.data_loaded:
+            index = random.randint(0, self._num_of_samples[dataset] - window)
+        check(self._data_loaded, ValueError, 'The Dataset must first be loaded using <loadData> function!')
+        if self._data_loaded:
             result_dict = {}
             for key in (self.model_def['Inputs'].keys() | self.model_def['States'].keys()):
                 result_dict[key] = []
             for idx in range(window):
-                for key ,samples in self.data[dataset].items():
+                for key ,samples in self._data[dataset].items():
                     if key in (self.model_def['Inputs'].keys() | self.model_def['States'].keys()):
                         result_dict[key].append(samples[index+idx])
             return result_dict
@@ -92,8 +93,8 @@ class Loader:
         """
         idx_to_remove = []
         if dataset_name is None:
-            for name in self.data.keys():
-                dataset = self.data[name]
+            for name in self._data.keys():
+                dataset = self._data[name]
                 n_samples = len(dataset[list(dataset.keys())[0]])
 
                 data_for_filter = []
@@ -105,13 +106,13 @@ class Loader:
                     if not filter_function(sample):
                         idx_to_remove.append(idx)
 
-                for key in self.data[name].keys():
-                    self.data[name][key] = np.delete(self.data[name][key], idx_to_remove, axis=0)
-                    self.num_of_samples[name] = self.data[name][key].shape[0]
+                for key in self._data[name].keys():
+                    self._data[name][key] = np.delete(self._data[name][key], idx_to_remove, axis=0)
+                    self._num_of_samples[name] = self._data[name][key].shape[0]
                 self.visualizer.showDataset(name=name)
 
         else:
-            dataset = self.data[dataset_name]
+            dataset = self._data[dataset_name]
             n_samples = len(dataset[list(dataset.keys())[0]])
 
             data_for_filter = []
@@ -123,9 +124,9 @@ class Loader:
                 if not filter_function(sample):
                     idx_to_remove.append(idx)
 
-            for key in self.data[dataset_name].keys():
-                self.data[dataset_name][key] = np.delete(self.data[dataset_name][key], idx_to_remove, axis=0)
-                self.num_of_samples[dataset_name] = self.data[dataset_name][key].shape[0]
+            for key in self._data[dataset_name].keys():
+                self._data[dataset_name][key] = np.delete(self._data[dataset_name][key], idx_to_remove, axis=0)
+                self._num_of_samples[dataset_name] = self._data[dataset_name][key].shape[0]
             self.visualizer.showDataset(name=dataset_name)
 
     def loadData(self, name, source, format=None, skiplines=0, delimiter=',', header=None, resampling=False):
@@ -186,9 +187,9 @@ class Loader:
         json_inputs = self.model_def['Inputs'] | self.model_def['States']
         model_inputs = list(json_inputs.keys())
         ## Initialize the dictionary containing the data
-        if name in list(self.data.keys()):
+        if name in list(self._data.keys()):
             log.warning(f'Dataset named {name} already loaded! overriding the existing one..')
-        self.data[name] = {}
+        self._data[name] = {}
 
         num_of_samples = {}
         if type(source) is str:  ## we have a directory path containing the files
@@ -214,7 +215,7 @@ class Loader:
 
             ## Initialize each input key
             for key in format_idx.keys():
-                self.data[name][key] = []
+                self._data[name][key] = []
 
             ## obtain the file names
             try:
@@ -223,9 +224,9 @@ class Loader:
             except StopIteration as e:
                 check(False, StopIteration, f'ERROR: The path "{source}" does not exist!')
                 return
-            self.file_count = len(files)
-            if self.file_count > 1:  ## Multifile
-                self.multifile[name] = []
+            self._file_count = len(files)
+            if self._file_count > 1:  ## Multifile
+                self._multifile[name] = []
 
             ## Cycle through all the files
             for file in files:
@@ -235,25 +236,25 @@ class Loader:
                 except:
                     log.warning(f'Cannot read file {os.path.join(source, file)}')
                     continue
-                if self.file_count > 1:
-                    self.multifile[name].append(
-                        (self.multifile[name][-1] + (len(df) - self._max_n_samples + 1)) if self.multifile[name] else len(
+                if self._file_count > 1:
+                    self._multifile[name].append(
+                        (self._multifile[name][-1] + (len(df) - self._max_n_samples + 1)) if self._multifile[name] else len(
                             df) - self._max_n_samples + 1)
                 ## Cycle through all the windows
                 for key, idxs in format_idx.items():
                     back, forw = self._input_ns_backward[key], self._input_ns_forward[key]
                     ## Save as numpy array the data
                     data = df.iloc[:, idxs[0]:idxs[1]].to_numpy()
-                    self.data[name][key] += [data[i - back:i + forw] for i in
-                                             range(self._max_samples_backward, len(df) - self._max_samples_forward + 1)]
+                    self._data[name][key] += [data[i - back:i + forw] for i in
+                                              range(self._max_samples_backward, len(df) - self._max_samples_forward + 1)]
 
             ## Stack the files
             for key in format_idx.keys():
-                self.data[name][key] = np.stack(self.data[name][key])
-                num_of_samples[key] = self.data[name][key].shape[0]
+                self._data[name][key] = np.stack(self._data[name][key])
+                num_of_samples[key] = self._data[name][key].shape[0]
 
         elif type(source) is dict:  ## we have a crafted dataset
-            self.file_count = 1
+            self._file_count = 1
 
             ## Check if the inputs are correct
             # assert set(model_inputs).issubset(source.keys()), f'The dataset is missing some inputs. Inputs needed for the model: {model_inputs}'
@@ -263,26 +264,26 @@ class Loader:
                 if key not in source.keys():
                     continue
 
-                self.data[name][key] = []  ## Initialize the dataset
+                self._data[name][key] = []  ## Initialize the dataset
 
                 back, forw = self._input_ns_backward[key], self._input_ns_forward[key]
                 for idx in range(len(source[key]) - self._max_n_samples + 1):
-                    self.data[name][key].append(
+                    self._data[name][key].append(
                         source[key][idx + (self._max_samples_backward - back):idx + (self._max_samples_backward + forw)])
 
             ## Stack the files
             for key in model_inputs:
                 if key not in source.keys():
                     continue
-                self.data[name][key] = np.stack(self.data[name][key])
-                if self.data[name][key].ndim == 2:  ## Add the sample dimension
-                    self.data[name][key] = np.expand_dims(self.data[name][key], axis=-1)
-                if self.data[name][key].ndim > 3:
-                    self.data[name][key] = np.squeeze(self.data[name][key], axis=1)
-                num_of_samples[key] = self.data[name][key].shape[0]
+                self._data[name][key] = np.stack(self._data[name][key])
+                if self._data[name][key].ndim == 2:  ## Add the sample dimension
+                    self._data[name][key] = np.expand_dims(self._data[name][key], axis=-1)
+                if self._data[name][key].ndim > 3:
+                    self._data[name][key] = np.squeeze(self._data[name][key], axis=1)
+                num_of_samples[key] = self._data[name][key].shape[0]
 
         elif isinstance(source, pd.DataFrame):  ## we have a crafted dataset
-            self.file_count = 1
+            self._file_count = 1
 
             ## Resampling if the time column is provided (must be a Datetime object)
             if resampling:
@@ -320,17 +321,17 @@ class Loader:
                     processed_data[key] = np.squeeze(processed_data[key], axis=1)
                 num_of_samples[key] = processed_data[key].shape[0]
 
-            self.data[name] = processed_data
+            self._data[name] = processed_data
 
         # Check dim of the samples
         check(len(set(num_of_samples.values())) == 1, ValueError,
               f"The number of the sample of the dataset {name} are not the same for all input in the dataset: {num_of_samples}")
-        self.num_of_samples[name] = num_of_samples[list(num_of_samples.keys())[0]]
+        self._num_of_samples[name] = num_of_samples[list(num_of_samples.keys())[0]]
 
         ## Set the Loaded flag to True
-        self.data_loaded = True
+        self._data_loaded = True
         ## Update the number of datasets loaded
-        self.n_datasets = len(self.data.keys())
-        self.datasets_loaded.add(name)
+        self.__n_datasets = len(self._data.keys())
+        self.__datasets_loaded.add(name)
         ## Show the dataset
         self.visualizer.showDataset(name=name)
