@@ -150,7 +150,7 @@ class Network(Memory):
             check("connect" in state.keys() or  'closedLoop' in state.keys(), KeyError, f'The connect or closed loop missing for state "{key}"')
 
         self.model_def.setBuildWindow(sample_time)
-        self.model = Model(self.model_def.json)
+        self.model = Model(self.model_def.getJson())
         self.__addInfo()
 
         self._input_ns_backward = {key:value['ns'][0] for key, value in (self.model_def['Inputs']|self.model_def['States']).items()}
@@ -167,7 +167,7 @@ class Network(Memory):
 
         self.neuralized = True
         self.traced = False
-        self.visualizer.showModel(self.model_def.json)
+        self.visualizer.showModel(self.model_def.getJson())
         self.visualizer.showModelInputWindow()
         self.visualizer.showBuiltModel()
 

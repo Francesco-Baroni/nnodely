@@ -56,7 +56,7 @@ class Exporter:
             model_def.update(model_dict={key: self.model_dict[key] for key in models if key in self.model_dict})
             model_def.setBuildWindow(self.model_def['Info']['SampleTime'])
             model_def.updateParameters(self.model)
-            model = Model(model_def.json)
+            model = Model(model_def.__json)
         else:
             model = self.model
         self.exporter.saveTorchModel(model, name, model_folder)
@@ -126,13 +126,13 @@ class Exporter:
                 name += '_' + '_'.join(models)
             model_def = ModelDef()
             model_def.update(
-                model_dict={key: self.model_def.model_dict[key] for key in models if key in self.model_def.model_dict})
+                model_dict={key: self.model_def.__model_dict[key] for key in models if key in self.model_def.__model_dict})
             model_def.setBuildWindow(self.model_def['Info']['SampleTime'])
             model_def.updateParameters(self.model)
         else:
             model_def = self.model_def
         check(model_def.isDefined(), RuntimeError, "The network has not been defined.")
-        self.exporter.saveModel(model_def.json, name, model_path)
+        self.exporter.saveModel(model_def.getJson(), name, model_path)
 
     def loadModel(self, name=None, model_folder=None):
         """
@@ -205,10 +205,10 @@ class Exporter:
                 name += '_' + '_'.join(models)
             model_def = ModelDef()
             model_def.update(
-                model_dict={key: self.model_def.model_dict[key] for key in models if key in self.model_def.model_dict})
+                model_dict={key: self.model_def.__model_dict[key] for key in models if key in self.model_def.__model_dict})
             model_def.setBuildWindow(self.model_def['Info']['SampleTime'])
             model_def.updateParameters(self.model)
-            model = Model(model_def.json)
+            model = Model(model_def.__json)
         else:
             model_def = self.model_def
             model = self.model
@@ -217,7 +217,7 @@ class Exporter:
         check(self.traced == False, RuntimeError,
               'The model is traced and cannot be exported to Python.\n Run neuralizeModel() to recreate a standard model.')
         check(self.neuralized == True, RuntimeError, 'The model is not neuralized yet.')
-        self.exporter.saveModel(model_def.json, name, model_path)
+        self.exporter.saveModel(model_def.getJson(), name, model_path)
         self.exporter.exportPythonModel(model_def, model, name, model_path)
 
     def importPythonModel(self, name=None, model_folder=None):
@@ -302,18 +302,22 @@ class Exporter:
         check(self.traced == False, RuntimeError,
               'The model is traced and cannot be exported to ONNX.\n Run neuralizeModel() to recreate a standard model.')
         check(self.neuralized == True, RuntimeError, 'The model is not neuralized yet.')
-        check(self.model_def.model_dict != {}, RuntimeError, 'The model is loaded and not created.')
+        # TODO replace with getJson(model = models) # generate the subtree json of a model
+        # From here --------------
+        model_dict = self.model_def.getModelDict()
+        check(model_dict != {}, RuntimeError, 'The model is loaded but is not .')
         model_def = ModelDef()
         if models is not None:
             if name == 'net':
                 name += '_' + '_'.join(models)
             model_def.update(
-                model_dict={key: self.model_def.model_dict[key] for key in models if key in self.model_def.model_dict})
+                model_dict={key: model_dict[key] for key in models if key in model_dict})
         else:
-            model_def.update(model_dict=self.model_def.model_dict)
+            model_def.update(model_dict=model_dict)
         model_def.setBuildWindow(self.model_def['Info']['SampleTime'])
         model_def.updateParameters(self.model)
-        model = Model(model_def.json)
+        # To here -------------- Are removed
+        model = Model(model_def.getJson())
         model.update()
         self.exporter.exportONNX(model_def, model, inputs_order, outputs_order, name, model_folder)
 

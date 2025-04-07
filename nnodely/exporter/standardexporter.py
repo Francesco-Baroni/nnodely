@@ -54,7 +54,7 @@ class StandardExporter(EmptyExporter):
         file_name = name + ".py"
         model_path = os.path.join(self.workspace_folder, file_name) if model_folder is None else os.path.join(model_folder, file_name)
         ## Export to python file
-        export_python_model(model_def.json, model, model_path)
+        export_python_model(model_def.getJson(), model, model_path)
         self.visualizer.exportModel('Python Torch Model', model_path)
 
     def importPythonModel(self, name = 'net', model_folder = None):

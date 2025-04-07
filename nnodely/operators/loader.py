@@ -288,12 +288,12 @@ class Loader:
             ## Resampling if the time column is provided (must be a Datetime object)
             if resampling:
                 if type(source.index) is pd.DatetimeIndex:
-                    source = source.resample(f"{int(self.model_def.sample_time * 1e9)}ns").interpolate(method="linear")
+                    source = source.resample(f"{int(self.model_def.getSampleTime()  * 1e9)}ns").interpolate(method="linear")
                 elif 'time' in source.columns:
                     if not ptypes.is_datetime64_any_dtype(source['time']):
                         source['time'] = pd.to_datetime(source['time'], unit='s')
                     source = source.set_index('time', drop=True)
-                    source = source.resample(f"{int(self.model_def.sample_time * 1e9)}ns").interpolate(method="linear")
+                    source = source.resample(f"{int(self.model_def.getSampleTime() * 1e9)}ns").interpolate(method="linear")
                 else:
                     raise TypeError(
                         "No time column found in the DataFrame. Please provide a time column for resampling.")

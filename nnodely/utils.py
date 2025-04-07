@@ -27,7 +27,6 @@ def get_inputs(json, relation, inputs):
         else: ## another relation
             return get_inputs(json, rel, inputs) ## recursive call to find the inputs of the relation
 
-
 def enforce_types(func):
     @wraps(func)
     def wrapper(*args, **kwargs):

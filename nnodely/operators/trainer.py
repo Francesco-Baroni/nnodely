@@ -474,7 +474,7 @@ class Trainer(Memory):
             >>> mass_spring_damper.trainModel(splits=[70,20,10], prediction_samples=10, training_params = params)
         """
         check(self._data_loaded, RuntimeError, 'There is no _data loaded! The Training will stop.')
-        check('Models' in self.model_def.json, RuntimeError,
+        check('Models' in self.model_def.getJson(), RuntimeError,
               'There are no models to train. Load a model using the addModel function.')
         check(list(self.model.parameters()), RuntimeError,
               'There are no modules with learnable parameters! The Training will stop.')
@@ -724,7 +724,7 @@ class Trainer(Memory):
         ## Select the model
         select_model = self.__get_parameter(select_model=select_model)
         select_model_params = self.__get_parameter(select_model_params=select_model_params)
-        selected_model_def = ModelDef(self.model_def.json)
+        selected_model_def = ModelDef(self.model_def.getJson())
 
         ## Show the training parameters
         self.visualizer.showTrainParams()

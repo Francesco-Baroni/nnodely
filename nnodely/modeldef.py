@@ -13,75 +13,86 @@ log = nnLogger(__name__, logging.INFO)
 class ModelDef():
     def __init__(self, model_def = MAIN_JSON):
         # Models definition
-        self.json_base = copy.deepcopy(model_def)
+        self.__json_base = copy.deepcopy(model_def)
 
         # Inizialize the model definition
-        self.json = copy.deepcopy(self.json_base)
-        if "SampleTime" in self.json['Info']:
-            self.sample_time = self.json['Info']["SampleTime"]
+        self.__json = copy.deepcopy(self.__json_base)
+        if "SampleTime" in self.__json['Info']:
+            self.__sample_time = self.__json['Info']["SampleTime"]
         else:
-            self.sample_time = None
-        self.model_dict = {}
-        self.minimize_dict = {}
-        self.update_state_dict = {}
+            self.__sample_time = None
+        self.__model_dict = {}
+        self.__minimize_dict = {}
+        self.__update_state_dict = {}
 
     def __contains__(self, key):
-        return key in self.json
+        return key in self.__json
 
     def __getitem__(self, key):
-        return self.json[key]
+        return self.__json[key]
 
     def __setitem__(self, key, value):
-        self.json[key] = value
+        self.__json[key] = value
+
+    #TODO to remove when getJson takes a model list as argment
+    def getModelDict(self):
+        return copy.deepcopy(self.__model_dict)
+
+    def getJson(self):
+        return copy.deepcopy(self.__json)
+
+    def getSampleTime(self):
+        check(self.__sample_time is not None, AttributeError, "Sample time is not defined the model is not neuralized!")
+        return self.__sample_time
 
     def isDefined(self):
-        return self.json is not None
+        return self.__json is not None
 
     def update(self, model_def = None, model_dict = None, minimize_dict = None, update_state_dict = None):
-        self.json = copy.deepcopy(model_def) if model_def is not None else copy.deepcopy(self.json_base)
-        model_dict = copy.deepcopy(model_dict) if model_dict is not None else self.model_dict
-        minimize_dict = copy.deepcopy(minimize_dict) if minimize_dict is not None else self.minimize_dict
-        update_state_dict = copy.deepcopy(update_state_dict) if update_state_dict is not None else self.update_state_dict
+        self.__json = copy.deepcopy(model_def) if model_def is not None else copy.deepcopy(self.__json_base)
+        model_dict = copy.deepcopy(model_dict) if model_dict is not None else self.__model_dict
+        minimize_dict = copy.deepcopy(minimize_dict) if minimize_dict is not None else self.__minimize_dict
+        update_state_dict = copy.deepcopy(update_state_dict) if update_state_dict is not None else self.__update_state_dict
 
         # Add models to the model_def
         for key, stream_list in model_dict.items():
             for stream in stream_list:
-                self.json = merge(self.json, stream.json)
+                self.__json = merge(self.__json, stream.json)
         if len(model_dict) > 1:
-            if 'Models' not in self.json:
-                self.json['Models'] = {}
+            if 'Models' not in self.__json:
+                self.__json['Models'] = {}
             for model_name, model_params in model_dict.items():
-                self.json['Models'][model_name] = {'Inputs': [], 'States': [], 'Outputs': [], 'Parameters': [],
+                self.__json['Models'][model_name] = {'Inputs': [], 'States': [], 'Outputs': [], 'Parameters': [],
                                                         'Constants': []}
                 parameters, constants, inputs, states = set(), set(), set(), set()
                 for param in model_params:
-                    self.json['Models'][model_name]['Outputs'].append(param.name)
+                    self.__json['Models'][model_name]['Outputs'].append(param.name)
                     parameters |= set(param.json['Parameters'].keys())
                     constants |= set(param.json['Constants'].keys())
                     inputs |= set(param.json['Inputs'].keys())
                     states |= set(param.json['States'].keys())
-                self.json['Models'][model_name]['Parameters'] = list(parameters)
-                self.json['Models'][model_name]['Constants'] = list(constants)
-                self.json['Models'][model_name]['Inputs'] = list(inputs)
-                self.json['Models'][model_name]['States'] = list(states)
+                self.__json['Models'][model_name]['Parameters'] = list(parameters)
+                self.__json['Models'][model_name]['Constants'] = list(constants)
+                self.__json['Models'][model_name]['Inputs'] = list(inputs)
+                self.__json['Models'][model_name]['States'] = list(states)
         elif len(model_dict) == 1:
-            self.json['Models'] = list(model_dict.keys())[0]
+            self.__json['Models'] = list(model_dict.keys())[0]
 
-        if 'Minimizers' not in self.json:
-            self.json['Minimizers'] = {}
+        if 'Minimizers' not in self.__json:
+            self.__json['Minimizers'] = {}
         for key, minimize in minimize_dict.items():
-            self.json = merge(self.json, minimize['A'].json)
-            self.json = merge(self.json, minimize['B'].json)
-            self.json['Minimizers'][key] = {}
-            self.json['Minimizers'][key]['A'] = minimize['A'].name
-            self.json['Minimizers'][key]['B'] = minimize['B'].name
-            self.json['Minimizers'][key]['loss'] = minimize['loss']
+            self.__json = merge(self.__json, minimize['A'].json)
+            self.__json = merge(self.__json, minimize['B'].json)
+            self.__json['Minimizers'][key] = {}
+            self.__json['Minimizers'][key]['A'] = minimize['A'].name
+            self.__json['Minimizers'][key]['B'] = minimize['B'].name
+            self.__json['Minimizers'][key]['loss'] = minimize['loss']
 
         for key, update_state in update_state_dict.items():
-            self.json = merge(self.json, update_state.json)
+            self.__json = merge(self.__json, update_state.json)
 
-        if "SampleTime" in self.json['Info']:
-            self.sample_time = self.json['Info']["SampleTime"]
+        if "SampleTime" in self.__json['Info']:
+            self.__sample_time = self.__json['Info']["SampleTime"]
 
 
     def __update_state(self, stream_out, state_list_in, UpdateState):
@@ -96,9 +107,9 @@ class ModelDef():
             check(stream_out.dim['dim'] == state_in.dim['dim'], ValueError,
                   f"The dimension of {stream_out.name} is not equal to the dimension of {state_in.name} ({stream_out.dim['dim']}!={state_in.dim['dim']}).")
             if type(stream_out) is Output:
-                stream_name = self.json['Outputs'][stream_out.name]
+                stream_name = self.__json['Outputs'][stream_out.name]
                 stream_out = Stream(stream_name,stream_out.json,stream_out.dim, 0)
-            self.update_state_dict[state_in.name] = UpdateState(stream_out, state_in)
+            self.__update_state_dict[state_in.name] = UpdateState(stream_out, state_in)
 
     def addConnect(self, stream_out, state_list_in):
         from nnodely.input import Connect
@@ -114,8 +125,8 @@ class ModelDef():
         if isinstance(stream_list, (Output,Stream)):
             stream_list = [stream_list]
         if type(stream_list) is list:
-            check(name not in self.model_dict.keys(),ValueError,f"The name '{name}' of the model is already used")
-            self.model_dict[name] = copy.deepcopy(stream_list)
+            check(name not in self.__model_dict.keys(), ValueError, f"The name '{name}' of the model is already used")
+            self.__model_dict[name] = copy.deepcopy(stream_list)
         else:
             raise TypeError(f'stream_list is type {type(stream_list)} but must be an Output or Stream or a list of them')
         self.update()
@@ -125,15 +136,15 @@ class ModelDef():
             name_list = [name_list]
         if type(name_list) is list:
             for name in name_list:
-                check(name in self.model_dict, IndexError, f"The name {name} is not part of the available models")
-                del self.model_dict[name]
+                check(name in self.__model_dict, IndexError, f"The name {name} is not part of the available models")
+                del self.__model_dict[name]
         self.update()
 
     def addMinimize(self, name, streamA, streamB, loss_function='mse'):
         check(isinstance(streamA, (Output, Stream)), TypeError, 'streamA must be an instance of Output or Stream')
         check(isinstance(streamB, (Output, Stream)), TypeError, 'streamA must be an instance of Output or Stream')
         #check(streamA.dim == streamB.dim, ValueError, f'Dimension of streamA={streamA.dim} and streamB={streamB.dim} are not equal.')
-        self.minimize_dict[name]={'A':copy.deepcopy(streamA), 'B': copy.deepcopy(streamB), 'loss':loss_function}
+        self.__minimize_dict[name]={'A':copy.deepcopy(streamA), 'B': copy.deepcopy(streamB), 'loss':loss_function}
         self.update()
 
     def removeMinimize(self, name_list):
@@ -141,23 +152,23 @@ class ModelDef():
             name_list = [name_list]
         if type(name_list) is list:
             for name in name_list:
-                check(name in self.minimize_dict, IndexError, f"The name {name} is not part of the available minimuzes")
-                del self.minimize_dict[name]
+                check(name in self.__minimize_dict, IndexError, f"The name {name} is not part of the available minimuzes")
+                del self.__minimize_dict[name]
         self.update()
 
     def setBuildWindow(self, sample_time = None):
-        check(self.json is not None, RuntimeError, "No model is defined!")
+        check(self.__json is not None, RuntimeError, "No model is defined!")
         if sample_time is not None:
             check(sample_time > 0, RuntimeError, 'Sample time must be strictly positive!')
-            self.sample_time = sample_time
+            self.__sample_time = sample_time
         else:
-            if self.sample_time is None:
-                self.sample_time = 1
+            if self.__sample_time is None:
+                self.__sample_time = 1
 
-        self.json['Info'] = {"SampleTime": self.sample_time}
+        self.__json['Info'] = {"SampleTime": self.__sample_time}
 
-        check(self.json['Inputs'] | self.json['States'] != {}, RuntimeError, "No model is defined!")
-        json_inputs = self.json['Inputs'] | self.json['States']
+        check(self.__json['Inputs'] | self.__json['States'] != {}, RuntimeError, "No model is defined!")
+        json_inputs = self.__json['Inputs'] | self.__json['States']
 
         # for key,value in self.json['States'].items():
         #     check(closedloop_name in self.json['States'][key].keys() or connect_name in self.json['States'][key].keys(),
@@ -167,16 +178,16 @@ class ModelDef():
         for key, value in json_inputs.items():
             if value['sw'] == [0,0] and value['tw'] == [0,0]:
                 assert(False), f"Input '{key}' has no time window or sample window"
-            if value['sw'] == [0, 0] and self.sample_time is not None:
+            if value['sw'] == [0, 0] and self.__sample_time is not None:
                 ## check if value['tw'] is a multiple of sample_time
                 absolute_tw = abs(value['tw'][0]) + abs(value['tw'][1])
-                check(round(absolute_tw % self.sample_time) == 0, ValueError,
+                check(round(absolute_tw % self.__sample_time) == 0, ValueError,
                       f"Time window of input '{key}' is not a multiple of sample time. This network cannot be neuralized")
-                input_ns_backward[key] = round(-value['tw'][0] / self.sample_time)
-                input_ns_forward[key] = round(value['tw'][1] / self.sample_time)
-            elif self.sample_time is not None:
-                input_ns_backward[key] = max(round(-value['tw'][0] / self.sample_time),-value['sw'][0])
-                input_ns_forward[key] = max(round(value['tw'][1] / self.sample_time),value['sw'][1])
+                input_ns_backward[key] = round(-value['tw'][0] / self.__sample_time)
+                input_ns_forward[key] = round(value['tw'][1] / self.__sample_time)
+            elif self.__sample_time is not None:
+                input_ns_backward[key] = max(round(-value['tw'][0] / self.__sample_time), -value['sw'][0])
+                input_ns_forward[key] = max(round(value['tw'][1] / self.__sample_time), value['sw'][1])
             else:
                 check(value['tw'] == [0,0], RuntimeError, f"Sample time is not defined for input '{key}'")
                 input_ns_backward[key] = -value['sw'][0]
@@ -184,28 +195,28 @@ class ModelDef():
             value['ns'] = [input_ns_backward[key], input_ns_forward[key]]
             value['ntot'] = sum(value['ns'])
 
-        self.json['Info']['ns'] = [max(input_ns_backward.values()), max(input_ns_forward.values())]
-        self.json['Info']['ntot'] = sum(self.json['Info']['ns'])
-        if self.json['Info']['ns'][0] < 0:
+        self.__json['Info']['ns'] = [max(input_ns_backward.values()), max(input_ns_forward.values())]
+        self.__json['Info']['ntot'] = sum(self.__json['Info']['ns'])
+        if self.__json['Info']['ns'][0] < 0:
             log.warning(
-                f"The input is only in the far past the max_samples_backward is: {self.json['Info']['ns'][0]}")
-        if self.json['Info']['ns'][1] < 0:
+                f"The input is only in the far past the max_samples_backward is: {self.__json['Info']['ns'][0]}")
+        if self.__json['Info']['ns'][1] < 0:
             log.warning(
-                f"The input is only in the far future the max_sample_forward is: {self.json['Info']['ns'][1]}")
+                f"The input is only in the far future the max_sample_forward is: {self.__json['Info']['ns'][1]}")
 
-        for k, v in (self.json['Parameters']|self.json['Constants']).items():
+        for k, v in (self.__json['Parameters'] | self.__json['Constants']).items():
             if 'values' in v:
                 window = 'tw' if 'tw' in v.keys() else ('sw' if 'sw' in v.keys() else None)
                 if window == 'tw':
-                    check(np.array(v['values']).shape[0] == v['tw']/self.sample_time, ValueError,
+                    check(np.array(v['values']).shape[0] == v['tw'] / self.__sample_time, ValueError,
                       f"{k} has a different number of values for this sample time.")
                 if v['values'] == "SampleTime":
-                    v['values'] = self.sample_time
+                    v['values'] = self.__sample_time
 
 
     def updateParameters(self, model, recurrent=True):
         if model is not None:
-            for key in self.json['Parameters'].keys():
+            for key in self.__json['Parameters'].keys():
                 # if recurrent:
                 #     if key in model.Cell.all_parameters:
                 #         self.json['Parameters'][key]['values'] = model.Cell.all_parameters[key].tolist()
@@ -213,6 +224,6 @@ class ModelDef():
                 #             del self.json['Parameters'][key]['init_fun']
                 # else:
                 if key in model.all_parameters:
-                    self.json['Parameters'][key]['values'] = model.all_parameters[key].tolist()
-                    if 'init_fun' in self.json['Parameters'][key]:
-                        del self.json['Parameters'][key]['init_fun']
+                    self.__json['Parameters'][key]['values'] = model.all_parameters[key].tolist()
+                    if 'init_fun' in self.__json['Parameters'][key]:
+                        del self.__json['Parameters'][key]['init_fun']
