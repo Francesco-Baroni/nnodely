@@ -1,9 +1,11 @@
 import  torch
 
-from nnodely.utils import  TORCH_DTYPE
+from nnodely.utils import  TORCH_DTYPE, check
 
 class Memory:
     def __init__(self):
+        check(type(self) is not Memory, TypeError, "Loader class cannot be instantiated directly")
+
         # Model definition
         self.states = {}
         self.input_n_samples = {}
