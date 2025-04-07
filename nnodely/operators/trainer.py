@@ -307,7 +307,6 @@ class Trainer(Memory):
         ## return the losses
         return aux_losses
 
-
     def addMinimize(self, name, streamA, streamB, loss_function='mse'):
         """
         Adds a minimize loss function to the model.
@@ -782,9 +781,9 @@ class Trainer(Memory):
         end = time.time()
         ## Visualize the training time
         for key in self.model_def['Minimizers'].keys():
-            self.training[key] = {'train': train_losses[key]}
+            self._training[key] = {'train': train_losses[key]}
             if n_samples_val > 0:
-                self.training[key]['val'] = val_losses[key]
+                self._training[key]['val'] = val_losses[key]
         self.visualizer.showEndTraining(num_of_epochs - 1, train_losses, val_losses)
         self.visualizer.showTrainingTime(end - start)
 

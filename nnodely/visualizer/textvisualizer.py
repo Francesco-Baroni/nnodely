@@ -270,23 +270,23 @@ class TextVisualizer(Visualizer):
                 print(color('|'+(f'{key}').center(dim_loss, ' ') + '|'), end='')
                 for loss in list(loss_type_list):
                     if value["loss"] == loss:
-                        print(color((f'{eng(self.modely.performance[name_data][key][value["loss"]])}').center(19, ' ') + '|'), end='')
+                        print(color((f'{eng(self.modely._performance[name_data][key][value["loss"]])}').center(19, ' ') + '|'), end='')
                     else:
                         print(color((f' ').center(19, ' ') + '|'), end='')
-                print(color((f'{eng(self.modely.performance[name_data][key]["fvu"]["total"])}').center(19, ' ') + '|'), end='')
-                print(color((f'{eng(self.modely.performance[name_data][key]["aic"]["value"])}').center(19, ' ') + '|'))
+                print(color((f'{eng(self.modely._performance[name_data][key]["fvu"]["total"])}').center(19, ' ') + '|'), end='')
+                print(color((f'{eng(self.modely._performance[name_data][key]["aic"]["value"])}').center(19, ' ') + '|'))
 
             print(color('|' + (f'').center(dim_loss + 20 * (len(loss_type_list) + 2), '-') + '|'))
             print(color('|'+(f'Total').center(dim_loss, ' ') + '|'), end='')
-            print(color((f'{eng(self.modely.performance[name_data]["total"]["mean_error"])}').center(len(loss_type_list)*20-1, ' ') + '|'), end='')
-            print(color((f'{eng(self.modely.performance[name_data]["total"]["fvu"])}').center(19, ' ') + '|'), end='')
-            print(color((f'{eng(self.modely.performance[name_data]["total"]["aic"])}').center(19, ' ') + '|'))
+            print(color((f'{eng(self.modely._performance[name_data]["total"]["mean_error"])}').center(len(loss_type_list)*20-1, ' ') + '|'), end='')
+            print(color((f'{eng(self.modely._performance[name_data]["total"]["fvu"])}').center(19, ' ') + '|'), end='')
+            print(color((f'{eng(self.modely._performance[name_data]["total"]["aic"])}').center(19, ' ') + '|'))
 
             print(color('|' + (f'').center(dim_loss + 20 * (len(loss_type_list) + 2), '-') + '|'))
 
         if self.verbose >= 2:
             self.__title(" Detalied Results ")
-            print(color(pformat(self.modely.performance), GREEN))
+            print(color(pformat(self.modely._performance), GREEN))
             self.__line()
 
     def saveModel(self, name, path):
