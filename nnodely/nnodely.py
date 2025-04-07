@@ -73,10 +73,10 @@ class Modely(Network, Trainer, Loader, Validator, Exporter):
             self.internals = {}
 
         # Models definition
-        self.model_def = ModelDef()
-        self.model = None
-        self.neuralized = False
-        self.traced = False
+        self._model_def = ModelDef()
+        self._model = None
+        self._neuralized = False
+        self._traced = False
 
         Network.__init__(self)
         Loader.__init__(self)
@@ -85,16 +85,40 @@ class Modely(Network, Trainer, Loader, Validator, Exporter):
         Exporter.__init__(self, exporter, workspace, save_history)
 
     @property
+    def neuralized(self):
+        return self._neuralized
+
+    @neuralized.setter
+    def neuralized(self, value):
+        raise AttributeError("Cannot modify read-only property 'neuralized' use neuralizeModel() instead.")
+
+    @property
+    def traced(self):
+        return self._traced
+
+    @traced.setter
+    def traced(self, value):
+        raise AttributeError("Cannot modify read-only property 'traced'.")
+
+    @property
     def parameters(self):
-        return ReadOnlyDict(self.model.all_parameters)
+        return ReadOnlyDict({key:value.detach().numpy().tolist() for key,value in self._model.all_parameters.items()})
 
     @property
     def constants(self):
-        return ReadOnlyDict(self.model.all_constants)
+        return ReadOnlyDict({key:value.detach().numpy().tolist() for key,value in self._model.all_constants})
 
     @property
     def states(self):
         return {key:value.detach().numpy().tolist() for key,value in self._states.items()}
+
+    @property
+    def performance(self):
+        return ReadOnlyDict(self._performance)
+
+    @property
+    def json(self):
+        return ReadOnlyDict(self._model_def._ModelDef__json)
 
     def resetSeed(self, seed):
         """

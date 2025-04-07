@@ -122,7 +122,7 @@ class ModelyExportTest(unittest.TestCase):
             self.test({'x': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'y': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})
         test2 = Modely(visualizer=None, workspace=self.test.getWorkspace())
         test2.loadModel()  # Load the nnodely model with parameter values
-        self.assertEqual(test2.model_def.getJson(), self.test.model_def.getJson())
+        self.assertEqual(test2.json, self.test.json)
 
         if os.path.exists(self.test.getWorkspace()):
             shutil.rmtree(self.test.getWorkspace())

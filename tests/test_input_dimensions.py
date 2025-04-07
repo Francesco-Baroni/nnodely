@@ -14,9 +14,9 @@ sys.path.append(os.getcwd())
 # This file tests the dimensions of the inputs in particular:
 # The dimensions for each input
 # input_tw_backward, input_tw_forward
-# test.model_def['Inputs'][KEY]['ns'], and test.model_def['Inputs'][KEY]['ntot']
+# test.json['Inputs'][KEY]['ns'], and test.json['Inputs'][KEY]['ntot']
 # The total maximum dimensions:
-# model_def['Info']['ns'][0], model_def['Info']['ns'][1], and model_def['Info']['ntot']
+# json['Info']['ns'][0], json['Info']['ns'][1], and json['Info']['ntot']
 # And finally the dimensions for each relation
 # relation_samples
 
@@ -34,13 +34,13 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
 
         #self.assertEqual(0,test.input_tw_backward['in1'])
         #self.assertEqual(0,test.input_tw_forward['in1'])
-        self.assertEqual(1,test.model_def['Inputs']['in1']['ns'][0])
-        self.assertEqual(0,test.model_def['Inputs']['in1']['ns'][1])
-        self.assertEqual(1,test.model_def['Inputs']['in1']['ntot'])
+        self.assertEqual(1,test.json['Inputs']['in1']['ns'][0])
+        self.assertEqual(0,test.json['Inputs']['in1']['ns'][1])
+        self.assertEqual(1,test.json['Inputs']['in1']['ntot'])
 
-        self.assertEqual(1,test.model_def['Info']['ns'][0])
-        self.assertEqual(0,test.model_def['Info']['ns'][1])
-        self.assertEqual(1,test.model_def['Info']['ntot'])  # 5 samples
+        self.assertEqual(1,test.json['Info']['ns'][0])
+        self.assertEqual(0,test.json['Info']['ns'][1])
+        self.assertEqual(1,test.json['Info']['ntot'])  # 5 samples
 
     def test_network_building_simple(self):
         NeuObj.clearNames()
@@ -55,13 +55,13 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
 
         #self.assertEqual(0.05,test.input_tw_backward['in1'])
         #self.assertEqual(0,test.input_tw_forward['in1'])
-        self.assertEqual(5,test.model_def['Inputs']['in1']['ns'][0])
-        self.assertEqual(0,test.model_def['Inputs']['in1']['ns'][1])
-        self.assertEqual(5,test.model_def['Inputs']['in1']['ntot'])
+        self.assertEqual(5,test.json['Inputs']['in1']['ns'][0])
+        self.assertEqual(0,test.json['Inputs']['in1']['ns'][1])
+        self.assertEqual(5,test.json['Inputs']['in1']['ntot'])
 
-        self.assertEqual(5,test.model_def['Info']['ns'][0])
-        self.assertEqual(0,test.model_def['Info']['ns'][1])
-        self.assertEqual(5,test.model_def['Info']['ntot'])  # 5 samples
+        self.assertEqual(5,test.json['Info']['ns'][0])
+        self.assertEqual(0,test.json['Info']['ns'][1])
+        self.assertEqual(5,test.json['Info']['ntot'])  # 5 samples
 
     def test_network_building_tw(self):
         NeuObj.clearNames()
@@ -82,14 +82,14 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         # self.assertEqual({'in1': 5, 'in2': 5},test.input_ns_backward)
         # self.assertEqual({'in1': 0, 'in2': 2},test.input_ns_forward)
         # self.assertEqual({'in1': 5, 'in2': 7},test.input_n_samples)
-        self.assertEqual([5,0] ,test.model_def['Inputs']['in1']['ns'])
-        self.assertEqual([5,2],test.model_def['Inputs']['in2']['ns'])
-        self.assertEqual(5,test.model_def['Inputs']['in1']['ntot'])
-        self.assertEqual(7,test.model_def['Inputs']['in2']['ntot'])
+        self.assertEqual([5,0] ,test.json['Inputs']['in1']['ns'])
+        self.assertEqual([5,2],test.json['Inputs']['in2']['ns'])
+        self.assertEqual(5,test.json['Inputs']['in1']['ntot'])
+        self.assertEqual(7,test.json['Inputs']['in2']['ntot'])
 
-        self.assertEqual(5,test.model_def['Info']['ns'][0])
-        self.assertEqual(2,test.model_def['Info']['ns'][1])
-        self.assertEqual(7,test.model_def['Info']['ntot'])  # 5 samples + 2 samples of the horizon
+        self.assertEqual(5,test.json['Info']['ns'][0])
+        self.assertEqual(2,test.json['Info']['ns'][1])
+        self.assertEqual(7,test.json['Info']['ntot'])  # 5 samples + 2 samples of the horizon
 
     def test_network_building_tw2(self):
         NeuObj.clearNames()
@@ -107,13 +107,14 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
 
         #self.assertEqual(0.05,test.input_tw_backward['in2'])
         #self.assertEqual(0.03,test.input_tw_forward['in2'])
-        self.assertEqual(5,test.model_def['Inputs']['in2']['ns'][0])
-        self.assertEqual(3,test.model_def['Inputs']['in2']['ns'][1])
-        self.assertEqual(8,test.model_def['Inputs']['in2']['ntot']) # 5 samples + 3 samples of the horizon
+        print(test.json)
+        self.assertEqual(5,test.json['Inputs']['in2']['ns'][0])
+        self.assertEqual(3,test.json['Inputs']['in2']['ns'][1])
+        self.assertEqual(8,test.json['Inputs']['in2']['ntot']) # 5 samples + 3 samples of the horizon
 
-        self.assertEqual(5,test.model_def['Info']['ns'][0])
-        self.assertEqual(3,test.model_def['Info']['ns'][1])
-        self.assertEqual(8,test.model_def['Info']['ntot'])  # 5 samples
+        self.assertEqual(5,test.json['Info']['ns'][0])
+        self.assertEqual(3,test.json['Info']['ns'][1])
+        self.assertEqual(8,test.json['Info']['ntot'])  # 5 samples
 
     def test_network_building_tw3(self):
         NeuObj.clearNames()
@@ -129,13 +130,13 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
 
         #self.assertEqual(0.05, test.input_tw_backward['in2'])
         #self.assertEqual(0.03, test.input_tw_forward['in2'])
-        self.assertEqual(5, test.model_def['Inputs']['in2']['ns'][0],)
-        self.assertEqual(3, test.model_def['Inputs']['in2']['ns'][1])
-        self.assertEqual(8, test.model_def['Inputs']['in2']['ntot']) # 5 samples + 3 samples of the horizon
+        self.assertEqual(5, test.json['Inputs']['in2']['ns'][0],)
+        self.assertEqual(3, test.json['Inputs']['in2']['ns'][1])
+        self.assertEqual(8, test.json['Inputs']['in2']['ntot']) # 5 samples + 3 samples of the horizon
 
-        self.assertEqual(5, test.model_def['Info']['ns'][0])
-        self.assertEqual(3, test.model_def['Info']['ns'][1])
-        self.assertEqual(8, test.model_def['Info']['ntot'])  # 5 samples
+        self.assertEqual(5, test.json['Info']['ns'][0])
+        self.assertEqual(3, test.json['Info']['ns'][1])
+        self.assertEqual(8, test.json['Info']['ntot'])  # 5 samples
 
     def test_network_building_tw_with_offest(self):
         NeuObj.clearNames()
@@ -153,13 +154,13 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
 
         #self.assertEqual(0.05, test.input_tw_backward['in2'])
         #self.assertEqual(0.02, test.input_tw_forward['in2'])
-        self.assertEqual(5, test.model_def['Inputs']['in2']['ns'][0])
-        self.assertEqual(2, test.model_def['Inputs']['in2']['ns'][1] )
-        self.assertEqual(7, test.model_def['Inputs']['in2']['ntot']) # 5 samples + 2 samples of the horizon
+        self.assertEqual(5, test.json['Inputs']['in2']['ns'][0])
+        self.assertEqual(2, test.json['Inputs']['in2']['ns'][1] )
+        self.assertEqual(7, test.json['Inputs']['in2']['ntot']) # 5 samples + 2 samples of the horizon
 
-        self.assertEqual(5, test.model_def['Info']['ns'][0])
-        self.assertEqual(2, test.model_def['Info']['ns'][1])
-        self.assertEqual(7,test.model_def['Info']['ntot'])  # 5 samples
+        self.assertEqual(5, test.json['Info']['ns'][0])
+        self.assertEqual(2, test.json['Info']['ns'][1])
+        self.assertEqual(7,test.json['Info']['ntot'])  # 5 samples
 
     def test_network_building_tw_negative(self):
         NeuObj.clearNames()
@@ -174,13 +175,13 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
 
         #self.assertEqual(0.06,test.input_tw_backward['in2'])
         #self.assertEqual( -0.01, test.input_tw_forward['in2'])
-        self.assertEqual(6, test.model_def['Inputs']['in2']['ns'][0])
-        self.assertEqual(-1, test.model_def['Inputs']['in2']['ns'][1])
-        self.assertEqual(5, test.model_def['Inputs']['in2']['ntot']) # 6 samples - 1 samples of the horizon
+        self.assertEqual(6, test.json['Inputs']['in2']['ns'][0])
+        self.assertEqual(-1, test.json['Inputs']['in2']['ns'][1])
+        self.assertEqual(5, test.json['Inputs']['in2']['ntot']) # 6 samples - 1 samples of the horizon
 
-        self.assertEqual(6, test.model_def['Info']['ns'][0])
-        self.assertEqual(-1, test.model_def['Info']['ns'][1])
-        self.assertEqual(5, test.model_def['Info']['ntot'])  # 5 samples
+        self.assertEqual(6, test.json['Info']['ns'][0])
+        self.assertEqual(-1, test.json['Info']['ns'][1])
+        self.assertEqual(5, test.json['Info']['ntot'])  # 5 samples
 
     def test_network_building_tw_negative_with_offset(self):
         NeuObj.clearNames()
@@ -203,13 +204,13 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
 
         #self.assertEqual(0.06,test.input_tw_backward['in2'])
         #self.assertEqual( -0.01, test.input_tw_forward['in2'])
-        self.assertEqual(6, test.model_def['Inputs']['in2']['ns'][0])
-        self.assertEqual(-1, test.model_def['Inputs']['in2']['ns'][1])
-        self.assertEqual(5, test.model_def['Inputs']['in2']['ntot']) # 6 samples - 1 samples of the horizon
+        self.assertEqual(6, test.json['Inputs']['in2']['ns'][0])
+        self.assertEqual(-1, test.json['Inputs']['in2']['ns'][1])
+        self.assertEqual(5, test.json['Inputs']['in2']['ntot']) # 6 samples - 1 samples of the horizon
 
-        self.assertEqual(6, test.model_def['Info']['ns'][0])
-        self.assertEqual(-1, test.model_def['Info']['ns'][1])
-        self.assertEqual(5, test.model_def['Info']['ntot'])  # 5 samples
+        self.assertEqual(6, test.json['Info']['ns'][0])
+        self.assertEqual(-1, test.json['Info']['ns'][1])
+        self.assertEqual(5, test.json['Info']['ntot'])  # 5 samples
 
     def test_network_building_tw_positive(self):
         NeuObj.clearNames()
@@ -231,13 +232,13 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
 
         #self.assertEqual(-0.01, test.input_tw_backward['in2'])
         #self.assertEqual(0.07, test.input_tw_forward['in2'])
-        self.assertEqual(-1, test.model_def['Inputs']['in2']['ns'][0])
-        self.assertEqual(7, test.model_def['Inputs']['in2']['ns'][1])
-        self.assertEqual(6, test.model_def['Inputs']['in2']['ntot']) # -1 samples + 6 samples of the horizon
+        self.assertEqual(-1, test.json['Inputs']['in2']['ns'][0])
+        self.assertEqual(7, test.json['Inputs']['in2']['ns'][1])
+        self.assertEqual(6, test.json['Inputs']['in2']['ntot']) # -1 samples + 6 samples of the horizon
 
-        self.assertEqual(-1, test.model_def['Info']['ns'][0])
-        self.assertEqual(7, test.model_def['Info']['ns'][1])
-        self.assertEqual(6, test.model_def['Info']['ntot'])  # 5 samples
+        self.assertEqual(-1, test.json['Info']['ns'][0])
+        self.assertEqual(7, test.json['Info']['ns'][1])
+        self.assertEqual(6, test.json['Info']['ntot'])  # 5 samples
 
     def test_network_building_tw_positive_with_offset(self):
         NeuObj.clearNames()
@@ -259,13 +260,13 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
 
         #self.assertEqual(-0.01,test.input_tw_backward['in2'])
         #self.assertEqual( 0.07, test.input_tw_forward['in2'])
-        self.assertEqual(-1, test.model_def['Inputs']['in2']['ns'][0])
-        self.assertEqual(7, test.model_def['Inputs']['in2']['ns'][1])
-        self.assertEqual(6, test.model_def['Inputs']['in2']['ntot']) # 6 samples - 1 samples of the horizon
+        self.assertEqual(-1, test.json['Inputs']['in2']['ns'][0])
+        self.assertEqual(7, test.json['Inputs']['in2']['ns'][1])
+        self.assertEqual(6, test.json['Inputs']['in2']['ntot']) # 6 samples - 1 samples of the horizon
 
-        self.assertEqual(-1, test.model_def['Info']['ns'][0])
-        self.assertEqual(7, test.model_def['Info']['ns'][1])
-        self.assertEqual(6, test.model_def['Info']['ntot'])  # 5 samples
+        self.assertEqual(-1, test.json['Info']['ns'][0])
+        self.assertEqual(7, test.json['Info']['ns'][1])
+        self.assertEqual(6, test.json['Info']['ntot'])  # 5 samples
 
     def test_network_building_sw(self):
         NeuObj.clearNames()
@@ -283,13 +284,13 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
 
         #self.assertEqual(0,test.input_tw_backward['in1'])
         #self.assertEqual(0,test.input_tw_forward['in1'])
-        self.assertEqual(3,test.model_def['Inputs']['in1']['ns'][0])
-        self.assertEqual(3,test.model_def['Inputs']['in1']['ns'][1])
-        self.assertEqual(6,test.model_def['Inputs']['in1']['ntot']) # 6 samples - 1 samples of the horizon
+        self.assertEqual(3,test.json['Inputs']['in1']['ns'][0])
+        self.assertEqual(3,test.json['Inputs']['in1']['ns'][1])
+        self.assertEqual(6,test.json['Inputs']['in1']['ntot']) # 6 samples - 1 samples of the horizon
 
-        self.assertEqual(3,test.model_def['Info']['ns'][0])
-        self.assertEqual(3,test.model_def['Info']['ns'][1])
-        self.assertEqual(6,test.model_def['Info']['ntot'])  # 5 samples
+        self.assertEqual(3,test.json['Info']['ns'][0])
+        self.assertEqual(3,test.json['Info']['ns'][1])
+        self.assertEqual(6,test.json['Info']['ntot'])  # 5 samples
 
     def test_network_building_sw_with_offset(self):
         NeuObj.clearNames()
@@ -308,13 +309,13 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
 
         #self.assertEqual(0, test.input_tw_backward['in2'])
         #self.assertEqual(0, test.input_tw_forward['in2'])
-        self.assertEqual(5, test.model_def['Inputs']['in2']['ns'][0])
-        self.assertEqual(2, test.model_def['Inputs']['in2']['ns'][1])
-        self.assertEqual(7, test.model_def['Inputs']['in2']['ntot'])
+        self.assertEqual(5, test.json['Inputs']['in2']['ns'][0])
+        self.assertEqual(2, test.json['Inputs']['in2']['ns'][1])
+        self.assertEqual(7, test.json['Inputs']['in2']['ntot'])
 
-        self.assertEqual(5, test.model_def['Info']['ns'][0])
-        self.assertEqual(2, test.model_def['Info']['ns'][1])
-        self.assertEqual(7, test.model_def['Info']['ntot'])
+        self.assertEqual(5, test.json['Info']['ns'][0])
+        self.assertEqual(2, test.json['Info']['ns'][1])
+        self.assertEqual(7, test.json['Info']['ntot'])
 
     def test_network_building_sw_and_tw(self):
         NeuObj.clearNames()
@@ -331,13 +332,13 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
 
         #self.assertEqual(0.01,test.input_tw_backward['in2'])
         #self.assertEqual(0,test.input_tw_forward['in2'])
-        self.assertEqual(4,test.model_def['Inputs']['in2']['ns'][0])
-        self.assertEqual(2,test.model_def['Inputs']['in2']['ns'][1])
-        self.assertEqual(6,test.model_def['Inputs']['in2']['ntot'])
+        self.assertEqual(4,test.json['Inputs']['in2']['ns'][0])
+        self.assertEqual(2,test.json['Inputs']['in2']['ns'][1])
+        self.assertEqual(6,test.json['Inputs']['in2']['ntot'])
 
-        self.assertEqual(4,test.model_def['Info']['ns'][0])
-        self.assertEqual(2,test.model_def['Info']['ns'][1])
-        self.assertEqual(6,test.model_def['Info']['ntot'])
+        self.assertEqual(4,test.json['Info']['ns'][0])
+        self.assertEqual(2,test.json['Info']['ns'][1])
+        self.assertEqual(6,test.json['Info']['ntot'])
 
     def test_example_parametric_differnt_dim_input(self):
         NeuObj.clearNames()
@@ -398,13 +399,13 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         test.addMinimize('error3', z.last(), out6, loss_function='rmse')
         test.neuralizeModel(0.5)
 
-        self.assertEqual([10,0],test.model_def['Inputs']['x']['ns'])
-        self.assertEqual([10,0],test.model_def['Inputs']['y']['ns'])
-        self.assertEqual([1,0],test.model_def['Inputs']['z']['ns'])
+        self.assertEqual([10,0],test.json['Inputs']['x']['ns'])
+        self.assertEqual([10,0],test.json['Inputs']['y']['ns'])
+        self.assertEqual([1,0],test.json['Inputs']['z']['ns'])
         #
-        # self.assertEqual(4,test.model_def['Info']['ns'][0])
-        # self.assertEqual(2,test.model_def['Info']['ns'][1])
-        # self.assertEqual(6,test.model_def['Info']['ntot'])
+        # self.assertEqual(4,test.json['Info']['ns'][0])
+        # self.assertEqual(2,test.json['Info']['ns'][1])
+        # self.assertEqual(6,test.json['Info']['ntot'])
 
     def test_batch_size_and_step(self):
         NeuObj.clearNames()

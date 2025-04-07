@@ -12,10 +12,10 @@ class Network(Memory):
         check(type(self) is not Network, TypeError, "Network class cannot be instantiated directly")
 
     def __addInfo(self):
-        total_params = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
-        self.model_def['Info']['num_parameters'] = total_params
+        total_params = sum(p.numel() for p in self._model.parameters() if p.requires_grad)
+        self._model_def['Info']['num_parameters'] = total_params
         from nnodely import __version__
-        self.model_def['Info']['nnodely_version'] = __version__
+        self._model_def['Info']['nnodely_version'] = __version__
 
     def addModel(self, name, stream_list):
         """
@@ -37,9 +37,9 @@ class Network(Memory):
             >>> model.addModel('example_model', [out])
         """
         try:
-            self.model_def.addModel(name, stream_list)
+            self._model_def.addModel(name, stream_list)
         except Exception as e:
-            self.model_def.removeModel(name)
+            self._model_def.removeModel(name)
             raise e
 
     def removeModel(self, name_list):
@@ -56,7 +56,7 @@ class Network(Memory):
         Example usage:
             >>> model.removeModel(['sub_model1', 'sub_model2'])
         """
-        self.model_def.removeModel(name_list)
+        self._model_def.removeModel(name_list)
 
     def addConnect(self, stream_out, state_list_in):
         """
@@ -82,7 +82,7 @@ class Network(Memory):
             >>> relation = Fir(x.last())
             >>> model.addConnect(relation, y)
         """
-        self.model_def.addConnect(stream_out, state_list_in)
+        self._model_def.addConnect(stream_out, state_list_in)
 
     def addClosedLoop(self, stream_out, state_list_in):
         """
@@ -108,7 +108,7 @@ class Network(Memory):
             >>> relation = Fir(x.last())
             >>> model.addClosedLoop(relation, y)
         """
-        self.model_def.addClosedLoop(stream_out, state_list_in)
+        self._model_def.addClosedLoop(stream_out, state_list_in)
 
     def neuralizeModel(self, sample_time = None, clear_model = False, model_def = None):
         """
@@ -139,35 +139,35 @@ class Network(Memory):
         if model_def is not None:
             check(sample_time == None, ValueError, 'The sample_time must be None if a model_def is provided')
             check(clear_model == False, ValueError, 'The clear_model must be False if a model_def is provided')
-            self.model_def = ModelDef(model_def)
+            self._model_def = ModelDef(model_def)
         else:
             if clear_model:
-                self.model_def.update()
+                self._model_def.update()
             else:
-                self.model_def.updateParameters(self.model)
+                self._model_def.updateParameters(self._model)
 
-        for key, state in self.model_def['States'].items():
+        for key, state in self._model_def['States'].items():
             check("connect" in state.keys() or  'closedLoop' in state.keys(), KeyError, f'The connect or closed loop missing for state "{key}"')
 
-        self.model_def.setBuildWindow(sample_time)
-        self.model = Model(self.model_def.getJson())
+        self._model_def.setBuildWindow(sample_time)
+        self._model = Model(self._model_def.getJson())
         self.__addInfo()
 
-        self._input_ns_backward = {key:value['ns'][0] for key, value in (self.model_def['Inputs']|self.model_def['States']).items()}
-        self._input_ns_forward = {key:value['ns'][1] for key, value in (self.model_def['Inputs']|self.model_def['States']).items()}
+        self._input_ns_backward = {key:value['ns'][0] for key, value in (self._model_def['Inputs']|self._model_def['States']).items()}
+        self._input_ns_forward = {key:value['ns'][1] for key, value in (self._model_def['Inputs']|self._model_def['States']).items()}
         self._max_samples_backward = max(self._input_ns_backward.values())
         self._max_samples_forward = max(self._input_ns_forward.values())
         self._input_n_samples = {}
-        for key, value in (self.model_def['Inputs'] | self.model_def['States']).items():
+        for key, value in (self._model_def['Inputs'] | self._model_def['States']).items():
             self._input_n_samples[key] = self._input_ns_backward[key] + self._input_ns_forward[key]
         self._max_n_samples = max(self._input_ns_backward.values()) + max(self._input_ns_forward.values())
 
         ## Initialize States
         self.resetStates()
 
-        self.neuralized = True
-        self.traced = False
-        self.visualizer.showModel(self.model_def.getJson())
+        self._neuralized = True
+        self._traced = False
+        self.visualizer.showModel(self._model_def.getJson())
         self.visualizer.showModelInputWindow()
         self.visualizer.showBuiltModel()
 
@@ -228,17 +228,17 @@ class Network(Memory):
 
         ## Check closed loop integrity
         for close_in, close_out in (closed_loop | connect).items():
-            check(close_in in self.model_def['Inputs'], ValueError, f'the tag "{close_in}" is not an input variable.')
-            check(close_out in self.model_def['Outputs'], ValueError,
+            check(close_in in self._model_def['Inputs'], ValueError, f'the tag "{close_in}" is not an input variable.')
+            check(close_out in self._model_def['Outputs'], ValueError,
                   f'the tag "{close_out}" is not an output of the network')
 
         ## List of keys
-        model_inputs = list(self.model_def['Inputs'].keys())
-        model_states = list(self.model_def['States'].keys())
-        json_inputs = self.model_def['Inputs'] | self.model_def['States']
-        state_closed_loop = [key for key, value in self.model_def['States'].items() if
+        model_inputs = list(self._model_def['Inputs'].keys())
+        model_states = list(self._model_def['States'].keys())
+        json_inputs = self._model_def['Inputs'] | self._model_def['States']
+        state_closed_loop = [key for key, value in self._model_def['States'].items() if
                              'closedLoop' in value.keys()] + list(closed_loop.keys())
-        state_connect = [key for key, value in self.model_def['States'].items() if 'connect' in value.keys()] + list(
+        state_connect = [key for key, value in self._model_def['States'].items() if 'connect' in value.keys()] + list(
             connect.keys())
         extra_inputs = list(set(list(inputs.keys())) - set(model_inputs) - set(model_states))
         non_mandatory_inputs = state_closed_loop + state_connect
@@ -258,8 +258,8 @@ class Network(Memory):
         if num_of_samples:
             window_dim = num_of_samples
             for key in inputs.keys():
-                input_dim = self.model_def['Inputs'][key]['dim'] if key in model_inputs else \
-                self.model_def['States'][key]['dim']
+                input_dim = self._model_def['Inputs'][key]['dim'] if key in model_inputs else \
+                self._model_def['States'][key]['dim']
                 new_samples = num_of_samples - (len(inputs[key]) - self._input_n_samples[key] + 1)
                 if input_dim > 1:
                     log.warning(f'The variable {key} is filled with {new_samples} samples equal to zeros.')
@@ -271,7 +271,7 @@ class Network(Memory):
             windows = []
             for key in inputs.keys():
                 if key in mandatory_inputs:
-                    n_samples = len(inputs[key]) if sampled else len(inputs[key]) - self.model_def['Inputs'][key][
+                    n_samples = len(inputs[key]) if sampled else len(inputs[key]) - self._model_def['Inputs'][key][
                         'ntot'] + 1
                     windows.append(n_samples)
             if not windows:
@@ -279,10 +279,10 @@ class Network(Memory):
                     if key in non_mandatory_inputs:
                         if key in model_inputs:
                             n_samples = len(inputs[key]) if sampled else len(inputs[key]) - \
-                                                                         self.model_def['Inputs'][key]['ntot'] + 1
+                                                                         self._model_def['Inputs'][key]['ntot'] + 1
                         else:
                             n_samples = len(inputs[key]) if sampled else len(inputs[key]) - \
-                                                                         self.model_def['States'][key]['ntot'] + 1
+                                                                         self._model_def['States'][key]['ntot'] + 1
                         windows.append(n_samples)
             window_dim = min(windows) if windows else 0
         else:  ## No inputs
@@ -302,7 +302,7 @@ class Network(Memory):
             log.warning(f'Inputs not provided: {missing_inputs}. Autofilling with zeros..')
             for key in missing_inputs:
                 inputs[key] = np.zeros(
-                    shape=(self._input_n_samples[key] + window_dim - 1, self.model_def['Inputs'][key]['dim']),
+                    shape=(self._input_n_samples[key] + window_dim - 1, self._model_def['Inputs'][key]['dim']),
                     dtype=NP_DTYPE).tolist()
 
         ## Transform inputs in 3D Tensors
@@ -326,7 +326,7 @@ class Network(Memory):
 
         ## initialize the resulting dictionary
         result_dict = {}
-        for key in self.model_def['Outputs'].keys():
+        for key in self._model_def['Outputs'].keys():
             result_dict[key] = []
 
         ## Inference
@@ -338,7 +338,7 @@ class Network(Memory):
         with torch.enable_grad() if calculate_grad else torch.inference_mode():
             ## Update with virtual states
             if prediction_samples is not None:
-                self.model.update(closed_loop=closed_loop, connect=connect)
+                self._model.update(closed_loop=closed_loop, connect=connect)
             else:
                 prediction_samples = 0
             X = {}
@@ -382,10 +382,10 @@ class Network(Memory):
                             X[key] = X[key].detach().requires_grad_(True)
                     count -= 1
                 ## Forward pass
-                result, _, out_closed_loop, out_connect = self.model(X)
+                result, _, out_closed_loop, out_connect = self._model(X)
 
                 ## Append the prediction of the current sample to the result dictionary
-                for key in self.model_def['Outputs'].keys():
+                for key in self._model_def['Outputs'].keys():
                     if result[key].shape[-1] == 1:
                         result[key] = result[key].squeeze(-1)
                         if result[key].shape[-1] == 1:

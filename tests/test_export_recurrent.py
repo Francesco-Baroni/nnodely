@@ -53,16 +53,16 @@ class ModelyExportTest(unittest.TestCase):
         ## Inference
         sample = {'x':[1], 'y':[2], 'z':[3], 'target':[18]}
         train_result = test(sample)
-        train_parameters = test.model.all_parameters
+        train_parameters = test.parameters
         # Export the model
         test.exportPythonModel()
         # Import the model
         test.importPythonModel(name=network_name)
         # Inference with imported model
         self.assertEqual(train_result, test(sample))
-        self.assertEqual(train_parameters['a'], test.model.all_parameters['a'])
-        self.assertEqual(train_parameters['b'], test.model.all_parameters['b'])
-        self.assertEqual(train_parameters['c'], test.model.all_parameters['c'])
+        self.assertEqual(train_parameters['a'], test.parameters['a'])
+        self.assertEqual(train_parameters['b'], test.parameters['b'])
+        self.assertEqual(train_parameters['c'], test.parameters['c'])
 
         if os.path.exists(test.getWorkspace()):
             shutil.rmtree(test.getWorkspace())

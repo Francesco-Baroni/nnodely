@@ -412,7 +412,7 @@ class ModelyJsonTest(unittest.TestCase):
         out5 = Output('out5', rel5)
 
         # m = MPLVisualizer(5)
-        # m.showFunctions(list(example.model_def['Functions'].keys()), xlim=[[-5, 5], [-1, 1]])
+        # m.showFunctions(list(example.json['Functions'].keys()), xlim=[[-5, 5], [-1, 1]])
         exampleA = Modely(seed=2)
         with self.assertRaises(TypeError):
             exampleA.addModel('model', [out1, out2, out3])

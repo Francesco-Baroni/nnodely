@@ -53,12 +53,12 @@ class Exporter:
             if name == 'net':
                 name += '_' + '_'.join(models)
             model_def = ModelDef()
-            model_def.update(model_dict={key: self.model_dict[key] for key in models if key in self.model_dict})
-            model_def.setBuildWindow(self.model_def['Info']['SampleTime'])
-            model_def.updateParameters(self.model)
+            model_def.update(model_dict={key: self._model_dict[key] for key in models if key in self._model_dict})
+            model_def.setBuildWindow(self._model_def['Info']['SampleTime'])
+            model_def.updateParameters(self._model)
             model = Model(model_def.__json)
         else:
-            model = self.model
+            model = self._model
         self.exporter.saveTorchModel(model, name, model_folder)
 
     def loadTorchModel(self, name='net', model_folder=None):
@@ -89,7 +89,7 @@ class Exporter:
             >>> model.loadTorchModel(name='example_model', model_folder='path/to/load')
         """
         check(self.neuralized == True, RuntimeError, 'The model is not neuralized yet.')
-        self.exporter.loadTorchModel(self.model, name, model_folder)
+        self.exporter.loadTorchModel(self._model, name, model_folder)
 
     def saveModel(self, name='net', model_path=None, models=None):
         ## TODO: Add tests passing the attribute 'models'
@@ -126,11 +126,11 @@ class Exporter:
                 name += '_' + '_'.join(models)
             model_def = ModelDef()
             model_def.update(
-                model_dict={key: self.model_def.__model_dict[key] for key in models if key in self.model_def.__model_dict})
-            model_def.setBuildWindow(self.model_def['Info']['SampleTime'])
-            model_def.updateParameters(self.model)
+                model_dict={key: self._model_def.__model_dict[key] for key in models if key in self._model_def.__model_dict})
+            model_def.setBuildWindow(self._model_def['Info']['SampleTime'])
+            model_def.updateParameters(self._model)
         else:
-            model_def = self.model_def
+            model_def = self._model_def
         check(model_def.isDefined(), RuntimeError, "The network has not been defined.")
         self.exporter.saveModel(model_def.getJson(), name, model_path)
 
@@ -164,10 +164,10 @@ class Exporter:
             name = 'net'
         model_def = self.exporter.loadModel(name, model_folder)
         check(model_def, RuntimeError, "Error to load the network.")
-        self.model_def = ModelDef(model_def)
-        self.model = None
-        self.neuralized = False
-        self.traced = False
+        self._model_def = ModelDef(model_def)
+        self._model = None
+        self._neuralized = False
+        self._traced = False
 
     def exportPythonModel(self, name='net', model_path=None, models=None):
         """
@@ -205,16 +205,16 @@ class Exporter:
                 name += '_' + '_'.join(models)
             model_def = ModelDef()
             model_def.update(
-                model_dict={key: self.model_def.__model_dict[key] for key in models if key in self.model_def.__model_dict})
-            model_def.setBuildWindow(self.model_def['Info']['SampleTime'])
-            model_def.updateParameters(self.model)
+                model_dict={key: self._model_def.__model_dict[key] for key in models if key in self._model_def.__model_dict})
+            model_def.setBuildWindow(self._model_def['Info']['SampleTime'])
+            model_def.updateParameters(self._model)
             model = Model(model_def.__json)
         else:
-            model_def = self.model_def
-            model = self.model
+            model_def = self._model_def
+            model = self._model
         # check(model_def['States'] == {}, TypeError, "The network has state variables. The export to python is not possible.")
         check(model_def.isDefined(), RuntimeError, "The network has not been defined.")
-        check(self.traced == False, RuntimeError,
+        check(self._traced == False, RuntimeError,
               'The model is traced and cannot be exported to Python.\n Run neuralizeModel() to recreate a standard model.')
         check(self.neuralized == True, RuntimeError, 'The model is not neuralized yet.')
         self.exporter.saveModel(model_def.getJson(), name, model_path)
@@ -251,9 +251,9 @@ class Exporter:
         model_def = self.exporter.loadModel(name, model_folder)
         check(model_def is not None, RuntimeError, "Error to load the network.")
         self.neuralizeModel(model_def=model_def)
-        self.model = self.exporter.importPythonModel(name, model_folder)
-        self.traced = True
-        self.model_def.updateParameters(self.model)
+        self._model = self.exporter.importPythonModel(name, model_folder)
+        self._traced = True
+        self._model_def.updateParameters(self._model)
 
     def exportONNX(self, inputs_order=None, outputs_order=None, models=None, name='net', model_folder=None):
         """
@@ -298,13 +298,13 @@ class Exporter:
             >>> model.neuralizeModel()
             >>> model.exportONNX(inputs_order=['input1', 'input2'], outputs_order=['output1'], name='example_model', model_folder='path/to/export')
         """
-        check(self.model_def.isDefined(), RuntimeError, "The network has not been defined.")
+        check(self._model_def.isDefined(), RuntimeError, "The network has not been defined.")
         check(self.traced == False, RuntimeError,
               'The model is traced and cannot be exported to ONNX.\n Run neuralizeModel() to recreate a standard model.')
         check(self.neuralized == True, RuntimeError, 'The model is not neuralized yet.')
         # TODO replace with getJson(model = models) # generate the subtree json of a model
         # From here --------------
-        model_dict = self.model_def.getModelDict()
+        model_dict = self._model_def.getModelDict()
         check(model_dict != {}, RuntimeError, 'The model is loaded but is not .')
         model_def = ModelDef()
         if models is not None:
@@ -314,8 +314,8 @@ class Exporter:
                 model_dict={key: model_dict[key] for key in models if key in model_dict})
         else:
             model_def.update(model_dict=model_dict)
-        model_def.setBuildWindow(self.model_def['Info']['SampleTime'])
-        model_def.updateParameters(self.model)
+        model_def.setBuildWindow(self._model_def['Info']['SampleTime'])
+        model_def.updateParameters(self._model)
         # To here -------------- Are removed
         model = Model(model_def.getJson())
         model.update()

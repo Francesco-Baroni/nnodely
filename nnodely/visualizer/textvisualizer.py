@@ -40,23 +40,23 @@ class TextVisualizer(Visualizer):
     def showMinimize(self,variable_name):
         if self.verbose >= 2:
             self.__title(f" Minimize Error of {variable_name} between"
-                         f" {self.modely.model_def['Minimizers'][variable_name]['A']} and"
-                         f" {self.modely.model_def['Minimizers'][variable_name]['B']} with {self.modely.model_def['Minimizers'][variable_name]['loss']} ")
+                         f" {self.modely._model_def['Minimizers'][variable_name]['A']} and"
+                         f" {self.modely._model_def['Minimizers'][variable_name]['B']} with {self.modely._model_def['Minimizers'][variable_name]['loss']} ")
             self.__line()
 
     def showModelInputWindow(self):
         if self.verbose >= 2:
             input_ns_backward = {key: value['ns'][0] for key, value in
-                                 (self.modely.model_def['Inputs'] | self.modely.model_def['States']).items()}
+                                 (self.modely._model_def['Inputs'] | self.modely._model_def['States']).items()}
             input_ns_forward = {key: value['ns'][1] for key, value in
-                                (self.modely.model_def['Inputs'] | self.modely.model_def['States']).items()}
+                                (self.modely._model_def['Inputs'] | self.modely._model_def['States']).items()}
             self.__title(" nnodely Model Input Windows ")
             #self.__paramjson("time_window_backward:",self.modely.input_tw_backward)
             #self.__paramjson("time_window_forward:",self.modely.input_tw_forward)
             self.__paramjson("sample_window_backward:", input_ns_backward)
             self.__paramjson("sample_window_forward:", input_ns_forward)
             self.__paramjson("input_n_samples:", self.modely._input_n_samples)
-            self.__param("max_samples [backw, forw]:", f"[{self.modely.model_def['Info']['ns'][0]},{self.modely.model_def['Info']['ns'][1]}]")
+            self.__param("max_samples [backw, forw]:", f"[{self.modely._model_def['Info']['ns'][0]},{self.modely._model_def['Info']['ns'][1]}]")
             self.__param("max_samples total:",f"{self.modely._max_n_samples}")
             self.__line()
 
@@ -69,20 +69,20 @@ class TextVisualizer(Visualizer):
     def showBuiltModel(self):
         if self.verbose >= 2:
             self.__title(" nnodely Built Model ")
-            print(color(pformat(self.modely.model),GREEN))
+            print(color(pformat(self.modely._model),GREEN))
             self.__line()
 
     def showWeights(self, weights = None):
         self.__title(" nnodely Models Weights ")
-        for key, param in self.modely.model.all_parameters.items():
+        for key, param in self.modely.parameters.items():
             if weights is None or key in weights:
-                self.__paramjson(key,param.tolist())
+                self.__paramjson(key,param)
         self.__line()
 
     def showWeightsInTrain(self, batch = None, epoch = None, weights = None):
         if self.verbose >= 2:
             par = self.modely.run_training_params
-            dim = len(self.modely.model_def['Minimizers'])
+            dim = len(self.modely._model_def['Minimizers'])
             COLOR = BLUE
             if epoch is not None:
                 print(color('|' + (f"{epoch + 1}/{par['num_of_epochs']}").center(10, ' ') + '|',COLOR), end='')
@@ -92,10 +92,10 @@ class TextVisualizer(Visualizer):
                 print(color('|' + (f"{batch + 1}").center(10, ' ') + '|', COLOR), end='')
                 print(color((f' Params end batch {batch + 1} ').center(20 * (dim + 1) - 1, '-') + '|', COLOR))
 
-            for key, param in self.modely.model.all_parameters.items():
+            for key, param in self.modely.parameters.items():
                 if weights is None or key in weights:
                     print(color('|' + (f"{key}").center(10, ' ') + '|', COLOR), end='')
-                    print(color((f'{param.tolist()}').center(20 * (dim + 1) - 1, ' ') + '|', COLOR))
+                    print(color((f'{param}').center(20 * (dim + 1) - 1, ' ') + '|', COLOR))
 
             if epoch is not None:
                 print(color('|'+(f'').center(10+20*(dim+1), '-') + '|'))
@@ -106,7 +106,7 @@ class TextVisualizer(Visualizer):
             self.__param("Dataset Name:", name)
             self.__param("Number of files:", f'{self.modely._file_count}')
             self.__param("Total number of samples:", f'{self.modely._num_of_samples[name]}')
-            for key in self.modely.model_def['Inputs'].keys():
+            for key in self.modely._model_def['Inputs'].keys():
                 if key in self.modely._data[name].keys():
                     self.__param(f"Shape of {key}:", f'{self.modely._data[name][key].shape}')
             self.__line()
@@ -114,20 +114,20 @@ class TextVisualizer(Visualizer):
     def showStartTraining(self):
         if self.verbose >= 1:
             par = self.modely.run_training_params
-            dim = len(self.modely.model_def['Minimizers'])
-            self.__title(" nnodely Training ", 12+(len(self.modely.model_def['Minimizers'])+1)*20)
+            dim = len(self.modely._model_def['Minimizers'])
+            self.__title(" nnodely Training ", 12+(len(self.modely._model_def['Minimizers'])+1)*20)
             print(color('|'+(f'Epoch').center(10,' ')+'|'),end='')
-            for key in self.modely.model_def['Minimizers'].keys():
+            for key in self.modely._model_def['Minimizers'].keys():
                 print(color((f'{key}').center(19, ' ') + '|'), end='')
             print(color((f'Total').center(19, ' ') + '|'))
 
             print(color('|' + (f' ').center(10, ' ') + '|'), end='')
-            for key in self.modely.model_def['Minimizers'].keys():
+            for key in self.modely._model_def['Minimizers'].keys():
                 print(color((f'Loss').center(19, ' ') + '|'),end='')
             print(color((f'Loss').center(19, ' ') + '|'))
 
             print(color('|' + (f' ').center(10, ' ') + '|'), end='')
-            for key in self.modely.model_def['Minimizers'].keys():
+            for key in self.modely._model_def['Minimizers'].keys():
                 if par['n_samples_val']:
                     print(color((f'train').center(9, ' ') + '|'),end='')
                     print(color((f'val').center(9, ' ') + '|'),end='')
@@ -146,13 +146,13 @@ class TextVisualizer(Visualizer):
             eng = lambda val: np.format_float_scientific(val, precision=3)
             par = self.modely.run_training_params
             show_epoch = 1 if par['num_of_epochs'] <= 20 else 10
-            dim = len(self.modely.model_def['Minimizers'])
+            dim = len(self.modely._model_def['Minimizers'])
             if epoch < par['num_of_epochs']:
                 print('', end='\r')
                 print('|' + (f"{epoch + 1}/{par['num_of_epochs']}").center(10, ' ') + '|', end='')
                 train_loss = []
                 val_loss = []
-                for key in self.modely.model_def['Minimizers'].keys():
+                for key in self.modely._model_def['Minimizers'].keys():
                     train_loss.append(train_losses[key][epoch])
                     if val_losses:
                         val_loss.append(val_losses[key][epoch])
@@ -170,7 +170,7 @@ class TextVisualizer(Visualizer):
                 if (epoch + 1) % show_epoch == 0:
                     print('', end='\r')
                     print(color('|' + (f"{epoch + 1}/{par['num_of_epochs']}").center(10, ' ') + '|'), end='')
-                    for key in self.modely.model_def['Minimizers'].keys():
+                    for key in self.modely._model_def['Minimizers'].keys():
                         if val_losses:
                             print(color((f'{eng(train_losses[key][epoch])}').center(9, ' ') + '|'), end='')
                             print(color((f'{eng(val_losses[key][epoch])}').center(9, ' ') + '|'), end='')
@@ -250,8 +250,8 @@ class TextVisualizer(Visualizer):
     def showResult(self, name_data):
         eng = lambda val: np.format_float_scientific(val, precision=3)
         if self.verbose >= 1:
-            dim_loss = len(max(self.modely.model_def['Minimizers'].keys(),key=len))
-            loss_type_list = set([value["loss"] for ind, (key, value) in enumerate(self.modely.model_def['Minimizers'].items())])
+            dim_loss = len(max(self.modely._model_def['Minimizers'].keys(),key=len))
+            loss_type_list = set([value["loss"] for ind, (key, value) in enumerate(self.modely._model_def['Minimizers'].items())])
             self.__title(f" nnodely Model Results for {name_data} ", dim_loss + 2 + (len(loss_type_list) + 2) * 20)
             print(color('|' + (f'Loss').center(dim_loss, ' ') + '|'), end='')
             for loss in loss_type_list:
@@ -266,7 +266,7 @@ class TextVisualizer(Visualizer):
             print(color((f'lower better').center(19, ' ') + '|'))
 
             print(color('|' + (f'').center(dim_loss + 20 * (len(loss_type_list) + 2), '-') + '|'))
-            for ind, (key, value) in enumerate(self.modely.model_def['Minimizers'].items()):
+            for ind, (key, value) in enumerate(self.modely._model_def['Minimizers'].items()):
                 print(color('|'+(f'{key}').center(dim_loss, ' ') + '|'), end='')
                 for loss in list(loss_type_list):
                     if value["loss"] == loss:

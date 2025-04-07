@@ -40,6 +40,8 @@ from nnodely.nnodely import nnodely, Modely, clearNames
 from nnodely.visualizer import Visualizer, TextVisualizer, MPLVisualizer, MPLNotebookVisualizer
 from nnodely.exporter import StandardExporter
 
+# Basic nnodely
+from nnodely.basic.optimizer import Optimizer, SGD, Adam
+
 # Support functions
-from nnodely.support.optimizer import Optimizer, SGD, Adam
 from nnodely.support.initializer import init_negexp, init_lin, init_constant, init_exp

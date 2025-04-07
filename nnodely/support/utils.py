@@ -21,10 +21,41 @@ class ReadOnlyDict:
         self._data = data
 
     def __getitem__(self, key):
-        return self._data[key]
+        value = self._data[key]
+        if isinstance(value, dict):
+            return ReadOnlyDict(value)
+        return value
 
     def __len__(self):
         return len(self._data)
+
+    def __iter__(self):
+        return iter(self._data)
+
+    def keys(self):
+        return self._data.keys()
+
+    def items(self):
+        return self._data.items()
+
+    def values(self):
+        return self._data.values()
+
+    def __or__(self, other):
+        if not isinstance(other, ReadOnlyDict):
+            return NotImplemented
+        combined_data = {**self._data, **other._data}
+        return ReadOnlyDict(combined_data)
+
+    def __str__(self):
+        from nnodely.visualizer.visualizer import color, GREEN
+        from pprint import pformat
+        return color(pformat(self._data), GREEN)
+
+    def __eq__(self, other):
+        if not isinstance(other, ReadOnlyDict):
+            return NotImplemented
+        return self._data == other._data
 
 
 def get_window(obj):

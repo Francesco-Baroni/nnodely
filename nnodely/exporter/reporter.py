@@ -16,7 +16,7 @@ class Reporter:
         c = canvas.Canvas(report_path, pagesize=letter)
         width, height = letter
 
-        for key, value in self.modely.model_def['Minimizers'].items():
+        for key, value in self.modely._model_def['Minimizers'].items():
             fig = plt.figure(figsize=(10, 5))
             ax = fig.add_subplot(111)
             if 'val' in self.modely._training[key]:
@@ -31,13 +31,13 @@ class Reporter:
             c.drawImage(ImageReader(training), 50, height - 290, width=500, height=250)
             c.showPage()
 
-        for key in self.modely.model_def['Minimizers'].keys():
+        for key in self.modely._model_def['Minimizers'].keys():
             c.drawString(100, height - 30, f"Prediction of {key}")
             for ind, name_data in enumerate(self.modely._prediction.keys()):
                 fig = plt.figure(figsize=(10, 5))
                 ax = fig.add_subplot(111)
                 plots.plot_results(ax, name_data, key, self.modely._prediction[name_data][key]['A'],
-                               self.modely._prediction[name_data][key]['B'], self.modely.model_def['Info']["SampleTime"])
+                               self.modely._prediction[name_data][key]['B'], self.modely._model_def['Info']["SampleTime"])
                 # Add a text box with correlation coefficient
                 results = io.BytesIO()
                 plt.savefig(results, format='png')

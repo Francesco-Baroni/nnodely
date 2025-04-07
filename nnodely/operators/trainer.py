@@ -2,8 +2,8 @@ import copy, torch, random
 
 from nnodely.basic.modeldef import ModelDef
 from nnodely.basic.model import Model
-from nnodely.support.optimizer import Optimizer, SGD, Adam
-from nnodely.support.loss import CustomLoss
+from nnodely.basic.optimizer import Optimizer, SGD, Adam
+from nnodely.basic.loss import CustomLoss
 from nnodely.support.utils import tensor_to_list, check, log, TORCH_DTYPE, check_gradient_operations
 from nnodely.operators.memory import Memory
 
@@ -98,9 +98,9 @@ class Trainer(Memory):
         ## Get parameter to be trained
         json_models = []
         models = self.__get_parameter(models=models)
-        if 'Models' in self.model_def:
-            json_models = list(self.model_def['Models'].keys()) if type(self.model_def['Models']) is dict else [
-                self.model_def['Models']]
+        if 'Models' in self._model_def:
+            json_models = list(self._model_def['Models'].keys()) if type(self._model_def['Models']) is dict else [
+                self._model_def['Models']]
         if models is None:
             models = json_models
         self.run_training_params['models'] = models
@@ -109,10 +109,10 @@ class Trainer(Memory):
             models = [models]
         for model in models:
             check(model in json_models, ValueError, f'The model {model} is not in the model definition')
-            if type(self.model_def['Models']) is dict:
-                params_to_train |= set(self.model_def['Models'][model]['Parameters'])
+            if type(self._model_def['Models']) is dict:
+                params_to_train |= set(self._model_def['Models'][model]['Parameters'])
             else:
-                params_to_train |= set(self.model_def['Parameters'].keys())
+                params_to_train |= set(self._model_def['Parameters'].keys())
 
         # Get the optimizer
         if type(optimizer) is str:
@@ -124,7 +124,7 @@ class Trainer(Memory):
             check(issubclass(type(optimizer), Optimizer), TypeError,
                   "The optimizer must be an Optimizer or str")
 
-        optimizer.set_params_to_train(self.model.all_parameters, params_to_train)
+        optimizer.set_params_to_train(self._model.all_parameters, params_to_train)
 
         optimizer.add_defaults('lr', self.run_training_params['lr'])
         optimizer.add_option_to_params('lr', self.run_training_params['lr_param'])
@@ -190,11 +190,11 @@ class Trainer(Memory):
     def __recurrentTrain(self, data, batch_indexes, batch_size, loss_gains, closed_loop, connect, prediction_samples,
                          step, non_mandatory_inputs, mandatory_inputs, shuffle=False, train=True):
         indexes = copy.deepcopy(batch_indexes)
-        json_inputs = self.model_def['States'] | self.model_def['Inputs']
+        json_inputs = self._model_def['States'] | self._model_def['Inputs']
         aux_losses = torch.zeros(
-            [len(self.model_def['Minimizers']), round((len(indexes) + step) / (batch_size + step))])
+            [len(self._model_def['Minimizers']), round((len(indexes) + step) / (batch_size + step))])
         ## Update with virtual states
-        self.model.update(closed_loop=closed_loop, connect=connect)
+        self._model.update(closed_loop=closed_loop, connect=connect)
         X = {}
         batch_val = 0
         while len(indexes) >= batch_size:
@@ -211,7 +211,7 @@ class Trainer(Memory):
             if train:
                 self.__optimizer.zero_grad()  ## Reset the gradient
             ## Reset
-            horizon_losses = {ind: [] for ind in range(len(self.model_def['Minimizers']))}
+            horizon_losses = {ind: [] for ind in range(len(self._model_def['Minimizers']))}
             for key in non_mandatory_inputs:
                 if key in data.keys():
                     ## with data
@@ -232,16 +232,16 @@ class Trainer(Memory):
                 for key in mandatory_inputs:
                     X[key] = data[key][[idx + horizon_idx for idx in idxs]]
                 ## Forward pass
-                out, minimize_out, out_closed_loop, out_connect = self.model(X)
+                out, minimize_out, out_closed_loop, out_connect = self._model(X)
 
                 if self.log_internal and train:
                     assert (check_gradient_operations(self._states) == 0)
                     assert (check_gradient_operations(data) == 0)
-                    internals_dict = {'XY': tensor_to_list(X), 'out': out, 'param': self.model.all_parameters,
-                                      'closedLoop': self.model.closed_loop_update, 'connect': self.model.connect_update}
+                    internals_dict = {'XY': tensor_to_list(X), 'out': out, 'param': self._model.all_parameters,
+                                      'closedLoop': self._model.closed_loop_update, 'connect': self._model.connect_update}
 
                 ## Loss Calculation
-                for ind, (key, value) in enumerate(self.model_def['Minimizers'].items()):
+                for ind, (key, value) in enumerate(self._model_def['Minimizers'].items()):
                     loss = self.__loss_functions[key](minimize_out[value['A']], minimize_out[value['B']])
                     loss = (loss * loss_gains[
                         key]) if key in loss_gains.keys() else loss  ## Multiply by the gain if necessary
@@ -256,7 +256,7 @@ class Trainer(Memory):
 
             ## Calculate the total loss
             total_loss = 0
-            for ind in range(len(self.model_def['Minimizers'])):
+            for ind in range(len(self._model_def['Minimizers'])):
                 loss = sum(horizon_losses[ind]) / (prediction_samples + 1)
                 aux_losses[ind][batch_val] = loss.item()
                 total_loss += loss
@@ -281,7 +281,7 @@ class Trainer(Memory):
             randomize = torch.randperm(n_samples)
             data = {key: val[randomize] for key, val in data.items()}
         ## Initialize the train losses vector
-        aux_losses = torch.zeros([len(self.model_def['Minimizers']), n_samples // batch_size])
+        aux_losses = torch.zeros([len(self._model_def['Minimizers']), n_samples // batch_size])
         for idx in range(0, (n_samples - batch_size + 1), batch_size):
             ## Build the input tensor
             XY = {key: val[idx:idx + batch_size] for key, val in data.items()}
@@ -289,10 +289,10 @@ class Trainer(Memory):
             if train:
                 self.__optimizer.zero_grad()
             ## Model Forward
-            _, minimize_out, _, _ = self.model(XY)  ## Forward pass
+            _, minimize_out, _, _ = self._model(XY)  ## Forward pass
             ## Loss Calculation
             total_loss = 0
-            for ind, (key, value) in enumerate(self.model_def['Minimizers'].items()):
+            for ind, (key, value) in enumerate(self._model_def['Minimizers'].items()):
                 loss = self.__loss_functions[key](minimize_out[value['A']], minimize_out[value['B']])
                 loss = (loss * loss_gains[
                     key]) if key in loss_gains.keys() else loss  ## Multiply by the gain if necessary
@@ -327,7 +327,7 @@ class Trainer(Memory):
         Example usage:
             >>> model.addMinimize('minimize_op', streamA, streamB, loss_function='mse')
         """
-        self.model_def.addMinimize(name, streamA, streamB, loss_function)
+        self._model_def.addMinimize(name, streamA, streamB, loss_function)
         self.visualizer.showaddMinimize(name)
 
     def removeMinimize(self, name_list):
@@ -344,7 +344,7 @@ class Trainer(Memory):
         Example usage:
             >>> model.removeMinimize(['minimize_op1', 'minimize_op2'])
         """
-        self.model_def.removeMinimize(name_list)
+        self._model_def.removeMinimize(name_list)
 
     def trainModel(self,
                    models=None,
@@ -474,9 +474,9 @@ class Trainer(Memory):
             >>> mass_spring_damper.trainModel(splits=[70,20,10], prediction_samples=10, training_params = params)
         """
         check(self._data_loaded, RuntimeError, 'There is no _data loaded! The Training will stop.')
-        check('Models' in self.model_def.getJson(), RuntimeError,
+        check('Models' in self._model_def.getJson(), RuntimeError,
               'There are no models to train. Load a model using the addModel function.')
-        check(list(self.model.parameters()), RuntimeError,
+        check(list(self._model.parameters()), RuntimeError,
               'There are no modules with learnable parameters! The Training will stop.')
 
         ## Get running parameter from dict
@@ -495,22 +495,22 @@ class Trainer(Memory):
         recurrent_train = True
         if closed_loop:
             for input, output in closed_loop.items():
-                check(input in self.model_def['Inputs'], ValueError, f'the tag {input} is not an input variable.')
-                check(output in self.model_def['Outputs'], ValueError,
+                check(input in self._model_def['Inputs'], ValueError, f'the tag {input} is not an input variable.')
+                check(output in self._model_def['Outputs'], ValueError,
                       f'the tag {output} is not an output of the network')
                 log.warning(
                     f'Recurrent train: closing the loop between the the input ports {input} and the output ports {output} for {prediction_samples} samples')
         elif connect:
             for connect_in, connect_out in connect.items():
-                check(connect_in in self.model_def['Inputs'], ValueError,
+                check(connect_in in self._model_def['Inputs'], ValueError,
                       f'the tag {connect_in} is not an input variable.')
-                check(connect_out in self.model_def['Outputs'], ValueError,
+                check(connect_out in self._model_def['Outputs'], ValueError,
                       f'the tag {connect_out} is not an output of the network')
                 log.warning(
                     f'Recurrent train: connecting the input ports {connect_in} with output ports {connect_out} for {prediction_samples} samples')
-        elif self.model_def['States']:  ## if we have state variables we have to do the recurrent train
+        elif self._model_def['States']:  ## if we have state variables we have to do the recurrent train
             log.warning(
-                f"Recurrent train: update States variables {list(self.model_def['States'].keys())} for {prediction_samples} samples")
+                f"Recurrent train: update States variables {list(self._model_def['States'].keys())} for {prediction_samples} samples")
         else:
             if prediction_samples != 0:
                 log.warning(
@@ -634,7 +634,7 @@ class Trainer(Memory):
         ## Define the loss functions
         minimize_gain = self.__get_parameter(minimize_gain=minimize_gain)
         self.run_training_params['minimizers'] = {}
-        for name, values in self.model_def['Minimizers'].items():
+        for name, values in self._model_def['Minimizers'].items():
             self.__loss_functions[name] = CustomLoss(values['loss'])
             self.run_training_params['minimizers'][name] = {}
             self.run_training_params['minimizers'][name]['A'] = values['A']
@@ -658,19 +658,19 @@ class Trainer(Memory):
 
         ## Create the train, validation and test loss dictionaries
         train_losses, val_losses = {}, {}
-        for key in self.model_def['Minimizers'].keys():
+        for key in self._model_def['Minimizers'].keys():
             train_losses[key] = []
             if n_samples_val > 0:
                 val_losses[key] = []
 
         ## Check the needed keys are in the datasets
-        keys = set(self.model_def['Inputs'].keys())
-        keys |= {value['A'] for value in self.model_def['Minimizers'].values()} | {value['B'] for value in
-                                                                                   self.model_def[
+        keys = set(self._model_def['Inputs'].keys())
+        keys |= {value['A'] for value in self._model_def['Minimizers'].values()} | {value['B'] for value in
+                                                                                   self._model_def[
                                                                                        'Minimizers'].values()}
-        keys -= set(self.model_def['Relations'].keys())
-        keys -= set(self.model_def['States'].keys())
-        keys -= set(self.model_def['Outputs'].keys())
+        keys -= set(self._model_def['Relations'].keys())
+        keys -= set(self._model_def['States'].keys())
+        keys -= set(self._model_def['Outputs'].keys())
         if 'connect' in self.run_training_params:
             keys -= set(self.run_training_params['connect'].keys())
         if 'closed_loop' in self.run_training_params:
@@ -688,10 +688,10 @@ class Trainer(Memory):
                         train_batch_size + step) + 1
             unused_samples = n_samples_train - list_of_batch_indexes[-1] - train_batch_size - prediction_samples
 
-            model_inputs = list(self.model_def['Inputs'].keys())
-            state_closed_loop = [key for key, value in self.model_def['States'].items() if
+            model_inputs = list(self._model_def['Inputs'].keys())
+            state_closed_loop = [key for key, value in self._model_def['States'].items() if
                                  'closedLoop' in value.keys()] + list(closed_loop.keys())
-            state_connect = [key for key, value in self.model_def['States'].items() if
+            state_connect = [key for key, value in self._model_def['States'].items() if
                              'connect' in value.keys()] + list(connect.keys())
             non_mandatory_inputs = state_closed_loop + state_connect
             mandatory_inputs = list(set(model_inputs) - set(non_mandatory_inputs))
@@ -711,7 +711,7 @@ class Trainer(Memory):
         self.run_training_params['unused_samples'] = unused_samples
 
         ## Set the gradient to true if necessary
-        json_inputs = self.model_def['Inputs'] | self.model_def['States']
+        json_inputs = self._model_def['Inputs'] | self._model_def['States']
         for key in json_inputs.keys():
             if 'type' in json_inputs[key]:
                 if key in XY_train:
@@ -724,7 +724,7 @@ class Trainer(Memory):
         ## Select the model
         select_model = self.__get_parameter(select_model=select_model)
         select_model_params = self.__get_parameter(select_model_params=select_model_params)
-        selected_model_def = ModelDef(self.model_def.getJson())
+        selected_model_def = ModelDef(self._model_def.getJson())
 
         ## Show the training parameters
         self.visualizer.showTrainParams()
@@ -736,7 +736,7 @@ class Trainer(Memory):
 
         for epoch in range(num_of_epochs):
             ## TRAIN
-            self.model.train()
+            self._model.train()
             if recurrent_train:
                 losses = self.__recurrentTrain(XY_train, list_of_batch_indexes_train, train_batch_size, minimize_gain,
                                                closed_loop, connect, prediction_samples, train_step,
@@ -745,12 +745,12 @@ class Trainer(Memory):
                 losses = self.__Train(XY_train, n_samples_train, train_batch_size, minimize_gain, shuffle=shuffle_data,
                                       train=True)
             ## save the losses
-            for ind, key in enumerate(self.model_def['Minimizers'].keys()):
+            for ind, key in enumerate(self._model_def['Minimizers'].keys()):
                 train_losses[key].append(torch.mean(losses[ind]).tolist())
 
             if n_samples_val > 0:
                 ## VALIDATION
-                self.model.eval()
+                self._model.eval()
                 if recurrent_train:
                     losses = self.__recurrentTrain(XY_val, list_of_batch_indexes_val, val_batch_size, minimize_gain,
                                                    closed_loop, connect, prediction_samples, val_step,
@@ -759,7 +759,7 @@ class Trainer(Memory):
                     losses = self.__Train(XY_val, n_samples_val, val_batch_size, minimize_gain, shuffle=False,
                                           train=False)
                 ## save the losses
-                for ind, key in enumerate(self.model_def['Minimizers'].keys()):
+                for ind, key in enumerate(self._model_def['Minimizers'].keys()):
                     val_losses[key].append(torch.mean(losses[ind]).tolist())
 
             ## Early-stopping
@@ -771,7 +771,7 @@ class Trainer(Memory):
             if callable(select_model):
                 if select_model(train_losses, val_losses, select_model_params):
                     best_model_epoch = epoch
-                    selected_model_def.updateParameters(self.model)
+                    selected_model_def.updateParameters(self._model)
 
             ## Visualize the training...
             self.visualizer.showTraining(epoch, train_losses, val_losses)
@@ -780,7 +780,7 @@ class Trainer(Memory):
         ## Save the training time
         end = time.time()
         ## Visualize the training time
-        for key in self.model_def['Minimizers'].keys():
+        for key in self._model_def['Minimizers'].keys():
             self._training[key] = {'train': train_losses[key]}
             if n_samples_val > 0:
                 self._training[key]['val'] = val_losses[key]
@@ -790,7 +790,7 @@ class Trainer(Memory):
         ## Select the model
         if callable(select_model):
             log.info(f'Selected the model at the epoch {best_model_epoch + 1}.')
-            self.model = Model(selected_model_def)
+            self._model = Model(selected_model_def)
         else:
             log.info('The selected model is the LAST model of the training.')
 
@@ -806,4 +806,4 @@ class Trainer(Memory):
         self.visualizer.showResults()
 
         ## Get trained model from torch and set the model_def
-        self.model_def.updateParameters(self.model)
+        self._model_def.updateParameters(self._model)

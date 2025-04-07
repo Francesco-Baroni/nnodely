@@ -121,7 +121,7 @@ class ModelyTestVisualizer(unittest.TestCase):
         test.trainModel(optimizer='SGD', training_params=params)
         m.closeResult()
         m.closeTraining()
-        list_of_functions = list(test.model_def['Functions'].keys())
+        list_of_functions = list(test.json['Functions'].keys())
         with self.assertRaises(ValueError):
             m.showFunctions(list_of_functions[1])
         m.closeFunctions()
@@ -144,7 +144,7 @@ class ModelyTestVisualizer(unittest.TestCase):
         example = Modely(visualizer=m)
         example.addModel('out', out)
         example.neuralizeModel()
-        m.showFunctions(list(example.model_def['Functions'].keys()), xlim=[[-5, 5], [-1, 1]])
+        m.showFunctions(list(example.json['Functions'].keys()), xlim=[[-5, 5], [-1, 1]])
         m.closeFunctions()
 
     # def test_export_mplnotebookvisualizer(self):
@@ -166,5 +166,5 @@ class ModelyTestVisualizer(unittest.TestCase):
     #     params = {'num_of_epochs': 1, 'lr': 0.01}
     #     test.loadData(name='dataset', source=dataset)  # Create the dataset
     #     test.trainModel(optimizer='SGD', training_params=params)  # Train the traced model
-    #     m.showFunctions(list(test.model_def['Functions'].keys()), xlim=[[-5, 5], [-1, 1]])
+    #     m.showFunctions(list(test.json['Functions'].keys()), xlim=[[-5, 5], [-1, 1]])
     #     m.closeFunctions()
