@@ -1,8 +1,9 @@
-import copy, torch, inspect
+import copy, torch, inspect, typing
+
 from collections import OrderedDict
 
 import numpy as np
-
+from contextlib import suppress
 from pprint import pformat
 from functools import wraps
 from typing import get_type_hints
@@ -92,7 +93,7 @@ def enforce_types(func):
         for arg_name, arg in all_args.items():
             if (arg_name in hints.keys() or arg_name in sig.keys()) and not isinstance(arg,sig[arg_name].annotation):
                 raise TypeError(
-                    f"In Function or Class {func} Expected argument '{arg}' to be of type {sig[arg_name].annotation}, but got {type(arg)}")
+                    f"In Function or Class {func} Expected argument '{arg_name}={arg}' to be of type {sig[arg_name].annotation}, but got {type(arg)}")
 
         # for arg, arg_type in hints.items():
         #     if arg in all_args and not isinstance(all_args[arg], arg_type):

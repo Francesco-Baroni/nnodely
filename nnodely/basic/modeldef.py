@@ -212,16 +212,9 @@ class ModelDef():
                 if v['values'] == "SampleTime":
                     v['values'] = self.__sample_time
 
-
-    def updateParameters(self, model, recurrent=True):
+    def updateParameters(self, model):
         if model is not None:
             for key in self.__json['Parameters'].keys():
-                # if recurrent:
-                #     if key in model.Cell.all_parameters:
-                #         self.json['Parameters'][key]['values'] = model.Cell.all_parameters[key].tolist()
-                #         if 'init_fun' in self.json['Parameters'][key]:
-                #             del self.json['Parameters'][key]['init_fun']
-                # else:
                 if key in model.all_parameters:
                     self.__json['Parameters'][key]['values'] = model.all_parameters[key].tolist()
                     if 'init_fun' in self.__json['Parameters'][key]:

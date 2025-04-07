@@ -3,8 +3,9 @@ import os, random
 import pandas as pd
 import numpy as np
 import pandas.api.types as ptypes
+from collections.abc import Sequence, Callable
 
-from nnodely.support.utils import check, log
+from nnodely.support.utils import check, log, enforce_types
 
 class Loader:
     def __init__(self):
@@ -20,7 +21,8 @@ class Loader:
         self._data = {}
         self._multifile = {}
 
-    def getSamples(self, dataset, index = None, window=1):
+    @enforce_types
+    def getSamples(self, dataset:str, index:int|None = None, window:int=1) -> dict:
         """
         Retrieves a window of samples from a given dataset.
 
@@ -67,7 +69,8 @@ class Loader:
                         result_dict[key].append(samples[index+idx])
             return result_dict
 
-    def filterData(self, filter_function, dataset_name = None):
+    @enforce_types
+    def filterData(self, filter_function:Callable, dataset_name:str|None = None) -> None:
         """
         Filters the data in the dataset using the provided filter function.
 
@@ -129,7 +132,15 @@ class Loader:
                 self._num_of_samples[dataset_name] = self._data[dataset_name][key].shape[0]
             self.visualizer.showDataset(name=dataset_name)
 
-    def loadData(self, name, source, format=None, skiplines=0, delimiter=',', header=None, resampling=False):
+    @enforce_types
+    def loadData(self, name:str,
+                 source: str | dict | pd.DataFrame,
+                 format: list | None = None,
+                 skiplines: int = 0,
+                 delimiter: str = ',',
+                 header: int | str | Sequence | None = None,
+                 resampling: bool = False
+                 ) -> None:
         """
         Loads data into the model. The data can be loaded from a directory path containing the csv files or from a crafted dataset.
 
@@ -137,7 +148,7 @@ class Loader:
         ----------
         name : str
             The name of the dataset.
-        source : str or list
+        source : str or list or pd.DataFrame
             The source of the data. Can be a directory path containing the csv files or a list of custom data.
         format : list or None, optional
             The format of the data. When loading multiple csv files the format parameter will define how to read each column of the file. Default is None.

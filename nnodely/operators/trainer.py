@@ -1,11 +1,15 @@
 import copy, torch, random
 
+from collections.abc import Callable
+
 from nnodely.basic.modeldef import ModelDef
 from nnodely.basic.model import Model
 from nnodely.basic.optimizer import Optimizer, SGD, Adam
 from nnodely.basic.loss import CustomLoss
-from nnodely.support.utils import tensor_to_list, check, log, TORCH_DTYPE, check_gradient_operations
+from nnodely.support.utils import tensor_to_list, check, log, TORCH_DTYPE, check_gradient_operations, enforce_types
 from nnodely.operators.memory import Memory
+from nnodely.basic.relation import Stream
+from nnodely.layers.output import Output
 
 class Trainer(Memory):
     def __init__(self):
@@ -307,7 +311,8 @@ class Trainer(Memory):
         ## return the losses
         return aux_losses
 
-    def addMinimize(self, name, streamA, streamB, loss_function='mse'):
+    @enforce_types
+    def addMinimize(self, name:str, streamA:Stream|Output, streamB:Stream|Output, loss_function:str='mse') -> None:
         """
         Adds a minimize loss function to the model.
 
@@ -330,7 +335,8 @@ class Trainer(Memory):
         self._model_def.addMinimize(name, streamA, streamB, loss_function)
         self.visualizer.showaddMinimize(name)
 
-    def removeMinimize(self, name_list):
+    @enforce_types
+    def removeMinimize(self, name_list:list|str) -> None:
         """
         Removes minimize loss functions using the given list of names.
 
@@ -346,22 +352,23 @@ class Trainer(Memory):
         """
         self._model_def.removeMinimize(name_list)
 
+    @enforce_types
     def trainModel(self,
-                   models=None,
-                   train_dataset=None, validation_dataset=None, test_dataset=None, splits=None,
-                   closed_loop=None, connect=None, step=None, prediction_samples=None,
-                   shuffle_data=None,
-                   early_stopping=None, early_stopping_params=None,
-                   select_model=None, select_model_params=None,
-                   minimize_gain=None,
-                   num_of_epochs=None,
-                   train_batch_size=None, val_batch_size=None, test_batch_size=None,
-                   optimizer=None,
-                   lr=None, lr_param=None,
-                   optimizer_params=None, optimizer_defaults=None,
-                   training_params=None,
-                   add_optimizer_params=None, add_optimizer_defaults=None
-                   ):
+                   models: str | list | None = None,
+                   train_dataset: str | None = None, validation_dataset: str | None = None, test_dataset: str | None = None, splits: list | None = None,
+                   closed_loop: dict | None = None, connect: dict | None = None, step: int | None = None, prediction_samples: int | None = None,
+                   shuffle_data: bool | None = None,
+                   early_stopping: Callable | None = None, early_stopping_params: dict | None = None,
+                   select_model: Callable | None = None, select_model_params: dict | None = None,
+                   minimize_gain: dict | None = None,
+                   num_of_epochs: int = None,
+                   train_batch_size: int = None, val_batch_size: int = None, test_batch_size: int = None,
+                   optimizer: str | Optimizer | None = None,
+                   lr: int | float | None = None, lr_param: dict | None = None,
+                   optimizer_params: list | None = None, optimizer_defaults: dict | None = None,
+                   training_params: dict | None = None,
+                   add_optimizer_params: list | None = None, add_optimizer_defaults: dict | None = None
+                   ) -> None:
         """
         Trains the model using the provided datasets and parameters.
 
@@ -412,13 +419,13 @@ class Trainer(Memory):
             The learning rate. Default is None.
         lr_param : dict or None, optional
             A dictionary of learning rate parameters. Default is None.
-        optimizer_params : dict or None, optional
+        optimizer_params : list or dict or None, optional
             A dictionary of optimizer parameters. Default is None.
         optimizer_defaults : dict or None, optional
             A dictionary of default optimizer settings. Default is None.
         training_params : dict or None, optional
             A dictionary of training parameters. Default is None.
-        add_optimizer_params : dict or None, optional
+        add_optimizer_params : list or None, optional
             Additional optimizer parameters. Default is None.
         add_optimizer_defaults : dict or None, optional
             Additional default optimizer settings. Default is None.

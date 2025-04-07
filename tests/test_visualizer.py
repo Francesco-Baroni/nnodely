@@ -88,8 +88,7 @@ class ModelyTestVisualizer(unittest.TestCase):
         t.showMinimize('error3')
         test.trainModel(optimizer='SGD', training_params=params)
         t.showWeights()
-        test.trainModel(optimizer='SGD', training_params=params, validation_dataset=params)
-        test.trainModel(optimizer='SGD', training_params=params, validation_dataset=params, closed_loop={'x':'out'}, prediction_samples=1)
+        test.trainModel(optimizer='SGD', training_params=params, closed_loop={'x':'out'}, prediction_samples=1)
         test.saveModel()
         test.loadModel()
 

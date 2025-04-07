@@ -2,24 +2,28 @@ from nnodely.exporter.standardexporter import StandardExporter
 from nnodely.exporter.emptyexporter import EmptyExporter
 from nnodely.basic.model import Model
 from nnodely.basic.modeldef import ModelDef
-from nnodely.support.utils import check
+from nnodely.support.utils import check, enforce_types
+
 
 class Exporter:
-    def __init__(self, exporter, workspace, save_history):
+    @enforce_types
+    def __init__(self, exporter:EmptyExporter|str|None=None, workspace:str|None=None, *, save_history:bool=False):
         check(type(self) is not Exporter, TypeError, "Exporter class cannot be instantiated directly")
 
         # Exporter
         if exporter == 'Standard':
-            self.exporter = StandardExporter(workspace, self.visualizer, save_history)
+            self.exporter = StandardExporter(workspace, self.visualizer, save_history=save_history)
         elif exporter != None:
             self.exporter = exporter
         else:
             self.exporter = EmptyExporter()
 
+    @enforce_types
     def getWorkspace(self):
         return self.exporter.getWorkspace()
 
-    def saveTorchModel(self, name='net', model_folder=None, models=None):
+    @enforce_types
+    def saveTorchModel(self, name:str='net', model_folder:str|None=None, *, models:str|None=None) -> None:
         """
         Saves the neural network model in PyTorch format.
 
@@ -61,7 +65,8 @@ class Exporter:
             model = self._model
         self.exporter.saveTorchModel(model, name, model_folder)
 
-    def loadTorchModel(self, name='net', model_folder=None):
+    @enforce_types
+    def loadTorchModel(self, name:str='net', model_folder:str|None=None) -> None:
         """
         Loads a neural network model from a PyTorch format file.
 
@@ -91,7 +96,8 @@ class Exporter:
         check(self.neuralized == True, RuntimeError, 'The model is not neuralized yet.')
         self.exporter.loadTorchModel(self._model, name, model_folder)
 
-    def saveModel(self, name='net', model_path=None, models=None):
+    @enforce_types
+    def saveModel(self, name:str='net', model_path:str|None=None, *, models:str|None=None) -> None:
         ## TODO: Add tests passing the attribute 'models'
         """
         Saves the neural network model definition in a json file.
@@ -134,7 +140,8 @@ class Exporter:
         check(model_def.isDefined(), RuntimeError, "The network has not been defined.")
         self.exporter.saveModel(model_def.getJson(), name, model_path)
 
-    def loadModel(self, name=None, model_folder=None):
+    @enforce_types
+    def loadModel(self, name:str='net', model_folder:str|None=None) -> None:
         """
         Loads a neural network model from a json file containing the model definition.
 
@@ -160,8 +167,6 @@ class Exporter:
             >>> model = Modely()
             >>> model.loadModel(name='example_model', model_folder='path/to/load')
         """
-        if name is None:
-            name = 'net'
         model_def = self.exporter.loadModel(name, model_folder)
         check(model_def, RuntimeError, "Error to load the network.")
         self._model_def = ModelDef(model_def)
@@ -169,7 +174,8 @@ class Exporter:
         self._neuralized = False
         self._traced = False
 
-    def exportPythonModel(self, name='net', model_path=None, models=None):
+    @enforce_types
+    def exportPythonModel(self, name:str='net', model_path:str|None=None, *, models:str|None=None) -> None:
         """
         Exports the neural network model as a standalone PyTorch Module class.
 
@@ -220,7 +226,8 @@ class Exporter:
         self.exporter.saveModel(model_def.getJson(), name, model_path)
         self.exporter.exportPythonModel(model_def, model, name, model_path)
 
-    def importPythonModel(self, name=None, model_folder=None):
+    @enforce_types
+    def importPythonModel(self, name:str='net', model_folder:str|None=None) -> None:
         """
         Imports a neural network model from a standalone PyTorch Module class.
 
@@ -246,8 +253,6 @@ class Exporter:
             >>> model = Modely()
             >>> model.importPythonModel(name='example_model', model_folder='path/to/import')
         """
-        if name is None:
-            name = 'net'
         model_def = self.exporter.loadModel(name, model_folder)
         check(model_def is not None, RuntimeError, "Error to load the network.")
         self.neuralizeModel(model_def=model_def)
@@ -255,7 +260,8 @@ class Exporter:
         self._traced = True
         self._model_def.updateParameters(self._model)
 
-    def exportONNX(self, inputs_order=None, outputs_order=None, models=None, name='net', model_folder=None):
+    @enforce_types
+    def exportONNX(self, inputs_order:list|None=None, outputs_order:list|None=None, name:str='net', model_folder:str|None=None, *, models:str|list|None=None) -> None:
         """
         Exports the neural network model to an ONNX file.
 
@@ -321,7 +327,8 @@ class Exporter:
         model.update()
         self.exporter.exportONNX(model_def, model, inputs_order, outputs_order, name, model_folder)
 
-    def onnxInference(self, inputs: dict, path: str):
+    @enforce_types
+    def onnxInference(self, inputs:dict, path:str) -> dict:
         """
         Run an inference session using an onnx model previously exported using the nnodely framework.
 
@@ -368,7 +375,8 @@ class Exporter:
         """
         return self.exporter.onnxInference(inputs, path)
 
-    def exportReport(self, name='net', model_folder=None):
+    @enforce_types
+    def exportReport(self, name:str='net', model_folder:None=None) -> None:
         """
         Generates a PDF report with plots containing the results of the training and validation of the neural network.
 

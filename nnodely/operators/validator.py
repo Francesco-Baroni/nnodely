@@ -3,7 +3,7 @@ import torch
 import numpy as np
 
 from nnodely.basic.loss import CustomLoss
-from nnodely.support.utils import  check, TORCH_DTYPE
+from nnodely.support.utils import  check, TORCH_DTYPE, enforce_types
 from nnodely.operators.memory import Memory
 
 class Validator(Memory):
@@ -15,7 +15,17 @@ class Validator(Memory):
         self._prediction = {}
         self._training = {}
 
-    def resultAnalysis(self, dataset, data = None, minimize_gain = {}, closed_loop = {}, connect = {},  prediction_samples = None, step = 0, batch_size = None):
+    @enforce_types
+    def resultAnalysis(self,
+                       dataset: str,
+                       data: dict | None = None,
+                       minimize_gain: dict = {},
+                       closed_loop: dict = {},
+                       connect: dict = {},
+                       prediction_samples: int | str | None = None,
+                       step: int = 0,
+                       batch_size: int | None = None
+                       ) -> None:
         import warnings
         json_inputs = self.json['Inputs'] | self.json['States']
         calculate_grad = False

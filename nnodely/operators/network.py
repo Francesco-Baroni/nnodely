@@ -4,8 +4,11 @@ import numpy as np
 
 from nnodely.basic.modeldef import ModelDef
 from nnodely.basic.model import Model
-from nnodely.support.utils import check, log, TORCH_DTYPE, NP_DTYPE, argmax_dict, argmin_dict
+from nnodely.support.utils import check, log, TORCH_DTYPE, NP_DTYPE, argmax_dict, argmin_dict, enforce_types
 from nnodely.operators.memory import Memory
+from nnodely.basic.relation import Stream
+from nnodely.layers.input import State
+from nnodely.layers.output import Output
 
 class Network(Memory):
     def __init__(self):
@@ -17,7 +20,8 @@ class Network(Memory):
         from nnodely import __version__
         self._model_def['Info']['nnodely_version'] = __version__
 
-    def addModel(self, name, stream_list):
+    @enforce_types
+    def addModel(self, name:str, stream_list:list|Output|Stream) -> None:
         """
         Adds a new model with the given name along with a list of Outputs.
 
@@ -42,7 +46,8 @@ class Network(Memory):
             self._model_def.removeModel(name)
             raise e
 
-    def removeModel(self, name_list):
+    @enforce_types
+    def removeModel(self, name_list:list) -> None:
         """
         Removes models with the given list of names.
 
@@ -58,7 +63,8 @@ class Network(Memory):
         """
         self._model_def.removeModel(name_list)
 
-    def addConnect(self, stream_out, state_list_in):
+    @enforce_types
+    def addConnect(self, stream_out:Output|Stream, state_list_in:State) -> None:
         """
         Adds a connection from a relation stream to an input state.
 
@@ -66,8 +72,8 @@ class Network(Memory):
         ----------
         stream_out : Stream
             The relation stream to connect from.
-        state_list_in : list of State
-            The list of input states to connect to.
+        state_list_in : State
+            The states to connect to.
 
         Examples
         --------
@@ -84,7 +90,8 @@ class Network(Memory):
         """
         self._model_def.addConnect(stream_out, state_list_in)
 
-    def addClosedLoop(self, stream_out, state_list_in):
+    @enforce_types
+    def addClosedLoop(self, stream_out:Output|Stream, state_list_in:State) -> None:
         """
         Adds a closed loop connection from a relation stream to an input state.
 
@@ -110,7 +117,8 @@ class Network(Memory):
         """
         self._model_def.addClosedLoop(stream_out, state_list_in)
 
-    def neuralizeModel(self, sample_time = None, clear_model = False, model_def = None):
+    @enforce_types
+    def neuralizeModel(self, sample_time:float|int|None = None, clear_model:bool = False, model_def:dict|None = None) -> None:
         """
         Neuralizes the model, preparing it for inference and training. This method creates a neural network model starting from the model definition.
         It will also create all the time windows for the inputs and states.
@@ -171,8 +179,9 @@ class Network(Memory):
         self.visualizer.showModelInputWindow()
         self.visualizer.showBuiltModel()
 
-    def __call__(self, inputs={}, sampled=False, closed_loop={}, connect={}, prediction_samples='auto',
-                 num_of_samples=None):  ##, align_input=False):
+    @enforce_types
+    def __call__(self, inputs:dict={}, sampled:bool=False, closed_loop:dict={}, connect:dict={}, prediction_samples:str|int|None='auto',
+                 num_of_samples:int|None=None) -> dict:  ##, align_input=False):
         """
         Performs inference on the model.
 

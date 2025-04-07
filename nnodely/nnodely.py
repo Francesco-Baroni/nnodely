@@ -82,7 +82,7 @@ class Modely(Network, Trainer, Loader, Validator, Exporter):
         Loader.__init__(self)
         Trainer.__init__(self)
         Validator.__init__(self)
-        Exporter.__init__(self, exporter, workspace, save_history)
+        Exporter.__init__(self, exporter, workspace, save_history=save_history)
 
     @property
     def neuralized(self):

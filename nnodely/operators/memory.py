@@ -1,6 +1,6 @@
 import  torch
 
-from nnodely.support.utils import  TORCH_DTYPE, check
+from nnodely.support.utils import  TORCH_DTYPE, check, enforce_types
 
 class Memory:
     def __init__(self):
@@ -31,7 +31,8 @@ class Memory:
             X[key] = value
             self._states[key] = X[key].clone().detach()
 
-    def resetStates(self, states=[], batch=1):
+    @enforce_types
+    def resetStates(self, states:set={}, batch:int=1) -> None:
         if states: ## reset only specific states
             for key in states:
                 window_size = self._input_n_samples[key]
