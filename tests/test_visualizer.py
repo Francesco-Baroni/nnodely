@@ -146,24 +146,26 @@ class ModelyTestVisualizer(unittest.TestCase):
         m.showFunctions(list(example.json['Functions'].keys()), xlim=[[-5, 5], [-1, 1]])
         m.closeFunctions()
 
-    # def test_export_mplnotebookvisualizer(self):
-    #     m = MPLNotebookVisualizer(5)
-    #     test = Modely(visualizer=m, seed=42)
-    #     test.addModel('modelA', self.out)
-    #     test.addModel('modelB', [self.out2, self.out3, self.out4])
-    #     test.addModel('modelC', [self.out4, self.out5, self.out6])
-    #     test.addMinimize('error1', self.x.last(), self.out)
-    #     test.addMinimize('error2', self.y.last(), self.out3, loss_function='rmse')
-    #     test.addMinimize('error3', self.z.last(), self.out6, loss_function='rmse')
-    #
-    #     test.neuralizeModel(0.5)
-    #
-    #     data_x = np.arange(0.0, 10, 0.1)
-    #     data_y = np.arange(0.0, 10, 0.1)
-    #     a, b = -1.0, 2.0
-    #     dataset = {'x': data_x, 'y': data_y, 'z': a * data_x + b * data_y}
-    #     params = {'num_of_epochs': 1, 'lr': 0.01}
-    #     test.loadData(name='dataset', source=dataset)  # Create the dataset
-    #     test.trainModel(optimizer='SGD', training_params=params)  # Train the traced model
-    #     m.showFunctions(list(test.json['Functions'].keys()), xlim=[[-5, 5], [-1, 1]])
-    #     m.closeFunctions()
+    def test_export_mplnotebookvisualizer(self):
+        m = MPLNotebookVisualizer(5, test=True)
+        test = Modely(visualizer=m, seed=42)
+        test.addModel('modelA', self.out)
+        test.addModel('modelB', [self.out2, self.out3, self.out4])
+        test.addModel('modelC', [self.out4, self.out5, self.out6])
+        test.addMinimize('error1', self.x.last(), self.out)
+        test.addMinimize('error2', self.y.last(), self.out3, loss_function='rmse')
+        test.addMinimize('error3', self.z.last(), self.out6, loss_function='rmse')
+
+        test.neuralizeModel(0.5)
+
+        data_x = np.arange(0.0, 10, 0.1)
+        data_y = np.arange(0.0, 10, 0.1)
+        a, b = -1.0, 2.0
+        dataset = {'x': data_x, 'y': data_y, 'z': a * data_x + b * data_y}
+        params = {'num_of_epochs': 1, 'lr': 0.01}
+        test.loadData(name='dataset', source=dataset)  # Create the dataset
+        test.trainModel(optimizer='SGD', training_params=params)  # Train the traced model
+        list_of_functions = list(test.json['Functions'].keys())
+        m.showFunctions(list_of_functions[0])
+        m.showFunctions(list_of_functions[4])
+        m.showFunctions(list_of_functions[3])

@@ -7,8 +7,10 @@ from nnodely.support.utils import check
 from mplplots import plots
 
 class MPLNotebookVisualizer(TextVisualizer):
-    def __init__(self, verbose = 1):
+    def __init__(self, verbose = 1, *, test = False):
         super().__init__(verbose)
+        if test:
+            plt.ion()
 
     def showEndTraining(self, epoch, train_losses, val_losses):
         for key in self.modely.json['Minimizers'].keys():
@@ -22,8 +24,8 @@ class MPLNotebookVisualizer(TextVisualizer):
         for key in self.modely.json['Minimizers'].keys():
             fig = plt.figure()
             ax = fig.add_subplot(111)
-            plots.plot_results(ax, name_data, key, self.modely.prediction[name_data][key]['A'],
-                               self.modely.prediction[name_data][key]['B'], self.modely.model_def['Info']["SampleTime"])
+            plots.plot_results(ax, name_data, key, self.modely._prediction[name_data][key]['A'],
+                               self.modely._prediction[name_data][key]['B'], self.modely._model_def['Info']["SampleTime"])
         plt.show()
 
     def showWeights(self, weights = None):
@@ -31,7 +33,7 @@ class MPLNotebookVisualizer(TextVisualizer):
 
     def showFunctions(self, functions = None, xlim = None, num_points = 1000):
         check(self.modely.neuralized, ValueError, "The model has not been neuralized.")
-        for fun, value in self.modely.model_def['Functions'].items():
+        for fun, value in self.modely._model_def['Functions'].items():
             if fun in functions:
                 if 'functions' in self.modely._model_def['Functions'][fun]:
                     x, activ_fun = return_fuzzify(value, xlim, num_points)
