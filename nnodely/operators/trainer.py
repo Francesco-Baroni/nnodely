@@ -11,7 +11,7 @@ class Trainer(Memory):
     def __init__(self):
         check(type(self) is not Trainer, TypeError, "Trainer class cannot be instantiated directly")
         # Training Parameters
-        self.standard_train_parameters = {
+        self.__standard_train_parameters = {
             'models' : None,
             'train_dataset' : None, 'validation_dataset' : None, 'test_dataset' : None, 'splits' : [70, 20, 10],
             'closed_loop' : {}, 'connect' : {}, 'step' : 0, 'prediction_samples' : 0,
@@ -28,55 +28,16 @@ class Trainer(Memory):
         }
 
         # Training Losses
-        self.loss_functions = {}
+        self.__loss_functions = {}
 
         # Optimizer
-        self.optimizer = None
-
-    def addMinimize(self, name, streamA, streamB, loss_function='mse'):
-        """
-        Adds a minimize loss function to the model.
-
-        Parameters
-        ----------
-        name : str
-            The name of the cost function.
-        streamA : Stream
-            The first relation stream for the minimize operation.
-        streamB : Stream
-            The second relation stream for the minimize operation.
-        loss_function : str, optional
-            The loss function to use from the ones provided. Default is 'mse'.
-
-        Example
-        -------
-        Example usage:
-            >>> model.addMinimize('minimize_op', streamA, streamB, loss_function='mse')
-        """
-        self.model_def.addMinimize(name, streamA, streamB, loss_function)
-        self.visualizer.showaddMinimize(name)
-
-    def removeMinimize(self, name_list):
-        """
-        Removes minimize loss functions using the given list of names.
-
-        Parameters
-        ----------
-        name_list : list of str
-            The list of minimize operation names to remove.
-
-        Example
-        -------
-        Example usage:
-            >>> model.removeMinimize(['minimize_op1', 'minimize_op2'])
-        """
-        self.model_def.removeMinimize(name_list)
+        self.__optimizer = None
 
     def __save_internal(self, key, value):
         self.internals[key] = tensor_to_list(value)
 
     def __get_train_parameters(self, training_params):
-        run_train_parameters = copy.deepcopy(self.standard_train_parameters)
+        run_train_parameters = copy.deepcopy(self.__standard_train_parameters)
         if training_params is None:
             return run_train_parameters
         for key, value in training_params.items():
@@ -188,6 +149,203 @@ class Trainer(Memory):
         optimizer.add_option_to_params('lr', lr_param)
 
         return optimizer
+
+
+    def __get_batch_indexes(self, dataset_name, n_samples, prediction_samples, batch_size, step, type='train'):
+        available_samples = n_samples - prediction_samples
+        batch_indexes = list(range(available_samples))
+        if dataset_name in self._multifile.keys():
+            if type == 'train':
+                start_idx, end_idx = 0, n_samples
+            elif type == 'val':
+                start_idx, end_idx = self.run_training_params['n_samples_train'], self.run_training_params[
+                                                                                      'n_samples_train'] + n_samples
+            elif type == 'test':
+                start_idx, end_idx = self.run_training_params['n_samples_train'] + self.run_training_params[
+                    'n_samples_val'], self.run_training_params['n_samples_train'] + self.run_training_params[
+                                         'n_samples_val'] + n_samples
+
+            forbidden_idxs = []
+            for i in self._multifile[dataset_name]:
+                if i < end_idx and i > start_idx:
+                    forbidden_idxs.extend(range(i - prediction_samples, i, 1))
+            batch_indexes = [idx for idx in batch_indexes if idx not in forbidden_idxs]
+
+        ## Clip the step
+        clipped_step = copy.deepcopy(step)
+        if clipped_step < 0:  ## clip the step to zero
+            log.warning(f"The step is negative ({clipped_step}). The step is set to zero.", stacklevel=5)
+            clipped_step = 0
+        if clipped_step > (len(batch_indexes) - batch_size):  ## Clip the step to the maximum number of samples
+            log.warning(
+                f"The step ({clipped_step}) is greater than the number of available samples ({len(batch_indexes) - batch_size}). The step is set to the maximum number.",
+                stacklevel=5)
+            clipped_step = len(batch_indexes) - batch_size
+        ## Loss vector
+        check((batch_size + clipped_step) > 0, ValueError,
+              f"The sum of batch_size={batch_size} and the step={clipped_step} must be greater than 0.")
+
+        return batch_indexes, clipped_step
+
+    def __recurrentTrain(self, data, batch_indexes, batch_size, loss_gains, closed_loop, connect, prediction_samples,
+                         step, non_mandatory_inputs, mandatory_inputs, shuffle=False, train=True):
+        indexes = copy.deepcopy(batch_indexes)
+        json_inputs = self.model_def['States'] | self.model_def['Inputs']
+        aux_losses = torch.zeros(
+            [len(self.model_def['Minimizers']), round((len(indexes) + step) / (batch_size + step))])
+        ## Update with virtual states
+        self.model.update(closed_loop=closed_loop, connect=connect)
+        X = {}
+        batch_val = 0
+        while len(indexes) >= batch_size:
+            idxs = random.sample(indexes, batch_size) if shuffle else indexes[:batch_size]
+            for num in idxs:
+                indexes.remove(num)
+            if step > 0:
+                if len(indexes) >= step:
+                    step_idxs = random.sample(indexes, step) if shuffle else indexes[:step]
+                    for num in step_idxs:
+                        indexes.remove(num)
+                else:
+                    indexes = []
+            if train:
+                self.__optimizer.zero_grad()  ## Reset the gradient
+            ## Reset
+            horizon_losses = {ind: [] for ind in range(len(self.model_def['Minimizers']))}
+            for key in non_mandatory_inputs:
+                if key in data.keys():
+                    ## with data
+                    X[key] = data[key][idxs]
+                else:  ## with zeros
+                    window_size = self._input_n_samples[key]
+                    dim = json_inputs[key]['dim']
+                    if 'type' in json_inputs[key]:
+                        X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=True)
+                    else:
+                        X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE,
+                                             requires_grad=False)
+                    self._states[key] = X[key]
+
+
+            for horizon_idx in range(prediction_samples + 1):
+                ## Get data
+                for key in mandatory_inputs:
+                    X[key] = data[key][[idx + horizon_idx for idx in idxs]]
+                ## Forward pass
+                out, minimize_out, out_closed_loop, out_connect = self.model(X)
+
+                if self.log_internal and train:
+                    assert (check_gradient_operations(self._states) == 0)
+                    assert (check_gradient_operations(data) == 0)
+                    internals_dict = {'XY': tensor_to_list(X), 'out': out, 'param': self.model.all_parameters,
+                                      'closedLoop': self.model.closed_loop_update, 'connect': self.model.connect_update}
+
+                ## Loss Calculation
+                for ind, (key, value) in enumerate(self.model_def['Minimizers'].items()):
+                    loss = self.__loss_functions[key](minimize_out[value['A']], minimize_out[value['B']])
+                    loss = (loss * loss_gains[
+                        key]) if key in loss_gains.keys() else loss  ## Multiply by the gain if necessary
+                    horizon_losses[ind].append(loss)
+
+                ## Update
+                self._updateState(X, out_closed_loop, out_connect)
+
+                if self.log_internal and train:
+                    internals_dict['state'] = self._states
+                    self.__save_internal('inout_' + str(batch_val) + '_' + str(horizon_idx), internals_dict)
+
+            ## Calculate the total loss
+            total_loss = 0
+            for ind in range(len(self.model_def['Minimizers'])):
+                loss = sum(horizon_losses[ind]) / (prediction_samples + 1)
+                aux_losses[ind][batch_val] = loss.item()
+                total_loss += loss
+
+            ## Gradient Step
+            if train:
+                total_loss.backward()  ## Backpropagate the error
+                self.__optimizer.step()
+                self.visualizer.showWeightsInTrain(batch=batch_val)
+            batch_val += 1
+
+        ## Remove virtual states
+        self._removeVirtualStates(connect, closed_loop)
+
+        ## return the losses
+        return aux_losses
+
+    def __Train(self, data, n_samples, batch_size, loss_gains, shuffle=True, train=True):
+        check((n_samples - batch_size + 1) > 0, ValueError,
+              f"The number of available sample are (n_samples_train - train_batch_size + 1) = {n_samples - batch_size + 1}.")
+        if shuffle:
+            randomize = torch.randperm(n_samples)
+            data = {key: val[randomize] for key, val in data.items()}
+        ## Initialize the train losses vector
+        aux_losses = torch.zeros([len(self.model_def['Minimizers']), n_samples // batch_size])
+        for idx in range(0, (n_samples - batch_size + 1), batch_size):
+            ## Build the input tensor
+            XY = {key: val[idx:idx + batch_size] for key, val in data.items()}
+            ## Reset gradient
+            if train:
+                self.__optimizer.zero_grad()
+            ## Model Forward
+            _, minimize_out, _, _ = self.model(XY)  ## Forward pass
+            ## Loss Calculation
+            total_loss = 0
+            for ind, (key, value) in enumerate(self.model_def['Minimizers'].items()):
+                loss = self.__loss_functions[key](minimize_out[value['A']], minimize_out[value['B']])
+                loss = (loss * loss_gains[
+                    key]) if key in loss_gains.keys() else loss  ## Multiply by the gain if necessary
+                aux_losses[ind][idx // batch_size] = loss.item()
+                total_loss += loss
+            ## Gradient step
+            if train:
+                total_loss.backward()
+                self.__optimizer.step()
+                self.visualizer.showWeightsInTrain(batch=idx // batch_size)
+
+        ## return the losses
+        return aux_losses
+
+
+    def addMinimize(self, name, streamA, streamB, loss_function='mse'):
+        """
+        Adds a minimize loss function to the model.
+
+        Parameters
+        ----------
+        name : str
+            The name of the cost function.
+        streamA : Stream
+            The first relation stream for the minimize operation.
+        streamB : Stream
+            The second relation stream for the minimize operation.
+        loss_function : str, optional
+            The loss function to use from the ones provided. Default is 'mse'.
+
+        Example
+        -------
+        Example usage:
+            >>> model.addMinimize('minimize_op', streamA, streamB, loss_function='mse')
+        """
+        self.model_def.addMinimize(name, streamA, streamB, loss_function)
+        self.visualizer.showaddMinimize(name)
+
+    def removeMinimize(self, name_list):
+        """
+        Removes minimize loss functions using the given list of names.
+
+        Parameters
+        ----------
+        name_list : list of str
+            The list of minimize operation names to remove.
+
+        Example
+        -------
+        Example usage:
+            >>> model.removeMinimize(['minimize_op1', 'minimize_op2'])
+        """
+        self.model_def.removeMinimize(name_list)
 
     def trainModel(self,
                    models=None,
@@ -469,7 +627,7 @@ class Trainer(Memory):
         self.run_training_params['optimizer'] = optimizer.name
         self.run_training_params['optimizer_params'] = optimizer.optimizer_params
         self.run_training_params['optimizer_defaults'] = optimizer.optimizer_defaults
-        self.optimizer = optimizer.get_torch_optimizer()
+        self.__optimizer = optimizer.get_torch_optimizer()
 
         ## Get num_of_epochs
         num_of_epochs = self.__get_parameter(num_of_epochs=num_of_epochs)
@@ -478,7 +636,7 @@ class Trainer(Memory):
         minimize_gain = self.__get_parameter(minimize_gain=minimize_gain)
         self.run_training_params['minimizers'] = {}
         for name, values in self.model_def['Minimizers'].items():
-            self.loss_functions[name] = CustomLoss(values['loss'])
+            self.__loss_functions[name] = CustomLoss(values['loss'])
             self.run_training_params['minimizers'][name] = {}
             self.run_training_params['minimizers'][name]['A'] = values['A']
             self.run_training_params['minimizers'][name]['B'] = values['B']
@@ -650,159 +808,3 @@ class Trainer(Memory):
 
         ## Get trained model from torch and set the model_def
         self.model_def.updateParameters(self.model)
-
-    def __get_batch_indexes(self, dataset_name, n_samples, prediction_samples, batch_size, step, type='train'):
-        available_samples = n_samples - prediction_samples
-        batch_indexes = list(range(available_samples))
-        if dataset_name in self._multifile.keys():
-            if type == 'train':
-                start_idx, end_idx = 0, n_samples
-            elif type == 'val':
-                start_idx, end_idx = self.run_training_params['n_samples_train'], self.run_training_params[
-                                                                                      'n_samples_train'] + n_samples
-            elif type == 'test':
-                start_idx, end_idx = self.run_training_params['n_samples_train'] + self.run_training_params[
-                    'n_samples_val'], self.run_training_params['n_samples_train'] + self.run_training_params[
-                                         'n_samples_val'] + n_samples
-
-            forbidden_idxs = []
-            for i in self._multifile[dataset_name]:
-                if i < end_idx and i > start_idx:
-                    forbidden_idxs.extend(range(i - prediction_samples, i, 1))
-            batch_indexes = [idx for idx in batch_indexes if idx not in forbidden_idxs]
-
-        ## Clip the step
-        clipped_step = copy.deepcopy(step)
-        if clipped_step < 0:  ## clip the step to zero
-            log.warning(f"The step is negative ({clipped_step}). The step is set to zero.", stacklevel=5)
-            clipped_step = 0
-        if clipped_step > (len(batch_indexes) - batch_size):  ## Clip the step to the maximum number of samples
-            log.warning(
-                f"The step ({clipped_step}) is greater than the number of available samples ({len(batch_indexes) - batch_size}). The step is set to the maximum number.",
-                stacklevel=5)
-            clipped_step = len(batch_indexes) - batch_size
-        ## Loss vector
-        check((batch_size + clipped_step) > 0, ValueError,
-              f"The sum of batch_size={batch_size} and the step={clipped_step} must be greater than 0.")
-
-        return batch_indexes, clipped_step
-
-    def __recurrentTrain(self, data, batch_indexes, batch_size, loss_gains, closed_loop, connect, prediction_samples,
-                         step, non_mandatory_inputs, mandatory_inputs, shuffle=False, train=True):
-        indexes = copy.deepcopy(batch_indexes)
-        json_inputs = self.model_def['States'] | self.model_def['Inputs']
-        aux_losses = torch.zeros(
-            [len(self.model_def['Minimizers']), round((len(indexes) + step) / (batch_size + step))])
-        ## Update with virtual states
-        self.model.update(closed_loop=closed_loop, connect=connect)
-        X = {}
-        batch_val = 0
-        while len(indexes) >= batch_size:
-            idxs = random.sample(indexes, batch_size) if shuffle else indexes[:batch_size]
-            for num in idxs:
-                indexes.remove(num)
-            if step > 0:
-                if len(indexes) >= step:
-                    step_idxs = random.sample(indexes, step) if shuffle else indexes[:step]
-                    for num in step_idxs:
-                        indexes.remove(num)
-                else:
-                    indexes = []
-            if train:
-                self.optimizer.zero_grad()  ## Reset the gradient
-            ## Reset
-            horizon_losses = {ind: [] for ind in range(len(self.model_def['Minimizers']))}
-            for key in non_mandatory_inputs:
-                if key in data.keys():
-                    ## with data
-                    X[key] = data[key][idxs]
-                else:  ## with zeros
-                    window_size = self._input_n_samples[key]
-                    dim = json_inputs[key]['dim']
-                    if 'type' in json_inputs[key]:
-                        X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=True)
-                    else:
-                        X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE,
-                                             requires_grad=False)
-                    self._states[key] = X[key]
-
-
-            for horizon_idx in range(prediction_samples + 1):
-                ## Get data
-                for key in mandatory_inputs:
-                    X[key] = data[key][[idx + horizon_idx for idx in idxs]]
-                ## Forward pass
-                out, minimize_out, out_closed_loop, out_connect = self.model(X)
-
-                if self.log_internal and train:
-                    assert (check_gradient_operations(self._states) == 0)
-                    assert (check_gradient_operations(data) == 0)
-                    internals_dict = {'XY': tensor_to_list(X), 'out': out, 'param': self.model.all_parameters,
-                                      'closedLoop': self.model.closed_loop_update, 'connect': self.model.connect_update}
-
-                ## Loss Calculation
-                for ind, (key, value) in enumerate(self.model_def['Minimizers'].items()):
-                    loss = self.loss_functions[key](minimize_out[value['A']], minimize_out[value['B']])
-                    loss = (loss * loss_gains[
-                        key]) if key in loss_gains.keys() else loss  ## Multiply by the gain if necessary
-                    horizon_losses[ind].append(loss)
-
-                ## Update
-                self._updateState(X, out_closed_loop, out_connect)
-
-                if self.log_internal and train:
-                    internals_dict['state'] = self._states
-                    self.__save_internal('inout_' + str(batch_val) + '_' + str(horizon_idx), internals_dict)
-
-            ## Calculate the total loss
-            total_loss = 0
-            for ind in range(len(self.model_def['Minimizers'])):
-                loss = sum(horizon_losses[ind]) / (prediction_samples + 1)
-                aux_losses[ind][batch_val] = loss.item()
-                total_loss += loss
-
-            ## Gradient Step
-            if train:
-                total_loss.backward()  ## Backpropagate the error
-                self.optimizer.step()
-                self.visualizer.showWeightsInTrain(batch=batch_val)
-            batch_val += 1
-
-        ## Remove virtual states
-        self._removeVirtualStates(connect, closed_loop)
-
-        ## return the losses
-        return aux_losses
-
-    def __Train(self, data, n_samples, batch_size, loss_gains, shuffle=True, train=True):
-        check((n_samples - batch_size + 1) > 0, ValueError,
-              f"The number of available sample are (n_samples_train - train_batch_size + 1) = {n_samples - batch_size + 1}.")
-        if shuffle:
-            randomize = torch.randperm(n_samples)
-            data = {key: val[randomize] for key, val in data.items()}
-        ## Initialize the train losses vector
-        aux_losses = torch.zeros([len(self.model_def['Minimizers']), n_samples // batch_size])
-        for idx in range(0, (n_samples - batch_size + 1), batch_size):
-            ## Build the input tensor
-            XY = {key: val[idx:idx + batch_size] for key, val in data.items()}
-            ## Reset gradient
-            if train:
-                self.optimizer.zero_grad()
-            ## Model Forward
-            _, minimize_out, _, _ = self.model(XY)  ## Forward pass
-            ## Loss Calculation
-            total_loss = 0
-            for ind, (key, value) in enumerate(self.model_def['Minimizers'].items()):
-                loss = self.loss_functions[key](minimize_out[value['A']], minimize_out[value['B']])
-                loss = (loss * loss_gains[
-                    key]) if key in loss_gains.keys() else loss  ## Multiply by the gain if necessary
-                aux_losses[ind][idx // batch_size] = loss.item()
-                total_loss += loss
-            ## Gradient step
-            if train:
-                total_loss.backward()
-                self.optimizer.step()
-                self.visualizer.showWeightsInTrain(batch=idx // batch_size)
-
-        ## return the losses
-        return aux_losses
