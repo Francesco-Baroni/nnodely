@@ -1,4 +1,4 @@
-import sys, os, unittest, torch, shutil
+import io, os, unittest, torch
 import numpy as np
 
 from nnodely import *
@@ -66,6 +66,18 @@ class ModelyTestVisualizer(unittest.TestCase):
         self.out7 = Output('out7', parfun_zz(z.last()))
         self.out8 = Output('out8', Fir(parfun_x(x.tw(1)) + parfun_y(y.tw(1), c_v)) + Fir(parfun_zz(x.tw(5), t_5, c_5_2)))
         self.out9 = Output('out9', Fir(parfun_2d(x.tw(1)) + parfun_3d(x.tw(1),x.tw(1))))
+
+    def setUp(self):
+        # Reindirizza stdout e stderr
+        self._original_stdout = sys.stdout
+        self._original_stderr = sys.stderr
+        sys.stdout = io.StringIO()
+        #sys.stderr = io.StringIO()
+
+    def tearDown(self):
+        # Ripristina stdout e stderr
+        sys.stdout = self._original_stdout
+        #sys.stderr = self._original_stderr
 
     def test_export_textvisualizer(self):
         t = TextVisualizer(5)

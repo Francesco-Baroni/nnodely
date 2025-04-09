@@ -1,4 +1,4 @@
-import sys, os, unittest
+import os, unittest
 
 import numpy as np
 
@@ -413,7 +413,7 @@ class ModelyJsonTest(unittest.TestCase):
 
         # m = MPLVisualizer(5)
         # m.showFunctions(list(example.json['Functions'].keys()), xlim=[[-5, 5], [-1, 1]])
-        exampleA = Modely(seed=2)
+        exampleA = Modely(visualizer=None, seed=2)
         with self.assertRaises(TypeError):
             exampleA.addModel('model', [out1, out2, out3])
         exampleA.addModel('model_A', [out1, out2])
@@ -422,7 +422,7 @@ class ModelyJsonTest(unittest.TestCase):
         exampleA.addModel('model_A2', [out1, out2, out4, out5])
         exampleA.neuralizeModel(0.25)
 
-        exampleB = Modely(seed=2)
+        exampleB = Modely(visualizer=None, seed=2)
         exampleB.addModel('model_B', [out3])
         exampleB.neuralizeModel(1)
 
