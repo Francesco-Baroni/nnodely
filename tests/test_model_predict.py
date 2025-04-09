@@ -1336,7 +1336,7 @@ class ModelyPredictTest(unittest.TestCase):
 
         out1 = Output('out1',fun_map(input2.tw(0.03)))
         out2 = Output('out2', fun(input2.tw(0.03)))
-        test = Modely()
+        test = Modely(visualizer=None)
         test.addModel('out',[out1,out2])
         test.neuralizeModel(0.01)
         results = test({'in2': [0, 1, 2]})
