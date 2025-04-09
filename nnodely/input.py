@@ -1,7 +1,7 @@
 import copy
 
 from nnodely.relation import NeuObj, Stream, ToStream
-from nnodely.utils import check, merge, enforce_types
+from nnodely.utils import check, merge, enforce_types, get_inputs
 from nnodely.part import SamplePart, TimePart
 from nnodely.timeoperation import Derivate, Integrate
 
@@ -262,4 +262,6 @@ class ClosedLoop(Stream, ToStream):
               KeyError, f"The state variable {obj2.name} is already connected.")
         self.json['States'][obj2.name][closedloop_name] = obj1.name
         if init is not None:
-            self.json['States'][obj2.name]['init'] = init.nameq
+            needed_inputs = get_inputs(self.json, init.name)
+            check(obj2.name not in needed_inputs, KeyError, f"Inconsistency Error: Cannot initialize the state variable {obj2.name} with the relation {init.name}.")
+            self.json['States'][obj2.name]['init'] = init.name

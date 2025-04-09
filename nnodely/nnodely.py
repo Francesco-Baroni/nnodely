@@ -319,6 +319,7 @@ class Modely:
                         X[key] = X[key].requires_grad_(True)
                 ## reset states
                 if count == 0 or prediction_samples=='auto':
+                    init_states = []
                     count = prediction_samples
                     for key in non_mandatory_inputs: ## Get non mandatory data (from inputs, from states, or with zeros)
                         ## if prediction_samples is 'auto' and i have enough samples
@@ -335,6 +336,10 @@ class Modely:
                             dim = json_inputs[key]['dim']
                             X[key] = torch.zeros(size=(1, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
                             self.states[key] = X[key]
+                            if 'init' in json_inputs[key].keys(): ## with init relation
+                                self.model.connect_update[key] = json_inputs[key]['init']
+                                init_states.append(key)
+
                         if 'type' in json_inputs[key].keys():
                             X[key] = X[key].requires_grad_(True)
                     first = False
@@ -346,6 +351,11 @@ class Modely:
                     count -= 1
                 ## Forward pass
                 result, _, out_closed_loop, out_connect = self.model(X)
+
+                if init_states:
+                    for key in init_states:
+                        del self.model.connect_update[key]
+                    init_states = []
 
                 ## Append the prediction of the current sample to the result dictionary
                 for key in self.model_def['Outputs'].keys():
@@ -1457,13 +1467,13 @@ class Modely:
     
     def __updateState(self, X, out_closed_loop, out_connect):
         ## Update
+        for key, value in out_connect.items():
+            X[key] = value
+            self.states[key] = X[key].clone().detach()
         for key, val in out_closed_loop.items():
             shift = val.shape[1]  ## take the output time dimension
             X[key] = torch.roll(X[key], shifts=-1, dims=1) ## Roll the time window
             X[key][:, -shift:, :] = val ## substitute with the predicted value
-            self.states[key] = X[key].clone().detach()
-        for key, value in out_connect.items():
-            X[key] = value
             self.states[key] = X[key].clone().detach()
 
     def __recurrentTrain(self, data, batch_indexes, batch_size, loss_gains, closed_loop, connect, prediction_samples, step, non_mandatory_inputs, mandatory_inputs, shuffle=False, train=True):
@@ -1488,10 +1498,10 @@ class Modely:
             if train:
                 self.optimizer.zero_grad() ## Reset the gradient
             ## Reset 
+            init_states = []
             horizon_losses = {ind: [] for ind in range(len(self.model_def['Minimizers']))}
             for key in non_mandatory_inputs:
-                if key in data.keys():
-                ## with data
+                if key in data.keys(): ## with data
                     X[key] = data[key][idxs]
                 else: ## with zeros
                     window_size = self.input_n_samples[key]
@@ -1501,6 +1511,11 @@ class Modely:
                     else:
                         X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
                     self.states[key] = X[key]
+
+                    if 'init' in json_inputs[key].keys(): ## with init relation
+                        #del self.model.closed_loop_update[key]
+                        self.model.connect_update[key] = json_inputs[key]['init']
+                        init_states.append(key)
 
             for horizon_idx in range(prediction_samples + 1):
                 ## Get data 
@@ -1522,6 +1537,11 @@ class Modely:
 
                 ## Update
                 self.__updateState(X, out_closed_loop, out_connect)
+                ## remove initialization in closed_loop
+                if init_states:
+                    for key in init_states:
+                        del self.model.connect_update[key]
+                    init_states = []
 
                 if self.log_internal and train:
                     internals_dict['state'] = self.states

@@ -4,7 +4,7 @@ import copy
 
 import numpy as np
 
-from nnodely.utils import check, merge, enforce_types, ForbiddenTags
+from nnodely.utils import check, merge, enforce_types, ForbiddenTags, get_inputs
 
 from nnodely.logger import logging, nnLogger
 log = nnLogger(__name__, logging.CRITICAL)
@@ -324,6 +324,8 @@ class Stream(Relation):
               f"The state variable {obj.name} is already connected.")
         self.json['States'][obj.name]['closedLoop'] = self.name
         if init is not None:
+            needed_inputs = get_inputs(self.json, init.name)
+            check(obj.name not in needed_inputs, KeyError, f"Inconsistency Error: Cannot initialize the state variable {obj.name} with the relation {init.name}.")
             self.json['States'][obj.name]['init'] = init.name
         return Stream(self.name, self.json, self.dim,0 )
 
