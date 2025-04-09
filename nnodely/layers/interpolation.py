@@ -4,11 +4,11 @@ import torch.nn as nn
 
 from collections.abc import Callable
 
-from nnodely.relation import NeuObj, Stream, AutoToStream
-from nnodely.model import Model
-from nnodely.utils import check, merge, enforce_types
+from nnodely.basic.relation import NeuObj, Stream, AutoToStream
+from nnodely.basic.model import Model
+from nnodely.support.utils import check, merge, enforce_types
 
-from nnodely.logger import logging, nnLogger
+from nnodely.support.logger import logging, nnLogger
 log = nnLogger(__name__, logging.CRITICAL)
 
 interpolation_relation_name = 'Interpolation'

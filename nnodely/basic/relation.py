@@ -2,9 +2,9 @@ import copy
 
 import numpy as np
 
-from nnodely.utils import check, merge, enforce_types, ForbiddenTags
+from nnodely.support.utils import check, merge, enforce_types, ForbiddenTags
 
-from nnodely.logger import logging, nnLogger
+from nnodely.support.logger import logging, nnLogger
 log = nnLogger(__name__, logging.CRITICAL)
 
 MAIN_JSON = {
@@ -21,7 +21,7 @@ MAIN_JSON = {
 CHECK_NAMES = True
 
 def toStream(obj):
-    from nnodely.parameter import Parameter, Constant
+    from nnodely.layers.parameter import Parameter, Constant
     if type(obj) in (int,float,list,np.ndarray):
         obj = Constant('Constant'+str(NeuObj.count), obj)
         #obj = Stream(obj, MAIN_JSON, {'dim': 1}) if type(obj) in (int, float) else obj
@@ -65,47 +65,47 @@ class NeuObj():
 
 class Relation():
     def __add__(self, obj):
-        from nnodely.arithmetic import Add
+        from nnodely.layers.arithmetic import Add
         return Add(self, obj)
 
     def __radd__(self, obj):
-        from nnodely.arithmetic import Add
+        from nnodely.layers.arithmetic import Add
         return Add(obj, self)
 
     def __sub__(self, obj):
-        from nnodely.arithmetic import Sub
+        from nnodely.layers.arithmetic import Sub
         return Sub(self, obj)
 
     def __rsub__(self, obj):
-        from nnodely.arithmetic import Sub
+        from nnodely.layers.arithmetic import Sub
         return Sub(obj, self)
 
     def __truediv__(self, obj):
-        from nnodely.arithmetic import Div
+        from nnodely.layers.arithmetic import Div
         return Div(self, obj)
 
     def __rtruediv__(self, obj):
-        from nnodely.arithmetic import Div
+        from nnodely.layers.arithmetic import Div
         return Div(obj, self)
 
     def __mul__(self, obj):
-        from nnodely.arithmetic import Mul
+        from nnodely.layers.arithmetic import Mul
         return Mul(self, obj)
 
     def __rmul__(self, obj):
-        from nnodely.arithmetic import Mul
+        from nnodely.layers.arithmetic import Mul
         return Mul(obj, self)
 
     def __pow__(self, obj):
-        from nnodely.arithmetic import Pow
+        from nnodely.layers.arithmetic import Pow
         return Pow(self, obj)
 
     def __rpow__(self, obj):
-        from nnodely.arithmetic import Pow
+        from nnodely.layers.arithmetic import Pow
         return Pow(obj, self)
 
     def __neg__(self):
-        from nnodely.arithmetic import Neg
+        from nnodely.layers.arithmetic import Neg
         return Neg(self)
 
 class Stream(Relation):
@@ -157,7 +157,7 @@ class Stream(Relation):
             A Stream representing the TimePart object with the selected time window.
 
         """
-        from nnodely.input import State, Connect
+        from nnodely.layers.input import State, Connect
         if type(tw) is list:
             check(0 >= tw[1] > tw[0] and tw[0] < 0, ValueError, "The dimension of the sample window must be in the past.")
         s = State(self.name+"_tw"+str(NeuObj.count),dimensions=self.dim['dim'])
@@ -184,7 +184,7 @@ class Stream(Relation):
             A Stream representing the SamplePart object with the selected samples.
 
         """
-        from nnodely.input import State, Connect
+        from nnodely.layers.input import State, Connect
         if type(sw) is list:
             check(0 >= sw[1] > sw[0] and sw[0] < 0, ValueError, "The dimension of the sample window must be in the past.")
         s = State(self.name+"_sw"+str(NeuObj.count),dimensions=self.dim['dim'])
@@ -250,7 +250,7 @@ class Stream(Relation):
         Stream
             A Stream of the signal represents the integral or derivation operation.
         """
-        from nnodely.timeoperation import Derivate, Integrate
+        from nnodely.layers.timeoperation import Derivate, Integrate
         check(order != 0, ValueError, "The order must be a positive or negative integer not a zero")
         if order > 0:
             for i in range(order):
@@ -281,7 +281,7 @@ class Stream(Relation):
         KeyError
             If the state variable is already connected.
         """
-        from nnodely.input import State
+        from nnodely.layers.input import State
         check(type(obj) is State, TypeError,
               f"The {obj} must be a State and not a {type(obj)}.")
         self.json = merge(self.json, obj.json)
@@ -311,7 +311,7 @@ class Stream(Relation):
         KeyError
             If the state variable is already connected.
         """
-        from nnodely.input import State
+        from nnodely.layers.input import State
         check(type(obj) is State, TypeError,
               f"The {obj} must be a State and not a {type(obj)}.")
         self.json = merge(self.json, obj.json)

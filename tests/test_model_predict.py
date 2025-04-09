@@ -2,8 +2,8 @@ import sys, os, torch, unittest
 import numpy as np
 
 from nnodely import *
-from nnodely.relation import NeuObj
-from nnodely.logger import logging, nnLogger
+from nnodely.basic.relation import NeuObj
+from nnodely.support.logger import logging, nnLogger
 
 log = nnLogger(__name__, logging.CRITICAL)
 log.setAllLevel(logging.CRITICAL)
@@ -1926,20 +1926,20 @@ class ModelyPredictTest(unittest.TestCase):
         test.addModel('model', [approx_dy_dx, approx_y])
         test.neuralizeModel()
         results = test({'x':[1,2]})
-        self.assertAlmostEqual(results['out'][0], parametric_fun(torch.tensor(1), test.model.all_parameters['a'],
-                                                            test.model.all_parameters['b'],
-                                                            test.model.all_parameters['c'],
-                                                            test.model.all_parameters['d']).detach().numpy().tolist()[0],places=5)
-        self.assertAlmostEqual(results['d_out'][0], dx_parametric_fun(torch.tensor(1), test.model.all_parameters['a'],
-                                                            test.model.all_parameters['b'],
-                                                            test.model.all_parameters['c'],
-                                                            test.model.all_parameters['d']).detach().numpy().tolist()[0],places=5)
-        self.assertAlmostEqual(results['out'][1], parametric_fun(torch.tensor(2), test.model.all_parameters['a'],
-                                                            test.model.all_parameters['b'],
-                                                            test.model.all_parameters['c'],
-                                                            test.model.all_parameters['d']).detach().numpy().tolist()[0],places=5)
-        self.assertAlmostEqual(results['d_out'][1], dx_parametric_fun(torch.tensor(2), test.model.all_parameters['a'],
-                                                            test.model.all_parameters['b'],
-                                                            test.model.all_parameters['c'],
-                                                            test.model.all_parameters['d']).detach().numpy().tolist()[0],places=5)
+        self.assertAlmostEqual(results['out'][0], parametric_fun(torch.tensor(1), torch.tensor(test.parameters['a']),
+                                                            torch.tensor(test.parameters['b']),
+                                                            torch.tensor(test.parameters['c']),
+                                                            torch.tensor(test.parameters['d'])).detach().numpy().tolist()[0],places=5)
+        self.assertAlmostEqual(results['d_out'][0], dx_parametric_fun(torch.tensor(1), torch.tensor(test.parameters['a']),
+                                                            torch.tensor(test.parameters['b']),
+                                                            torch.tensor(test.parameters['c']),
+                                                            torch.tensor(test.parameters['d'])).detach().numpy().tolist()[0],places=5)
+        self.assertAlmostEqual(results['out'][1], parametric_fun(torch.tensor(2), torch.tensor(test.parameters['a']),
+                                                            torch.tensor(test.parameters['b']),
+                                                            torch.tensor(test.parameters['c']),
+                                                            torch.tensor(test.parameters['d'])).detach().numpy().tolist()[0],places=5)
+        self.assertAlmostEqual(results['d_out'][1], dx_parametric_fun(torch.tensor(2), torch.tensor(test.parameters['a']),
+                                                            torch.tensor(test.parameters['b']),
+                                                            torch.tensor(test.parameters['c']),
+                                                            torch.tensor(test.parameters['d'])).detach().numpy().tolist()[0],places=5)
 

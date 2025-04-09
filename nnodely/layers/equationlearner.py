@@ -1,15 +1,15 @@
 import inspect
 
-from nnodely.relation import NeuObj, Stream
-from nnodely.utils import check, enforce_types
+from nnodely.basic.relation import NeuObj, Stream
+from nnodely.support.utils import check, enforce_types
 
-from nnodely.linear import Linear
-from nnodely.part import Select, Concatenate
-from nnodely.fuzzify import Fuzzify
-from nnodely.parametricfunction import ParamFun
-from nnodely.activation import Relu, ELU, Identity, Sigmoid
-from nnodely.trigonometric import Sin, Cos, Tan, Tanh, Cosh, Sech
-from nnodely.arithmetic import Add, Mul, Sub, Neg, Pow, Sum
+from nnodely.layers.linear import Linear
+from nnodely.layers.part import Select, Concatenate
+from nnodely.layers.fuzzify import Fuzzify
+from nnodely.layers.parametricfunction import ParamFun
+from nnodely.layers.activation import Relu, ELU, Identity, Sigmoid
+from nnodely.layers.trigonometric import Sin, Cos, Tan, Tanh, Cosh, Sech
+from nnodely.layers.arithmetic import Add, Mul, Sub, Neg, Pow, Sum
 
 equationlearner_relation_name = 'EquationLearner'
 Available_functions = [Sin, Cos, Tan, Cosh, Tanh, Sech, Add, Mul, Sub, Neg, Pow, Sum, Concatenate, Relu, ELU, Identity, Sigmoid]

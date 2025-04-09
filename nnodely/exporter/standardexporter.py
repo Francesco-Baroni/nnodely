@@ -1,15 +1,17 @@
 import os, torch
 
-from nnodely.exporter.exporter import Exporter
+from nnodely.visualizer import Visualizer
+from nnodely.exporter.emptyexporter import EmptyExporter
 from nnodely.exporter.reporter import Reporter
 from nnodely.exporter.export import save_model, load_model, export_python_model, export_pythononnx_model, export_onnx_model, import_python_model, import_onnx_model, onnx_inference
-from nnodely.utils import check
+from nnodely.support.utils import check, enforce_types
 
-from nnodely.logger import logging, nnLogger
+from nnodely.support.logger import logging, nnLogger
 log = nnLogger(__name__, logging.CRITICAL)
 
-class StandardExporter(Exporter):
-    def __init__(self, workspace=None, visualizer=None, save_history=False):
+class StandardExporter(EmptyExporter):
+    @enforce_types
+    def __init__(self, workspace:str|None=None, visualizer:Visualizer|None=None, *, save_history:bool=False):
         super().__init__(workspace, visualizer, save_history)
 
     def getWorkspace(self):
@@ -54,7 +56,7 @@ class StandardExporter(Exporter):
         file_name = name + ".py"
         model_path = os.path.join(self.workspace_folder, file_name) if model_folder is None else os.path.join(model_folder, file_name)
         ## Export to python file
-        export_python_model(model_def.json, model, model_path)
+        export_python_model(model_def.getJson(), model, model_path)
         self.visualizer.exportModel('Python Torch Model', model_path)
 
     def importPythonModel(self, name = 'net', model_folder = None):

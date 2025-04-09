@@ -2,8 +2,8 @@ import sys, os, unittest, torch, shutil, torch.onnx, importlib
 import numpy as np
 
 from nnodely import *
-from nnodely.relation import NeuObj, Stream
-from nnodely.logger import logging, nnLogger
+from nnodely.basic.relation import NeuObj, Stream
+from nnodely.support.logger import logging, nnLogger
 
 log = nnLogger(__name__, logging.CRITICAL)
 log.setAllLevel(logging.CRITICAL)
@@ -53,16 +53,16 @@ class ModelyExportTest(unittest.TestCase):
         ## Inference
         sample = {'x':[1], 'y':[2], 'z':[3], 'target':[18]}
         train_result = test(sample)
-        train_parameters = test.model.all_parameters
+        train_parameters = test.parameters
         # Export the model
         test.exportPythonModel()
         # Import the model
         test.importPythonModel(name=network_name)
         # Inference with imported model
         self.assertEqual(train_result, test(sample))
-        self.assertEqual(train_parameters['a'], test.model.all_parameters['a'])
-        self.assertEqual(train_parameters['b'], test.model.all_parameters['b'])
-        self.assertEqual(train_parameters['c'], test.model.all_parameters['c'])
+        self.assertEqual(train_parameters['a'], test.parameters['a'])
+        self.assertEqual(train_parameters['b'], test.parameters['b'])
+        self.assertEqual(train_parameters['c'], test.parameters['c'])
 
         if os.path.exists(test.getWorkspace()):
             shutil.rmtree(test.getWorkspace())

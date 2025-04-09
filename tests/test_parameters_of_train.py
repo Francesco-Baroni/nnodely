@@ -2,8 +2,8 @@ import unittest, os, sys
 import numpy as np
 
 from nnodely import *
-from nnodely.relation import NeuObj
-from nnodely.logger import logging, nnLogger
+from nnodely.basic.relation import NeuObj
+from nnodely.support.logger import logging, nnLogger
 
 log = nnLogger(__name__, logging.CRITICAL)
 log.setAllLevel(logging.CRITICAL)
@@ -46,7 +46,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         test.loadData(name='dataset', source=data_folder, format=data_struct, skiplines=4, delimiter='\t', header=None)
         test.trainModel(splits=[80,10,10])
 
-        self.assertEqual((15-6), test.num_of_samples['dataset'])
+        self.assertEqual((15-6), test._num_of_samples['dataset'])
         self.assertEqual(round((15-6)*80/100),test.run_training_params['n_samples_train'])
         self.assertEqual(round((15-6)*10/100),test.run_training_params['n_samples_val'])
         self.assertEqual(round((15-6)*10/100),test.run_training_params['n_samples_test'])
@@ -88,7 +88,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         self.assertEqual(346,test.run_training_params['n_samples_train']) ## ((500 - 5) * 0.7)  = 346
         self.assertEqual(99,test.run_training_params['n_samples_val']) ## ((500 - 5) * 0.2)  = 99
         self.assertEqual(50,test.run_training_params['n_samples_test']) ## ((500 - 5) * 0.1)  = 50
-        self.assertEqual(495,test.num_of_samples['dataset'])
+        self.assertEqual(495, test._num_of_samples['dataset'])
         self.assertEqual(4,test.run_training_params['train_batch_size'])
         self.assertEqual(4,test.run_training_params['val_batch_size'])
         self.assertEqual(1,test.run_training_params['test_batch_size'])
@@ -138,7 +138,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         self.assertEqual((len(data_x)-1)*100/100,test.run_training_params['n_samples_train']) ## ((500 - 1) * 1)  = 499
         self.assertEqual(0,test.run_training_params['n_samples_val']) ## ((500 - 5) * 0)  = 0
         self.assertEqual(0,test.run_training_params['n_samples_test']) ## ((500 - 5) * 0)  = 0
-        self.assertEqual((len(data_x)-1)*100/100,test.num_of_samples['dataset'])
+        self.assertEqual((len(data_x)-1) * 100 / 100, test._num_of_samples['dataset'])
         self.assertEqual(4,test.run_training_params['train_batch_size'])
         self.assertEqual(0,test.run_training_params['val_batch_size'])
         self.assertEqual(0,test.run_training_params['test_batch_size'])
@@ -184,7 +184,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         self.assertEqual(round((len(data_x) - 0) * 80 / 100), test.run_training_params['n_samples_train'])
         self.assertEqual((len(data_x) - 0) * 20 / 100, test.run_training_params['n_samples_val'])
         self.assertEqual(0, test.run_training_params['n_samples_test'])
-        self.assertEqual((len(data_x) - 0) * 100 / 100, test.num_of_samples['dataset'])
+        self.assertEqual((len(data_x) - 0) * 100 / 100, test._num_of_samples['dataset'])
         self.assertEqual(4, test.run_training_params['train_batch_size'])
         self.assertEqual(4, test.run_training_params['val_batch_size'])
         self.assertEqual(0, test.run_training_params['test_batch_size'])
@@ -233,7 +233,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         self.assertEqual(round((len(data_x) - 1) * 80 / 100), test.run_training_params['n_samples_train'])
         self.assertEqual(round((len(data_x) - 1) * 20 / 100), test.run_training_params['n_samples_val'])
         self.assertEqual(0, test.run_training_params['n_samples_test'])
-        self.assertEqual((len(data_x) - 1) * 100 / 100, test.num_of_samples['dataset'])
+        self.assertEqual((len(data_x) - 1) * 100 / 100, test._num_of_samples['dataset'])
         self.assertEqual(4, test.run_training_params['train_batch_size'])
         self.assertEqual(4, test.run_training_params['val_batch_size'])
         self.assertEqual(0, test.run_training_params['test_batch_size'])
@@ -266,7 +266,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
 
         data_struct = ['x','F','x2','y2','','A1x','A1y','B1x','B1y','','A2x','A2y','B2x','out','','x3','in1','in2','time']
         test.loadData(name='dataset', source=data_folder, format=data_struct, skiplines=4, delimiter='\t', header=None)
-        self.assertEqual((10,5,1),test.data['dataset']['in1'].shape)
+        self.assertEqual((10,5,1), test._data['dataset']['in1'].shape)
 
         training_params = {}
         training_params['train_batch_size'] = 1
@@ -289,7 +289,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         self.assertEqual(7,test.run_training_params['n_samples_train'])
         self.assertEqual(2,test.run_training_params['n_samples_val'])
         self.assertEqual(1,test.run_training_params['n_samples_test'])
-        self.assertEqual(10,test.num_of_samples['dataset'])
+        self.assertEqual(10, test._num_of_samples['dataset'])
         self.assertEqual(1,test.run_training_params['train_batch_size'])
         self.assertEqual(1,test.run_training_params['val_batch_size'])
         self.assertEqual(1,test.run_training_params['test_batch_size'])
@@ -315,7 +315,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
 
         data_struct = ['x','F','x2','y2','','A1x','A1y','B1x','B1y','','A2x','A2y','B2x','out','','x3','in1','in2','time']
         test.loadData(name='dataset',source=data_folder, format=data_struct, skiplines=4, delimiter='\t', header=None)
-        self.assertEqual((10,5,1),test.data['dataset']['in1'].shape)
+        self.assertEqual((10,5,1), test._data['dataset']['in1'].shape)
 
         training_params = {}
         training_params['train_batch_size'] = 25
@@ -331,7 +331,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         # 10 / 1 * 0.5 = 5 for training
         # 10 / 1 * 0.0 = 0 for validation
         # 10 / 1 * 0.5 = 5 for test
-        self.assertEqual((15 - 5), test.num_of_samples['dataset'])
+        self.assertEqual((15 - 5), test._num_of_samples['dataset'])
         self.assertEqual(round((15 - 5) * 50 / 100), test.run_training_params['n_samples_train'])
         self.assertEqual(round((15 - 5) * 0 / 100), test.run_training_params['n_samples_val'])
         self.assertEqual(round((15 - 5) * 50 / 100), test.run_training_params['n_samples_test'])
@@ -361,7 +361,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         data_struct = ['x', 'F', 'x2', 'y2', '', 'A1x', 'A1y', 'B1x', 'B1y', '', 'A2x', 'A2y', 'B2x', 'out', '', 'x3',
                        'in1', 'in2', 'time']
         test.loadData(name='dataset', source=data_folder, format=data_struct, skiplines=4, delimiter='\t', header=None)
-        self.assertEqual((10, 5, 1), test.data['dataset']['in1'].shape)
+        self.assertEqual((10, 5, 1), test._data['dataset']['in1'].shape)
 
         training_params = {}
         training_params['train_batch_size'] = 2
@@ -379,7 +379,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         # 10 * 0.4 = 2 for training
         # 10 * 0.3 = 1 for validation
         # 10 * 0.3 = 1 for test
-        self.assertEqual((15 - 5), test.num_of_samples['dataset'])
+        self.assertEqual((15 - 5), test._num_of_samples['dataset'])
         self.assertEqual(round((15 - 5) * 40 / 100), test.run_training_params['n_samples_train'])
         self.assertEqual(round((15 - 5) * 30 / 100), test.run_training_params['n_samples_val'])
         self.assertEqual(round((15 - 5) * 30 / 100), test.run_training_params['n_samples_test'])
@@ -409,7 +409,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         data_struct = ['x', 'F', 'x2', 'y2', '', 'A1x', 'A1y', 'B1x', 'B1y', '', 'A2x', 'A2y', 'B2x', 'out', '', 'x3',
                        'in1', 'in2', 'time']
         test.loadData(name='dataset', source=data_folder, format=data_struct, skiplines=4, delimiter='\t', header=None)
-        self.assertEqual((10, 5, 1), test.data['dataset']['in1'].shape)
+        self.assertEqual((10, 5, 1), test._data['dataset']['in1'].shape)
 
         training_params = {}
         training_params['train_batch_size'] = 2
@@ -427,7 +427,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         # 10 * 0.8 = 8 for training
         # 10 * 0.1 = 1 for validation
         # 10 * 0.1 = 1 for test
-        self.assertEqual((15 - 5), test.num_of_samples['dataset'])
+        self.assertEqual((15 - 5), test._num_of_samples['dataset'])
         self.assertEqual(round((15 - 5) * 80 / 100), test.run_training_params['n_samples_train'])
         self.assertEqual(round((15 - 5) * 10 / 100), test.run_training_params['n_samples_val'])
         self.assertEqual(round((15 - 5) * 10 / 100), test.run_training_params['n_samples_test'])
@@ -462,7 +462,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
 
         test.loadData(name='dataset', source=dataset, skiplines=0)
         self.assertEqual((15, 5, 1),
-                         test.data['dataset']['in1'].shape)  ## 20 data - 5 tw = 15 sample | 0.05/0.01 = 5 in1
+                         test._data['dataset']['in1'].shape)  ## 20 data - 5 tw = 15 sample | 0.05/0.01 = 5 in1
 
         training_params = {}
         training_params['train_batch_size'] = 2
@@ -480,7 +480,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         # 15 * 0.8 = 12 for training
         # 15 * 0.2 = 3 for validation
         # 15 * 0.0 = 0 for test
-        self.assertEqual((20 - 5), test.num_of_samples['dataset'])
+        self.assertEqual((20 - 5), test._num_of_samples['dataset'])
         self.assertEqual(round((20 - 5) * 80 / 100), test.run_training_params['n_samples_train'])
         self.assertEqual(round((20 - 5) * 20 / 100), test.run_training_params['n_samples_val'])
         self.assertEqual(round((20 - 5) * 0 / 100), test.run_training_params['n_samples_test'])
@@ -535,9 +535,9 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         test.trainModel(train_dataset='train_dataset', validation_dataset='validation_dataset',
                         test_dataset='test_dataset', training_params=training_params)
 
-        self.assertEqual(9, test.num_of_samples['train_dataset'])
-        self.assertEqual(5, test.num_of_samples['validation_dataset'])
-        self.assertEqual(7, test.num_of_samples['test_dataset'])
+        self.assertEqual(9, test._num_of_samples['train_dataset'])
+        self.assertEqual(5, test._num_of_samples['validation_dataset'])
+        self.assertEqual(7, test._num_of_samples['test_dataset'])
         self.assertEqual(9, test.run_training_params['n_samples_train'])
         self.assertEqual(5, test.run_training_params['n_samples_val'])
         self.assertEqual(7, test.run_training_params['n_samples_test'])
@@ -580,7 +580,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         training_params['num_of_epochs'] = 7
         test.trainModel(splits=[80, 10, 10], training_params=training_params)
 
-        self.assertEqual(22, test.num_of_samples['dataset'])
+        self.assertEqual(22, test._num_of_samples['dataset'])
         self.assertEqual(18, test.run_training_params['n_samples_train'])
         self.assertEqual(2, test.run_training_params['n_samples_val'])
         self.assertEqual(2, test.run_training_params['n_samples_test'])
@@ -602,7 +602,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         training_params['test_batch_size'] = 2
         test.trainModel(splits=[80, 10, 10], training_params=training_params)
 
-        self.assertEqual(22, test.num_of_samples['dataset'])
+        self.assertEqual(22, test._num_of_samples['dataset'])
         self.assertEqual(18, test.run_training_params['n_samples_train'])
         self.assertEqual(2, test.run_training_params['n_samples_val'])
         self.assertEqual(2, test.run_training_params['n_samples_test'])

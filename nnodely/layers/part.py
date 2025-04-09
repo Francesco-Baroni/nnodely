@@ -3,9 +3,9 @@ import copy
 import torch.nn as nn
 import torch
 
-from nnodely.relation import ToStream, Stream, toStream
-from nnodely.model import Model
-from nnodely.utils import check, enforce_types, merge
+from nnodely.basic.relation import ToStream, Stream, toStream
+from nnodely.basic.model import Model
+from nnodely.support.utils import check, enforce_types, merge
 
 part_relation_name = 'Part'
 select_relation_name = 'Select'

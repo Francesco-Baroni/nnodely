@@ -315,7 +315,7 @@ and [[code extended]](https://github.com/tonegas/nnodely-applications/blob/main/
 <a id="6">[6]</a> 
 Hector Perez-Villeda, Justus Piater, Matteo Saveriano. (2023).
 Learning and extrapolation of robotic skills using task-parameterized equation learner networks.
-Robotics and Autonomous Systems. https://doi.org/10.1016/j.robot.2022.104309
+Robotics and Autonomous Systems. https://doi.org/10.1016/j.robot.2022.104309 (look the [[code]](https://github.com/tonegas/nnodely-applications/blob/main/equation_learner/equation_learner.ipynb))
 
 <a id="7">[7]</a> 
 M. Raissi. P. Perdikaris b, G.E. Karniadakis a. (2019).

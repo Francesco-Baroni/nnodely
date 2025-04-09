@@ -1,7 +1,7 @@
 import copy
 import torch
 
-from nnodely.utils import check
+from nnodely.support.utils import check
 
 class Optimizer:
     """
