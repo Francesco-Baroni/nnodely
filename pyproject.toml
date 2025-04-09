@@ -34,9 +34,13 @@ dynamic = ["version"]
 
 [tool.setuptools]
 packages = ["nnodely",
+            "nnodely.basic",
+            "nnodely.exporter",
+            "nnodely.layers",
+            "nnodely.operators",
+            "nnodely.supprot",
             "nnodely.visualizer",
             "nnodely.visualizer.dynamicmpl",
-            "nnodely.exporter",
             "mplplots"]
 
 #[tool.setuptools.data-files]
