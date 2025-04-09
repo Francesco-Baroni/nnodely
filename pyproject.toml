@@ -38,7 +38,7 @@ packages = ["nnodely",
             "nnodely.exporter",
             "nnodely.layers",
             "nnodely.operators",
-            "nnodely.supprot",
+            "nnodely.support",
             "nnodely.visualizer",
             "nnodely.visualizer.dynamicmpl",
             "mplplots"]
