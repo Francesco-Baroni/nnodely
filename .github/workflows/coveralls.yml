@@ -29,11 +29,9 @@ jobs:
     - name: Tests with coverage
       run: |
         coverage run --omit='./results/*','./docs/*','./examples/*' -m unittest discover tests
-
     - name: Create coverage xml
-      rum: |
+      run: |
         coverage xml
-
     - name: Coveralls
       uses: coverallsapp/github-action@v2.3.6
 
