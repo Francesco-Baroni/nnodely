@@ -112,6 +112,10 @@ class ModelyTestVisualizer(unittest.TestCase):
         test.importPythonModel()
         test.exportReport()
 
+        test = Modely(visualizer='Standard')
+        test.addModel('modelA', self.out)
+        test.neuralizeModel(0.5)
+
     def test_export_mplvisualizer(self):
         m = MPLVisualizer(5)
         test = Modely(visualizer=m, seed=42)
