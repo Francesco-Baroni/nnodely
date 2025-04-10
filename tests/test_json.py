@@ -5,6 +5,7 @@ import numpy as np
 from nnodely import *
 from nnodely.basic.relation import NeuObj, Stream
 from nnodely.support.logger import logging, nnLogger
+from nnodely.support.utils import subjson
 
 log = nnLogger(__name__, logging.CRITICAL)
 log.setAllLevel(logging.CRITICAL)
@@ -624,5 +625,43 @@ class ModelyJsonTest(unittest.TestCase):
         self.assertEqual((1, 1, 3), np.array(results['out41']).shape)
         self.assertEqual((1, 1, 3), np.array(results['out5']).shape)
         self.assertEqual((1, 1, 3), np.array(results['out51']).shape)
+
+    def test_multi_model_json_and_subjson(self):
+        NeuObj.clearNames()
+        x = Input('x')
+        y = State('y')
+        target = Input('target')
+
+        c1 = Constant('c1', values=5.0)
+        c3 = Constant('c3', values=5.0)
+
+        rel2 = Linear(W=Parameter('W2', values=[[2.0]]), b=False)(y.last())
+        rel4 = Linear(W=Parameter('W4', values=[[4.0]]), b=False)(y.last())
+        rel2.closedLoop(y)
+        
+        def fun2(x, a):
+            return x * a
+        
+        def fun4(x, b):
+            return x + b
+
+        out1 = Output('out1', c1 + Linear(W=Parameter('W1', values=[[1.0]]), b=False)(x.last()))
+        out2 = Output('out2', rel2 + ParamFun(fun2, parameters_and_constants=[c1])(y.last()))
+        out3 = Output('out3', c3 + Linear(W=Parameter('W3', values=[[3.0]]), b=False)(x.last()))
+        out4 = Output('out4', rel4 + ParamFun(fun4, parameters_and_constants=[c1])(y.last()))
+
+        nn = Modely(visualizer=TextVisualizer())
+        nn.addModel('model_A', [out1, out2])
+        nn.addModel('model_B', [out3, out4])
+        nn.addMinimize('error_A', out1, target.last())
+        nn.addMinimize('error_B', out3, target.last())
+        nn.neuralizeModel(2.0)
+        
+        subjson_A = subjson(nn.json, 'model_A')
+        subjson_B = subjson(nn.json, 'model_B')
+        print("####### JSON MODEL A #######")
+        print(subjson_A)
+        print("####### JSON MODEL B #######")
+        print(subjson_B)
 
 

@@ -78,6 +78,24 @@ def get_inputs(json, relation):
      
     return inputs
 
+def subjson(json, models:str|list):
+    sub_json = {}
+    if isinstance(models, str):
+        models = [models]
+    for model in models:
+        if model not in json['Models']:
+            log.warning(f"Model [{model}] not found! continue with the next one.")
+            continue
+        for category, items in json['Models'][model].items():
+            sub_json[category] = {key:value for key, value in json[category].items() if key in items}
+
+    if sub_json:
+        sub_json['Models'] = {}
+        for model in models:
+            sub_json['Models'][model] = json['Models'][model]
+
+    return sub_json
+
 def enforce_types(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
