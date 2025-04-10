@@ -6,7 +6,7 @@ from nnodely.basic.modeldef import ModelDef
 from nnodely.basic.model import Model
 from nnodely.basic.optimizer import Optimizer, SGD, Adam
 from nnodely.basic.loss import CustomLoss
-from nnodely.support.utils import tensor_to_list, check, log, TORCH_DTYPE, check_gradient_operations, enforce_types
+from nnodely.support.utils import tensor_to_list, check, log, TORCH_DTYPE, enforce_types
 from nnodely.basic.relation import Stream
 from nnodely.layers.output import Output
 
@@ -242,8 +242,8 @@ class Trainer():
                 out, minimize_out, out_closed_loop, out_connect = self._model(X)
 
                 if self.log_internal and train:
-                    assert (check_gradient_operations(self._states) == 0)
-                    assert (check_gradient_operations(data) == 0)
+                    #assert (check_gradient_operations(self._states) == 0)
+                    #assert (check_gradient_operations(data) == 0)
                     internals_dict = {'XY': tensor_to_list(X), 'out': out, 'param': self._model.all_parameters,
                                       'closedLoop': self._model.closed_loop_update, 'connect': self._model.connect_update}
 

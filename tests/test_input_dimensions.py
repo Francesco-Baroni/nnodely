@@ -107,7 +107,6 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
 
         #self.assertEqual(0.05,test.input_tw_backward['in2'])
         #self.assertEqual(0.03,test.input_tw_forward['in2'])
-        print(test.json)
         self.assertEqual(5,test.json['Inputs']['in2']['ns'][0])
         self.assertEqual(3,test.json['Inputs']['in2']['ns'][1])
         self.assertEqual(8,test.json['Inputs']['in2']['ntot']) # 5 samples + 3 samples of the horizon
@@ -340,9 +339,9 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         self.assertEqual(2,test.json['Info']['ns'][1])
         self.assertEqual(6,test.json['Info']['ntot'])
 
-    def test_example_parametric_differnt_dim_input(self):
+    def test_example_parametric_different_dim_input(self):
         NeuObj.clearNames()
-        test = Modely(seed=42)
+        test = Modely(visualizer=None, seed=42)
         x = Input('x')
         y = Input('y')
         z = Input('z')

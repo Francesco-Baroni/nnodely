@@ -142,7 +142,7 @@ class ModelyExportTest(unittest.TestCase):
         dummy_input = {'x':np.ones(shape=(3, 1, 1, 1)).astype(np.float32),
                        'y':np.ones(shape=(1, 1, 1)).astype(np.float32),
                        'z':np.ones(shape=(1, 1, 1)).astype(np.float32)}
-        outputs = Modely().onnxInference(dummy_input,onnx_model_path)
+        outputs = Modely(visualizer=None).onnxInference(dummy_input,onnx_model_path)
         # Get the output
         expected_output = np.array([[[[3.]]], [[[5.]]], [[[7.]]]], dtype=np.float32)
         self.assertEqual(outputs[0].tolist(), expected_output.tolist())
@@ -169,7 +169,7 @@ class ModelyExportTest(unittest.TestCase):
 
         ## ONNX IMPORT
         onnx_model_path = os.path.join(result_path, 'onnx', 'net.onnx')
-        outputs = Modely().onnxInference(inputs={'num_cycle':np.ones(shape=(10, 1, 1, 1)).astype(np.float32), 'x':np.ones(shape=(1, 1, 1)).astype(np.float32)}, path=onnx_model_path)
+        outputs = Modely(visualizer=None).onnxInference(inputs={'num_cycle':np.ones(shape=(10, 1, 1, 1)).astype(np.float32), 'x':np.ones(shape=(1, 1, 1)).astype(np.float32)}, path=onnx_model_path)
         self.assertEqual(output_nodely['out1'], outputs[0].squeeze().tolist())
         self.assertEqual(output_nodely['out2'], outputs[1].squeeze().tolist())
 
@@ -224,7 +224,7 @@ class ModelyExportTest(unittest.TestCase):
 
         ## Onnx Import
         onnx_model_path = os.path.join(result_path, 'onnx', 'net.onnx')
-        outputs = Modely().onnxInference(sample, onnx_model_path)
+        outputs = Modely(visualizer=None).onnxInference(sample, onnx_model_path)
         self.assertEqual(outputs[0][0][0].tolist(), model_inference['accelleration'])
 
         if os.path.exists(vehicle.getWorkspace()):
@@ -358,7 +358,7 @@ class ModelyExportTest(unittest.TestCase):
                             'input4': np.random.rand(1,1,4,3).astype(np.float32)}
         recurrent_sample['state1'] = np.random.rand(1,1,1).astype(np.float32)
         recurrent_sample['state2'] = np.random.rand(1,1,3).astype(np.float32)
-        inference = Modely().onnxInference(recurrent_sample, onnx_model_path)
+        inference = Modely(visualizer=None).onnxInference(recurrent_sample, onnx_model_path)
         self.assertListEqual(list(inference[0].shape), [1,1,1,1])
         self.assertListEqual(list(inference[1].shape), [1,1,1,3])
         self.assertListEqual(list(inference[2].shape), [1,1,1,1])
@@ -375,7 +375,7 @@ class ModelyExportTest(unittest.TestCase):
                             'input4': np.random.rand(5,1,4,3).astype(np.float32)}
         recurrent_sample['state1'] = np.random.rand(1,1,1).astype(np.float32)
         recurrent_sample['state2'] = np.random.rand(1,1,3).astype(np.float32)
-        inference = Modely().onnxInference(recurrent_sample, onnx_model_path)
+        inference = Modely(visualizer=None).onnxInference(recurrent_sample, onnx_model_path)
         self.assertListEqual(list(inference[0].shape), [5,1,1,1])
         self.assertListEqual(list(inference[1].shape), [5,1,1,3])
         self.assertListEqual(list(inference[2].shape), [5,1,1,1])
@@ -392,7 +392,7 @@ class ModelyExportTest(unittest.TestCase):
                             'input4': np.random.rand(5,2,4,3).astype(np.float32)}
         recurrent_sample['state1'] = np.random.rand(2,1,1).astype(np.float32)
         recurrent_sample['state2'] = np.random.rand(2,1,3).astype(np.float32)
-        inference = Modely().onnxInference(recurrent_sample, onnx_model_path)
+        inference = Modely(visualizer=None).onnxInference(recurrent_sample, onnx_model_path)
         self.assertListEqual(list(inference[0].shape), [5,2,1,1])
         self.assertListEqual(list(inference[1].shape), [5,2,1,3])
         self.assertListEqual(list(inference[2].shape), [5,2,1,1])
@@ -527,13 +527,13 @@ class ModelyExportTest(unittest.TestCase):
         ## ONNX IMPORT
         onnx_model_path = os.path.join(result_path, 'onnx', network_name+'.onnx')
         onnx_sample = {key: (np.expand_dims(value, axis=1).astype(np.float32) if key != 'vel' else value)  for key, value in model_sample.items()}
-        outputs = Modely().onnxInference(onnx_sample, onnx_model_path)
+        outputs = Modely(visualizer=None).onnxInference(onnx_sample, onnx_model_path)
         self.assertEqual(outputs[0][0], model_inference['accelleration'])
 
         model_sample = vehicle.getSamples('dataset', window=3)
         onnx_sample = {key: (np.expand_dims(value, axis=1).astype(np.float32) if key != 'vel' else np.expand_dims(np.array(value[0], dtype=np.float32), axis=0))  for key, value in model_sample.items()}
         model_inference = vehicle(model_sample, sampled=True, prediction_samples=3)
-        outputs = Modely().onnxInference(onnx_sample, onnx_model_path)
+        outputs = Modely(visualizer=None).onnxInference(onnx_sample, onnx_model_path)
         self.assertEqual(outputs[0].squeeze().tolist(), model_inference['accelleration'])
 
         if os.path.exists(vehicle.getWorkspace()):
@@ -551,7 +551,7 @@ class ModelyExportTest(unittest.TestCase):
 
         out61 = Output('out61', sw_7.sw(6))
         out62 = Output('out62', SamplePart(sw_7,1,7))
-        test = Modely(workspace=result_path)
+        test = Modely(visualizer=None, workspace=result_path)
         test.addModel('out', [out61,out62])
         test.neuralizeModel()
         sample = [14, 1, 2, 3, 4, 5, 6]
@@ -559,7 +559,7 @@ class ModelyExportTest(unittest.TestCase):
 
         onnx_model_path = os.path.join(result_path, 'onnx', network_name+'.onnx')
         test.exportONNX(inputs_order=['inin','SamplePart1_sw1'],outputs_order=['out61','out62'],name=network_name)
-        outputs = Modely().onnxInference({'inin':np.array([[[[14],[1],[2],[3],[4],[5],[6]]]]).astype(np.float32),'SamplePart1_sw1':np.array([[[0],[0],[0],[0],[0],[0]]]).astype(np.float32)}, onnx_model_path)
+        outputs = Modely(visualizer=None).onnxInference({'inin':np.array([[[[14],[1],[2],[3],[4],[5],[6]]]]).astype(np.float32),'SamplePart1_sw1':np.array([[[0],[0],[0],[0],[0],[0]]]).astype(np.float32)}, onnx_model_path)
         self.assertEqual(outputs[0].squeeze().tolist(), results['out61'][0])
         self.assertEqual(outputs[1].squeeze().tolist(), results['out62'][0])
         self.assertEqual(results['out61'][0], results['out62'][0])
