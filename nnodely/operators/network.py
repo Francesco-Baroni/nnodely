@@ -179,8 +179,7 @@ class Network():
         self.visualizer.showBuiltModel()
 
     @enforce_types
-    def __call__(self, inputs:dict={}, sampled:bool=False, closed_loop:dict={}, connect:dict={}, prediction_samples:str|int|None='auto',
-                 num_of_samples:int|None=None) -> dict:  ##, align_input=False):
+    def __call__(self, inputs:dict={}, sampled:bool=False, closed_loop:dict={}, connect:dict={}, prediction_samples:str|int|None='auto', num_of_samples:int|None=None) -> dict:
         """
         Performs inference on the model.
 
@@ -361,14 +360,13 @@ class Network():
                         X[key] = X[key].requires_grad_(True)
                 ## reset states
                 if count == 0 or prediction_samples == 'auto':
+                    init_states = []
                     count = prediction_samples
                     for key in non_mandatory_inputs:  ## Get non mandatory data (from inputs, from states, or with zeros)
                         ## if prediction_samples is 'auto' and i have enough samples
                         ## if prediction_samples is NOT 'auto' but i have enough extended window (with zeros)
-                        if (key in inputs.keys() and prediction_samples == 'auto' and idx < num_of_windows[key]) or (
-                                key in inputs.keys() and prediction_samples != 'auto' and idx < inputs[key].shape[1]):
-                            X[key] = inputs[key][idx:idx + 1] if sampled else inputs[key][:,
-                                                                              idx:idx + self._input_n_samples[key]]
+                        if (key in inputs.keys() and prediction_samples == 'auto' and idx < num_of_windows[key]) or (key in inputs.keys() and prediction_samples != 'auto' and idx < inputs[key].shape[1]):
+                            X[key] = inputs[key][idx:idx + 1] if sampled else inputs[key][:,idx:idx + self._input_n_samples[key]]
                         ## if im in the first reset
                         ## if i have a state in memory
                         ## if i have prediction_samples = 'auto' and not enough samples
@@ -380,6 +378,9 @@ class Network():
                             dim = json_inputs[key]['dim']
                             X[key] = torch.zeros(size=(1, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
                             self._states[key] = X[key]
+                            if 'init' in json_inputs[key].keys(): ## with init relation
+                                self._model.connect_update[key] = json_inputs[key]['init']
+                                init_states.append(key)
                         if 'type' in json_inputs[key].keys():
                             X[key] = X[key].requires_grad_(True)
                     first = False
@@ -391,6 +392,11 @@ class Network():
                     count -= 1
                 ## Forward pass
                 result, _, out_closed_loop, out_connect = self._model(X)
+
+                if init_states:
+                    for key in init_states:
+                        del self._model.connect_update[key]
+                    init_states = []
 
                 ## Append the prediction of the current sample to the result dictionary
                 for key in self._model_def['Outputs'].keys():

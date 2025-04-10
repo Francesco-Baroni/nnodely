@@ -62,13 +62,21 @@ class ReadOnlyDict:
 def get_window(obj):
     return 'tw' if 'tw' in obj.dim else ('sw' if 'sw' in obj.dim else None)
 
-def get_inputs(json, relation, inputs):
+def get_inputs(json, relation):
     # Get all the inputs needed to compute a specific relation from the json graph
+    inputs = []
+     
+    def search(rel):
+        if rel in (json['Inputs'] | json['States']):  # Found an input
+            inputs.append(rel)
+        elif rel in json['Relations']:  # Another relation
+            for sub_rel in json['Relations'][rel][1]:
+                search(sub_rel)
+     
     for rel in json['Relations'][relation][1]:
-        if rel in (json['Inputs'] | json['States']): ## find an input
-            return inputs.append(rel)
-        else: ## another relation
-            return get_inputs(json, rel, inputs) ## recursive call to find the inputs of the relation
+        search(rel)
+     
+    return inputs
 
 def enforce_types(func):
     @wraps(func)

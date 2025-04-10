@@ -1,7 +1,7 @@
 import copy
 
 from nnodely.basic.relation import NeuObj, Stream, ToStream
-from nnodely.support.utils import check, merge, enforce_types
+from nnodely.support.utils import check, merge, enforce_types, get_inputs
 from nnodely.layers.part import SamplePart, TimePart
 from nnodely.layers.timeoperation import Derivate, Integrate
 
@@ -257,7 +257,7 @@ class Connect(Stream, ToStream):
 
 class ClosedLoop(Stream, ToStream):
     @enforce_types
-    def __init__(self, obj1:Stream, obj2: State) -> Stream:
+    def __init__(self, obj1:Stream, obj2: State, init:Stream|None=None) -> Stream:
         check(type(obj1) is Stream, TypeError,
               f"The {obj1} must be a Stream and not a {type(obj1)}.")
         check(type(obj2) is State, TypeError,
@@ -266,3 +266,7 @@ class ClosedLoop(Stream, ToStream):
         check(closedloop_name not in self.json['States'][obj2.name] or connect_name not in self.json['States'][obj2.name],
               KeyError, f"The state variable {obj2.name} is already connected.")
         self.json['States'][obj2.name][closedloop_name] = obj1.name
+        if init:
+            needed_inputs = get_inputs(self.json, init.name)
+            check(obj2.name not in needed_inputs, KeyError, f"Inconsistency Error: Cannot initialize the state variable {obj2.name} with the relation {init.name}.")
+            self.json['States'][obj2.name]['init'] = init.name

@@ -1625,3 +1625,40 @@ class ModelyTrainingTest(unittest.TestCase):
 
         result = m({'x': x.tolist(), 'y': y.tolist()}, connect={'y2':'out1'}, num_of_samples=10, prediction_samples=10)
         self.assertAlmostEqual([a.tolist() for a in target[0:10]],result['out2'])
+
+    def test_state_initialization(self):
+        NeuObj.clearNames()
+        x = Input('x')
+        y = State('y')
+        target = Input('target')
+
+        p_1 = Parameter('p1', sw=1, values=[[1]])
+        p_2 = Parameter('p2', sw=1, values=[[2]])
+        fir1 = Fir(W=p_1, b=False)(x.last())
+        fir2 = Fir(W=p_2, b=False)(y.last())
+        relation = fir1 + fir2
+        #relation = ClosedLoop(relation, y, init=fir1)
+        relation.closedLoop(y, init=fir1)
+        out = Output('out', relation)
+        
+        model = Modely(visualizer=None, seed=42, log_internal=True)
+        model.addModel('model', out)
+        model.addMinimize('error', out, target.last())
+        model.neuralizeModel(1)
+
+        def fun(x, a, b):
+            return a*x + b
+
+        x_data = np.linspace(1, 10, 10)
+        target_data = fun(x_data, 2, 3)
+
+        dataset = {'x': x_data, 'target': target_data}
+        model.loadData('dataset', dataset)
+        model.trainModel(lr=0.0, train_dataset='dataset', num_of_epochs=1, prediction_samples=5, train_batch_size=1, shuffle_data=False)
+        self.assertEqual(model.internals['inout_0_0']['out']['out'], [[[3.0]]])
+        self.assertEqual(model.internals['inout_0_1']['out']['out'], [[[8.0]]])
+        self.assertEqual(model.internals['inout_0_2']['out']['out'], [[[19.0]]])
+        self.assertEqual(model.internals['inout_0_3']['out']['out'], [[[42.0]]])
+        self.assertEqual(model.internals['inout_0_4']['out']['out'], [[[89.0]]])
+        self.assertEqual(model.internals['inout_0_5']['out']['out'], [[[184.0]]])
+        self.assertEqual(model.internals['inout_1_0']['out']['out'], [[[6.0]]])

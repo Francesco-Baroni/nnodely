@@ -217,10 +217,10 @@ class Trainer():
             if train:
                 self.__optimizer.zero_grad()  ## Reset the gradient
             ## Reset
+            init_states = []
             horizon_losses = {ind: [] for ind in range(len(self._model_def['Minimizers']))}
             for key in non_mandatory_inputs:
-                if key in data.keys():
-                    ## with data
+                if key in data.keys(): ## with data
                     X[key] = data[key][idxs]
                 else:  ## with zeros
                     window_size = self._input_n_samples[key]
@@ -231,6 +231,10 @@ class Trainer():
                         X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE,
                                              requires_grad=False)
                     self._states[key] = X[key]
+
+                    if 'init' in json_inputs[key].keys(): ## with init relation
+                        self._model.connect_update[key] = json_inputs[key]['init']
+                        init_states.append(key)
 
 
             for horizon_idx in range(prediction_samples + 1):
@@ -255,6 +259,11 @@ class Trainer():
 
                 ## Update
                 self._updateState(X, out_closed_loop, out_connect)
+                ## remove initialization in closed_loop
+                if init_states:
+                    for key in init_states:
+                        del self._model.connect_update[key]
+                    init_states = []
 
                 if self.log_internal and train:
                     internals_dict['state'] = self._states
