@@ -1,8 +1,6 @@
 import logging
 import sys
 
-from nnodely import LOG_LEVEL
-
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
 
 #The background is set with 40 plus the number of the color, and the foreground with 30
@@ -30,7 +28,7 @@ LEVEL_STRING = {
     logging.ERROR: "ERROR",
     SUPPRESS: "SUPPRESS"
 }
-
+LOG_LEVEL = logging.INFO
 
 
 class JsonFormatter(logging.Formatter):

@@ -567,4 +567,36 @@ class ModelyExportTest(unittest.TestCase):
         if os.path.exists(test.getWorkspace()):
             shutil.rmtree(test.getWorkspace())
 
+    # TODO to be added when fixed the function for partial exprot
+    # def test_partial_model_export(self):
+    #     result_path = 'results'
+    #     NeuObj.clearNames()
+    #     x = Input('x')
+    #     y = Input('y')
+    #     x_last = x.last()
+    #     y_last = y.last()
+    #     p1 = Parameter('p1', sw=1, values=[[1.2]])
+    #     fun = Sin(x_last) + Fir(W=p1)(x_last) + Cos(y_last)
+    #     out_der = Derivate(fun, x_last) + Derivate(fun, y_last)
+    #
+    #     x2 = State('x2')
+    #     y2 = Input('y2')
+    #     x2_last = x2.last()
+    #     y2_last = y2.last()
+    #     p2 = Parameter('p2', sw=1, values=[[1.2]])
+    #     fun2 = Sin(x2_last) + Fir(W=p2)(x2_last) + Cos(y2_last)
+    #     out_der2 = Derivate(fun2, x2_last) + Derivate(fun2, y2_last)
+    #     out_der.connect(x2)
+    #
+    #     out1 = Output('out1', out_der)
+    #     out2 = Output('out2', out_der2)
+    #
+    #     m = Modely(workspace=result_path, visualizer=TextVisualizer(), seed=5)
+    #     m.addModel('modelA', [out1])
+    #     m.addModel('modelB', [out2])
+    #     m.neuralizeModel()
+    #     # m.saveModel(models = 'modelA')
+    #     # m.exportPythonModel(models = 'modelA')
+    #     # m.saveTorchModel(models = 'modelA')
+    #     # m.exportONNX(['x','y'], ['out1'], models = 'modelA')
 
