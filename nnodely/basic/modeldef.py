@@ -61,19 +61,24 @@ class ModelDef():
             if 'Models' not in self.__json:
                 self.__json['Models'] = {}
             for model_name, model_params in model_dict.items():
-                self.__json['Models'][model_name] = {'Inputs': [], 'States': [], 'Outputs': [], 'Parameters': [],
-                                                        'Constants': []}
-                parameters, constants, inputs, states = set(), set(), set(), set()
+                self.__json['Models'][model_name] = {
+                    'Inputs': [], 'States': [], 'Outputs': [],
+                    'Parameters': [],'Constants': [],'Functions': [], 'Relations': []}
+                parameters, constants, inputs, states, functions, relations = set(), set(), set(), set(), set(), set()
                 for param in model_params:
                     self.__json['Models'][model_name]['Outputs'].append(param.name)
                     parameters |= set(param.json['Parameters'].keys())
                     constants |= set(param.json['Constants'].keys())
                     inputs |= set(param.json['Inputs'].keys())
                     states |= set(param.json['States'].keys())
+                    functions |= set(param.json['Functions'].keys())
+                    relations |= set(param.json['Relations'].keys())
                 self.__json['Models'][model_name]['Parameters'] = list(parameters)
                 self.__json['Models'][model_name]['Constants'] = list(constants)
                 self.__json['Models'][model_name]['Inputs'] = list(inputs)
                 self.__json['Models'][model_name]['States'] = list(states)
+                self.__json['Models'][model_name]['Functions'] = list(functions)
+                self.__json['Models'][model_name]['Relations'] = list(relations)
         elif len(model_dict) == 1:
             self.__json['Models'] = list(model_dict.keys())[0]
 
@@ -92,7 +97,6 @@ class ModelDef():
 
         if "SampleTime" in self.__json['Info']:
             self.__sample_time = self.__json['Info']["SampleTime"]
-
 
     def __update_state(self, stream_out, state_list_in, UpdateState):
         from nnodely.layers.input import  State
