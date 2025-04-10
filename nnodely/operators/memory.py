@@ -21,14 +21,13 @@ class Memory:
                 del self._states[key]
 
     def _updateState(self, X, out_closed_loop, out_connect):
-        ## Update
+        for key, value in out_connect.items():
+            X[key] = value
+            self._states[key] = X[key].clone().detach()
         for key, val in out_closed_loop.items():
             shift = val.shape[1]  ## take the output time dimension
             X[key] = torch.roll(X[key], shifts=-1, dims=1)  ## Roll the time window
             X[key][:, -shift:, :] = val  ## substitute with the predicted value
-            self._states[key] = X[key].clone().detach()
-        for key, value in out_connect.items():
-            X[key] = value
             self._states[key] = X[key].clone().detach()
 
     @enforce_types

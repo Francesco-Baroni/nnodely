@@ -51,8 +51,7 @@ class Derivate(Stream, ToStream):
         else:
             super().__init__(der_relation_name + str(Stream.count), merge(output.json,input.json), input.dim)
             self.json['Relations'][self.name] = [der_relation_name, [output.name, input.name]]
-            grad_inputs = []
-            get_inputs(self.json, input.name, grad_inputs)
+            grad_inputs = get_inputs(self.json, input.name)
             for i in grad_inputs:
                 if i in self.json['Inputs']:
                     self.json['Inputs'][i]['type'] = 'derivate'

@@ -188,7 +188,7 @@ class Model(nn.Module):
                             available_keys.add(connect_input)
 
         ## Return a dictionary with all the connected inputs
-        connect_update_dict = {key: result_dict[key] for key, value in self.connect_update.items()}
+        connect_update_dict = {key: result_dict[key] for key in self.connect_update.keys()}
         ## Return a dictionary with all the relations that updates the state variables
         closed_loop_update_dict = {key: result_dict[value] for key, value in self.closed_loop_update.items()}
         ## Return a dictionary with all the outputs final values
