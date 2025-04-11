@@ -6,7 +6,6 @@ from nnodely import *
 from nnodely.basic.relation import NeuObj, Stream
 from nnodely.support.logger import logging, nnLogger
 from nnodely.support.utils import subjson
-from pprint import pformat
 
 log = nnLogger(__name__, logging.CRITICAL)
 log.setAllLevel(logging.CRITICAL)
@@ -628,7 +627,6 @@ class ModelyJsonTest(unittest.TestCase):
         self.assertEqual((1, 1, 3), np.array(results['out51']).shape)
 
     def test_multi_model_json_and_subjson(self):
-        from nnodely.visualizer.visualizer import color, RED
         NeuObj.clearNames()
         x = Input('x')
         y = State('y')
@@ -652,7 +650,7 @@ class ModelyJsonTest(unittest.TestCase):
         out3 = Output('out3', c3 + Linear(W=Parameter('W3', values=[[3.0]]), b=False)(x.last()))
         out4 = Output('out4', rel4 + ParamFun(fun4, parameters_and_constants=[c3])(y.last()))
 
-        nn = Modely(visualizer=TextVisualizer())
+        nn = Modely(visualizer=None)
         nn.addModel('model_A', [out1, out2])
         nn.addModel('model_B', [out3, out4])
         nn.addMinimize('error_A', out1, target.last())
@@ -661,9 +659,28 @@ class ModelyJsonTest(unittest.TestCase):
         
         subjson_A = subjson(nn.json, 'model_A')
         subjson_B = subjson(nn.json, 'model_B')
-        print("####### JSON MODEL A #######")
-        print(color(pformat(subjson_A),RED))
-        print("####### JSON MODEL B #######")
-        print(color(pformat(subjson_B),RED))
+        self.assertEqual(subjson_A['Constants']['c1'],nn.json.__dict__['_data']['Constants']['c1'])
+        self.assertEqual(subjson_B['Constants']['c3'],nn.json.__dict__['_data']['Constants']['c3'])
+        self.assertEqual(subjson_A['Functions']['FParamFun12'], nn.json.__dict__['_data']['Functions']['FParamFun12'])
+        self.assertEqual(subjson_B['Functions']['FParamFun17'], nn.json.__dict__['_data']['Functions']['FParamFun17'])
+        self.assertEqual(subjson_A['Inputs']['x'], nn.json.__dict__['_data']['Inputs']['x'])
+        self.assertEqual(subjson_B['Inputs']['x'], nn.json.__dict__['_data']['Inputs']['x'])
+        self.assertEqual(list(subjson_A['Models'].keys()), ['model_A'])
+        self.assertEqual(list(subjson_B['Models'].keys()), ['model_B'])
+        self.assertEqual(sorted(list(subjson_A['Relations'].keys())), sorted(nn.json.__dict__['_data']['Models']['model_A']['Relations']))
+        self.assertEqual(sorted(list(subjson_B['Relations'].keys())), sorted(nn.json.__dict__['_data']['Models']['model_B']['Relations']))
+        self.assertEqual(list(subjson_A['Parameters'].keys()), ['W1', 'W2'])
+        self.assertEqual(list(subjson_B['Parameters'].keys()), ['W3', 'W4'])
+        self.assertEqual(list(subjson_A['Outputs'].keys()), ['out1', 'out2'])
+        self.assertEqual(list(subjson_B['Outputs'].keys()), ['out3', 'out4'])
+        self.assertEqual(subjson_A['States']['y'], nn.json.__dict__['_data']['States']['y'])
+        self.assertEqual(subjson_B['States']['y'], nn.json.__dict__['_data']['States']['y'])
+
+        # from nnodely.visualizer.visualizer import color, RED
+        # from pprint import pformat
+        # print("####### JSON MODEL A #######")
+        # print(color(pformat(subjson_A),RED))
+        # print("####### JSON MODEL B #######")
+        # print(color(pformat(subjson_B),RED))
 
 
