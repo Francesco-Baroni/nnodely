@@ -6,6 +6,7 @@ from nnodely import *
 from nnodely.basic.relation import NeuObj, Stream
 from nnodely.support.logger import logging, nnLogger
 from nnodely.support.utils import subjson
+from pprint import pformat
 
 log = nnLogger(__name__, logging.CRITICAL)
 log.setAllLevel(logging.CRITICAL)
@@ -627,6 +628,7 @@ class ModelyJsonTest(unittest.TestCase):
         self.assertEqual((1, 1, 3), np.array(results['out51']).shape)
 
     def test_multi_model_json_and_subjson(self):
+        from nnodely.visualizer.visualizer import color, RED
         NeuObj.clearNames()
         x = Input('x')
         y = State('y')
@@ -648,7 +650,7 @@ class ModelyJsonTest(unittest.TestCase):
         out1 = Output('out1', c1 + Linear(W=Parameter('W1', values=[[1.0]]), b=False)(x.last()))
         out2 = Output('out2', rel2 + ParamFun(fun2, parameters_and_constants=[c1])(y.last()))
         out3 = Output('out3', c3 + Linear(W=Parameter('W3', values=[[3.0]]), b=False)(x.last()))
-        out4 = Output('out4', rel4 + ParamFun(fun4, parameters_and_constants=[c1])(y.last()))
+        out4 = Output('out4', rel4 + ParamFun(fun4, parameters_and_constants=[c3])(y.last()))
 
         nn = Modely(visualizer=TextVisualizer())
         nn.addModel('model_A', [out1, out2])
@@ -660,8 +662,8 @@ class ModelyJsonTest(unittest.TestCase):
         subjson_A = subjson(nn.json, 'model_A')
         subjson_B = subjson(nn.json, 'model_B')
         print("####### JSON MODEL A #######")
-        print(subjson_A)
+        print(color(pformat(subjson_A),RED))
         print("####### JSON MODEL B #######")
-        print(subjson_B)
+        print(color(pformat(subjson_B),RED))
 
 

@@ -92,8 +92,26 @@ def subjson(json, models:str|list):
     if sub_json:
         sub_json['Models'] = {}
         for model in models:
-            sub_json['Models'][model] = json['Models'][model]
+            sub_json['Models'][model] = {key:value for key,value in json['Models'][model].items()}
+        sub_json['Minimizers'] = {}
+        for min_name, min_value in json['Minimizers'].items():
+            if (min_value['A'] in sub_json['Outputs'].keys() or min_value['A'] in sub_json['Relations'].keys()) and (min_value['B'] in sub_json['Outputs'].keys() or min_value['B'] in sub_json['Relations'].keys()):
+                sub_json['Minimizers'][min_name] = {key:value for key, value in json['Minimizers'][min_name].items()}
 
+        sub_json['Info'] = {"SampleTime": json['Info']['SampleTime']}
+        json_inputs = sub_json['Inputs'] | sub_json['States']
+        input_ns_backward, input_ns_forward = {}, {}
+        for key, value in json_inputs.items():
+            if value['sw'] == [0, 0]:
+                input_ns_backward[key] = round(-value['tw'][0] / sub_json['Info']['SampleTime'])
+                input_ns_forward[key] = round(value['tw'][1] / sub_json['Info']['SampleTime'])
+            else:
+                input_ns_backward[key] = max(round(-value['tw'][0] / sub_json['Info']['SampleTime']), -value['sw'][0])
+                input_ns_forward[key] = max(round(value['tw'][1] / sub_json['Info']['SampleTime']), value['sw'][1])
+        sub_json['Info']['ns'] = [max(input_ns_backward.values()), max(input_ns_forward.values())]
+        sub_json['Info']['ntot'] = sum(sub_json['Info']['ns'])
+        from nnodely import __version__
+        sub_json['Info']['nnodely_version'] = __version__
     return sub_json
 
 def enforce_types(func):
