@@ -1,12 +1,12 @@
 import subprocess, json, os, importlib
 
 from nnodely.visualizer.textvisualizer import TextVisualizer
-from nnodely.fuzzify import return_fuzzify
-from nnodely.parametricfunction import return_standard_inputs, return_function
-from nnodely.utils import check
-from nnodely.modeldef import ModelDef
+from nnodely.layers.fuzzify import return_fuzzify
+from nnodely.layers.parametricfunction import return_standard_inputs, return_function
+from nnodely.support.utils import check
+from nnodely.basic.modeldef import ModelDef
 
-from nnodely.logger import logging, nnLogger
+from nnodely.support.logger import logging, nnLogger
 log = nnLogger(__name__, logging.INFO)
 
 def get_library_path(library_name):
@@ -22,25 +22,25 @@ class MPLVisualizer(TextVisualizer):
         import signal
         import sys
         get_library_path('nnodely')
-        self.training_visualizer_script = os.path.join(get_library_path('nnodely'),'visualizer','dynamicmpl','trainingplot.py')
-        self.time_series_visualizer_script = os.path.join(get_library_path('nnodely'),'visualizer','dynamicmpl','resultsplot.py')
-        self.fuzzy_visualizer_script = os.path.join(get_library_path('nnodely'),'visualizer','dynamicmpl','fuzzyplot.py')
-        self.function_visualizer_script = os.path.join(get_library_path('nnodely'),'visualizer','dynamicmpl','functionplot.py')
-        self.process_training = {}
-        self.process_results = {}
-        self.process_function = {}
+        self.__training_visualizer_script = os.path.join(get_library_path('nnodely'),'visualizer','dynamicmpl','trainingplot.py')
+        self.__time_series_visualizer_script = os.path.join(get_library_path('nnodely'),'visualizer','dynamicmpl','resultsplot.py')
+        self.__fuzzy_visualizer_script = os.path.join(get_library_path('nnodely'),'visualizer','dynamicmpl','fuzzyplot.py')
+        self.__function_visualizer_script = os.path.join(get_library_path('nnodely'),'visualizer','dynamicmpl','functionplot.py')
+        self.__process_training = {}
+        self.__process_results = {}
+        self.__process_function = {}
         def signal_handler(sig, frame):
-            for key in self.process_training.keys():
-                self.process_training[key].terminate()
-                self.process_training[key].wait()
-            for name_data in self.process_results.keys():
-                for key in self.process_results[name_data].keys():
-                    self.process_results[name_data][key].terminate()
-                    self.process_results[name_data][key].wait()
-            self.process_results = {}
-            for key in self.process_function.keys():
-                self.process_function[key].terminate()
-                self.process_functios[key].wait()
+            for key in self.__process_training.keys():
+                self.__process_training[key].terminate()
+                self.__process_training[key].wait()
+            for name_data in self.__process_results.keys():
+                for key in self.__process_results[name_data].keys():
+                    self.__process_results[name_data][key].terminate()
+                    self.__process_results[name_data][key].wait()
+            self.__process_results = {}
+            for key in self.__process_function.keys():
+                self.__process_function[key].terminate()
+                self.__process_functios[key].wait()
             sys.exit()
 
         signal.signal(signal.SIGINT, signal_handler)
@@ -50,21 +50,21 @@ class MPLVisualizer(TextVisualizer):
 
     def showTraining(self, epoch, train_losses, val_losses):
         if epoch == 0:
-            for key in self.process_training.keys():
-                if self.process_training[key].poll() is None:
-                    self.process_training[key].terminate()
-                    self.process_training[key].wait()
-                self.process_training[key] = {}
+            for key in self.__process_training.keys():
+                if self.__process_training[key].poll() is None:
+                    self.__process_training[key].terminate()
+                    self.__process_training[key].wait()
+                self.__process_training[key] = {}
 
-            self.process_training = {}
-            for key in self.n4m.model_def['Minimizers'].keys():
-                self.process_training[key] = subprocess.Popen(['python', self.training_visualizer_script], stdin=subprocess.PIPE, text=True)
+            self.__process_training = {}
+            for key in self.modely._model_def['Minimizers'].keys():
+                self.__process_training[key] = subprocess.Popen(['python', self.__training_visualizer_script], stdin=subprocess.PIPE, text=True)
 
-        num_of_epochs = self.n4m.run_training_params['num_of_epochs']
-        train_dataset = self.n4m.run_training_params['train_dataset']
-        validation_dataset = self.n4m.run_training_params['validation_dataset']
+        num_of_epochs = self.modely.run_training_params['num_of_epochs']
+        train_dataset = self.modely.run_training_params['train_dataset']
+        validation_dataset = self.modely.run_training_params['validation_dataset']
         if epoch+1 <= num_of_epochs:
-            for key in self.n4m.model_def['Minimizers'].keys():
+            for key in self.modely._model_def['Minimizers'].keys():
                 if val_losses:
                     val_loss = val_losses[key][epoch]
                 else:
@@ -73,42 +73,42 @@ class MPLVisualizer(TextVisualizer):
                         "train_losses": train_losses[key][epoch], "val_losses": val_loss}
                 try:
                     # Send data to the visualizer process
-                    self.process_training[key].stdin.write(f"{json.dumps(data)}\n")
-                    self.process_training[key].stdin.flush()
+                    self.__process_training[key].stdin.write(f"{json.dumps(data)}\n")
+                    self.__process_training[key].stdin.flush()
                 except BrokenPipeError:
                     self.closeTraining()
                     log.warning("The visualizer process has been closed.")
 
         if epoch+1 == num_of_epochs:
-            for key in self.n4m.model_def['Minimizers'].keys():
-                self.process_training[key].stdin.close()
+            for key in self.modely._model_def['Minimizers'].keys():
+                self.__process_training[key].stdin.close()
 
     def showResult(self, name_data):
         super().showResult(name_data)
-        check(name_data in self.n4m.performance, ValueError, f"Results not available for {name_data}.")
-        if name_data in self.process_results:
-            for key in self.n4m.model_def['Minimizers'].keys():
-                if key in self.process_results[name_data] and self.process_results[name_data][key].poll() is None:
-                    self.process_results[name_data][key].terminate()
-                    self.process_results[name_data][key].wait()
-                self.process_results[name_data][key] = None
-        self.process_results[name_data] = {}
+        check(name_data in self.modely._performance, ValueError, f"Results not available for {name_data}.")
+        if name_data in self.__process_results:
+            for key in self.modely._model_def['Minimizers'].keys():
+                if key in self.__process_results[name_data] and self.__process_results[name_data][key].poll() is None:
+                    self.__process_results[name_data][key].terminate()
+                    self.__process_results[name_data][key].wait()
+                self.__process_results[name_data][key] = None
+        self.__process_results[name_data] = {}
 
-        for key in self.n4m.model_def['Minimizers'].keys():
+        for key in self.modely._model_def['Minimizers'].keys():
             # Start the data visualizer process
-            self.process_results[name_data][key] = subprocess.Popen(['python', self.time_series_visualizer_script], stdin=subprocess.PIPE,
+            self.__process_results[name_data][key] = subprocess.Popen(['python', self.__time_series_visualizer_script], stdin=subprocess.PIPE,
                                                     text=True)
             data = {"name_data": name_data,
                     "key": key,
-                    "performance": self.n4m.performance[name_data][key],
-                    "prediction_A": self.n4m.prediction[name_data][key]['A'],
-                    "prediction_B": self.n4m.prediction[name_data][key]['B'],
-                    "sample_time": self.n4m.model_def['Info']["SampleTime"]}
+                    "performance": self.modely._performance[name_data][key],
+                    "prediction_A": self.modely._prediction[name_data][key]['A'],
+                    "prediction_B": self.modely._prediction[name_data][key]['B'],
+                    "sample_time": self.modely._model_def['Info']["SampleTime"]}
             try:
                 # Send data to the visualizer process
-                self.process_results[name_data][key].stdin.write(f"{json.dumps(data)}\n")
-                self.process_results[name_data][key].stdin.flush()
-                self.process_results[name_data][key].stdin.close()
+                self.__process_results[name_data][key].stdin.write(f"{json.dumps(data)}\n")
+                self.__process_results[name_data][key].stdin.flush()
+                self.__process_results[name_data][key].stdin.close()
             except BrokenPipeError:
                 self.closeResult(self, name_data)
                 log.warning(f"The visualizer {name_data} process has been closed.")
@@ -117,26 +117,26 @@ class MPLVisualizer(TextVisualizer):
         pass
 
     def showFunctions(self, functions = None, xlim = None, num_points = 1000):
-        check(self.n4m.neuralized, ValueError, "The model has not been neuralized.")
-        for key, value in self.n4m.model_def['Functions'].items():
+        check(self.modely.neuralized, ValueError, "The model has not been neuralized.")
+        for key, value in self.modely._model_def['Functions'].items():
             if key in functions:
-                if key in self.process_function and self.process_function[key].poll() is None:
-                    self.process_function[key].terminate()
-                    self.process_function[key].wait()
+                if key in self.__process_function and self.__process_function[key].poll() is None:
+                    self.__process_function[key].terminate()
+                    self.__process_function[key].wait()
 
-                if 'functions' in self.n4m.model_def['Functions'][key]:
+                if 'functions' in self.modely._model_def['Functions'][key]:
                     x, activ_fun = return_fuzzify(value, xlim, num_points)
                     data = {"name": key,
                             "x": x,
                             "y": activ_fun,
                             "chan_centers": value['centers']}
                     # Start the data visualizer process
-                    self.process_function[key] = subprocess.Popen(['python', self.fuzzy_visualizer_script],
+                    self.__process_function[key] = subprocess.Popen(['python', self.__fuzzy_visualizer_script],
                                                                   stdin=subprocess.PIPE,
                                                                   text=True)
                 elif 'code':
-                    model_def = ModelDef(self.n4m.model_def)
-                    model_def.updateParameters(self.n4m.model)
+                    model_def = ModelDef(self.modely._model_def)
+                    model_def.updateParameters(self.modely._model)
                     function_inputs = return_standard_inputs(value, model_def, xlim, num_points)
                     function_output, function_input_list = return_function(value, function_inputs)
 
@@ -154,60 +154,60 @@ class MPLVisualizer(TextVisualizer):
                     data['input_names'] = function_input_list
 
                     # Start the data visualizer process
-                    self.process_function[key] = subprocess.Popen(['python', self.function_visualizer_script],
+                    self.__process_function[key] = subprocess.Popen(['python', self.__function_visualizer_script],
                                                                   stdin=subprocess.PIPE,
                                                                   text=True)
                 try:
                     # Send data to the visualizer process
-                    self.process_function[key].stdin.write(f"{json.dumps(data)}\n")
-                    self.process_function[key].stdin.flush()
-                    self.process_function[key].stdin.close()
+                    self.__process_function[key].stdin.write(f"{json.dumps(data)}\n")
+                    self.__process_function[key].stdin.flush()
+                    self.__process_function[key].stdin.close()
                 except BrokenPipeError:
                     self.closeFunctions()
                     log.warning(f"The visualizer {functions} process has been closed.")
 
     def closeFunctions(self, functions = None):
         if functions is None:
-            for key in self.process_function.keys():
-                self.process_function[key].terminate()
-                self.process_function[key].wait()
-            self.process_function = {}
+            for key in self.__process_function.keys():
+                self.__process_function[key].terminate()
+                self.__process_function[key].wait()
+            self.__process_function = {}
         else:
             for key in functions:
-                self.process_function[key].terminate()
-                self.process_function[key].wait()
-                self.process_function.pop(key)
+                self.__process_function[key].terminate()
+                self.__process_function[key].wait()
+                self.__process_function.pop(key)
 
     def closeTraining(self, minimizer = None):
         if minimizer is None:
-            for key in self.n4m.model_def['Minimizers'].keys():
-                if key in self.process_training and self.process_training[key].poll() is None:
-                    self.process_training[key].terminate()
-                    self.process_training[key].wait()
-                self.process_training[key] = {}
+            for key in self.modely._model_def['Minimizers'].keys():
+                if key in self.__process_training and self.__process_training[key].poll() is None:
+                    self.__process_training[key].terminate()
+                    self.__process_training[key].wait()
+                self.__process_training[key] = {}
         else:
-            self.process_training[minimizer].terminate()
-            self.process_training[minimizer].wait()
-            self.process_training.pop(minimizer)
+            self.__process_training[minimizer].terminate()
+            self.__process_training[minimizer].wait()
+            self.__process_training.pop(minimizer)
 
     def closeResult(self, name_data = None, minimizer = None):
         if name_data is None:
             check(minimizer is None, ValueError, "If name_data is None, minimizer must be None.")
-            for name_data in self.process_results.keys():
-                for key in self.process_results[name_data].keys():
-                    self.process_results[name_data][key].terminate()
-                    self.process_results[name_data][key].wait()
-            self.process_results = {}
+            for name_data in self.__process_results.keys():
+                for key in self.__process_results[name_data].keys():
+                    self.__process_results[name_data][key].terminate()
+                    self.__process_results[name_data][key].wait()
+            self.__process_results = {}
         else:
             if minimizer is None:
-                for key in self.process_results[name_data].keys():
-                    self.process_results[name_data][key].terminate()
-                    self.process_results[name_data][key].wait()
-                self.process_results[name_data] = {}
+                for key in self.__process_results[name_data].keys():
+                    self.__process_results[name_data][key].terminate()
+                    self.__process_results[name_data][key].wait()
+                self.__process_results[name_data] = {}
             else:
-                self.process_results[name_data][minimizer].terminate()
-                self.process_results[name_data][minimizer].wait()
-                self.process_results[name_data].pop(minimizer)
+                self.__process_results[name_data][minimizer].terminate()
+                self.__process_results[name_data][minimizer].wait()
+                self.__process_results[name_data].pop(minimizer)
 
 
 

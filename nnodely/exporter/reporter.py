@@ -9,20 +9,20 @@ from mplplots import plots
 
 
 class Reporter:
-    def __init__(self, n4m):
-        self.n4m = n4m
+    def __init__(self, modely):
+        self.modely = modely
 
     def exportReport(self, report_path):
         c = canvas.Canvas(report_path, pagesize=letter)
         width, height = letter
 
-        for key, value in self.n4m.model_def['Minimizers'].items():
+        for key, value in self.modely._model_def['Minimizers'].items():
             fig = plt.figure(figsize=(10, 5))
             ax = fig.add_subplot(111)
-            if 'val' in self.n4m.training[key]:
-                plots.plot_training(ax, f"Training Loss of {key}", key, self.n4m.training[key]['train'], self.n4m.training[key]['val'])
+            if 'val' in self.modely._training[key]:
+                plots.plot_training(ax, f"Training Loss of {key}", key, self.modely._training[key]['train'], self.modely._training[key]['val'])
             else:
-                plots.plot_training(ax, f"Training Loss of {key}", key, self.n4m.training[key]['train'])
+                plots.plot_training(ax, f"Training Loss of {key}", key, self.modely._training[key]['train'])
             training = io.BytesIO()
             plt.savefig(training, format='png')
             training.seek(0)
@@ -31,13 +31,13 @@ class Reporter:
             c.drawImage(ImageReader(training), 50, height - 290, width=500, height=250)
             c.showPage()
 
-        for key in self.n4m.model_def['Minimizers'].keys():
+        for key in self.modely._model_def['Minimizers'].keys():
             c.drawString(100, height - 30, f"Prediction of {key}")
-            for ind, name_data in enumerate(self.n4m.prediction.keys()):
+            for ind, name_data in enumerate(self.modely._prediction.keys()):
                 fig = plt.figure(figsize=(10, 5))
                 ax = fig.add_subplot(111)
-                plots.plot_results(ax, name_data, key, self.n4m.prediction[name_data][key]['A'],
-                               self.n4m.prediction[name_data][key]['B'], self.n4m.model_def['Info']["SampleTime"])
+                plots.plot_results(ax, name_data, key, self.modely._prediction[name_data][key]['A'],
+                               self.modely._prediction[name_data][key]['B'], self.modely._model_def['Info']["SampleTime"])
                 # Add a text box with correlation coefficient
                 results = io.BytesIO()
                 plt.savefig(results, format='png')

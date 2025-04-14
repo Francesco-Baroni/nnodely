@@ -2,8 +2,8 @@ import sys, os, torch, unittest
 import numpy as np
 
 from nnodely import *
-from nnodely.relation import NeuObj
-from nnodely.logger import logging, nnLogger
+from nnodely.basic.relation import NeuObj
+from nnodely.support.logger import logging, nnLogger
 
 log = nnLogger(__name__, logging.CRITICAL)
 log.setAllLevel(logging.CRITICAL)
@@ -1336,7 +1336,7 @@ class ModelyPredictTest(unittest.TestCase):
 
         out1 = Output('out1',fun_map(input2.tw(0.03)))
         out2 = Output('out2', fun(input2.tw(0.03)))
-        test = Modely()
+        test = Modely(visualizer=None)
         test.addModel('out',[out1,out2])
         test.neuralizeModel(0.01)
         results = test({'in2': [0, 1, 2]})
@@ -1413,6 +1413,8 @@ class ModelyPredictTest(unittest.TestCase):
         test.addModel('out_A',  [out_aux,out1])
         test.neuralizeModel()
         results = test({'in1': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]}, connect={'state': 'out_aux'})
+        with self.assertRaises(ValueError):
+            test({'in1': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]}, connect={'out_aux': 'state'})
         self.assertEqual((4, 3), np.array(results['out1']).shape)
         self.assertEqual([[4.0, 5.0, 6.0], [5.0, 6.0, 7.0], [6.0, 7.0, 8.0], [7.0, 8.0, 9.0]], results['out1'])
 
@@ -1836,6 +1838,71 @@ class ModelyPredictTest(unittest.TestCase):
         self.TestAlmostEqual(results['in1_sm2_2'], inin_sm2)
         self.TestAlmostEqual(results['in1_sm2_3'], inin_sm2)
 
+    def test_integrate_derivate_trapezoidal(self):
+        NeuObj.clearNames()
+        input = Input('in1')
+
+        in1_s = Output('in1_s', input.s(1,method='trapezoidal'))
+        in1_s2 = Output('in1_s2', input.s(2,method='trapezoidal'))
+        in1_s2_2 = Output('in1_s2_2', Derivate(input.s(1,method='trapezoidal'),method='trapezoidal'))
+        in1_s2_3 = Output('in1_s2_3', input.s(1,method='trapezoidal').s(1,method='trapezoidal'))
+        in1_s_2 = Output('in1_s_2', input.s(2,method='trapezoidal').s(-1,method='trapezoidal'))
+
+        in1_sm = Output('in1_sm', input.s(-1,method='trapezoidal'))
+        in1_sm2 = Output('in1_sm2', input.s(-2,method='trapezoidal'))
+        in1_sm2_2 = Output('in1_sm2_2', Integrate(input.s(-1,method='trapezoidal'),method='trapezoidal'))
+        in1_sm2_3 = Output('in1_sm2_3', input.s(-1,method='trapezoidal').s(-1,method='trapezoidal'))
+        in1_sm_2 = Output('in1_sm_2', input.s(-2,method='trapezoidal').s(1,method='trapezoidal'))
+
+        in1_1 = Output('in1_1', Integrate(input.s(1,method='trapezoidal'),method='trapezoidal'))
+        in1_2 = Output('in1_2', Integrate(Integrate(input.s(2,method='trapezoidal'),method='trapezoidal'),method='trapezoidal'))
+        in1_3 = Output('in1_3', Integrate(Integrate(Derivate(input.s(1,method='trapezoidal'),method='trapezoidal'),method='trapezoidal'),method='trapezoidal'))
+
+        in1_1_2 = Output('in1_1_2', Derivate(input.s(-1,method='trapezoidal'),method='trapezoidal'))
+        in1_2_2 = Output('in1_2_2', Derivate(Derivate(input.s(-2,method='trapezoidal'),method='trapezoidal'),method='trapezoidal'))
+        in1_3_2 = Output('in1_3_2', Derivate(Derivate(Integrate(input.s(-1,method='trapezoidal'),method='trapezoidal'),method='trapezoidal'),method='trapezoidal'))
+
+        test = Modely(visualizer=None)
+        test.addModel('out_A', [in1_s, in1_s2, in1_s2_2, in1_s2_3, in1_s_2, in1_sm, in1_sm2, in1_sm2_2, in1_sm2_3, in1_sm_2, in1_1, in1_2, in1_3, in1_1_2, in1_2_2, in1_3_2])
+        test.neuralizeModel(1)
+        inin = {'in1': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]}
+        results = test(inin)
+        self.assertEqual(results['in1_1'], inin['in1'])
+        self.assertEqual(results['in1_2'], inin['in1'])
+        self.assertEqual(results['in1_3'], inin['in1'])
+        self.assertEqual(results['in1_1_2'], inin['in1'])
+        self.assertEqual(results['in1_2_2'], inin['in1'])
+        self.assertEqual(results['in1_3_2'], inin['in1'])
+
+        inin_sm = [7., 14.5, 16., 18.5, 22., 26.5, 32., 38.5, 46., 54.5]
+        inin_sm2 = [  3.5 ,  14.25,  29.5 ,  46.75,  67.  ,  91.25, 120.5 , 155.75, 198.  , 248.25]
+        self.assertEqual(results['in1_sm'], inin_sm)
+        self.assertEqual(results['in1_sm_2'], inin_sm)
+        self.assertEqual(results['in1_sm2'], inin_sm2)
+        self.assertEqual(results['in1_sm2_2'], inin_sm2)
+        self.assertEqual(results['in1_sm2_3'], inin_sm2)
+
+        test = Modely(visualizer=None)
+        test.addModel('out_A',
+                      [in1_s, in1_s2, in1_s2_2, in1_s2_3, in1_s_2, in1_sm, in1_sm2, in1_sm2_2, in1_sm2_3, in1_sm_2, in1_1, in1_2, in1_3, in1_1_2, in1_2_2, in1_3_2])
+        test.neuralizeModel(0.01)
+        inin = {'in1': [14, 1, 2, 3, 4, 5, 6, 7, 8, 9]}
+        results = test(inin)
+        self.TestAlmostEqual(results['in1_1'], inin['in1'], precision=4)
+        self.TestAlmostEqual(results['in1_2'], inin['in1'], precision=4)
+        self.TestAlmostEqual(results['in1_3'], inin['in1'], precision=4)
+        self.TestAlmostEqual(results['in1_1_2'], inin['in1'], precision=4)
+        self.TestAlmostEqual(results['in1_2_2'], inin['in1'], precision=3)
+        self.TestAlmostEqual(results['in1_3_2'], inin['in1'], precision=3)
+
+        inin_sm = [ 0.07 , 0.145, 0.16 , 0.185, 0.22 , 0.265, 0.32 , 0.385, 0.46 , 0.545]
+        inin_sm2 = [0.00035 , 0.001425, 0.00295 , 0.004675, 0.0067  , 0.009125, 0.01205 , 0.015575, 0.0198  , 0.024825]
+        self.TestAlmostEqual(results['in1_sm'], inin_sm)
+        self.TestAlmostEqual(results['in1_sm_2'], inin_sm)
+        self.TestAlmostEqual(results['in1_sm2'], inin_sm2)
+        self.TestAlmostEqual(results['in1_sm2_2'], inin_sm2)
+        self.TestAlmostEqual(results['in1_sm2_3'], inin_sm2)
+
     def test_derivate_wrt_input(self):
         NeuObj.clearNames()
         x = Input('x')
@@ -1859,20 +1926,20 @@ class ModelyPredictTest(unittest.TestCase):
         test.addModel('model', [approx_dy_dx, approx_y])
         test.neuralizeModel()
         results = test({'x':[1,2]})
-        self.assertAlmostEqual(results['out'][0], parametric_fun(torch.tensor(1), test.model.all_parameters['a'],
-                                                            test.model.all_parameters['b'],
-                                                            test.model.all_parameters['c'],
-                                                            test.model.all_parameters['d']).detach().numpy().tolist()[0],places=5)
-        self.assertAlmostEqual(results['d_out'][0], dx_parametric_fun(torch.tensor(1), test.model.all_parameters['a'],
-                                                            test.model.all_parameters['b'],
-                                                            test.model.all_parameters['c'],
-                                                            test.model.all_parameters['d']).detach().numpy().tolist()[0],places=5)
-        self.assertAlmostEqual(results['out'][1], parametric_fun(torch.tensor(2), test.model.all_parameters['a'],
-                                                            test.model.all_parameters['b'],
-                                                            test.model.all_parameters['c'],
-                                                            test.model.all_parameters['d']).detach().numpy().tolist()[0],places=5)
-        self.assertAlmostEqual(results['d_out'][1], dx_parametric_fun(torch.tensor(2), test.model.all_parameters['a'],
-                                                            test.model.all_parameters['b'],
-                                                            test.model.all_parameters['c'],
-                                                            test.model.all_parameters['d']).detach().numpy().tolist()[0],places=5)
+        self.assertAlmostEqual(results['out'][0], parametric_fun(torch.tensor(1), torch.tensor(test.parameters['a']),
+                                                            torch.tensor(test.parameters['b']),
+                                                            torch.tensor(test.parameters['c']),
+                                                            torch.tensor(test.parameters['d'])).detach().numpy().tolist()[0],places=5)
+        self.assertAlmostEqual(results['d_out'][0], dx_parametric_fun(torch.tensor(1), torch.tensor(test.parameters['a']),
+                                                            torch.tensor(test.parameters['b']),
+                                                            torch.tensor(test.parameters['c']),
+                                                            torch.tensor(test.parameters['d'])).detach().numpy().tolist()[0],places=5)
+        self.assertAlmostEqual(results['out'][1], parametric_fun(torch.tensor(2), torch.tensor(test.parameters['a']),
+                                                            torch.tensor(test.parameters['b']),
+                                                            torch.tensor(test.parameters['c']),
+                                                            torch.tensor(test.parameters['d'])).detach().numpy().tolist()[0],places=5)
+        self.assertAlmostEqual(results['d_out'][1], dx_parametric_fun(torch.tensor(2), torch.tensor(test.parameters['a']),
+                                                            torch.tensor(test.parameters['b']),
+                                                            torch.tensor(test.parameters['c']),
+                                                            torch.tensor(test.parameters['d'])).detach().numpy().tolist()[0],places=5)
 

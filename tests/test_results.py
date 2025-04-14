@@ -2,8 +2,8 @@ import unittest, os, sys
 import numpy as np
 
 from nnodely import *
-from nnodely.relation import NeuObj
-from nnodely.logger import logging, nnLogger
+from nnodely.basic.relation import NeuObj
+from nnodely.support.logger import logging, nnLogger
 
 log = nnLogger(__name__, logging.CRITICAL)
 log.setAllLevel(logging.CRITICAL)
@@ -15,7 +15,7 @@ sys.path.append(os.getcwd())
 # in closed loop and states cases
 # in connect and states cases
 
-data_folder = os.path.join(os.path.dirname(__file__), 'data/')
+data_folder = os.path.join(os.path.dirname(__file__), '_data/')
 
 class ModelyTrainingTest(unittest.TestCase):
     def test_analysis_results(self):
@@ -39,7 +39,7 @@ class ModelyTrainingTest(unittest.TestCase):
         test.resultAnalysis('dataset')
         self.assertEqual({'A': [[[2.0]],[[2.0]],[[2.0]],[[2.0]],[[2.0]],[[2.0]],[[2.0]],[[2.0]],[[2.0]],[[2.0]]],
                                'B': [[[1.0]],[[1.0]],[[1.0]],[[1.0]],[[1.0]],[[1.0]],[[1.0]],[[1.0]],[[1.0]],[[1.0]]]},
-                         test.prediction['dataset']['error1'])
+                         test._prediction['dataset']['error1'])
         self.assertEqual((1.0 ** 2) * 10.0 / 10.0, test.performance['dataset']['error1']['mse'])
         self.assertEqual((2.0 ** 2) * 10.0 / 10.0, test.performance['dataset']['error2']['mse'])
         self.assertEqual((1+4)/2.0, test.performance['dataset']['total']['mean_error'])
@@ -47,7 +47,7 @@ class ModelyTrainingTest(unittest.TestCase):
         test.resultAnalysis('dataset', batch_size = 5)
         self.assertEqual({'A': [[[2.0]],[[2.0]],[[2.0]],[[2.0]],[[2.0]],[[2.0]],[[2.0]],[[2.0]],[[2.0]],[[2.0]]],
                                'B': [[[1.0]],[[1.0]],[[1.0]],[[1.0]],[[1.0]],[[1.0]],[[1.0]],[[1.0]],[[1.0]],[[1.0]]]},
-                         test.prediction['dataset']['error1'])
+                         test._prediction['dataset']['error1'])
         self.assertEqual((1.0 ** 2) * 10.0 / 10.0, test.performance['dataset']['error1']['mse'])
         self.assertEqual((2.0 ** 2) * 10.0 / 10.0, test.performance['dataset']['error2']['mse'])
         self.assertEqual((1+4)/2.0, test.performance['dataset']['total']['mean_error'])
@@ -55,7 +55,7 @@ class ModelyTrainingTest(unittest.TestCase):
         test.resultAnalysis('dataset', batch_size = 6)
         self.assertEqual({'A': [[[2.0]],[[2.0]],[[2.0]],[[2.0]],[[2.0]],[[2.0]]],
                                'B': [[[1.0]],[[1.0]],[[1.0]],[[1.0]],[[1.0]],[[1.0]]]},
-                         test.prediction['dataset']['error1'])
+                         test._prediction['dataset']['error1'])
         self.assertEqual((1.0 ** 2) * 10.0 / 10.0, test.performance['dataset']['error1']['mse'])
         self.assertEqual((2.0 ** 2) * 10.0 / 10.0, test.performance['dataset']['error2']['mse'])
         self.assertEqual((1+4)/2.0, test.performance['dataset']['total']['mean_error'])
@@ -76,7 +76,7 @@ class ModelyTrainingTest(unittest.TestCase):
         test.resultAnalysis('dataset2', batch_size = 6)
         self.assertEqual({'A': [[[2.0]],[[2.0]],[[2.0]],[[2.0]],[[2.0]],[[2.0]]],
                                'B': [[[1.0]],[[1.0]],[[1.0]],[[1.0]],[[1.0]],[[1.0]]]},
-                         test.prediction['dataset2']['error1'])
+                         test._prediction['dataset2']['error1'])
         self.assertEqual((1.0 ** 2) * 6.0 / 6.0, test.performance['dataset2']['error1']['mse'])
         self.assertEqual((2.0 ** 2) * 6.0 / 6.0, test.performance['dataset2']['error2']['mse'])
         self.assertEqual((1+4)/2.0, test.performance['dataset2']['total']['mean_error'])
@@ -109,7 +109,7 @@ class ModelyTrainingTest(unittest.TestCase):
         test.resultAnalysis('dataset')
         self.assertEqual({'A': [[[2.0]],[[2.0]],[[2.0]],[[2.0]],[[2.0]],[[2.0]],[[2.0]],[[2.0]],[[2.0]],[[2.0]]],
                                'B': [[[2.0]],[[2.0]],[[2.0]],[[2.0]],[[2.0]],[[2.0]],[[2.0]],[[2.0]],[[2.0]],[[2.0]]]},
-                         test.prediction['dataset']['error1'])
+                         test._prediction['dataset']['error1'])
         self.assertEqual((0.0 ** 2) * 10.0 / 10.0, test.performance['dataset']['error1']['mse'])
         self.assertEqual((1.0 ** 2) * 10.0 / 10.0, test.performance['dataset']['error2']['mse'])
         self.assertEqual((0+1)/2.0, test.performance['dataset']['total']['mean_error'])
@@ -145,8 +145,8 @@ class ModelyTrainingTest(unittest.TestCase):
                                    [[[40.0]], [[50.0]], [[60.0]], [[70.0]]],
                                    [[[50.0]], [[60.0]], [[70.0]], [[80.0]]],
                                    [[[60.0]], [[70.0]], [[80.0]], [[90.0]]]]
-        self.assertEqual({'A': A, 'B': B}, test.prediction['dataset']['error1'])
-        self.assertEqual({'A': C, 'B': B}, test.prediction['dataset']['error2'])
+        self.assertEqual({'A': A, 'B': B}, test._prediction['dataset']['error1'])
+        self.assertEqual({'A': C, 'B': B}, test._prediction['dataset']['error2'])
         self.assertAlmostEqual(np.sum((np.array(A).flatten()-np.array(B).flatten())**2)/24.0, test.performance['dataset']['error1']['mse'], places=3)
         self.assertAlmostEqual(np.sum((np.array(C).flatten()-np.array(B).flatten())**2)/24.0, test.performance['dataset']['error2']['mse'], places=3)
         self.assertAlmostEqual((np.sum((np.array(A).flatten()-np.array(B).flatten())**2)/24.0+np.sum((np.array(C).flatten()-np.array(B).flatten())**2)/24.0)/2.0, test.performance['dataset']['total']['mean_error'], places=3)
@@ -170,8 +170,8 @@ class ModelyTrainingTest(unittest.TestCase):
                                    [[[40.0]], [[50.0]], [[60.0]], [[70.0]]],
                                    [[[50.0]], [[60.0]], [[70.0]], [[80.0]]],
                                    [[[60.0]], [[70.0]], [[80.0]], [[90.0]]]]
-        self.assertEqual({'A': A, 'B': B}, test.prediction['dataset']['error1'])
-        self.assertEqual({'A': C, 'B': B}, test.prediction['dataset']['error2'])
+        self.assertEqual({'A': A, 'B': B}, test._prediction['dataset']['error1'])
+        self.assertEqual({'A': C, 'B': B}, test._prediction['dataset']['error2'])
         self.assertAlmostEqual(np.sum((np.array(A).flatten()-np.array(B).flatten())**2)/24.0, test.performance['dataset']['error1']['mse'], places=3)
         self.assertAlmostEqual(np.sum((np.array(C).flatten()-np.array(B).flatten())**2)/24.0, test.performance['dataset']['error2']['mse'], places=3)
         self.assertAlmostEqual((np.sum((np.array(A).flatten()-np.array(B).flatten())**2)/24.0+np.sum((np.array(C).flatten()-np.array(B).flatten())**2)/24.0)/2.0, test.performance['dataset']['total']['mean_error'], places=3)
@@ -192,8 +192,8 @@ class ModelyTrainingTest(unittest.TestCase):
                                    [[[30.0]], [[40.0]], [[50.0]], [[60.0]], [[70.0]], [[80.0]]],
                                    [[[40.0]], [[50.0]], [[60.0]], [[70.0]], [[80.0]], [[90.0]]],
                                    [[[50.0]], [[60.0]], [[70.0]], [[80.0]], [[90.0]], [[100.0]]]]
-        self.assertEqual({'A': A, 'B': B}, test.prediction['dataset']['error1'])
-        self.assertEqual({'A': C, 'B': B}, test.prediction['dataset']['error2'])
+        self.assertEqual({'A': A, 'B': B}, test._prediction['dataset']['error1'])
+        self.assertEqual({'A': C, 'B': B}, test._prediction['dataset']['error2'])
         self.assertAlmostEqual(np.sum((np.array(A).flatten()-np.array(B).flatten())**2)/30.0, test.performance['dataset']['error1']['mse'], places=3)
         self.assertAlmostEqual(np.sum((np.array(C).flatten()-np.array(B).flatten())**2)/30.0, test.performance['dataset']['error2']['mse'], places=3)
         self.assertAlmostEqual((np.sum((np.array(A).flatten()-np.array(B).flatten())**2)/30.0+np.sum((np.array(C).flatten()-np.array(B).flatten())**2)/30.0)/2.0, test.performance['dataset']['total']['mean_error'], places=3)
@@ -235,8 +235,8 @@ class ModelyTrainingTest(unittest.TestCase):
              [[[40.0]], [[50.0]], [[60.0]], [[70.0]]],
              [[[50.0]], [[60.0]], [[70.0]], [[80.0]]],
              [[[60.0]], [[70.0]], [[80.0]], [[90.0]]]]
-        self.assertEqual({'A': A, 'B': B}, test.prediction['dataset']['error1'])
-        self.assertEqual({'A': C, 'B': B}, test.prediction['dataset']['error2'])
+        self.assertEqual({'A': A, 'B': B}, test._prediction['dataset']['error1'])
+        self.assertEqual({'A': C, 'B': B}, test._prediction['dataset']['error2'])
         self.assertAlmostEqual(np.sum((np.array(A).flatten() - np.array(B).flatten()) ** 2) / 24.0,
                                test.performance['dataset']['error1']['mse'], places=3)
         self.assertAlmostEqual(np.sum((np.array(C).flatten() - np.array(B).flatten()) ** 2) / 24.0,
@@ -264,8 +264,8 @@ class ModelyTrainingTest(unittest.TestCase):
              [[[40.0]], [[50.0]], [[60.0]], [[70.0]]],
              [[[50.0]], [[60.0]], [[70.0]], [[80.0]]],
              [[[60.0]], [[70.0]], [[80.0]], [[90.0]]]]
-        self.assertEqual({'A': A, 'B': B}, test.prediction['dataset']['error1'])
-        self.assertEqual({'A': C, 'B': B}, test.prediction['dataset']['error2'])
+        self.assertEqual({'A': A, 'B': B}, test._prediction['dataset']['error1'])
+        self.assertEqual({'A': C, 'B': B}, test._prediction['dataset']['error2'])
         self.assertAlmostEqual(np.sum((np.array(A).flatten() - np.array(B).flatten()) ** 2) / 24.0,
                                test.performance['dataset']['error1']['mse'], places=3)
         self.assertAlmostEqual(np.sum((np.array(C).flatten() - np.array(B).flatten()) ** 2) / 24.0,
@@ -290,8 +290,8 @@ class ModelyTrainingTest(unittest.TestCase):
              [[[30.0]], [[40.0]], [[50.0]], [[60.0]], [[70.0]], [[80.0]]],
              [[[40.0]], [[50.0]], [[60.0]], [[70.0]], [[80.0]], [[90.0]]],
              [[[50.0]], [[60.0]], [[70.0]], [[80.0]], [[90.0]], [[100.0]]]]
-        self.assertEqual({'A': A, 'B': B}, test.prediction['dataset']['error1'])
-        self.assertEqual({'A': C, 'B': B}, test.prediction['dataset']['error2'])
+        self.assertEqual({'A': A, 'B': B}, test._prediction['dataset']['error1'])
+        self.assertEqual({'A': C, 'B': B}, test._prediction['dataset']['error2'])
         self.assertAlmostEqual(np.sum((np.array(A).flatten() - np.array(B).flatten()) ** 2) / 30.0,
                                test.performance['dataset']['error1']['mse'], places=3)
         self.assertAlmostEqual(np.sum((np.array(C).flatten() - np.array(B).flatten()) ** 2) / 30.0,

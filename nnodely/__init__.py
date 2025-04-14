@@ -1,45 +1,75 @@
-
-__version__ = '1.3.1'
-
 import sys
-major, minor = sys.version_info.major, sys.version_info.minor
-
 import logging
-LOG_LEVEL = logging.INFO
+
+# Network input, outputs and parameters
+from nnodely.layers.input import Input, State, Connect, ClosedLoop
+from nnodely.layers.parameter import Parameter, Constant, SampleTime
+from nnodely.layers.output import Output
+
+# Network elements
+from nnodely.layers.activation import Relu, ELU, Softmax, Sigmoid, Identity
+from nnodely.layers.fir import Fir
+from nnodely.layers.linear import Linear
+from nnodely.layers.arithmetic import Add, Sum, Sub, Mul, Div, Pow, Neg
+from nnodely.layers.trigonometric import Sin, Cos, Tan, Cosh, Tanh, Sech
+from nnodely.layers.parametricfunction import ParamFun
+from nnodely.layers.fuzzify import Fuzzify
+from nnodely.layers.part import Part, Select, Concatenate, SamplePart, SampleSelect, TimePart, TimeConcatenate
+from nnodely.layers.localmodel import LocalModel
+from nnodely.layers.equationlearner import EquationLearner
+from nnodely.layers.timeoperation import Integrate, Derivate
+from nnodely.layers.interpolation import Interpolation
+
+# Main nnodely classes
+from nnodely.nnodely import nnodely, Modely, clearNames
+from nnodely.visualizer import Visualizer, TextVisualizer, MPLVisualizer, MPLNotebookVisualizer
+from nnodely.exporter import StandardExporter
+
+# Basic nnodely
+from nnodely.basic.optimizer import Optimizer, SGD, Adam
+
+# Support functions
+from nnodely.support.initializer import init_negexp, init_lin, init_constant, init_exp
+from nnodely.support import logger
+
+major, minor = sys.version_info.major, sys.version_info.minor
+logger.LOG_LEVEL = logging.INFO
+
+__version__ = '1.4.0'
 
 if major < 3:
     sys.exit("Sorry, Python 2 is not supported. You need Python >= 3.10 for "+__package__+".")
 elif minor < 9:
     sys.exit("Sorry, You need Python >= 3.10 for "+__package__+".")
 else:
-    print(f'>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'+
-          f' {__package__}_v{__version__} '.center(20, '-')+
-          f'<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+    print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>' +
+          f' {__package__}_v{__version__} '.center(20, '-') +
+          '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
 
-# Network input, outputs and parameters
-from nnodely.input import Input, State, Connect, ClosedLoop
-from nnodely.parameter import Parameter, Constant, SampleTime
-from nnodely.output import Output
 
-# Network elements
-from nnodely.activation import Relu, ELU, Softmax, Sigmoid, Identity
-from nnodely.fir import Fir
-from nnodely.linear import Linear
-from nnodely.arithmetic import Add, Sum, Sub, Mul, Div, Pow, Neg
-from nnodely.trigonometric import Sin, Cos, Tan, Cosh, Tanh, Sech
-from nnodely.parametricfunction import ParamFun
-from nnodely.fuzzify import Fuzzify
-from nnodely.part import  Part, Select, Concatenate, SamplePart, SampleSelect, TimePart, TimeConcatenate
-from nnodely.localmodel import LocalModel
-from nnodely.equationlearner import EquationLearner
-from nnodely.timeoperation import Integrate, Derivate
-from nnodely.interpolation import Interpolation
-
-# Main nnodely classes
-from nnodely.nnodely import nnodely, Modely
-from nnodely.visualizer import Visualizer, TextVisualizer, MPLVisualizer, MPLNotebookVisualizer
-from nnodely.optimizer import Optimizer, SGD, Adam
-from nnodely.exporter import Exporter, StandardExporter
-
-# Support functions
-from nnodely.initializer import init_negexp, init_lin, init_constant, init_exp
+__all__ = [
+    'nnodely', 'Modely', 'clearNames',
+    'Input', 'State', 'Connect', 'ClosedLoop',
+    'Parameter', 'Constant', 'SampleTime',
+    'Output',
+    'Relu', 'ELU', 'Softmax', 'Sigmoid', 'Identity',
+    'Fir',
+    'Linear',
+    'Add', 'Sum', 'Sub', 'Mul', 'Div', 'Pow', 'Neg',
+    'Sin', 'Cos', 'Tan', 'Cosh', 'Tanh', 'Sech',
+    'ParamFun',
+    'Fuzzify',
+    'Part',  'Select',  'Concatenate',
+    'SamplePart',  'SampleSelect',
+    'TimePart',  'TimeConcatenate',
+    'LocalModel',
+    'EquationLearner',
+    'Integrate',  'Derivate',
+    'Interpolation',
+    'Visualizer', 'TextVisualizer', 'MPLVisualizer', 'MPLNotebookVisualizer',
+    'StandardExporter',
+    'SGD', 'Adam', 'Optimizer',
+    'init_negexp', 'init_lin', 'init_constant', 'init_exp',
+    # Main nnodely classes
+    '__version__'
+]

@@ -2,8 +2,8 @@ import  os, unittest, torch, shutil
 import numpy as np
 
 from nnodely import *
-from nnodely.relation import NeuObj
-from nnodely.logger import logging, nnLogger
+from nnodely.basic.relation import NeuObj
+from nnodely.support.logger import logging, nnLogger
 
 log = nnLogger(__name__, logging.CRITICAL)
 log.setAllLevel(logging.CRITICAL)
@@ -24,7 +24,7 @@ class ModelyExportTest(unittest.TestCase):
 
     def __init__(self, *args, **kwargs):
         super(ModelyExportTest, self).__init__(*args, **kwargs)
-        NeuObj.clearNames()
+        clearNames()
 
         self.result_path = './results'
         self.test = Modely(visualizer=None, seed=42, workspace=self.result_path)
@@ -122,7 +122,11 @@ class ModelyExportTest(unittest.TestCase):
             self.test({'x': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'y': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})
         test2 = Modely(visualizer=None, workspace=self.test.getWorkspace())
         test2.loadModel()  # Load the nnodely model with parameter values
-        self.assertEqual(test2.model_def.json, self.test.model_def.json)
+        with self.assertRaises(AttributeError):
+            test2.neuralized = True
+        with self.assertRaises(AttributeError):
+            test2.traced = True
+        self.assertEqual(test2.json, self.test.json)
 
         if os.path.exists(self.test.getWorkspace()):
             shutil.rmtree(self.test.getWorkspace())

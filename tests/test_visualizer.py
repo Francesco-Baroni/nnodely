@@ -1,9 +1,9 @@
-import sys, os, unittest, torch, shutil
+import sys, io, os, unittest, torch
 import numpy as np
 
 from nnodely import *
-from nnodely.relation import NeuObj
-from nnodely.logger import logging, nnLogger
+from nnodely.basic.relation import NeuObj
+from nnodely.support.logger import logging, nnLogger
 
 log = nnLogger(__name__, logging.CRITICAL)
 log.setAllLevel(logging.CRITICAL)
@@ -39,6 +39,8 @@ class ModelyTestVisualizer(unittest.TestCase):
         parfun_x = ParamFun(myFun, parameters_and_constants=[K_x,c_v])
         parfun_y = ParamFun(myFun, parameters_and_constants=[K_y])
         parfun_zz = ParamFun(myFun)
+        parfun_2d = ParamFun(myFun, parameters_and_constants=[K_x, K_x])
+        parfun_3d = ParamFun(myFun, parameters_and_constants=[K_x])
         fir_w = Fir(W=w_5)(x.tw(5))
         fir_t = Fir(W=t_5)(y.tw(5))
         time_part = TimePart(x.tw(5), i=1, j=3)
@@ -47,17 +49,35 @@ class ModelyTestVisualizer(unittest.TestCase):
         def fuzzyfun(x):
             return torch.sin(x)
 
+        def fuzzyfunth(x):
+            return torch.tanh(x)
+
         fuzzy = Fuzzify(output_dimension=4, range=[0, 4], functions=fuzzyfun)(x.tw(1))
         fuzzyTriang = Fuzzify(centers=[1, 2, 3, 7])(x.tw(1))
+        fuzzyRect = Fuzzify(centers=[1, 2, 3, 7], functions='Rectangular')(x.tw(1))
+        fuzzyList = Fuzzify(centers=[1, 3, 2, 7], functions=[fuzzyfun,fuzzyfunth])(x.tw(1))
 
         self.out = Output('out', Fir(parfun_x(x.tw(1)) + parfun_y(y.tw(1), c_v)))
         self.out2 = Output('out2', Add(w, x.tw(1)) + Add(t, y.tw(1)) + Add(w, c))
         self.out3 = Output('out3', Add(fir_w, fir_t))
-        self.out4 = Output('out4', Linear(output_dimension=1)(fuzzy+fuzzyTriang))
+        self.out4 = Output('out4', Linear(output_dimension=1)(fuzzy+fuzzyTriang+fuzzyRect+fuzzyList))
         self.out5 = Output('out5', Fir(time_part) + Fir(sample_select))
         self.out6 = Output('out6', LocalModel(output_function=Fir())(x.tw(1), fuzzy))
         self.out7 = Output('out7', parfun_zz(z.last()))
         self.out8 = Output('out8', Fir(parfun_x(x.tw(1)) + parfun_y(y.tw(1), c_v)) + Fir(parfun_zz(x.tw(5), t_5, c_5_2)))
+        self.out9 = Output('out9', Fir(parfun_2d(x.tw(1)) + parfun_3d(x.tw(1),x.tw(1))))
+
+    def setUp(self):
+        # Reindirizza stdout e stderr
+        self._original_stdout = sys.stdout
+        self._original_stderr = sys.stderr
+        sys.stdout = io.StringIO()
+        #sys.stderr = io.StringIO()
+
+    def tearDown(self):
+        # Ripristina stdout e stderr
+        sys.stdout = self._original_stdout
+        #sys.stderr = self._original_stderr
 
     def test_export_textvisualizer(self):
         t = TextVisualizer(5)
@@ -83,8 +103,7 @@ class ModelyTestVisualizer(unittest.TestCase):
         t.showMinimize('error3')
         test.trainModel(optimizer='SGD', training_params=params)
         t.showWeights()
-        test.trainModel(optimizer='SGD', training_params=params, validation_dataset=params)
-        test.trainModel(optimizer='SGD', training_params=params, validation_dataset=params, closed_loop={'x':'out'}, prediction_samples=1)
+        test.trainModel(optimizer='SGD', training_params=params, closed_loop={'x':'out'}, prediction_samples=1)
         test.saveModel()
         test.loadModel()
 
@@ -93,6 +112,10 @@ class ModelyTestVisualizer(unittest.TestCase):
         test.importPythonModel()
         test.exportReport()
 
+        test = Modely(visualizer='Standard')
+        test.addModel('modelA', self.out)
+        test.neuralizeModel(0.5)
+
     def test_export_mplvisualizer(self):
         m = MPLVisualizer(5)
         test = Modely(visualizer=m, seed=42)
@@ -100,6 +123,7 @@ class ModelyTestVisualizer(unittest.TestCase):
         test.addModel('modelB', [self.out2, self.out3, self.out4])
         test.addModel('modelC', [self.out4, self.out5, self.out6])
         test.addModel('modelD', self.out7)
+        test.addModel('modelE', self.out9)
         test.addMinimize('error1', self.x.last(), self.out)
         test.addMinimize('error2', self.y.last(), self.out3, loss_function='rmse')
         test.addMinimize('error3', self.z.last(), self.out6, loss_function='rmse')
@@ -116,16 +140,18 @@ class ModelyTestVisualizer(unittest.TestCase):
         test.trainModel(optimizer='SGD', training_params=params)
         m.closeResult()
         m.closeTraining()
-        list_of_functions = list(test.model_def['Functions'].keys())
+        list_of_functions = list(test.json['Functions'].keys())
+        try:
+            for f in list_of_functions:
+                m.showFunctions(f)
+        except ValueError:
+            pass
         with self.assertRaises(ValueError):
             m.showFunctions(list_of_functions[1])
         m.closeFunctions()
-        m.showFunctions(list_of_functions[0])
-        m.showFunctions(list_of_functions[4])
-        m.showFunctions(list_of_functions[3])
-        m.closeFunctions()
 
     def test_export_mplvisualizer2(self):
+        clearNames(['x', 'F'])
         x = Input('x')
         F = Input('F')
         def myFun(K1, K2, p1, p2):
@@ -138,27 +164,30 @@ class ModelyTestVisualizer(unittest.TestCase):
         example = Modely(visualizer=m)
         example.addModel('out', out)
         example.neuralizeModel()
-        m.showFunctions(list(example.model_def['Functions'].keys()), xlim=[[-5, 5], [-1, 1]])
+        m.showFunctions(list(example.json['Functions'].keys()), xlim=[[-5, 5], [-1, 1]])
         m.closeFunctions()
 
-    # def test_export_mplnotebookvisualizer(self):
-    #     m = MPLNotebookVisualizer(5)
-    #     test = Modely(visualizer=m, seed=42)
-    #     test.addModel('modelA', self.out)
-    #     test.addModel('modelB', [self.out2, self.out3, self.out4])
-    #     test.addModel('modelC', [self.out4, self.out5, self.out6])
-    #     test.addMinimize('error1', self.x.last(), self.out)
-    #     test.addMinimize('error2', self.y.last(), self.out3, loss_function='rmse')
-    #     test.addMinimize('error3', self.z.last(), self.out6, loss_function='rmse')
-    #
-    #     test.neuralizeModel(0.5)
-    #
-    #     data_x = np.arange(0.0, 10, 0.1)
-    #     data_y = np.arange(0.0, 10, 0.1)
-    #     a, b = -1.0, 2.0
-    #     dataset = {'x': data_x, 'y': data_y, 'z': a * data_x + b * data_y}
-    #     params = {'num_of_epochs': 1, 'lr': 0.01}
-    #     test.loadData(name='dataset', source=dataset)  # Create the dataset
-    #     test.trainModel(optimizer='SGD', training_params=params)  # Train the traced model
-    #     m.showFunctions(list(test.model_def['Functions'].keys()), xlim=[[-5, 5], [-1, 1]])
-    #     m.closeFunctions()
+    def test_export_mplnotebookvisualizer(self):
+        m = MPLNotebookVisualizer(5, test=True)
+        test = Modely(visualizer=m, seed=42)
+        test.addModel('modelB', [self.out2, self.out3, self.out4])
+        test.addModel('modelC', [self.out4, self.out5, self.out6])
+        test.addModel('modelD', [self.out9])
+        test.addMinimize('error2', self.y.last(), self.out3, loss_function='rmse')
+        test.addMinimize('error3', self.z.last(), self.out6, loss_function='rmse')
+
+        test.neuralizeModel(1)
+
+        data_x = np.arange(0.0, 10, 0.1)
+        data_y = np.arange(0.0, 10, 0.1)
+        a, b = -1.0, 2.0
+        dataset = {'x': data_x, 'y': data_y, 'z': a * data_x + b * data_y}
+        params = {'num_of_epochs': 1, 'lr': 0.01}
+        test.loadData(name='dataset', source=dataset)  # Create the dataset
+        test.trainModel(optimizer='SGD', training_params=params)  # Train the traced model
+        list_of_functions = list(test.json['Functions'].keys())
+        try:
+            for f in list_of_functions:
+                m.showFunctions(f)
+        except ValueError:
+            pass

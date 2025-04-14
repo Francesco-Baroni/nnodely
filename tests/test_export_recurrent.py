@@ -2,8 +2,8 @@ import sys, os, unittest, torch, shutil, torch.onnx, importlib
 import numpy as np
 
 from nnodely import *
-from nnodely.relation import NeuObj, Stream
-from nnodely.logger import logging, nnLogger
+from nnodely.basic.relation import NeuObj, Stream
+from nnodely.support.logger import logging, nnLogger
 
 log = nnLogger(__name__, logging.CRITICAL)
 log.setAllLevel(logging.CRITICAL)
@@ -53,16 +53,16 @@ class ModelyExportTest(unittest.TestCase):
         ## Inference
         sample = {'x':[1], 'y':[2], 'z':[3], 'target':[18]}
         train_result = test(sample)
-        train_parameters = test.model.all_parameters
+        train_parameters = test.parameters
         # Export the model
         test.exportPythonModel()
         # Import the model
         test.importPythonModel(name=network_name)
         # Inference with imported model
         self.assertEqual(train_result, test(sample))
-        self.assertEqual(train_parameters['a'], test.model.all_parameters['a'])
-        self.assertEqual(train_parameters['b'], test.model.all_parameters['b'])
-        self.assertEqual(train_parameters['c'], test.model.all_parameters['c'])
+        self.assertEqual(train_parameters['a'], test.parameters['a'])
+        self.assertEqual(train_parameters['b'], test.parameters['b'])
+        self.assertEqual(train_parameters['c'], test.parameters['c'])
 
         if os.path.exists(test.getWorkspace()):
             shutil.rmtree(test.getWorkspace())
@@ -142,7 +142,7 @@ class ModelyExportTest(unittest.TestCase):
         dummy_input = {'x':np.ones(shape=(3, 1, 1, 1)).astype(np.float32),
                        'y':np.ones(shape=(1, 1, 1)).astype(np.float32),
                        'z':np.ones(shape=(1, 1, 1)).astype(np.float32)}
-        outputs = Modely().onnxInference(dummy_input,onnx_model_path)
+        outputs = Modely(visualizer=None).onnxInference(dummy_input,onnx_model_path)
         # Get the output
         expected_output = np.array([[[[3.]]], [[[5.]]], [[[7.]]]], dtype=np.float32)
         self.assertEqual(outputs[0].tolist(), expected_output.tolist())
@@ -169,7 +169,7 @@ class ModelyExportTest(unittest.TestCase):
 
         ## ONNX IMPORT
         onnx_model_path = os.path.join(result_path, 'onnx', 'net.onnx')
-        outputs = Modely().onnxInference(inputs={'num_cycle':np.ones(shape=(10, 1, 1, 1)).astype(np.float32), 'x':np.ones(shape=(1, 1, 1)).astype(np.float32)}, path=onnx_model_path)
+        outputs = Modely(visualizer=None).onnxInference(inputs={'num_cycle':np.ones(shape=(10, 1, 1, 1)).astype(np.float32), 'x':np.ones(shape=(1, 1, 1)).astype(np.float32)}, path=onnx_model_path)
         self.assertEqual(output_nodely['out1'], outputs[0].squeeze().tolist())
         self.assertEqual(output_nodely['out2'], outputs[1].squeeze().tolist())
 
@@ -224,7 +224,7 @@ class ModelyExportTest(unittest.TestCase):
 
         ## Onnx Import
         onnx_model_path = os.path.join(result_path, 'onnx', 'net.onnx')
-        outputs = Modely().onnxInference(sample, onnx_model_path)
+        outputs = Modely(visualizer=None).onnxInference(sample, onnx_model_path)
         self.assertEqual(outputs[0][0][0].tolist(), model_inference['accelleration'])
 
         if os.path.exists(vehicle.getWorkspace()):
@@ -358,7 +358,7 @@ class ModelyExportTest(unittest.TestCase):
                             'input4': np.random.rand(1,1,4,3).astype(np.float32)}
         recurrent_sample['state1'] = np.random.rand(1,1,1).astype(np.float32)
         recurrent_sample['state2'] = np.random.rand(1,1,3).astype(np.float32)
-        inference = Modely().onnxInference(recurrent_sample, onnx_model_path)
+        inference = Modely(visualizer=None).onnxInference(recurrent_sample, onnx_model_path)
         self.assertListEqual(list(inference[0].shape), [1,1,1,1])
         self.assertListEqual(list(inference[1].shape), [1,1,1,3])
         self.assertListEqual(list(inference[2].shape), [1,1,1,1])
@@ -375,7 +375,7 @@ class ModelyExportTest(unittest.TestCase):
                             'input4': np.random.rand(5,1,4,3).astype(np.float32)}
         recurrent_sample['state1'] = np.random.rand(1,1,1).astype(np.float32)
         recurrent_sample['state2'] = np.random.rand(1,1,3).astype(np.float32)
-        inference = Modely().onnxInference(recurrent_sample, onnx_model_path)
+        inference = Modely(visualizer=None).onnxInference(recurrent_sample, onnx_model_path)
         self.assertListEqual(list(inference[0].shape), [5,1,1,1])
         self.assertListEqual(list(inference[1].shape), [5,1,1,3])
         self.assertListEqual(list(inference[2].shape), [5,1,1,1])
@@ -392,7 +392,7 @@ class ModelyExportTest(unittest.TestCase):
                             'input4': np.random.rand(5,2,4,3).astype(np.float32)}
         recurrent_sample['state1'] = np.random.rand(2,1,1).astype(np.float32)
         recurrent_sample['state2'] = np.random.rand(2,1,3).astype(np.float32)
-        inference = Modely().onnxInference(recurrent_sample, onnx_model_path)
+        inference = Modely(visualizer=None).onnxInference(recurrent_sample, onnx_model_path)
         self.assertListEqual(list(inference[0].shape), [5,2,1,1])
         self.assertListEqual(list(inference[1].shape), [5,2,1,3])
         self.assertListEqual(list(inference[2].shape), [5,2,1,1])
@@ -527,13 +527,13 @@ class ModelyExportTest(unittest.TestCase):
         ## ONNX IMPORT
         onnx_model_path = os.path.join(result_path, 'onnx', network_name+'.onnx')
         onnx_sample = {key: (np.expand_dims(value, axis=1).astype(np.float32) if key != 'vel' else value)  for key, value in model_sample.items()}
-        outputs = Modely().onnxInference(onnx_sample, onnx_model_path)
+        outputs = Modely(visualizer=None).onnxInference(onnx_sample, onnx_model_path)
         self.assertEqual(outputs[0][0], model_inference['accelleration'])
 
         model_sample = vehicle.getSamples('dataset', window=3)
         onnx_sample = {key: (np.expand_dims(value, axis=1).astype(np.float32) if key != 'vel' else np.expand_dims(np.array(value[0], dtype=np.float32), axis=0))  for key, value in model_sample.items()}
         model_inference = vehicle(model_sample, sampled=True, prediction_samples=3)
-        outputs = Modely().onnxInference(onnx_sample, onnx_model_path)
+        outputs = Modely(visualizer=None).onnxInference(onnx_sample, onnx_model_path)
         self.assertEqual(outputs[0].squeeze().tolist(), model_inference['accelleration'])
 
         if os.path.exists(vehicle.getWorkspace()):
@@ -551,7 +551,7 @@ class ModelyExportTest(unittest.TestCase):
 
         out61 = Output('out61', sw_7.sw(6))
         out62 = Output('out62', SamplePart(sw_7,1,7))
-        test = Modely(workspace=result_path)
+        test = Modely(visualizer=None, workspace=result_path)
         test.addModel('out', [out61,out62])
         test.neuralizeModel()
         sample = [14, 1, 2, 3, 4, 5, 6]
@@ -559,7 +559,7 @@ class ModelyExportTest(unittest.TestCase):
 
         onnx_model_path = os.path.join(result_path, 'onnx', network_name+'.onnx')
         test.exportONNX(inputs_order=['inin','SamplePart1_sw1'],outputs_order=['out61','out62'],name=network_name)
-        outputs = Modely().onnxInference({'inin':np.array([[[[14],[1],[2],[3],[4],[5],[6]]]]).astype(np.float32),'SamplePart1_sw1':np.array([[[0],[0],[0],[0],[0],[0]]]).astype(np.float32)}, onnx_model_path)
+        outputs = Modely(visualizer=None).onnxInference({'inin':np.array([[[[14],[1],[2],[3],[4],[5],[6]]]]).astype(np.float32),'SamplePart1_sw1':np.array([[[0],[0],[0],[0],[0],[0]]]).astype(np.float32)}, onnx_model_path)
         self.assertEqual(outputs[0].squeeze().tolist(), results['out61'][0])
         self.assertEqual(outputs[1].squeeze().tolist(), results['out62'][0])
         self.assertEqual(results['out61'][0], results['out62'][0])
@@ -567,4 +567,36 @@ class ModelyExportTest(unittest.TestCase):
         if os.path.exists(test.getWorkspace()):
             shutil.rmtree(test.getWorkspace())
 
+    # TODO to be added when fixed the function for partial exprot
+    # def test_partial_model_export(self):
+    #     result_path = 'results'
+    #     NeuObj.clearNames()
+    #     x = Input('x')
+    #     y = Input('y')
+    #     x_last = x.last()
+    #     y_last = y.last()
+    #     p1 = Parameter('p1', sw=1, values=[[1.2]])
+    #     fun = Sin(x_last) + Fir(W=p1)(x_last) + Cos(y_last)
+    #     out_der = Derivate(fun, x_last) + Derivate(fun, y_last)
+    #
+    #     x2 = State('x2')
+    #     y2 = Input('y2')
+    #     x2_last = x2.last()
+    #     y2_last = y2.last()
+    #     p2 = Parameter('p2', sw=1, values=[[1.2]])
+    #     fun2 = Sin(x2_last) + Fir(W=p2)(x2_last) + Cos(y2_last)
+    #     out_der2 = Derivate(fun2, x2_last) + Derivate(fun2, y2_last)
+    #     out_der.connect(x2)
+    #
+    #     out1 = Output('out1', out_der)
+    #     out2 = Output('out2', out_der2)
+    #
+    #     m = Modely(workspace=result_path, visualizer=TextVisualizer(), seed=5)
+    #     m.addModel('modelA', [out1])
+    #     m.addModel('modelB', [out2])
+    #     m.neuralizeModel()
+    #     # m.saveModel(models = 'modelA')
+    #     # m.exportPythonModel(models = 'modelA')
+    #     # m.saveTorchModel(models = 'modelA')
+    #     # m.exportONNX(['x','y'], ['out1'], models = 'modelA')
 

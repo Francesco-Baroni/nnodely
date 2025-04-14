@@ -3,8 +3,8 @@ import unittest, sys, os, torch
 import numpy as np
 
 from nnodely import *
-from nnodely.relation import NeuObj, Stream
-from nnodely.logger import logging, nnLogger
+from nnodely.basic.relation import NeuObj, Stream
+from nnodely.support.logger import logging, nnLogger
 
 log = nnLogger(__name__, logging.CRITICAL)
 log.setAllLevel(logging.CRITICAL)
@@ -36,7 +36,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         test.neuralizeModel(0.01)
 
         list_of_dimensions = [[1, 1], [1, 1]]
-        for ind, (key, value) in enumerate({k: v for k, v in test.model.relation_forward.items() if 'Fir' in k}.items()):
+        for ind, (key, value) in enumerate({k: v for k, v in test._model.relation_forward.items() if 'Fir' in k}.items()):
             self.assertEqual(list_of_dimensions[ind],list(value.weights.shape))
       
     def test_network_building_simple(self):
@@ -52,7 +52,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         test.neuralizeModel(0.01)
         
         list_of_dimensions = {'Fir2':[5,1],'Fir5':[1,1]}
-        for key, value in {k:v for k,v in test.model.relation_forward.items() if 'Fir' in k}.items():
+        for key, value in {k:v for k,v in test._model.relation_forward.items() if 'Fir' in k}.items():
             self.assertEqual(list_of_dimensions[key],list(value.weights.shape))
 
     def test_network_building_tw(self):
@@ -71,7 +71,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         test.neuralizeModel(0.01)
         
         list_of_dimensions = {'Fir2':[5,1], 'Fir5':[1,1], 'Fir8':[5,1], 'Fir11':[4,1]}
-        for key, value in {k:v for k,v in test.model.relation_forward.items() if 'Fir' in k}.items():
+        for key, value in {k:v for k,v in test._model.relation_forward.items() if 'Fir' in k}.items():
             self.assertEqual(list_of_dimensions[key],list(value.weights.shape))
     
     def test_network_building_tw2(self):
@@ -89,11 +89,11 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         test.addModel('fun',fun)
         test.neuralizeModel(0.01)
 
-        self.assertEqual(test.max_n_samples, 8) # 5 samples + 3 samples of the horizon
-        self.assertEqual({'in2': 8} , test.input_n_samples)
+        self.assertEqual(test._max_n_samples, 8) # 5 samples + 3 samples of the horizon
+        self.assertEqual({'in2': 8} , test._input_n_samples)
         
         list_of_dimensions = {'Fir2':[5,1], 'Fir5':[4,1], 'Fir8':[6,1], 'Fir11':[3,1], 'Fir14':[3,1]}
-        for  key, value in {k:v for k,v in test.model.relation_forward.items() if 'Fir' in k}.items():
+        for  key, value in {k:v for k,v in test._model.relation_forward.items() if 'Fir' in k}.items():
             self.assertEqual(list_of_dimensions[key],list(value.weights.shape))
 
     def test_network_building_tw3(self):
@@ -109,7 +109,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         test.neuralizeModel(0.01)
 
         list_of_dimensions = [[5,1], [4,1], [5,1]]
-        for ind, (key, value) in enumerate({k:v for k,v in test.model.relation_forward.items() if 'Fir' in k}.items()):
+        for ind, (key, value) in enumerate({k:v for k,v in test._model.relation_forward.items() if 'Fir' in k}.items()):
             self.assertEqual(list_of_dimensions[ind],list(value.weights.shape))
 
     def test_network_building_tw_with_offest(self):
@@ -128,7 +128,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         test.neuralizeModel(0.01)
 
         list_of_dimensions = {'Fir2':[5,1], 'Fir5':[6,1], 'Fir8':[6,1], 'Fir11':[6,1]}
-        for key, value in {k:v for k,v in test.model.relation_forward.items() if 'Fir' in k}.items():
+        for key, value in {k:v for k,v in test._model.relation_forward.items() if 'Fir' in k}.items():
             self.assertEqual(list_of_dimensions[key],list(value.weights.shape))
 
     def test_network_building_tw_negative(self):
@@ -143,7 +143,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         test.neuralizeModel(0.01)
 
         list_of_dimensions = [[3,1], [3,1]]
-        for ind, (key, value) in enumerate({k:v for k,v in test.model.relation_forward.items() if 'Fir' in k}.items()):
+        for ind, (key, value) in enumerate({k:v for k,v in test._model.relation_forward.items() if 'Fir' in k}.items()):
             self.assertEqual(list_of_dimensions[ind],list(value.weights.shape))
 
     def test_network_building_tw_positive(self):
@@ -158,7 +158,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         test.neuralizeModel(0.01)
 
         list_of_dimensions = [[3,1], [3,1]]
-        for ind, (key, value) in enumerate({k:v for k,v in test.model.relation_forward.items() if 'Fir' in k}.items()):
+        for ind, (key, value) in enumerate({k:v for k,v in test._model.relation_forward.items() if 'Fir' in k}.items()):
             self.assertEqual(list_of_dimensions[ind],list(value.weights.shape))
 
     def test_network_building_sw_with_offset(self):
@@ -176,7 +176,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         test.neuralizeModel(0.01)
 
         list_of_dimensions = {'Fir2':[5,1], 'Fir5':[6,1], 'Fir8':[6,1], 'Fir11':[6,1]}
-        for key, value in {k:v for k,v in test.model.relation_forward.items() if 'Fir' in k}.items():
+        for key, value in {k:v for k,v in test._model.relation_forward.items() if 'Fir' in k}.items():
             self.assertEqual(list_of_dimensions[key],list(value.weights.shape))
 
     def test_network_building_sw_and_tw(self):
@@ -193,7 +193,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         test.neuralizeModel(0.01)
 
         list_of_dimensions = [[6,1], [1,1]]
-        for ind, (key, value) in enumerate({k:v for k,v in test.model.relation_forward.items() if 'Fir' in k}.items()):
+        for ind, (key, value) in enumerate({k:v for k,v in test._model.relation_forward.items() if 'Fir' in k}.items()):
             self.assertEqual(list_of_dimensions[ind],list(value.weights.shape))
 
     def test_network_linear(self):
@@ -215,7 +215,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         test.neuralizeModel(0.01)
 
         list_of_dimensions = [[1,1],[1,5],[3,1],[3,5]]
-        for ind, (key, value) in enumerate({k:v for k,v in test.model.relation_forward.items() if 'Linear' in k}.items()):
+        for ind, (key, value) in enumerate({k:v for k,v in test._model.relation_forward.items() if 'Linear' in k}.items()):
             self.assertEqual(list_of_dimensions[ind],list(value.weights.shape))
 
     def test_network_linear_interpolation_train(self):
@@ -233,7 +233,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         dataset = {'x':np.random.uniform(1,4,100)}
         test.loadData(name='dataset', source=dataset)
         test.trainModel(num_of_epochs=100, train_batch_size=10)
-        self.assertAlmostEqual(test.model.all_parameters['a'].item(), 0.5, places=2)
+        self.assertAlmostEqual(test.parameters['a'][0][0], 0.5, places=2)
 
     def test_network_linear_interpolation(self):
         NeuObj.clearNames()
