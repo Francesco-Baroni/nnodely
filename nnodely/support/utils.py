@@ -55,64 +55,132 @@ class ReadOnlyDict:
 
     def __eq__(self, other):
         if not isinstance(other, ReadOnlyDict):
-            return NotImplemented
+            raise NotImplemented
         return self._data == other._data
 
 
 def get_window(obj):
     return 'tw' if 'tw' in obj.dim else ('sw' if 'sw' in obj.dim else None)
 
-def get_inputs(json, relation):
+# def get_inputs(json, relation):
+#     # Get all the inputs needed to compute a specific relation from the json graph
+#     inputs = []
+#
+#     def search(rel):
+#         if rel in (json['Inputs'] | json['States']):  # Found an input
+#             inputs.append(rel)
+#             if rel in json['States']:
+#                 if 'connect' in json['States'][rel]:
+#                     search(json['States'][rel]['connect'])
+#                 if 'closed_loop' in json['States'][rel]:
+#                     search(json['States'][rel]['closed_loop'])
+#         elif rel in json['Relations']:  # Another relation
+#             for sub_rel in json['Relations'][rel][1]:
+#                 search(sub_rel)
+#
+#     for rel in json['Relations'][relation][1]:
+#         search(rel)
+#
+#     return inputs
+
+# def subjson(json, models:str|list):
+#     from nnodely.basic.relation import MAIN_JSON
+#     if type(models) is not str:
+#         sub_json = {}
+#         for model in models:
+#             check(model in json['Models'],AttributeError, f"Model [{model}] not found!")
+#             for category, items in json['Models'][model].items():
+#                 sub_json[category] = {key:value for key, value in json[category].items() if key in items}
+#             sub_json['Models'] = {}
+#             for model in models:
+#                 sub_json['Models'][model] = {key:value for key,value in json['Models'][model].items()}
+#     else:
+#         sub_json = copy.deepcopy(json)
+#         sub_json['Minimizers'] = {}
+#         sub_json['Info'] = {}
+#     return sub_json
+
+def subjson_from_relation(json, relation):
     # Get all the inputs needed to compute a specific relation from the json graph
-    inputs = []
-     
+    inputs = set()
+    relations = set()
+    constants = set()
+    parameters = set()
+    functions = set()
+
     def search(rel):
         if rel in (json['Inputs'] | json['States']):  # Found an input
-            inputs.append(rel)
+            inputs.add(rel)
+            if rel in json['States']:
+                if 'connect' in json['States'][rel]:
+                    search(json['States'][rel]['connect'])
+                if 'closed_loop' in json['States'][rel]:
+                    search(json['States'][rel]['closed_loop'])
+        elif rel in json['Constants']:  # Found a constant or parameter
+            constants.add(rel)
+        elif rel in json['Parameters']:
+            parameters.add(rel)
+        elif rel in json['Functions']:
+            functions.add(rel)
+            if 'params_and_consts' in json['Functions'][rel]:
+                for sub_rel in json['Functions'][rel]['params_and_consts']:
+                    search(sub_rel)
         elif rel in json['Relations']:  # Another relation
+            relations.add(rel)
             for sub_rel in json['Relations'][rel][1]:
                 search(sub_rel)
-     
-    for rel in json['Relations'][relation][1]:
-        search(rel)
-     
-    return inputs
+            for sub_rel in json['Relations'][rel][2:]:
+                if json['Relations'][rel][0] in ('Fir', 'Linear'):
+                    search(sub_rel)
+                if json['Relations'][rel][0] in ('Fuzzify'):
+                    search(sub_rel)
+                if json['Relations'][rel][0] in ('ParamFun'):
+                    search(sub_rel)
 
-def subjson(json, models:str|list):
-    sub_json = {}
-    if isinstance(models, str):
-        models = [models]
-    for model in models:
-        if model not in json['Models']:
-            log.warning(f"Model [{model}] not found! continue with the next one.")
-            continue
-        for category, items in json['Models'][model].items():
-            sub_json[category] = {key:value for key, value in json[category].items() if key in items}
+    search(relation)
+    from nnodely.basic.relation import MAIN_JSON
+    sub_json = copy.deepcopy(MAIN_JSON)
+    sub_json['Relations'] = {key: value for key, value in json['Relations'].items() if key in relations}
+    sub_json['Inputs'] = {key: value for key, value in json['Inputs'].items() if key in inputs}
+    sub_json['States'] = {key: value for key, value in json['States'].items() if key in inputs}
+    sub_json['Constants'] = {key: value for key, value in json['Constants'].items() if key in constants}
+    sub_json['Parameters'] = {key: value for key, value in json['Parameters'].items() if key in parameters}
+    sub_json['Functions'] = {key: value for key, value in json['Functions'].items() if key in functions}
+    sub_json['Outputs'] = {}
+    sub_json['Minimizers'] = {}
+    sub_json['Info'] = {}
+    return sub_json
 
-    if sub_json:
+
+def subjson_from_output(json, outputs:str|list):
+    from nnodely.basic.relation import MAIN_JSON
+    sub_json = copy.deepcopy(MAIN_JSON)
+    if type(outputs) is str:
+        outputs = [outputs]
+    for output in outputs:
+        sub_json = merge(sub_json, subjson_from_relation(json,json['Outputs'][output]))
+        sub_json['Outputs'][output] = json['Outputs'][output]
+    return sub_json
+
+def subjson_from_model(json, models:str|list):
+    from nnodely.basic.relation import MAIN_JSON
+    sub_json = copy.deepcopy(MAIN_JSON)
+    if type(models) is str:
+        check(models in json['Models'], AttributeError, f"Model [{models}] not found!")
+        if type(json['Models']) is str:
+            outputs = set(json['Outputs'].keys())
+        else:
+            outputs = set(json['Models'][models]['Outputs'])
+        sub_json['Models'] = models
+    else:
+        outputs = set()
         sub_json['Models'] = {}
         for model in models:
-            sub_json['Models'][model] = {key:value for key,value in json['Models'][model].items()}
-        sub_json['Minimizers'] = {}
-        for min_name, min_value in json['Minimizers'].items():
-            if (min_value['A'] in sub_json['Outputs'].keys() or min_value['A'] in sub_json['Relations'].keys()) and (min_value['B'] in sub_json['Outputs'].keys() or min_value['B'] in sub_json['Relations'].keys()):
-                sub_json['Minimizers'][min_name] = {key:value for key, value in json['Minimizers'][min_name].items()}
+            check(model in json['Models'].keys(), AttributeError, f"Model [{model}] not found!")
+            outputs |= set(json['Models'][model]['Outputs'])
+            sub_json['Models'][model] = {key: value for key, value in json['Models'][model].items()}
 
-        sub_json['Info'] = {"SampleTime": json['Info']['SampleTime']}
-        json_inputs = sub_json['Inputs'] | sub_json['States']
-        input_ns_backward, input_ns_forward = {}, {}
-        for key, value in json_inputs.items():
-            if value['sw'] == [0, 0]:
-                input_ns_backward[key] = round(-value['tw'][0] / sub_json['Info']['SampleTime'])
-                input_ns_forward[key] = round(value['tw'][1] / sub_json['Info']['SampleTime'])
-            else:
-                input_ns_backward[key] = max(round(-value['tw'][0] / sub_json['Info']['SampleTime']), -value['sw'][0])
-                input_ns_forward[key] = max(round(value['tw'][1] / sub_json['Info']['SampleTime']), value['sw'][1])
-        sub_json['Info']['ns'] = [max(input_ns_backward.values()), max(input_ns_forward.values())]
-        sub_json['Info']['ntot'] = sum(sub_json['Info']['ns'])
-        from nnodely import __version__
-        sub_json['Info']['nnodely_version'] = __version__
-    return sub_json
+    return merge(sub_json, subjson_from_output(json, outputs))
 
 def enforce_types(func):
     @wraps(func)
