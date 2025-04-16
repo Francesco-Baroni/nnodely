@@ -43,8 +43,8 @@ class ModelyTrainingTest(unittest.TestCase):
         target = Input('target')
         x = State('x')
         relation = Fir(x.last())
-        output = Output('out', relation)
         relation.closedLoop(x)
+        output = Output('out', relation)
 
         test = Modely(visualizer=None, seed=42, log_internal=True)
         test.addModel('model', output)
