@@ -1,5 +1,5 @@
 # Extern packages
-import random, torch
+import random, torch, copy
 import numpy as np
 
 # Main operators
@@ -120,7 +120,7 @@ class Modely(Memory, Network, Trainer, Loader, Validator, Exporter):
 
     @property
     def json(self):
-        return ReadOnlyDict(self._model_def._ModelDef__json)
+        return copy.deepcopy(self._model_def._ModelDef__json)
 
     def resetSeed(self, seed):
         """
