@@ -179,7 +179,7 @@ class ModelyExportTest(unittest.TestCase):
     def test_export_and_import_onnx_module_complex(self):
         # Create nnodely structure
         result_path = 'results'
-        vehicle = Modely(visualizer=TextVisualizer(), seed=2, workspace=result_path)
+        vehicle = Modely(visualizer=None, seed=2, workspace=result_path)
 
         # Dimensions of the layers
         n  = 25
@@ -593,7 +593,7 @@ class ModelyExportTest(unittest.TestCase):
 
         out2 = Output('out2', out_der2)
 
-        m = Modely(workspace=result_path, visualizer=TextVisualizer(), seed=5)
+        m = Modely(workspace=result_path, visualizer=None, seed=5)
 
         # This model define a connection on an external variable
         # with self.assertRaises(RuntimeError):
