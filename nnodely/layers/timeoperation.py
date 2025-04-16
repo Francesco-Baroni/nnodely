@@ -2,7 +2,7 @@ import torch.nn as nn
 import torch
 
 from nnodely.basic.relation import Stream, NeuObj, ToStream
-from nnodely.support.utils import merge, enforce_types, get_inputs, check
+from nnodely.support.utils import merge, enforce_types, check, subjson_from_relation
 from nnodely.basic.model import Model
 from nnodely.support.fixstepsolver import Euler, Trapezoidal
 
@@ -51,7 +51,8 @@ class Derivate(Stream, ToStream):
         else:
             super().__init__(der_relation_name + str(Stream.count), merge(output.json,input.json), input.dim)
             self.json['Relations'][self.name] = [der_relation_name, [output.name, input.name]]
-            grad_inputs = get_inputs(self.json, input.name)
+            subjson = subjson_from_relation(self.json, input.name)
+            grad_inputs = subjson['Inputs'].keys()|subjson['States'].keys()
             for i in grad_inputs:
                 if i in self.json['Inputs']:
                     self.json['Inputs'][i]['type'] = 'derivate'
