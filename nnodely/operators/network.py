@@ -4,8 +4,9 @@ import numpy as np
 
 from nnodely.basic.modeldef import ModelDef
 from nnodely.basic.model import Model
-from nnodely.support.utils import check, log, TORCH_DTYPE, NP_DTYPE, argmax_dict, argmin_dict, enforce_types
-from nnodely.basic.relation import Stream
+from nnodely.support.utils import check, log, subjson_from_relation, TORCH_DTYPE, NP_DTYPE, argmax_dict, argmin_dict, \
+    enforce_types, subjson_from_output, merge
+from nnodely.basic.relation import Stream, MAIN_JSON
 from nnodely.layers.input import State
 from nnodely.layers.output import Output
 
@@ -39,6 +40,31 @@ class Network():
             >>> out = Output('out', Fir(x.last()))
             >>> model.addModel('example_model', [out])
         """
+        inputs = set()
+        all_inputs = set()
+        if type(stream_list) is not list:
+            stream_list = [stream_list]
+
+        subjson = MAIN_JSON
+        json = MAIN_JSON
+        for stream in stream_list:
+            if isinstance(stream, Output):
+                subjson = merge(subjson, subjson_from_output(stream.json, stream.name))
+                json = merge(json, stream.json)
+            else:
+                subjson = merge(subjson, subjson_from_relation(stream.json, stream.name))
+                json = merge(json, stream.json)
+
+        all_inputs = set(json['Inputs'].keys()|json['States'].keys())
+        needed_inputs = set(subjson['Inputs'].keys() | subjson['States'].keys())
+
+        extenal_inputs = set(all_inputs) - set(needed_inputs)
+        check(all_inputs == needed_inputs, RuntimeError, f'Connect or close loop operation on the inputs {list(extenal_inputs)}, that are not used in the model.')
+
+        for key, state in self._model_def['States'].items():
+            check("connect" in state.keys() or 'closedLoop' in state.keys(), RuntimeError,
+                  f'The connect or closed operation loop missing for state "{key}" or the state {key} is not used in the model.')
+
         try:
             self._model_def.addModel(name, stream_list)
         except Exception as e:
