@@ -2,7 +2,7 @@ import copy
 
 import numpy as np
 
-from nnodely.support.utils import check, merge
+from nnodely.support.utils import check, merge, subjson_from_model
 from nnodely.basic.relation import MAIN_JSON, Stream
 from nnodely.layers.output import Output
 
@@ -33,12 +33,11 @@ class ModelDef():
     def __setitem__(self, key, value):
         self.__json[key] = value
 
-    #TODO to remove when getJson takes a model list as argment
-    def getModelDict(self):
-        return copy.deepcopy(self.__model_dict)
-
-    def getJson(self):
-        return copy.deepcopy(self.__json)
+    def getJson(self, models:list|str|None = None) -> dict:
+        if models is None:
+            return copy.deepcopy(self.__json)
+        else:
+            return copy.deepcopy(subjson_from_model(self.__json, models))
 
     def getSampleTime(self):
         check(self.__sample_time is not None, AttributeError, "Sample time is not defined the model is not neuralized!")
