@@ -54,13 +54,14 @@ class Exporter:
         """
         check(self.neuralized == True, RuntimeError, 'The model is not neuralized yet!')
         if models is not None:
+            if type(models) is str:
+                models = [models]
             if name == 'net':
                 name += '_' + '_'.join(models)
-            model_def = ModelDef()
-            model_def.update(model_dict={key: self._model_dict[key] for key in models if key in self._model_dict})
+            model_def = ModelDef(self._model_def.getJson(models))
             model_def.setBuildWindow(self._model_def['Info']['SampleTime'])
             model_def.updateParameters(self._model)
-            model = Model(model_def.__json)
+            model = Model(model_def.getJson())
         else:
             model = self._model
         self.exporter.saveTorchModel(model, name, model_folder)
@@ -97,7 +98,7 @@ class Exporter:
         self.exporter.loadTorchModel(self._model, name, model_folder)
 
     @enforce_types
-    def saveModel(self, name:str='net', model_path:str|None=None, *, models:str|None=None) -> None:
+    def saveModel(self, name:str='net', model_path:str|None=None, *, models:str|list|None=None) -> None:
         ## TODO: Add tests passing the attribute 'models'
         """
         Saves the neural network model definition in a json file.
@@ -128,11 +129,11 @@ class Exporter:
             >>> model.saveModel(name='example_model', model_path='path/to/save')
         """
         if models is not None:
+            if type(models) is str:
+                models = [models]
             if name == 'net':
                 name += '_' + '_'.join(models)
-            model_def = ModelDef()
-            model_def.update(
-                model_dict={key: self._model_def.__model_dict[key] for key in models if key in self._model_def.__model_dict})
+            model_def = ModelDef(self._model_def.getJson(models))
             model_def.setBuildWindow(self._model_def['Info']['SampleTime'])
             model_def.updateParameters(self._model)
         else:
@@ -207,14 +208,14 @@ class Exporter:
             >>> model.exportPythonModel(name='example_model', model_path='path/to/export')
         """
         if models is not None:
+            if type(models) is str:
+                models = [models]
             if name == 'net':
                 name += '_' + '_'.join(models)
-            model_def = ModelDef()
-            model_def.update(
-                model_dict={key: self._model_def.__model_dict[key] for key in models if key in self._model_def.__model_dict})
+            model_def = ModelDef(self._model_def.getJson(models))
             model_def.setBuildWindow(self._model_def['Info']['SampleTime'])
             model_def.updateParameters(self._model)
-            model = Model(model_def.__json)
+            model = Model(model_def.getJson())
         else:
             model_def = self._model_def
             model = self._model
@@ -308,21 +309,18 @@ class Exporter:
         check(self.traced == False, RuntimeError,
               'The model is traced and cannot be exported to ONNX.\n Run neuralizeModel() to recreate a standard model.')
         check(self.neuralized == True, RuntimeError, 'The model is not neuralized yet.')
-        # TODO replace with getJson(model = models) # generate the subtree json of a model
         # From here --------------
-        model_dict = self._model_def.getModelDict()
-        check(model_dict != {}, RuntimeError, 'The model is loaded but is not .')
-        model_def = ModelDef()
         if models is not None:
+            if type(models) is str:
+                models = [models]
             if name == 'net':
                 name += '_' + '_'.join(models)
-            model_def.update(
-                model_dict={key: model_dict[key] for key in models if key in model_dict})
+            model_def = ModelDef(self._model_def.getJson(models))
         else:
-            model_def.update(model_dict=model_dict)
+            models = self._model_def['Models'] if type(self._model_def['Models']) is str else self._model_def['Models'].keys()
+            model_def = ModelDef(self._model_def.getJson(models))
         model_def.setBuildWindow(self._model_def['Info']['SampleTime'])
         model_def.updateParameters(self._model)
-        # To here -------------- Are removed
         model = Model(model_def.getJson())
         model.update()
         self.exporter.exportONNX(model_def, model, inputs_order, outputs_order, name, model_folder)
