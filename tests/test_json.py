@@ -5,7 +5,7 @@ import numpy as np
 from nnodely import *
 from nnodely.basic.relation import NeuObj, Stream
 from nnodely.support.logger import logging, nnLogger
-from nnodely.support.utils import subjson
+from nnodely.support.utils import subjson_from_model
 
 log = nnLogger(__name__, logging.CRITICAL)
 log.setAllLevel(logging.CRITICAL)
@@ -627,10 +627,10 @@ class ModelyJsonTest(unittest.TestCase):
         self.assertEqual((1, 1, 3), np.array(results['out51']).shape)
 
     def test_multi_model_json_and_subjson(self):
+        Stream.resetCount()
         NeuObj.clearNames()
         x = Input('x')
         y = State('y')
-        target = Input('target')
 
         c1 = Constant('c1', values=5.0)
         c3 = Constant('c3', values=5.0)
@@ -653,34 +653,37 @@ class ModelyJsonTest(unittest.TestCase):
         nn = Modely(visualizer=None)
         nn.addModel('model_A', [out1, out2])
         nn.addModel('model_B', [out3, out4])
-        nn.addMinimize('error_A', out1, target.last())
-        nn.addMinimize('error_B', out3, target.last())
-        nn.neuralizeModel(2.0)
         
-        subjson_A = subjson(nn.json, 'model_A')
-        subjson_B = subjson(nn.json, 'model_B')
-        self.assertEqual(subjson_A['Constants']['c1'],nn.json.__dict__['_data']['Constants']['c1'])
-        self.assertEqual(subjson_B['Constants']['c3'],nn.json.__dict__['_data']['Constants']['c3'])
-        self.assertEqual(subjson_A['Functions']['FParamFun12'], nn.json.__dict__['_data']['Functions']['FParamFun12'])
-        self.assertEqual(subjson_B['Functions']['FParamFun17'], nn.json.__dict__['_data']['Functions']['FParamFun17'])
-        self.assertEqual(subjson_A['Inputs']['x'], nn.json.__dict__['_data']['Inputs']['x'])
-        self.assertEqual(subjson_B['Inputs']['x'], nn.json.__dict__['_data']['Inputs']['x'])
-        self.assertEqual(list(subjson_A['Models'].keys()), ['model_A'])
-        self.assertEqual(list(subjson_B['Models'].keys()), ['model_B'])
-        self.assertEqual(sorted(list(subjson_A['Relations'].keys())), sorted(nn.json.__dict__['_data']['Models']['model_A']['Relations']))
-        self.assertEqual(sorted(list(subjson_B['Relations'].keys())), sorted(nn.json.__dict__['_data']['Models']['model_B']['Relations']))
-        self.assertEqual(list(subjson_A['Parameters'].keys()), ['W1', 'W2'])
-        self.assertEqual(list(subjson_B['Parameters'].keys()), ['W3', 'W4'])
-        self.assertEqual(list(subjson_A['Outputs'].keys()), ['out1', 'out2'])
-        self.assertEqual(list(subjson_B['Outputs'].keys()), ['out3', 'out4'])
-        self.assertEqual(subjson_A['States']['y'], nn.json.__dict__['_data']['States']['y'])
-        self.assertEqual(subjson_B['States']['y'], nn.json.__dict__['_data']['States']['y'])
+        subjson_A = subjson_from_model(nn.json, 'model_A')
+        subjson_B = subjson_from_model(nn.json, 'model_B')
+        self.assertEqual(subjson_A['Constants']['c1'],nn.json['Constants']['c1'])
+        self.assertEqual(subjson_B['Constants']['c3'],nn.json['Constants']['c3'])
+        self.assertEqual(subjson_A['Functions']['FParamFun11'], nn.json['Functions']['FParamFun11'])
+        self.assertEqual(subjson_B['Functions']['FParamFun16'], nn.json['Functions']['FParamFun16'])
+        self.assertEqual(subjson_A['Inputs']['x'], nn.json['Inputs']['x'])
+        self.assertEqual(subjson_B['Inputs']['x'], nn.json['Inputs']['x'])
+        self.assertEqual(subjson_A['Models'], 'model_A')
+        self.assertEqual(subjson_B['Models'], 'model_B')
+        self.assertEqual(sorted(list(subjson_A['Relations'].keys())), sorted(nn.json['Models']['model_A']['Relations']))
+        self.assertEqual(sorted(list(subjson_B['Relations'].keys())), sorted(nn.json['Models']['model_B']['Relations']))
+        self.assertEqual(sorted(list(subjson_A['Parameters'].keys())), sorted(['W2', 'W1']))
+        self.assertEqual(sorted(list(subjson_B['Parameters'].keys())), sorted(['W3', 'W4']))
+        self.assertEqual(sorted(list(subjson_A['Outputs'].keys())), sorted(['out1', 'out2']))
+        self.assertEqual(sorted(list(subjson_B['Outputs'].keys())), sorted(['out3', 'out4']))
+        self.assertEqual(subjson_A['States']['y'], nn.json['States']['y'])
+        self.assertEqual(subjson_B['States']['y'], nn.json['States']['y'])
 
-        # from nnodely.visualizer.visualizer import color, RED
-        # from pprint import pformat
-        # print("####### JSON MODEL A #######")
-        # print(color(pformat(subjson_A),RED))
-        # print("####### JSON MODEL B #######")
-        # print(color(pformat(subjson_B),RED))
+        aa = Modely(visualizer=None)
+        aa.addModel('model_A', [out1, out2])
+        self.assertEqual(subjson_A, aa.json)
 
+        bb = Modely(visualizer=None)
+        bb.addModel('model_A', [out1, out2])
+        self.assertEqual(subjson_A, bb.json)
 
+        # This is not equal becouse the subjson is not neuralized
+        # nn.neuralizeModel(2.0)
+        # aa.neuralizeModel(2.0)
+        # bb.neuralizeModel(2.0)
+        # self.assertEqual(subjson(nn.json, 'model_A'), aa.json)
+        # self.assertEqual(subjson(nn.json, 'model_B'), bb.json)
