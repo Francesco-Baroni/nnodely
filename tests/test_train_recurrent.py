@@ -75,11 +75,11 @@ class ModelyTrainingTest(unittest.TestCase):
         x = State('x')
         y = Input('y')
         relation = Fir()(x.tw(0.05))+Fir(y.sw([-2,2]))
+        relation.closedLoop(x)
         output = Output('out', relation)
 
         test = Modely(visualizer=None, log_internal=True)
         test.addModel('model', output)
-        test.addClosedLoop(relation, x)
         test.addMinimize('error', output, x.next())
         test.neuralizeModel(0.01)
 
@@ -114,17 +114,19 @@ class ModelyTrainingTest(unittest.TestCase):
         input1 = Input('in1')
         target = Input('target1')
         a = Parameter('a', sw=1, values=[[1]])
-        output1 = Output('out1',Fir(W=a)(input1.last()))
+        relation = Fir(W=a)(input1.last())
 
         inout = State('inout')
         W = Parameter('W', values=[[1]])
         b = Parameter('b', values=[1])
+
+        relation.connect(inout)
+        output1 = Output('out1', relation)
         output2 = Output('out2', Linear(W=W,b=b)(inout.last()))
 
         test = Modely(visualizer=None, seed=42)
         test.addModel('model', [output1,output2])
         test.addMinimize('error', target.last(), output2)
-        test.addConnect(output1, inout)
         test.neuralizeModel()
         self.assertEqual({'out1': [1.0], 'out2': [2.0]}, test({'in1': [1]}))
 
@@ -255,7 +257,7 @@ class ModelyTrainingTest(unittest.TestCase):
         a = Parameter('a', sw=1, values=[[1]])
         output1 = Output('out1',Fir(W=a)(input1.last()))
 
-        inout = State('inout')
+        inout = State('inout') #TODO convert to input
         W = Parameter('W', values=[[1]])
         b = Parameter('b', values=[1])
         output2 = Output('out2', Linear(W=W,b=b)(inout.last()))
@@ -357,17 +359,20 @@ class ModelyTrainingTest(unittest.TestCase):
         input1 = Input('in1')
         target = Input('out1')
         a = Parameter('a', sw=1, values=[[1]])
-        output1 = Output('out1-net',Fir(W=a)(input1.last()))
+        relation =Fir(W=a)(input1.last())
 
         inout = State('inout')
         W = Parameter('W', values=[[1]])
         b = Parameter('b', values=1)
+
+        relation.connect(inout)
+
+        output1 = Output('out1-net', relation)
         output2 = Output('out2-net', Linear(W=W,b=b)(inout.last()))
 
         test = Modely(visualizer=None,seed=42)
         test.addModel('model', [output1,output2])
         test.addMinimize('error', target.last(), output2)
-        test.addConnect(output1, inout)
         test.neuralizeModel()
         self.assertEqual({'out1-net': [1.0], 'out2-net': [2.0]}, test({'in1': [1]}))
 
@@ -494,11 +499,14 @@ class ModelyTrainingTest(unittest.TestCase):
         W = Parameter('W', values=[[-1], [-5]])
         b = Parameter('b', values=1)
         lin_out = Linear(W=W, b=b)(input1.sw(2))
-        output1 = Output('out1', lin_out)
 
         inout = State('inout')
         a = Parameter('a', sw=2, values=[[4], [5]])
         a_big = Parameter('ab', sw=5, values=[[1], [2], [3], [4], [5]])
+
+        lin_out.connect(inout)
+
+        output1 = Output('out1', lin_out)
         output2 = Output('out2', Fir(W=a)(inout.sw(2)))
         output3 = Output('out3', Fir(W=a_big)(inout.sw(5)))
         output4 = Output('out4', Fir(W=a)(lin_out))
@@ -507,7 +515,6 @@ class ModelyTrainingTest(unittest.TestCase):
 
         test = Modely(visualizer=None, seed=42, log_internal=True)
         test.addModel('model', [output1, output2, output3, output4])
-        test.addConnect(output1, inout)
         test.addMinimize('error2', target.last(), output2)
         #test.addMinimize('error3', target.last(), output3)
         #test.addMinimize('error4', target.last(), output4)
@@ -996,20 +1003,22 @@ class ModelyTrainingTest(unittest.TestCase):
         input1 = State('in1')
         target_out1 = Input('target1')
         a = Parameter('a', sw=1, values=[[1]])
-        output1 = Output('out1',Fir(W=a)(input1.last()))
+        relation1 = Fir(W=a)(input1.last())
+        relation1.closedLoop(input1)
+        output1 = Output('out1', relation1)
 
         input2 = State('in2')
         target_out2 = Input('target2')
         W = Parameter('W', values=[[1]])
         b = Parameter('b', values=[1])
-        output2 = Output('out2', Linear(W=W,b=b)(input2.last()))
+        relation2 = Linear(W=W,b=b)(input2.last())
+        relation2.closedLoop(input2)
+        output2 = Output('out2', relation2)
 
         test = Modely(visualizer=None, seed=42)
         test.addModel('model', [output1,output2])
         test.addMinimize('error1', target_out1.last(), output1)
         test.addMinimize('error2', target_out2.last(), output2)
-        test.addClosedLoop(output1, input1)
-        test.addClosedLoop(output2, input2)
         test.neuralizeModel()
         self.assertEqual({'out1': [0.0], 'out2': [1.0]}, test())
         self.assertEqual({'out1': [1.0], 'out2': [2.0]}, test({'in1': [1.0],'in2': [1.0]}))
@@ -1147,20 +1156,22 @@ class ModelyTrainingTest(unittest.TestCase):
         input1 = State('in1')
         target_out1 = Input('target1')
         a = Parameter('a', sw=1, values=[[1]])
-        output1 = Output('out1',Fir(W=a)(input1.last()))
+        relation1 = Fir(W=a)(input1.last())
+        relation1.closedLoop(input1)
+        output1 = Output('out1',relation1)
 
         input2 = State('in2')
         target_out2 = Input('target2')
         W = Parameter('W', values=[[1]])
         b = Parameter('b', values=[1])
-        output2 = Output('out2', Linear(W=W,b=b)(input2.last()))
+        relation2=Linear(W=W,b=b)(input2.last())
+        relation2.closedLoop(input2)
+        output2 = Output('out2', relation2)
 
         test = Modely(visualizer=None, seed=42)
         test.addModel('model', [output1,output2])
         test.addMinimize('error1', target_out1.last(), output1)
         test.addMinimize('error2', target_out2.last(), output2)
-        test.addClosedLoop(output1, input1)
-        test.addClosedLoop(output2, input2)
         test.neuralizeModel()
         self.assertEqual({'out1': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 'out2': [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]},
                          test(prediction_samples=5, num_of_samples=6))
@@ -1269,19 +1280,23 @@ class ModelyTrainingTest(unittest.TestCase):
         input1 = State('in1',dimensions=2)
         W = Parameter('W', values=[[-1],[-5]])
         b = Parameter('b', values=[1])
-        output1 = Output('out1', Linear(W=W, b=b)(input1.sw(2)))
+        relation1 = Linear(W=W, b=b)(input1.sw(2))
 
         input2 = State('in2')
         a = Parameter('a', sw=4, values=[[1,3],[2,4],[3,5],[4,6]])
-        output2 = Output('out2', Fir(output_dimension=2,W=a)(input2.sw(4)))
+        relation2 = Fir(output_dimension=2,W=a)(input2.sw(4))
+
+        relation2.closedLoop(input1)
+        relation1.closedLoop(input2)
+
+        output1 = Output('out1', relation1)
+        output2 = Output('out2', relation2)
 
         target1 = Input('target1')
         target2 = Input('target2', dimensions=2)
 
         test = Modely(visualizer=None, seed=42)
         test.addModel('model', [output1,output2])
-        test.addClosedLoop(output1, input2)
-        test.addClosedLoop(output2, input1)
         test.addMinimize('error1', output1, target1.sw(2))
         test.addMinimize('error2', output2, target2.last())
         test.neuralizeModel()
@@ -1493,11 +1508,17 @@ class ModelyTrainingTest(unittest.TestCase):
         input1 = State('in1',dimensions=2)
         W = Parameter('W', values=[[0.1],[0.1]])
         b = Parameter('b', values=[0.1])
-        output1 = Output('out1', feed.sw(2) + Linear(W=W, b=b)(input1.sw(2)))
+        relation1 = feed.sw(2) + Linear(W=W, b=b)(input1.sw(2))
 
         input2 = State('in2')
         a = Parameter('a', sw=4, values=[[0.1,0.3],[0.2,0.4],[0.3,0.5],[0.4,0.6]])
-        output2 = Output('out2', Fir(output_dimension=2, W=a)(input2.sw(4)))
+        relation2 = Fir(output_dimension=2, W=a)(input2.sw(4))
+
+        relation1.closedLoop(input2)
+        relation2.closedLoop(input1)
+
+        output1 = Output('out1', relation1)
+        output2 = Output('out2', relation2)
 
         target1 = Input('target1')
         target2 = Input('target2', dimensions=2)
@@ -1506,8 +1527,6 @@ class ModelyTrainingTest(unittest.TestCase):
         test2.addModel('model', [output1, output2])
         test2.addMinimize('error1', output1, target1.sw(2))
         test2.addMinimize('error2', output2, target2.last())
-        test2.addClosedLoop(output1, input2)
-        test2.addClosedLoop(output2, input1)
         test2.neuralizeModel()
         test2.loadData(name='dataset', source=dataset)
         test2.trainModel(splits=[60,40,0], optimizer='SGD', lr=0.001, num_of_epochs=1, prediction_samples=10)

@@ -61,7 +61,7 @@ class Network():
         extenal_inputs = set(all_inputs) - set(needed_inputs)
         check(all_inputs == needed_inputs, RuntimeError, f'Connect or close loop operation on the inputs {list(extenal_inputs)}, that are not used in the model.')
 
-        for key, state in self._model_def['States'].items():
+        for key, state in json['States'].items():
             check("connect" in state.keys() or 'closedLoop' in state.keys(), RuntimeError,
                   f'The connect or closed operation loop missing for state "{key}" or the state {key} is not used in the model.')
 

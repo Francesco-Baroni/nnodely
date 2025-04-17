@@ -563,11 +563,11 @@ class ModelyCreateDatasetTest(unittest.TestCase):
         NeuObj.clearNames()
         x = State('x')
         relation = Fir()(x.tw(0.05))
+        relation.closedLoop(x)
         output = Output('out', relation)
 
         test = Modely(visualizer=None, log_internal=True)
         test.addModel('model', output)
-        test.addClosedLoop(relation, x)
         test.addMinimize('error', output, x.next())
         test.neuralizeModel(0.01)
 
@@ -584,11 +584,11 @@ class ModelyCreateDatasetTest(unittest.TestCase):
         x = State('x')
         y = Input('y')
         relation = Fir()(x.tw(0.05))+Fir(y.sw([-2,2]))
+        relation.closedLoop(x)
         output = Output('out', relation)
 
         test = Modely(visualizer=None, log_internal=True)
         test.addModel('model', output)
-        test.addClosedLoop(relation, x)
         test.addMinimize('error', output, x.next())
         test.neuralizeModel(0.01)
 

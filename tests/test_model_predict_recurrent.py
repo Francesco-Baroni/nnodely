@@ -103,9 +103,9 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         F = State('F')
         p = Parameter('p', tw=0.5, dimensions=1, values=[[1.0],[1.0],[1.0],[1.0],[1.0]])
         x_out = Fir(W=p)(x.tw(0.5))+F.last()
+        x_out.closedLoop(F)
         out = Output('out',x_out)
         test = Modely(visualizer=None, seed=42)
-        test.addClosedLoop(x_out,F)
         test.addModel('out',out)
         test.neuralizeModel(0.1)
 
@@ -174,12 +174,12 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         n = Parameter('n', tw=0.5, dimensions=1, values=[[-1.0],[-1.0],[-1.0],[-1.0],[-1.0]])
         fir_pos = Fir(W=p)(x.tw(0.5))
         fir_neg = Fir(W=n)(y.tw(0.5))
+        fir_pos.closedLoop(x)
+        fir_neg.closedLoop(y)
         out_pos = Output('out_pos', fir_pos)
         out_neg = Output('out_neg', fir_neg)
         out = Output('out',fir_neg+fir_pos)
         test = Modely(visualizer=None, seed=42)
-        test.addClosedLoop(fir_pos, x)
-        test.addClosedLoop(fir_neg, y)
         test.addModel('out', out)
         test.addModel('out_pos',out_pos)
         test.addModel('out_neg',out_neg)
@@ -585,7 +585,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
 
         ## Model2
         input2 = Input('in2')
-        input3 = State('in3')
+        input3 = State('in3') # TODO Convert to input
         b = Parameter('b', dimensions=1, tw=0.05, values=[[1],[1],[1],[1],[1]])
         c = Parameter('c', dimensions=1, tw=0.03, values=[[1],[1],[1]])
         output2 = Output('out2', Fir(W=b)(input2.tw(0.05))+Fir(W=c)(input3.tw(0.03)))
@@ -737,16 +737,18 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         W = Parameter('W', values=[[-1],[-5]])
         b = Parameter('b', values=1)
         lin_out = Linear(W=W, b=b)(input1.sw(2))
-        output1 = Output('out1', lin_out)
 
         inout = State('inout')
         a = Parameter('a', sw = 2, values=[[4],[5]])
+
+        lin_out.connect(inout)
+
+        output1 = Output('out1', lin_out)
         output2 = Output('out2', Fir(W=a)(inout.sw(2)))
         output3 = Output('out3', Fir(W=a)(lin_out))
 
         test = Modely(visualizer=None, seed=42)
         test.addModel('model', [output1,output2,output3])
-        test.addConnect(output1,inout)
         test.neuralizeModel()
         # [[1,2],[2,3]]*[-1,-5] = [[1*-1+2*-5=-11],[2*-1+3*-5=-17]]+[1] = [-10,-16] -> [-10,-16]*[4,5] -> [-16*5+-10*4=-120] <------
         self.assertEqual({'out1': [[-10.0, -16.0]], 'out2': [-120.0], 'out3':[-120.0]}, test({'in1': [[1.0, 2.0], [2.0, 3.0]],'inout':[-10,-16]}))
@@ -780,18 +782,20 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         W = Parameter('W', values=[[-1],[-5]])
         b = Parameter('b', values=1)
         lin_out = Linear(W=W, b=b)(input1.sw(2))
-        output1 = Output('out1', lin_out)
 
         inout = State('inout')
         a = Parameter('a', sw = 2, values=[[4], [5]])
         a_big = Parameter('ab', sw = 5, values=[[1], [2], [3], [4], [5]])
+
+        lin_out.connect(inout)
+
+        output1 = Output('out1', lin_out)
         output2 = Output('out2', Fir(W=a)(inout.sw(2)))
         output3 = Output('out3', Fir(W=a_big)(inout.sw(5)))
         output4 = Output('out4', Fir(W=a)(lin_out))
 
         test = Modely(visualizer=None, seed=42)
         test.addModel('model', [output1,output2,output3,output4])
-        test.addConnect(output1, inout)
         test.neuralizeModel()
         # [[1,2],[2,3]]*[-1,-5] = [[1*-1+2*-5=-11],[2*-1+3*-5=-17]]+[1] = [-10,-16] -> [-10,-16]*[4,5] -> [-16*5+-10*4=-120] <------
         self.assertEqual({'out1': [[-10.0, -16.0]], 'out2': [-120.0], 'out3': [-120.0], 'out4': [-120.0]}, test({'in1': [[1.0, 2.0], [2.0, 3.0]]}))
@@ -860,18 +864,22 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         input1 = State('in1',dimensions=2)
         W = Parameter('W', values=[[-1],[-5]])
         b = Parameter('b', values=1)
-        output1 = Output('out1', Linear(W=W, b=b)(input1.sw(2)))
+        relation1 = Linear(W=W, b=b)(input1.sw(2))
 
         # input2 = State('inout') #TODO loop forever
         # test.addConnect(output1, input1) # With this
         input2 = State('in2')
         a = Parameter('a', sw=5, values=[[1,3],[2,4],[3,5],[4,6],[5,7]])
-        output2 = Output('out2', Fir(output_dimension=2,W=a)(input2.sw(5)))
+        relation2 = Fir(output_dimension=2,W=a)(input2.sw(5))
+
+        relation1.closedLoop(input2)
+        relation2.closedLoop(input1)
+
+        output1 = Output('out1', relation1)
+        output2 = Output('out2', relation2)
 
         test = Modely(visualizer=None, seed=42)
         test.addModel('model', [output1,output2])
-        test.addClosedLoop(output1, input2)
-        test.addClosedLoop(output2, input1)
         test.neuralizeModel()
         self.assertEqual({'out1': [[-10.0, -16.0]], 'out2': [[[-34.0, -86.0]]]},
                          test({'in1': [[1.0, 2.0], [2.0, 3.0]], 'in2': [-10, -16, -5, 2, 3]}))
@@ -1163,11 +1171,12 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         NeuObj.clearNames()
         input1 = State('in1')
         W = Parameter('W', sw=3, values=[[1], [2], [3]])
-        out = Output('out',Fir(W=W)(input1.sw(3)))
+        relation = Fir(W=W)(input1.sw(3))
+        relation.closedLoop(input1)
+        out = Output('out',relation)
 
         test = Modely(visualizer=None, seed=42)
         test.addModel('model', [out])
-        test.addClosedLoop(out, input1)
         test.neuralizeModel()
 
         result = test({'in1':[1,2,3]})

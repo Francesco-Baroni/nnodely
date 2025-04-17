@@ -413,9 +413,9 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         y = State('y')
 
         rel_out = Fir(x.last()) + Fir(y.last())
+        rel_out.closedLoop(y)
         out = Output('out', rel_out)
 
-        test.addClosedLoop(rel_out, y)
         test.addModel('modelA', out)
         test.addMinimize('error1', out, x.next())
         test.neuralizeModel()
