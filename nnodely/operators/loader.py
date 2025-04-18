@@ -240,10 +240,12 @@ class Loader:
                 self._multifile[name] = []
 
             ## Cycle through all the files
-            for file in files:
+            for i, file in enumerate(files):
                 try:
                     ## read the csv
                     df = pd.read_csv(os.path.join(source, file), skiprows=skiplines, delimiter=delimiter, header=header)
+                    if i == 0 and len(df.columns) != len(format):
+                        log.warning(f'The format has {len(format)} columns while the dataset has {len(df.columns)} columns.')
                 except:
                     log.warning(f'Cannot read file {os.path.join(source, file)}')
                     continue
