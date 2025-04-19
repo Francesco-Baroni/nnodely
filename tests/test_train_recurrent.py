@@ -41,7 +41,7 @@ class ModelyTrainingTest(unittest.TestCase):
     def test_recurrent_shuffle(self):
         NeuObj.clearNames()
         target = Input('target')
-        x = State('x')
+        x = Input('x')
         relation = Fir(x.last())
         relation.closedLoop(x)
         output = Output('out', relation)
@@ -72,7 +72,7 @@ class ModelyTrainingTest(unittest.TestCase):
 
     def test_train_multifiles(self):
         NeuObj.clearNames()
-        x = State('x')
+        x = Input('x')
         y = Input('y')
         relation = Fir()(x.tw(0.05))+Fir(y.sw([-2,2]))
         relation.closedLoop(x)
@@ -116,7 +116,7 @@ class ModelyTrainingTest(unittest.TestCase):
         a = Parameter('a', sw=1, values=[[1]])
         relation = Fir(W=a)(input1.last())
 
-        inout = State('inout')
+        inout = Input('inout')
         W = Parameter('W', values=[[1]])
         b = Parameter('b', values=[1])
 
@@ -361,7 +361,7 @@ class ModelyTrainingTest(unittest.TestCase):
         a = Parameter('a', sw=1, values=[[1]])
         relation =Fir(W=a)(input1.last())
 
-        inout = State('inout')
+        inout = Input('inout')
         W = Parameter('W', values=[[1]])
         b = Parameter('b', values=1)
 
@@ -500,7 +500,7 @@ class ModelyTrainingTest(unittest.TestCase):
         b = Parameter('b', values=1)
         lin_out = Linear(W=W, b=b)(input1.sw(2))
 
-        inout = State('inout')
+        inout = Input('inout')
         a = Parameter('a', sw=2, values=[[4], [5]])
         a_big = Parameter('ab', sw=5, values=[[1], [2], [3], [4], [5]])
 
@@ -1000,14 +1000,14 @@ class ModelyTrainingTest(unittest.TestCase):
 
     def test_training_values_fir_and_liner_closed_loop(self):
         NeuObj.clearNames()
-        input1 = State('in1')
+        input1 = Input('in1')
         target_out1 = Input('target1')
         a = Parameter('a', sw=1, values=[[1]])
         relation1 = Fir(W=a)(input1.last())
         relation1.closedLoop(input1)
         output1 = Output('out1', relation1)
 
-        input2 = State('in2')
+        input2 = Input('in2')
         target_out2 = Input('target2')
         W = Parameter('W', values=[[1]])
         b = Parameter('b', values=[1])
@@ -1153,14 +1153,14 @@ class ModelyTrainingTest(unittest.TestCase):
 
     def test_training_values_fir_and_linear_closed_loop_more_prediction(self):
         NeuObj.clearNames()
-        input1 = State('in1')
+        input1 = Input('in1')
         target_out1 = Input('target1')
         a = Parameter('a', sw=1, values=[[1]])
         relation1 = Fir(W=a)(input1.last())
         relation1.closedLoop(input1)
         output1 = Output('out1',relation1)
 
-        input2 = State('in2')
+        input2 = Input('in2')
         target_out2 = Input('target2')
         W = Parameter('W', values=[[1]])
         b = Parameter('b', values=[1])
@@ -1277,12 +1277,12 @@ class ModelyTrainingTest(unittest.TestCase):
 
     def test_training_values_fir_and_liner_closed_loop_bigger_window(self):
         NeuObj.clearNames()
-        input1 = State('in1',dimensions=2)
+        input1 = Input('in1',dimensions=2)
         W = Parameter('W', values=[[-1],[-5]])
         b = Parameter('b', values=[1])
         relation1 = Linear(W=W, b=b)(input1.sw(2))
 
-        input2 = State('in2')
+        input2 = Input('in2')
         a = Parameter('a', sw=4, values=[[1,3],[2,4],[3,5],[4,6]])
         relation2 = Fir(output_dimension=2,W=a)(input2.sw(4))
 
@@ -1505,12 +1505,12 @@ class ModelyTrainingTest(unittest.TestCase):
 
         NeuObj.clearNames()
         feed = Input('control')
-        input1 = State('in1',dimensions=2)
+        input1 = Input('in1',dimensions=2)
         W = Parameter('W', values=[[0.1],[0.1]])
         b = Parameter('b', values=[0.1])
         relation1 = feed.sw(2) + Linear(W=W, b=b)(input1.sw(2))
 
-        input2 = State('in2')
+        input2 = Input('in2')
         a = Parameter('a', sw=4, values=[[0.1,0.3],[0.2,0.4],[0.3,0.5],[0.4,0.6]])
         relation2 = Fir(output_dimension=2, W=a)(input2.sw(4))
 
@@ -1552,7 +1552,7 @@ class ModelyTrainingTest(unittest.TestCase):
 
     def test_train_derivate_wrt_input_closed_loop(self):
         NeuObj.clearNames()
-        x = State('x')
+        x = Input('x')
         x_target = Input('x_target')
         y = Input('y')
         x_last = x.last()
@@ -1599,7 +1599,7 @@ class ModelyTrainingTest(unittest.TestCase):
         fun = Sin(x_last) + Fir(W=p1)(x_last) + Cos(y_last)
         out_der = Derivate(fun, x_last) + Derivate(fun, y_last)
 
-        x2 = State('x2')
+        x2 = Input('x2')
         y2 = Input('y2')
         x2_last = x2.last()
         y2_last = y2.last()
@@ -1646,7 +1646,7 @@ class ModelyTrainingTest(unittest.TestCase):
     def test_state_initialization(self):
         NeuObj.clearNames()
         x = Input('x')
-        y = State('y')
+        y = Input('y')
         target = Input('target')
 
         p_1 = Parameter('p1', sw=1, values=[[1]])

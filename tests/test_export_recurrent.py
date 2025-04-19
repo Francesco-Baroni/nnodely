@@ -29,8 +29,8 @@ class ModelyExportTest(unittest.TestCase):
         network_name = 'net'
         test = Modely(visualizer=None, seed=42, workspace=result_path)
         x = Input('x')
-        y = State('y')
-        z = State('z')
+        y = Input('y')
+        z = Input('z')
         target = Input('target')
         a = Parameter('a', dimensions=1, sw=1, values=[[1]])
         b = Parameter('b', dimensions=1, sw=1, values=[[1]])
@@ -73,8 +73,8 @@ class ModelyExportTest(unittest.TestCase):
         network_name = 'exported_model'
         test = Modely(visualizer=None, seed=42, workspace=result_path)
         x = Input('x')
-        y = State('y')
-        z = State('z')
+        y = Input('y')
+        z = Input('z')
         a = Parameter('a', dimensions=1, sw=1, values=[[1]])
         b = Parameter('b', dimensions=1, sw=1, values=[[1]])
         c = Parameter('c', dimensions=1, sw=1, values=[[1]])
@@ -116,8 +116,8 @@ class ModelyExportTest(unittest.TestCase):
         result_path = 'results'
         test = Modely(visualizer=None, seed=42, workspace=result_path)
         x = Input('x')
-        y = State('y')
-        z = State('z')
+        y = Input('y')
+        z = Input('z')
         a = Parameter('a', dimensions=1, sw=1, values=[[1]])
         b = Parameter('b', dimensions=1, sw=1, values=[[1]])
         c = Parameter('c', dimensions=1, sw=1, values=[[1]])
@@ -155,7 +155,7 @@ class ModelyExportTest(unittest.TestCase):
         result_path = 'results'
         test = Modely(visualizer=None, seed=42, workspace=result_path)
         num_cycle = Input('num_cycle')
-        x = State('x')
+        x = Input('x')
         fir_x = Fir()(x.last()+1.0)
         fir_x.closedLoop(x)
         out1 = Output('out1', fir_x)
@@ -238,8 +238,8 @@ class ModelyExportTest(unittest.TestCase):
         input2 = Input('input2', dimensions=3)
         input3 = Input('input3')
         input4 = Input('input4', dimensions=3)
-        state1 = State('state1')
-        state2 = State('state2', dimensions=3)
+        state1 = Input('state1')
+        state2 = Input('state2', dimensions=3)
 
         rel_1 = Linear(b=True)(input1.last()) + Linear(b=True)(input3.last())
         rel_1.closedLoop(state1)
@@ -327,8 +327,8 @@ class ModelyExportTest(unittest.TestCase):
         input2 = Input('input2', dimensions=3)
         input3 = Input('input3')
         input4 = Input('input4', dimensions=3)
-        state1 = State('state1')
-        state2 = State('state2', dimensions=3)
+        state1 = Input('state1')
+        state2 = Input('state2', dimensions=3)
 
         rel_1 = Linear(b=True)(input1.last()) + Linear(b=True)(input3.last())
         rel_1.closedLoop(state1)
@@ -416,7 +416,7 @@ class ModelyExportTest(unittest.TestCase):
         na = 21
 
         #Create neural model inputs
-        velocity = State('vel')
+        velocity = Input('vel')
         brake = Input('brk')
         gear = Input('gear')
         torque = Input('trq')
@@ -486,7 +486,7 @@ class ModelyExportTest(unittest.TestCase):
         na = 21
 
         #Create neural model inputs
-        velocity = State('vel')
+        velocity = Input('vel')
         brake = Input('brk')
         gear = Input('gear')
         torque = Input('trq')
@@ -577,7 +577,7 @@ class ModelyExportTest(unittest.TestCase):
         fun = Sin(x_last) + Fir(W=p1)(x_last) + Cos(y_last)
         out_der = Derivate(fun, x_last) + Derivate(fun, y_last)
 
-        x2 = State('x2') # TODO no state in this case
+        x2 = Input('x2') # TODO no state in this case
         after_connect = Connect(out_der,x2)
         #x2.connect(out_der)
 

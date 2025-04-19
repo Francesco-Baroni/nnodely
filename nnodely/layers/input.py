@@ -1,7 +1,7 @@
 import copy
 
 from nnodely.basic.relation import NeuObj, Stream, ToStream
-from nnodely.support.utils import check, merge, enforce_types
+from nnodely.support.utils import check, merge, enforce_types, subjson_from_relation
 from nnodely.layers.part import SamplePart, TimePart
 from nnodely.layers.timeoperation import Derivate, Integrate
 
@@ -245,28 +245,21 @@ closedloop_name = 'closedLoop'
 
 class Connect(Stream, ToStream):
     @enforce_types
-    def __init__(self, obj1:Stream, obj2:State) -> Stream:
-        check(type(obj1) is Stream, TypeError,
-              f"The {obj1} must be a Stream and not a {type(obj1)}.")
-        check(type(obj2) is State, TypeError,
-              f"The {obj2} must be a State and not a {type(obj2)}.")
+    def __init__(self, obj1:Stream, obj2:Input) -> Stream:
         super().__init__(obj1.name,merge(obj1.json, obj2.json),obj1.dim)
-        check(closedloop_name not in self.json['States'][obj2.name] or connect_name not in self.json['States'][obj2.name],
+        check(closedloop_name not in self.json['Inputs'][obj2.name] or connect_name not in self.json['Inputs'][obj2.name],
               KeyError,f"The state variable {obj2.name} is already connected.")
-        self.json['States'][obj2.name][connect_name] = obj1.name
+        self.json['Inputs'][obj2.name][connect_name] = obj1.name
 
 class ClosedLoop(Stream, ToStream):
     @enforce_types
-    def __init__(self, obj1:Stream, obj2: State, init:Stream|None=None) -> Stream:
-        check(type(obj1) is Stream, TypeError,
-              f"The {obj1} must be a Stream and not a {type(obj1)}.")
-        check(type(obj2) is State, TypeError,
-              f"The {obj2} must be a State and not a {type(obj2)}.")
+    def __init__(self, obj1:Stream, obj2: Input, init:Stream|None=None) -> Stream:
         super().__init__(obj1.name, merge(obj1.json, obj2.json), obj1.dim)
-        check(closedloop_name not in self.json['States'][obj2.name] or connect_name not in self.json['States'][obj2.name],
+        check(closedloop_name not in self.json['Inputs'][obj2.name] or connect_name not in self.json['Inputs'][obj2.name],
               KeyError, f"The state variable {obj2.name} is already connected.")
-        self.json['States'][obj2.name][closedloop_name] = obj1.name
+        self.json['Inputs'][obj2.name][closedloop_name] = obj1.name
         if init:
-            needed_inputs = get_inputs(self.json, init.name)
+            subjson = subjson_from_relation(self.json, init.name)
+            needed_inputs = subjson['Inputs'].keys()|subjson['States'].keys()
             check(obj2.name not in needed_inputs, KeyError, f"Inconsistency Error: Cannot initialize the state variable {obj2.name} with the relation {init.name}.")
-            self.json['States'][obj2.name]['init'] = init.name
+            self.json['Inputs'][obj2.name]['init'] = init.name

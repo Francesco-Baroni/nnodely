@@ -267,12 +267,12 @@ class Exporter:
         Exports the neural network model to an ONNX file.
 
         .. note::
-            The input_order may contain all the inputs and states of the model in the order that you want to export them.
+            The input_order may contain all the inputs of the model in the order that you want to export them.
 
         Parameters
         ----------
         inputs_order : list
-            The order of the input and state variables.
+            The order of the input variables.
         outputs_order : list
             The order of the output variables.
         models : list or None, optional

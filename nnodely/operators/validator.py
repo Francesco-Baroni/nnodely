@@ -26,7 +26,7 @@ class Validator():
                        batch_size: int | None = None
                        ) -> None:
         import warnings
-        json_inputs = self.json['Inputs'] | self.json['States']
+        json_inputs = self.json['Inputs']
         calculate_grad = False
         for key, value in json_inputs.items():
             if 'type' in value.keys():
@@ -47,7 +47,7 @@ class Validator():
                 losses[name] = CustomLoss(values['loss'])
 
             recurrent = False
-            if (closed_loop or connect or self._model_def['States']) and prediction_samples is not None:
+            if (closed_loop or connect or len(self._model_def.recurrentInputs()) > 0) and prediction_samples is not None:
                 recurrent = True
 
             if data is None:
@@ -60,8 +60,8 @@ class Validator():
 
                 model_inputs = list(self._model_def['Inputs'].keys())
 
-                state_closed_loop = [key for key, value in self._model_def['States'].items() if 'closedLoop' in value.keys()] + list(closed_loop.keys())
-                state_connect = [key for key, value in self._model_def['States'].items() if 'connect' in value.keys()] + list(connect.keys())
+                state_closed_loop = [key for key, value in self._model_def['Inputs'].items() if 'closedLoop' in value.keys()] + list(closed_loop.keys())
+                state_connect = [key for key, value in self._model_def['Inputs'].items() if 'connect' in value.keys()] + list(connect.keys())
 
                 non_mandatory_inputs = state_closed_loop + state_connect
                 mandatory_inputs = list(set(model_inputs) - set(non_mandatory_inputs))

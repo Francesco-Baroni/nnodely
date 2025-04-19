@@ -34,6 +34,9 @@ class ModelDef():
     def __setitem__(self, key, value):
         self.__json[key] = value
 
+    def recurrentInputs(self):
+        return {key:value for key, value in self.__json['Inputs'].items() if ('closedLoop' in value.keys() or 'connect' in value.keys())}
+
     def getJson(self, models:list|str|None = None) -> dict:
         if models is None:
             return copy.deepcopy(self.__json)
@@ -69,13 +72,11 @@ class ModelDef():
                     parameters |= set(param.json['Parameters'].keys())
                     constants |= set(param.json['Constants'].keys())
                     inputs |= set(param.json['Inputs'].keys())
-                    states |= set(param.json['States'].keys())
                     functions |= set(param.json['Functions'].keys())
                     relations |= set(param.json['Relations'].keys())
                 self.__json['Models'][model_name]['Parameters'] = list(parameters)
                 self.__json['Models'][model_name]['Constants'] = list(constants)
                 self.__json['Models'][model_name]['Inputs'] = list(inputs)
-                self.__json['Models'][model_name]['States'] = list(states)
                 self.__json['Models'][model_name]['Functions'] = list(functions)
                 self.__json['Models'][model_name]['Relations'] = list(relations)
         elif len(model_dict) == 1:
@@ -152,8 +153,8 @@ class ModelDef():
 
         self.__json['Info'] = {"SampleTime": self.__sample_time}
 
-        check(self.__json['Inputs'] | self.__json['States'] != {}, RuntimeError, "No model is defined!")
-        json_inputs = self.__json['Inputs'] | self.__json['States']
+        check(self.__json['Inputs'] != {}, RuntimeError, "No model is defined!")
+        json_inputs = self.__json['Inputs']
 
         input_tw_backward, input_tw_forward, input_ns_backward, input_ns_forward = {}, {}, {}, {}
         for key, value in json_inputs.items():

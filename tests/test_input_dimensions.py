@@ -410,7 +410,7 @@ class ModelyNetworkBuildingTest(unittest.TestCase):
         NeuObj.clearNames()
         test = Modely(visualizer=None, seed=42, log_internal=True)
         x = Input('x')
-        y = State('y')
+        y = Input('y')
 
         rel_out = Fir(x.last()) + Fir(y.last())
         rel_out.closedLoop(y)

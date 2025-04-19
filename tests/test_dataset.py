@@ -561,7 +561,7 @@ class ModelyCreateDatasetTest(unittest.TestCase):
     
     def test_multifiles(self):
         NeuObj.clearNames()
-        x = State('x')
+        x = Input('x')
         relation = Fir()(x.tw(0.05))
         relation.closedLoop(x)
         output = Output('out', relation)
@@ -581,7 +581,7 @@ class ModelyCreateDatasetTest(unittest.TestCase):
 
     def test_multifiles_2(self):
         NeuObj.clearNames()
-        x = State('x')
+        x = Input('x')
         y = Input('y')
         relation = Fir()(x.tw(0.05))+Fir(y.sw([-2,2]))
         relation.closedLoop(x)

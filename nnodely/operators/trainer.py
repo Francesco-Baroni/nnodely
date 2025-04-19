@@ -196,7 +196,7 @@ class Trainer():
     def __recurrentTrain(self, data, batch_indexes, batch_size, loss_gains, prediction_samples,
                          step, non_mandatory_inputs, mandatory_inputs, shuffle=False, train=True):
         indexes = copy.deepcopy(batch_indexes)
-        json_inputs = self._model_def['States'] | self._model_def['Inputs']
+        json_inputs = self._model_def['Inputs']
         aux_losses = torch.zeros(
             [len(self._model_def['Minimizers']), round((len(indexes) + step) / (batch_size + step))])
         X = {}
@@ -525,9 +525,9 @@ class Trainer():
                       f'the tag {connect_out} is not an output of the network')
                 log.warning(
                     f'Recurrent train: connecting the input ports {connect_in} with output ports {connect_out} for {prediction_samples} samples')
-        elif self._model_def['States']:  ## if we have state variables we have to do the recurrent train
+        elif len(self._model_def.recurrentInputs()):  ## if we have input variables we have to do the recurrent train
             log.warning(
-                f"Recurrent train: update States variables {list(self._model_def['States'].keys())} for {prediction_samples} samples")
+                f"Recurrent train: update reccurent Input variables {list(self._model_def.recurrentInputs().keys())} for {prediction_samples} samples")
         else:
             if prediction_samples != 0:
                 log.warning(
@@ -686,7 +686,7 @@ class Trainer():
                                                                                    self._model_def[
                                                                                        'Minimizers'].values()}
         keys -= set(self._model_def['Relations'].keys())
-        keys -= set(self._model_def['States'].keys())
+        keys -= set(self._model_def.recurrentInputs().keys())
         keys -= set(self._model_def['Outputs'].keys())
         keys -= set(all_connect.keys())
         keys -= set(all_closed_loop.keys())
@@ -704,7 +704,7 @@ class Trainer():
             unused_samples = n_samples_train - list_of_batch_indexes[-1] - train_batch_size - prediction_samples
 
             model_inputs = list(self._model_def['Inputs'].keys())
-            non_mandatory_inputs = list(all_closed_loop.keys()) + list(all_connect.keys()) +  list(self._model_def['States'].keys())
+            non_mandatory_inputs = list(all_closed_loop.keys()) + list(all_connect.keys()) +  list(self._model_def.recurrentInputs().keys())
             mandatory_inputs = list(set(model_inputs) - set(non_mandatory_inputs))
 
             list_of_batch_indexes_train, train_step = self.__get_batch_indexes(train_dataset_name, n_samples_train,
@@ -722,7 +722,7 @@ class Trainer():
         self.run_training_params['unused_samples'] = unused_samples
 
         ## Set the gradient to true if necessary
-        json_inputs = self._model_def['Inputs'] | self._model_def['States']
+        json_inputs = self._model_def['Inputs']
         for key in json_inputs.keys():
             if 'type' in json_inputs[key]:
                 if key in XY_train:

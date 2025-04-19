@@ -88,7 +88,7 @@ class ModelyTrainingTest(unittest.TestCase):
 
     def test_analysis_results_closed_loop_state(self):
         NeuObj.clearNames()
-        input1 = State('in1')
+        input1 = Input('in1')
         target1 = Input('out1')
         target2 = Input('out2')
         a = Parameter('a', sw=1, values=[[2]])

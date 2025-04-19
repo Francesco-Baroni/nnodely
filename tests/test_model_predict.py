@@ -1392,7 +1392,7 @@ class ModelyPredictTest(unittest.TestCase):
         input = Input('in1')
         sw_from_input = input.sw(7)
 
-        state = State('state')
+        state = Input('state')
         sw_from_output = Connect(sw_from_input, state)
         out_aux = Output('out_aux', sw_from_output)
         out1 = Output('out1', state.sw(3))

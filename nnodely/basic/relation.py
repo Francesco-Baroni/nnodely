@@ -10,7 +10,6 @@ log = nnLogger(__name__, logging.CRITICAL)
 MAIN_JSON = {
                 'Info' : {},
                 'Inputs' : {},
-                'States' : {},
                 'Constants': {},
                 'Parameters' : {},
                 'Functions' : {},
@@ -157,13 +156,13 @@ class Stream(Relation):
             A Stream representing the TimePart object with the selected time window.
 
         """
-        from nnodely.layers.input import State, Connect
+        from nnodely.layers.input import Input, Connect
         if type(tw) is list:
             check(0 >= tw[1] > tw[0] and tw[0] < 0, ValueError, "The dimension of the sample window must be in the past.")
-        s = State(self.name+"_tw"+str(NeuObj.count),dimensions=self.dim['dim'])
+        s = Input(self.name+"_tw"+str(NeuObj.count),dimensions=self.dim['dim'])
         out_connect = Connect(self, s)
-        win_state = s.tw(tw, offset)
-        return Stream(win_state.name, merge(win_state.json, out_connect.json), win_state.dim,0 )
+        win_input = s.tw(tw, offset)
+        return Stream(win_input.name, merge(win_input.json, out_connect.json), win_input.dim,0 )
 
     @enforce_types
     def sw(self, sw:int|list, offset:int|None = None) -> "Stream":
@@ -184,13 +183,13 @@ class Stream(Relation):
             A Stream representing the SamplePart object with the selected samples.
 
         """
-        from nnodely.layers.input import State, Connect
+        from nnodely.layers.input import Input, Connect
         if type(sw) is list:
             check(0 >= sw[1] > sw[0] and sw[0] < 0, ValueError, "The dimension of the sample window must be in the past.")
-        s = State(self.name+"_sw"+str(NeuObj.count),dimensions=self.dim['dim'])
+        s = Input(self.name+"_sw"+str(NeuObj.count),dimensions=self.dim['dim'])
         out_connect = Connect(self, s)
-        win_state = s.sw(sw, offset)
-        return Stream(win_state.name, merge(win_state.json, out_connect.json), win_state.dim,0 )
+        win_input = s.sw(sw, offset)
+        return Stream(win_input.name, merge(win_input.json, out_connect.json), win_input.dim,0 )
 
     @enforce_types
     def z(self, delay:int|float) -> "Stream":
@@ -262,32 +261,32 @@ class Stream(Relation):
 
     def connect(self, obj) -> "Stream":
         """
-        Connects the current stream to a given state object.
+        Connects the current stream to a given input object.
 
         Parameters
         ----------
-        obj : State
-            The state object to connect to.
+        obj : Input
+            The input object to connect to.
 
         Returns
         -------
         Stream
-            A new Stream object representing the connected state.
+            A new Stream object representing the connected input.
 
         Raises
         ------
         TypeError
-            If the provided object is not of type State.
+            If the provided object is not of type Input.
         KeyError
-            If the state variable is already connected.
+            If the input variable is already connected.
         """
-        from nnodely.layers.input import State
-        check(type(obj) is State, TypeError,
-              f"The {obj} must be a State and not a {type(obj)}.")
+        from nnodely.layers.input import Input
+        check(type(obj) is Input, TypeError,
+              f"The {obj} must be a Input and not a {type(obj)}.")
         self.json = merge(self.json, obj.json)
-        check('closedLoop' not in self.json['States'][obj.name] or 'connect' not in self.json['States'][obj.name], KeyError,
-              f"The state variable {obj.name} is already connected.")
-        self.json['States'][obj.name]['connect'] = self.name
+        check('closedLoop' not in self.json['Inputs'][obj.name] or 'connect' not in self.json['Inputs'][obj.name], KeyError,
+              f"The input variable {obj.name} is already connected.")
+        self.json['Inputs'][obj.name]['connect'] = self.name
         return Stream(self.name, self.json, self.dim,0 )
 
     def closedLoop(self, obj, init = None):
@@ -307,23 +306,23 @@ class Stream(Relation):
         Raises
         ------
         TypeError
-            If the provided object is not of type State.
+            If the provided object is not of type Input.
         KeyError
-            If the state variable is already connected.
+            If the input variable is already connected.
         """
-        from nnodely.layers.input import State
-        check(type(obj) is State, TypeError,
-              f"The {obj} must be a State and not a {type(obj)}.")
+        from nnodely.layers.input import Input
+        check(type(obj) is Input, TypeError,
+              f"The {obj} must be a Input and not a {type(obj)}.")
         self.json = merge(self.json, obj.json)
-        check('closedLoop' not in self.json['States'][obj.name] or 'connect' not in self.json['States'][obj.name],
+        check('closedLoop' not in self.json['Inputs'][obj.name] or 'connect' not in self.json['Inputs'][obj.name],
               KeyError,
-              f"The state variable {obj.name} is already connected.")
-        self.json['States'][obj.name]['closedLoop'] = self.name
+              f"The input variable {obj.name} is already connected.")
+        self.json['Inputs'][obj.name]['closedLoop'] = self.name
         if init:
             subjson = subjson_from_relation(self.json, init.name)
-            needed_inputs = subjson['Inputs'].keys()|subjson['States'].keys()
-            check(obj.name not in needed_inputs, KeyError, f"Cannot initialize the state variable {obj.name} with the relation {init.name}.")
-            self.json['States'][obj.name]['init'] = init.name
+            needed_inputs = subjson['Inputs'].keys()
+            check(obj.name not in needed_inputs, KeyError, f"Cannot initialize the recurrent input variable {obj.name} with the relation {init.name}.")
+            self.json['Inputs'][obj.name]['init'] = init.name
         return Stream(self.name, self.json, self.dim,0 )
 
 class ToStream():

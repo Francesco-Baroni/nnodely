@@ -61,11 +61,11 @@ class Loader:
         check(self._data_loaded, ValueError, 'The Dataset must first be loaded using <loadData> function!')
         if self._data_loaded:
             result_dict = {}
-            for key in (self._model_def['Inputs'].keys() | self._model_def['States'].keys()):
+            for key in self._model_def['Inputs'].keys():
                 result_dict[key] = []
             for idx in range(window):
                 for key ,samples in self._data[dataset].items():
-                    if key in (self._model_def['Inputs'].keys() | self._model_def['States'].keys()):
+                    if key in self._model_def['Inputs'].keys():
                         result_dict[key].append(samples[index+idx])
             return result_dict
 
@@ -195,7 +195,7 @@ class Loader:
         check(self.neuralized, ValueError, "The network is not neuralized.")
         check(delimiter in ['\t', '\n', ';', ',', ' '], ValueError, 'delimiter not valid!')
 
-        json_inputs = self._model_def['Inputs'] | self._model_def['States']
+        json_inputs = self._model_def['Inputs']
         model_inputs = list(json_inputs.keys())
         ## Initialize the dictionary containing the data
         if name in list(self._data.keys()):

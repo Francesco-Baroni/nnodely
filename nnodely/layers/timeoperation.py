@@ -25,8 +25,8 @@ class Integrate(Stream, ToStream):
     """
     @enforce_types
     def __init__(self, output:Stream, *, method:str = 'euler') -> Stream:
-        from nnodely.layers.input import State, ClosedLoop
-        s = State(output.name + "_int" + str(NeuObj.count), dimensions=output.dim['dim'])
+        from nnodely.layers.input import Input, ClosedLoop
+        s = Input(output.name + "_int" + str(NeuObj.count), dimensions=output.dim['dim'])
         check(method in SOLVERS, ValueError, f"The method '{method}' is not supported yet")
         solver = SOLVERS[method]()
         new_s = s.last() + solver.integrate(output)
@@ -52,12 +52,9 @@ class Derivate(Stream, ToStream):
             super().__init__(der_relation_name + str(Stream.count), merge(output.json,input.json), input.dim)
             self.json['Relations'][self.name] = [der_relation_name, [output.name, input.name]]
             subjson = subjson_from_relation(self.json, input.name)
-            grad_inputs = subjson['Inputs'].keys()|subjson['States'].keys()
+            grad_inputs = subjson['Inputs'].keys()
             for i in grad_inputs:
-                if i in self.json['Inputs']:
-                    self.json['Inputs'][i]['type'] = 'derivate'
-                elif i in self.json['States']:
-                    self.json['States'][i]['type'] = 'derivate'
+                self.json['Inputs'][i]['type'] = 'derivate'
 
 
 class Derivate_Layer(nn.Module):

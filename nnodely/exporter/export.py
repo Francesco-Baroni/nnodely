@@ -59,6 +59,11 @@ def export_python_model(model_def, model, model_path):
     # trace.recompile()
     ## Standard way to modify the graph
 
+    recurrent_inputs = {key:value for key, value in model_def['Inputs'].items() if
+                        ('closedLoop' in value.keys() or 'connect' in value.keys())}
+    inputs = {key: value for key, value in model_def['Inputs'].items() if
+                        ('closedLoop' not in value.keys() and 'connect' not in value.keys())}
+
     attributes = sorted(set([line for line in trace.code.split() if 'self.' in line]))
     #print('attributes: ', attributes)
     #print('model.relation_forward: ', model.relation_forward.SamplePart14.W)
@@ -200,13 +205,13 @@ def export_python_model(model_def, model, model_path):
             else:
                 file.write(f"    {line}\n")
 
-        if model_def['States'] != {}:
+        if len(recurrent_inputs) > 0:
             file.write("class RecurrentModel(torch.nn.Module):\n")
             file.write("    def __init__(self):\n")
             file.write("        super().__init__()\n")
             file.write("        self.Cell = TracerModel()\n")
             list_inputs = "        self.inputs = ["
-            for key in model_def['Inputs'].keys():
+            for key in inputs.keys():
                 list_inputs += f"'{key}', "
             list_inputs += "]\n"
             file.write(list_inputs)
@@ -214,7 +219,7 @@ def export_python_model(model_def, model, model_path):
             file.write("\n")
             file.write("    def forward(self, kwargs):\n")
             file.write("        n_samples = min([kwargs[key].size(0) for key in self.inputs])\n")
-            for key in model_def['States'].keys():
+            for key in recurrent_inputs.keys():
                 file.write(f"        self.states['{key}'] = kwargs['{key}']\n")
             result_str = ""
             for key, value in model_def['Outputs'].items():
@@ -238,15 +243,16 @@ def export_python_model(model_def, model, model_path):
 
 def export_pythononnx_model(model_def, model_path, model_onnx_path, input_order=None, outputs_order=None):
     closed_loop_states, connect_states = [], []
-    for key, value in model_def['States'].items():
+    for key, value in model_def['Inputs'].items():
         if 'closedLoop' in value.keys():
             closed_loop_states.append(key)
         if 'connect' in value.keys():
             connect_states.append(key)
     
-    model_inputs = input_order if input_order else list(model_def['Inputs'].keys() | model_def['States'].keys())
+    model_inputs = input_order if input_order else list(model_def['Inputs'].keys())
     model_outputs = outputs_order if outputs_order else list(model_def['Outputs'].keys())
-    inputs = [key for key in model_inputs if key not in model_def['States'].keys()]
+    recurrent_inputs = [key for key, value in model_def['Inputs'].items() if ('closedLoop' in value.keys() or 'connect' in value.keys())]
+    inputs = [key for key in model_inputs if key not in recurrent_inputs]
 
     # Define the mapping dictionary input
     trace_mapping_input = {}
@@ -296,7 +302,7 @@ def export_pythononnx_model(model_def, model_path, model_onnx_path, input_order=
     with open(model_onnx_path, 'w') as file:
         file.write(file_content)
 
-        if model_def['States'] != {}:
+        if len(recurrent_inputs) > 0:
             file.write('\n')
             file.write("class RecurrentModel(torch.nn.Module):\n")
             file.write("    def __init__(self):\n")
@@ -354,27 +360,33 @@ def import_python_model(name, model_folder):
 def export_onnx_model(model_def, model, model_path, input_order=None, output_order=None, name='net_onnx'):
     sys.path.insert(0, model_path)
     module_name = os.path.basename(name)
+
+    recurrent_inputs = {key:value for key, value in model_def['Inputs'].items() if
+                        ('closedLoop' in value.keys() or 'connect' in value.keys())}
+    inputs = {key:value for key, value in model_def['Inputs'].items() if
+                        ('closedLoop' not in value.keys() and 'connect' not in value.keys())}
+
     if module_name in sys.modules:
         # Reload the module if it is already loaded
         module = importlib.reload(sys.modules[module_name])
     else:
         # Import the module if it is not loaded
         module = importlib.import_module(module_name)
-    model = torch.jit.script(module.RecurrentModel()) if model_def['States'] != {} else module.TracerModel()
+    model = torch.jit.script(module.RecurrentModel()) if len(recurrent_inputs) > 0 else module.TracerModel()
     model.eval()
     dummy_inputs = []
     input_names = []
     dynamic_axes = {}
-    onnx_inputs = input_order if input_order else list(model_def['Inputs'].keys() | model_def['States'].keys())
+    onnx_inputs = input_order if input_order else model_def['Inputs'].keys()
     for key in onnx_inputs:
         input_names.append(key)
-        window_size = model_def['Inputs'][key]['ntot'] if key in model_def['Inputs'].keys() else model_def['States'][key]['ntot']
-        dim = model_def['Inputs'][key]['dim'] if key in model_def['Inputs'].keys() else model_def['States'][key]['dim']
-        if model_def['States'] != {}:
-            if key in model_def['Inputs'].keys():
+        window_size = model_def['Inputs'][key]['ntot']
+        dim = model_def['Inputs'][key]['dim']
+        if len(recurrent_inputs) > 0 != {}:
+            if key in inputs.keys():
                 dummy_inputs.append(torch.randn(size=(1, 1, window_size, dim)))
                 dynamic_axes[key] = {0: 'horizon', 1: 'batch_size'}
-            elif key in model_def['States'].keys():
+            elif key in recurrent_inputs.keys():
                 dummy_inputs.append(torch.randn(size=(1, window_size, dim)))
                 dynamic_axes[key] = {0: 'batch_size'}
         else:

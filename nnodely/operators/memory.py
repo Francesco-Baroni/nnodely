@@ -35,11 +35,11 @@ class Memory:
         if states: ## reset only specific states
             for key in states:
                 window_size = self._input_n_samples[key]
-                dim = self._model_def['States'][key]['dim']
+                dim = self._model_def['Inputs'][key]['dim']
                 self._states[key] = torch.zeros(size=(batch, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
         else: ## reset all states
             self._states = {}
-            for key, state in self._model_def['States'].items():
+            for key, state in self._model_def.recurrentInputs().items():
                 window_size = self._input_n_samples[key]
                 dim = state['dim']
                 self._states[key] = torch.zeros(size=(batch, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)

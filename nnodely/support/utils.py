@@ -109,13 +109,13 @@ def subjson_from_relation(json, relation):
     functions = set()
 
     def search(rel):
-        if rel in (json['Inputs'] | json['States']):  # Found an input
+        if rel in json['Inputs']:  # Found an input
             inputs.add(rel)
-            if rel in json['States']:
-                if 'connect' in json['States'][rel]:
-                    search(json['States'][rel]['connect'])
-                if 'closed_loop' in json['States'][rel]:
-                    search(json['States'][rel]['closed_loop'])
+            if rel in json['Inputs']:
+                if 'connect' in json['Inputs'][rel]:
+                    search(json['Inputs'][rel]['connect'])
+                if 'closed_loop' in json['Inputs'][rel]:
+                    search(json['Inputs'][rel]['closed_loop'])
         elif rel in json['Constants']:  # Found a constant or parameter
             constants.add(rel)
         elif rel in json['Parameters']:
@@ -142,7 +142,6 @@ def subjson_from_relation(json, relation):
     sub_json = copy.deepcopy(MAIN_JSON)
     sub_json['Relations'] = {key: value for key, value in json['Relations'].items() if key in relations}
     sub_json['Inputs'] = {key: value for key, value in json['Inputs'].items() if key in inputs}
-    sub_json['States'] = {key: value for key, value in json['States'].items() if key in inputs}
     sub_json['Constants'] = {key: value for key, value in json['Constants'].items() if key in constants}
     sub_json['Parameters'] = {key: value for key, value in json['Parameters'].items() if key in parameters}
     sub_json['Functions'] = {key: value for key, value in json['Functions'].items() if key in functions}

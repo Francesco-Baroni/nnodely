@@ -19,6 +19,10 @@ class Model(nn.Module):
     def __init__(self, model_def):
         super(Model, self).__init__()
         model_def = copy.deepcopy(model_def)
+
+        self.states = {key: value for key, value in model_def['Inputs'].items() if
+                       ('closedLoop' in value.keys() or 'connect' in value.keys())}
+
         self.inputs = model_def['Inputs']
         self.outputs = model_def['Outputs']
         self.relations = model_def['Relations']
@@ -26,12 +30,12 @@ class Model(nn.Module):
         self.constants = model_def['Constants']
         self.sample_time = model_def['Info']['SampleTime']
         self.functions = model_def['Functions']
-        self.states = model_def['States']
+
         #self.state_model_main = model_def['States']
         self.minimizers = model_def['Minimizers']
         #self.states = model_def['States']#copy.deepcopy(self.state_model_main)
-        self.input_ns_backward = {key:value['ns'][0] for key, value in (model_def['Inputs']|model_def['States']).items()}
-        self.input_n_samples = {key:value['ntot'] for key, value in (model_def['Inputs']|model_def['States']).items()}
+        self.input_ns_backward = {key:value['ns'][0] for key, value in model_def['Inputs'].items()}
+        self.input_n_samples = {key:value['ntot'] for key, value in model_def['Inputs'].items()}
         self.minimizers_keys = [self.minimizers[key]['A'] for key in self.minimizers] + [self.minimizers[key]['B'] for key in self.minimizers]
 
         ## Build the network
@@ -43,7 +47,7 @@ class Model(nn.Module):
         self.connect_update = {}
 
         ## Define the correct slicing
-        json_inputs = self.inputs | self.states
+        json_inputs = self.inputs
         for _, items in self.relations.items():
             if items[0] == 'SamplePart':
                 if items[1][0] in json_inputs.keys():
@@ -155,8 +159,7 @@ class Model(nn.Module):
 
         ## Initially i have only the inputs from the dataset, the parameters, and the constants
         available_inputs = [key for key in self.inputs.keys() if key not in self.connect_update.keys()]  ## remove connected inputs
-        available_states = [key for key in self.states.keys() if key not in self.connect_update.keys()] ## remove connected states
-        available_keys = set(available_inputs + list(self.all_parameters.keys()) + list(self.all_constants.keys()) + available_states)
+        available_keys = set(available_inputs + list(self.all_parameters.keys()) + list(self.all_constants.keys()))
 
         ## Forward pass through the relations
         while not self.network_outputs.issubset(available_keys): ## i need to climb the relation tree until i get all the outputs
@@ -168,8 +171,6 @@ class Model(nn.Module):
                     for key in self.relation_inputs[relation]:
                         if key in self.all_constants.keys(): ## relation that takes a constant
                             layer_inputs.append(self.all_constants[key])
-                        elif key in available_states: ## relation that takes a state
-                            layer_inputs.append(kwargs[key])
                         elif key in available_inputs:  ## relation that takes inputs
                             layer_inputs.append(kwargs[key])
                         elif key in self.all_parameters.keys(): ## relation that takes parameters

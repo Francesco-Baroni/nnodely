@@ -46,10 +46,8 @@ class TextVisualizer(Visualizer):
 
     def showModelInputWindow(self):
         if self.verbose >= 2:
-            input_ns_backward = {key: value['ns'][0] for key, value in
-                                 (self.modely._model_def['Inputs'] | self.modely._model_def['States']).items()}
-            input_ns_forward = {key: value['ns'][1] for key, value in
-                                (self.modely._model_def['Inputs'] | self.modely._model_def['States']).items()}
+            input_ns_backward = {key: value['ns'][0] for key, value in self.modely._model_def['Inputs'].items()}
+            input_ns_forward = {key: value['ns'][1] for key, value in self.modely._model_def['Inputs'].items()}
             self.__title(" nnodely Model Input Windows ")
             #self.__paramjson("time_window_backward:",self.modely.input_tw_backward)
             #self.__paramjson("time_window_forward:",self.modely.input_tw_forward)

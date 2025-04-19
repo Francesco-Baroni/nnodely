@@ -55,15 +55,15 @@ class Network():
                 subjson = merge(subjson, subjson_from_relation(stream.json, stream.name))
                 json = merge(json, stream.json)
 
-        all_inputs = set(json['Inputs'].keys()|json['States'].keys())
-        needed_inputs = set(subjson['Inputs'].keys() | subjson['States'].keys())
+        all_inputs = json['Inputs'].keys()
+        needed_inputs = subjson['Inputs'].keys()
 
         extenal_inputs = set(all_inputs) - set(needed_inputs)
         check(all_inputs == needed_inputs, RuntimeError, f'Connect or close loop operation on the inputs {list(extenal_inputs)}, that are not used in the model.')
 
-        for key, state in json['States'].items():
-            check("connect" in state.keys() or 'closedLoop' in state.keys(), RuntimeError,
-                  f'The connect or closed loop operation missing for state "{key}" or the state {key} is not used in the model.')
+        # for key, state in json['States'].items():
+        #     check("connect" in state.keys() or 'closedLoop' in state.keys(), RuntimeError,
+        #           f'The connect or closed loop operation missing for state "{key}" or the state {key} is not used in the model.')
 
         try:
             self._model_def.addModel(name, stream_list)
@@ -179,19 +179,19 @@ class Network():
             else:
                 self._model_def.updateParameters(self._model)
 
-        for key, state in self._model_def['States'].items():
-            check("connect" in state.keys() or  'closedLoop' in state.keys(), KeyError, f'The connect or closed loop missing for state "{key}"')
+        # for key, state in self._model_def.recurrentInputs().items():
+        #     check("connect" in state.keys() or  'closedLoop' in state.keys(), KeyError, f'The connect or closed loop missing for state "{key}"')
 
         self._model_def.setBuildWindow(sample_time)
         self._model = Model(self._model_def.getJson())
         self.__addInfo()
 
-        self._input_ns_backward = {key:value['ns'][0] for key, value in (self._model_def['Inputs']|self._model_def['States']).items()}
-        self._input_ns_forward = {key:value['ns'][1] for key, value in (self._model_def['Inputs']|self._model_def['States']).items()}
+        self._input_ns_backward = {key:value['ns'][0] for key, value in self._model_def['Inputs'].items()}
+        self._input_ns_forward = {key:value['ns'][1] for key, value in self._model_def['Inputs'].items()}
         self._max_samples_backward = max(self._input_ns_backward.values())
         self._max_samples_forward = max(self._input_ns_forward.values())
         self._input_n_samples = {}
-        for key, value in (self._model_def['Inputs'] | self._model_def['States']).items():
+        for key, value in self._model_def['Inputs'].items():
             self._input_n_samples[key] = self._input_ns_backward[key] + self._input_ns_forward[key]
         self._max_n_samples = max(self._input_ns_backward.values()) + max(self._input_ns_forward.values())
 
@@ -267,14 +267,13 @@ class Network():
 
         ## List of keys
         model_inputs = list(self._model_def['Inputs'].keys())
-        model_states = list(self._model_def['States'].keys())
-        json_inputs = self._model_def['Inputs'] | self._model_def['States']
+        json_inputs = self._model_def['Inputs']
         # state_closed_loop = [key for key, value in self._model_def['States'].items() if
         #                      'closedLoop' in value.keys()] + list(all_closed_loop.keys())
         # state_connect = [key for key, value in self._model_def['States'].items() if 'connect' in value.keys()] + list(
         #     all_connect.keys())
-        extra_inputs = list(set(list(inputs.keys())) - set(model_inputs) - set(model_states))
-        non_mandatory_inputs = list(all_closed_loop.keys()) + list(all_connect.keys()) +  list(self._model_def['States'].keys())
+        extra_inputs = list(set(list(inputs.keys())) - set(model_inputs))
+        non_mandatory_inputs = list(all_closed_loop.keys()) + list(all_connect.keys()) +  list(self._model_def.recurrentInputs().keys())
         mandatory_inputs = list(set(model_inputs) - set(non_mandatory_inputs))
 
         ## Remove extra inputs
@@ -283,7 +282,7 @@ class Network():
                 f'The provided input {key} is not used inside the network. the inference will continue without using it')
             del inputs[key]
 
-        ## Get the number of data windows for each input/state
+        ## Get the number of data windows for each input
         num_of_windows = {key: len(value) for key, value in inputs.items()} if sampled else {
             key: len(value) - self._input_n_samples[key] + 1 for key, value in inputs.items()}
 
@@ -291,8 +290,7 @@ class Network():
         if num_of_samples:
             window_dim = num_of_samples
             for key in inputs.keys():
-                input_dim = self._model_def['Inputs'][key]['dim'] if key in model_inputs else \
-                self._model_def['States'][key]['dim']
+                input_dim = self._model_def['Inputs'][key]['dim']
                 new_samples = num_of_samples - (len(inputs[key]) - self._input_n_samples[key] + 1)
                 if input_dim > 1:
                     log.warning(f'The variable {key} is filled with {new_samples} samples equal to zeros.')
@@ -304,18 +302,15 @@ class Network():
             windows = []
             for key in inputs.keys():
                 if key in mandatory_inputs:
-                    n_samples = len(inputs[key]) if sampled else len(inputs[key]) - self._model_def['Inputs'][key][
-                        'ntot'] + 1
+                    n_samples = len(inputs[key]) if sampled else len(inputs[key]) - self._model_def['Inputs'][key]['ntot'] + 1
                     windows.append(n_samples)
             if not windows:
                 for key in inputs.keys():
                     if key in non_mandatory_inputs:
                         if key in model_inputs:
-                            n_samples = len(inputs[key]) if sampled else len(inputs[key]) - \
-                                                                         self._model_def['Inputs'][key]['ntot'] + 1
+                            n_samples = len(inputs[key]) if sampled else len(inputs[key]) - self._model_def['Inputs'][key]['ntot'] + 1
                         else:
-                            n_samples = len(inputs[key]) if sampled else len(inputs[key]) - \
-                                                                         self._model_def['States'][key]['ntot'] + 1
+                            n_samples = len(inputs[key]) if sampled else len(inputs[key]) - self._model_def['States'][key]['ntot'] + 1
                         windows.append(n_samples)
             window_dim = min(windows) if windows else 0
         else:  ## No inputs
