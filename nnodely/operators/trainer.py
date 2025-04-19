@@ -193,14 +193,12 @@ class Trainer():
 
         return batch_indexes, clipped_step
 
-    def __recurrentTrain(self, data, batch_indexes, batch_size, loss_gains, closed_loop, connect, prediction_samples,
+    def __recurrentTrain(self, data, batch_indexes, batch_size, loss_gains, prediction_samples,
                          step, non_mandatory_inputs, mandatory_inputs, shuffle=False, train=True):
         indexes = copy.deepcopy(batch_indexes)
         json_inputs = self._model_def['States'] | self._model_def['Inputs']
         aux_losses = torch.zeros(
             [len(self._model_def['Minimizers']), round((len(indexes) + step) / (batch_size + step))])
-        ## Update with virtual states
-        self._model.update(closed_loop=closed_loop, connect=connect)
         X = {}
         batch_val = 0
         while len(indexes) >= batch_size:
@@ -282,9 +280,6 @@ class Trainer():
                 self.__optimizer.step()
                 self.visualizer.showWeightsInTrain(batch=batch_val)
             batch_val += 1
-
-        ## Remove virtual states
-        self._removeVirtualStates(connect, closed_loop)
 
         ## return the losses
         return aux_losses
@@ -508,18 +503,22 @@ class Trainer():
         if self.log_internal:
             self.internals = {}
         step = self.__get_parameter(step=step)
+
         closed_loop = self.__get_parameter(closed_loop=closed_loop)
         connect = self.__get_parameter(connect=connect)
+        all_closed_loop = self.run_training_params['closed_loop'] = closed_loop | self._model_def._input_closed_loop
+        all_connect = self.run_training_params['connect'] = connect | self._model_def._input_connect
+
         recurrent_train = True
-        if closed_loop:
-            for input, output in closed_loop.items():
+        if all_closed_loop:
+            for input, output in all_closed_loop.items():
                 check(input in self._model_def['Inputs'], ValueError, f'the tag {input} is not an input variable.')
                 check(output in self._model_def['Outputs'], ValueError,
                       f'the tag {output} is not an output of the network')
                 log.warning(
                     f'Recurrent train: closing the loop between the the input ports {input} and the output ports {output} for {prediction_samples} samples')
-        elif connect:
-            for connect_in, connect_out in connect.items():
+        elif all_connect:
+            for connect_in, connect_out in all_connect.items():
                 check(connect_in in self._model_def['Inputs'], ValueError,
                       f'the tag {connect_in} is not an input variable.')
                 check(connect_out in self._model_def['Outputs'], ValueError,
@@ -689,10 +688,8 @@ class Trainer():
         keys -= set(self._model_def['Relations'].keys())
         keys -= set(self._model_def['States'].keys())
         keys -= set(self._model_def['Outputs'].keys())
-        if 'connect' in self.run_training_params:
-            keys -= set(self.run_training_params['connect'].keys())
-        if 'closed_loop' in self.run_training_params:
-            keys -= set(self.run_training_params['closed_loop'].keys())
+        keys -= set(all_connect.keys())
+        keys -= set(all_closed_loop.keys())
         check(set(keys).issubset(set(XY_train.keys())), KeyError,
               f"Not all the mandatory keys {keys} are present in the training dataset {set(XY_train.keys())}.")
 
@@ -707,11 +704,7 @@ class Trainer():
             unused_samples = n_samples_train - list_of_batch_indexes[-1] - train_batch_size - prediction_samples
 
             model_inputs = list(self._model_def['Inputs'].keys())
-            state_closed_loop = [key for key, value in self._model_def['States'].items() if
-                                 'closedLoop' in value.keys()] + list(closed_loop.keys())
-            state_connect = [key for key, value in self._model_def['States'].items() if
-                             'connect' in value.keys()] + list(connect.keys())
-            non_mandatory_inputs = state_closed_loop + state_connect
+            non_mandatory_inputs = list(all_closed_loop.keys()) + list(all_connect.keys()) +  list(self._model_def['States'].keys())
             mandatory_inputs = list(set(model_inputs) - set(non_mandatory_inputs))
 
             list_of_batch_indexes_train, train_step = self.__get_batch_indexes(train_dataset_name, n_samples_train,
@@ -752,13 +745,18 @@ class Trainer():
         start = time.time()
         self.visualizer.showStartTraining()
 
+        ## Update with virtual states
+        self._model.update(closed_loop=all_closed_loop, connect=all_connect)
+
+        self.resetStates()  ## Reset the states
+
         for epoch in range(num_of_epochs):
             ## TRAIN
             self._model.train()
             if recurrent_train:
                 losses = self.__recurrentTrain(XY_train, list_of_batch_indexes_train, train_batch_size, minimize_gain,
-                                               closed_loop, connect, prediction_samples, train_step,
-                                               non_mandatory_inputs, mandatory_inputs, shuffle=shuffle_data, train=True)
+                                               prediction_samples, train_step, non_mandatory_inputs,
+                                               mandatory_inputs, shuffle=shuffle_data, train=True)
             else:
                 losses = self.__Train(XY_train, n_samples_train, train_batch_size, minimize_gain, shuffle=shuffle_data,
                                       train=True)
@@ -771,8 +769,8 @@ class Trainer():
                 self._model.eval()
                 if recurrent_train:
                     losses = self.__recurrentTrain(XY_val, list_of_batch_indexes_val, val_batch_size, minimize_gain,
-                                                   closed_loop, connect, prediction_samples, val_step,
-                                                   non_mandatory_inputs, mandatory_inputs, shuffle=False, train=False)
+                                                   prediction_samples, val_step, non_mandatory_inputs,
+                                                   mandatory_inputs, shuffle=False, train=False)
                 else:
                     losses = self.__Train(XY_val, n_samples_val, val_batch_size, minimize_gain, shuffle=False,
                                           train=False)
@@ -812,16 +810,19 @@ class Trainer():
         else:
             log.info('The selected model is the LAST model of the training.')
 
-        self.resultAnalysis(train_dataset, XY_train, minimize_gain, closed_loop, connect, prediction_samples, step,
+        self.resultAnalysis(train_dataset, XY_train, minimize_gain, all_closed_loop, all_connect, prediction_samples, step,
                             train_batch_size)
         if self.run_training_params['n_samples_val'] > 0:
-            self.resultAnalysis(validation_dataset, XY_val, minimize_gain, closed_loop, connect, prediction_samples,
+            self.resultAnalysis(validation_dataset, XY_val, minimize_gain, all_closed_loop, all_connect, prediction_samples,
                                 step, val_batch_size)
         if self.run_training_params['n_samples_test'] > 0:
-            self.resultAnalysis(test_dataset, XY_test, minimize_gain, closed_loop, connect, prediction_samples, step,
+            self.resultAnalysis(test_dataset, XY_test, minimize_gain, all_closed_loop, all_connect, prediction_samples, step,
                                 test_batch_size)
 
         self.visualizer.showResults()
+
+        ## Remove virtual states
+        self._removeVirtualStates(connect, closed_loop)
 
         ## Get trained model from torch and set the model_def
         self._model_def.updateParameters(self._model)

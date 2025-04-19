@@ -257,7 +257,7 @@ class ModelyTrainingTest(unittest.TestCase):
         a = Parameter('a', sw=1, values=[[1]])
         output1 = Output('out1',Fir(W=a)(input1.last()))
 
-        inout = State('inout') #TODO convert to input
+        inout = Input('inout')
         W = Parameter('W', values=[[1]])
         b = Parameter('b', values=[1])
         output2 = Output('out2', Linear(W=W,b=b)(inout.last()))
@@ -1543,8 +1543,6 @@ class ModelyTrainingTest(unittest.TestCase):
         test2.addModel('model', [output1, output2])
         test2.addMinimize('error1', output1, target1.sw(2))
         test2.addMinimize('error2', output2, target2.last())
-        test2.addClosedLoop(output1, input2)
-        test2.addClosedLoop(output2, input1)
         test2.neuralizeModel()
         test2.loadData(name='dataset', source=dataset)
         test2.trainModel(splits=[100,0,0], train_batch_size=1, step=10, optimizer='SGD', lr=0.001, num_of_epochs=1, prediction_samples=3)

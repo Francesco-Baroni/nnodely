@@ -630,14 +630,13 @@ class ModelyJsonTest(unittest.TestCase):
         Stream.resetCount()
         NeuObj.clearNames()
         x = Input('x')
-        y = State('y')
+        y = Input('y') #TODO need to be modified
 
         c1 = Constant('c1', values=5.0)
         c3 = Constant('c3', values=5.0)
 
         rel2 = Linear(W=Parameter('W2', values=[[2.0]]), b=False)(y.last())
         rel4 = Linear(W=Parameter('W4', values=[[4.0]]), b=False)(y.last())
-        rel2.closedLoop(y)
         
         def fun2(x, a):
             return x * a
@@ -653,6 +652,7 @@ class ModelyJsonTest(unittest.TestCase):
         nn = Modely(visualizer=None)
         nn.addModel('model_A', [out1, out2])
         nn.addModel('model_B', [out3, out4])
+        nn.addClosedLoop(rel2,y)
         
         subjson_A = subjson_from_model(nn.json, 'model_A')
         subjson_B = subjson_from_model(nn.json, 'model_B')
@@ -670,8 +670,8 @@ class ModelyJsonTest(unittest.TestCase):
         self.assertEqual(sorted(list(subjson_B['Parameters'].keys())), sorted(['W3', 'W4']))
         self.assertEqual(sorted(list(subjson_A['Outputs'].keys())), sorted(['out1', 'out2']))
         self.assertEqual(sorted(list(subjson_B['Outputs'].keys())), sorted(['out3', 'out4']))
-        self.assertEqual(subjson_A['States']['y'], nn.json['States']['y'])
-        self.assertEqual(subjson_B['States']['y'], nn.json['States']['y'])
+        self.assertEqual(subjson_A['Inputs']['y'], nn.json['Inputs']['y'])
+        self.assertEqual(subjson_B['Inputs']['y'], nn.json['Inputs']['y'])
 
         aa = Modely(visualizer=None)
         aa.addModel('model_A', [out1, out2])

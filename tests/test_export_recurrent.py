@@ -577,7 +577,7 @@ class ModelyExportTest(unittest.TestCase):
         fun = Sin(x_last) + Fir(W=p1)(x_last) + Cos(y_last)
         out_der = Derivate(fun, x_last) + Derivate(fun, y_last)
 
-        x2 = State('x2')
+        x2 = State('x2') # TODO no state in this case
         after_connect = Connect(out_der,x2)
         #x2.connect(out_der)
 

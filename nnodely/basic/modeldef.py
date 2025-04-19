@@ -23,6 +23,8 @@ class ModelDef():
         self.__model_dict = {}
         self.__minimize_dict = {}
         self.__update_state_dict = {}
+        self._input_connect = {}
+        self._input_closed_loop = {}
 
     def __contains__(self, key):
         return key in self.__json
@@ -113,15 +115,23 @@ class ModelDef():
                 stream_out = Stream(stream_name,stream_out.json,stream_out.dim, 0)
             self.__update_state_dict[state_in.name] = UpdateState(stream_out, state_in)
 
-    def addConnect(self, stream_out, state_list_in):
-        from nnodely.layers.input import Connect
-        self.__update_state(stream_out, state_list_in, Connect)
-        self.update()
+    def addConnect(self, stream_out, input_list_in):
+        # from nnodely.layers.input import Connect
+        # self.__update_state(stream_out, input_list_in, Connect)
+        # self.update()
+        if type(input_list_in) is not list:
+            input_list_in = [input_list_in]
+        for input in input_list_in:
+            self._input_connect[input.name] = stream_out.name
 
-    def addClosedLoop(self, stream_out, state_list_in):
-        from nnodely.layers.input import ClosedLoop
-        self.__update_state(stream_out, state_list_in, ClosedLoop)
-        self.update()
+    def addClosedLoop(self, stream_out, input_list_in):
+        # from nnodely.layers.input import ClosedLoop
+        # self.__update_state(stream_out, input_list_in, ClosedLoop)
+        # self.update()
+        if type(input_list_in) is not list:
+            input_list_in = [input_list_in]
+        for input in input_list_in:
+            self._input_closed_loop[input.name] = stream_out.name
 
     def addModel(self, name, stream_list):
         if isinstance(stream_list, (Output,Stream)):

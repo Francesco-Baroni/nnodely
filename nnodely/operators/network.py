@@ -7,7 +7,7 @@ from nnodely.basic.model import Model
 from nnodely.support.utils import check, log, subjson_from_relation, TORCH_DTYPE, NP_DTYPE, argmax_dict, argmin_dict, \
     enforce_types, subjson_from_output, merge
 from nnodely.basic.relation import Stream, MAIN_JSON
-from nnodely.layers.input import State
+from nnodely.layers.input import State, Input
 from nnodely.layers.output import Output
 
 class Network():
@@ -63,7 +63,7 @@ class Network():
 
         for key, state in json['States'].items():
             check("connect" in state.keys() or 'closedLoop' in state.keys(), RuntimeError,
-                  f'The connect or closed operation loop missing for state "{key}" or the state {key} is not used in the model.')
+                  f'The connect or closed loop operation missing for state "{key}" or the state {key} is not used in the model.')
 
         try:
             self._model_def.addModel(name, stream_list)
@@ -89,7 +89,7 @@ class Network():
         self._model_def.removeModel(name_list)
 
     @enforce_types
-    def addConnect(self, stream_out:Output|Stream, state_list_in:State) -> None:
+    def addConnect(self, stream_out:Output|Stream, input_list_in:list|Input) -> None:
         """
         Adds a connection from a relation stream to an input state.
 
@@ -97,8 +97,8 @@ class Network():
         ----------
         stream_out : Stream
             The relation stream to connect from.
-        state_list_in : State
-            The states to connect to.
+        state_list_in : Input or list of inputs
+            The input or list of input to connect to.
 
         Examples
         --------
@@ -109,14 +109,14 @@ class Network():
         Example:
             >>> model = Modely()
             >>> x = Input('x')
-            >>> y = State('y')
+            >>> y = Input('y')
             >>> relation = Fir(x.last())
             >>> model.addConnect(relation, y)
         """
-        self._model_def.addConnect(stream_out, state_list_in)
+        self._model_def.addConnect(stream_out, input_list_in)
 
     @enforce_types
-    def addClosedLoop(self, stream_out:Output|Stream, state_list_in:State) -> None:
+    def addClosedLoop(self, stream_out:Output|Stream, input_list_in:list|Input) -> None:
         """
         Adds a closed loop connection from a relation stream to an input state.
 
@@ -124,8 +124,8 @@ class Network():
         ----------
         stream_out : Stream
             The relation stream to connect from.
-        state_list_in : list of State
-            The list of input states to connect to.
+        state_list_in : Input or list of inputs
+            The Input or the list of input to connect to.
 
         Examples
         --------
@@ -136,11 +136,11 @@ class Network():
         Example:
             >>> model = Modely()
             >>> x = Input('x')
-            >>> y = State('y')
+            >>> y = Input('y')
             >>> relation = Fir(x.last())
             >>> model.addClosedLoop(relation, y)
         """
-        self._model_def.addClosedLoop(stream_out, state_list_in)
+        self._model_def.addClosedLoop(stream_out, input_list_in)
 
     @enforce_types
     def neuralizeModel(self, sample_time:float|int|None = None, clear_model:bool = False, model_def:dict|None = None) -> None:
@@ -253,8 +253,8 @@ class Network():
 
         ## Copy dict for avoid python bug
         inputs = copy.deepcopy(inputs)
-        closed_loop = copy.deepcopy(closed_loop)
-        connect = copy.deepcopy(connect)
+        all_closed_loop = copy.deepcopy(closed_loop) | self._model_def._input_closed_loop
+        all_connect = copy.deepcopy(connect) | self._model_def._input_connect
 
         ## Check neuralize
         check(self.neuralized, RuntimeError, "The network is not neuralized.")
@@ -269,12 +269,12 @@ class Network():
         model_inputs = list(self._model_def['Inputs'].keys())
         model_states = list(self._model_def['States'].keys())
         json_inputs = self._model_def['Inputs'] | self._model_def['States']
-        state_closed_loop = [key for key, value in self._model_def['States'].items() if
-                             'closedLoop' in value.keys()] + list(closed_loop.keys())
-        state_connect = [key for key, value in self._model_def['States'].items() if 'connect' in value.keys()] + list(
-            connect.keys())
+        # state_closed_loop = [key for key, value in self._model_def['States'].items() if
+        #                      'closedLoop' in value.keys()] + list(all_closed_loop.keys())
+        # state_connect = [key for key, value in self._model_def['States'].items() if 'connect' in value.keys()] + list(
+        #     all_connect.keys())
         extra_inputs = list(set(list(inputs.keys())) - set(model_inputs) - set(model_states))
-        non_mandatory_inputs = state_closed_loop + state_connect
+        non_mandatory_inputs = list(all_closed_loop.keys()) + list(all_connect.keys()) +  list(self._model_def['States'].keys())
         mandatory_inputs = list(set(model_inputs) - set(non_mandatory_inputs))
 
         ## Remove extra inputs
@@ -371,7 +371,7 @@ class Network():
         with torch.enable_grad() if calculate_grad else torch.inference_mode():
             ## Update with virtual states
             if prediction_samples is not None:
-                self._model.update(closed_loop=closed_loop, connect=connect)
+                self._model.update(closed_loop=all_closed_loop, connect=all_connect)
             else:
                 prediction_samples = 0
             X = {}

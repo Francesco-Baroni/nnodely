@@ -212,7 +212,9 @@ class Model(nn.Module):
                 self.closed_loop_update[key] = state['closedLoop']
 
         for connect_in, connect_rel in connect.items():
-            self.connect_update[connect_in] = self.outputs[connect_rel]
+            set_relation = self.outputs[connect_rel] if connect_rel in self.outputs.keys() else connect_rel
+            self.connect_update[connect_in] = set_relation
 
         for close_in, close_rel in closed_loop.items():
-            self.closed_loop_update[close_in] = self.outputs[close_rel]
+            set_relation = self.outputs[close_rel] if close_rel in self.outputs.keys() else close_rel
+            self.closed_loop_update[close_in] = set_relation

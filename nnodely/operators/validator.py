@@ -207,9 +207,6 @@ class Validator():
                 self._prediction[dataset][key]['A'] = A_np.tolist()
                 self._prediction[dataset][key]['B'] = B_np.tolist()
 
-            ## Remove virtual states
-            self._removeVirtualStates(connect, closed_loop)
-
             self._performance[dataset]['total'] = {}
             self._performance[dataset]['total']['mean_error'] = np.mean([value for key,value in total_losses.items()])
             self._performance[dataset]['total']['fvu'] = np.mean([self._performance[dataset][key]['fvu']['total'] for key in self._model_def['Minimizers'].keys()])
