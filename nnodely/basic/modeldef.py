@@ -22,7 +22,6 @@ class ModelDef():
             self.__sample_time = None
         self.__model_dict = {}
         self.__minimize_dict = {}
-        self.__update_state_dict = {}
         self._input_connect = {}
         self._input_closed_loop = {}
 
@@ -52,7 +51,6 @@ class ModelDef():
         self.__json = copy.deepcopy(model_def) if model_def is not None else copy.deepcopy(self.__json_base)
         model_dict = copy.deepcopy(model_dict) if model_dict is not None else self.__model_dict
         minimize_dict = copy.deepcopy(minimize_dict) if minimize_dict is not None else self.__minimize_dict
-        update_state_dict = copy.deepcopy(update_state_dict) if update_state_dict is not None else self.__update_state_dict
 
         # Add models to the model_def
         for key, stream_list in model_dict.items():
@@ -93,41 +91,16 @@ class ModelDef():
             self.__json['Minimizers'][key]['B'] = minimize['B'].name
             self.__json['Minimizers'][key]['loss'] = minimize['loss']
 
-        for key, update_state in update_state_dict.items():
-            self.__json = merge(self.__json, update_state.json)
-
         if "SampleTime" in self.__json['Info']:
             self.__sample_time = self.__json['Info']["SampleTime"]
 
-    def __update_state(self, stream_out, state_list_in, UpdateState):
-        from nnodely.layers.input import  State
-        if type(state_list_in) is not list:
-            state_list_in = [state_list_in]
-        for state_in in state_list_in:
-            check(isinstance(stream_out, (Output, Stream)), TypeError,
-                  f"The {stream_out} must be a Stream or Output and not a {type(stream_out)}.")
-            check(type(state_in) is State, TypeError,
-                  f"The {state_in} must be a State and not a {type(state_in)}.")
-            check(stream_out.dim['dim'] == state_in.dim['dim'], ValueError,
-                  f"The dimension of {stream_out.name} is not equal to the dimension of {state_in.name} ({stream_out.dim['dim']}!={state_in.dim['dim']}).")
-            if type(stream_out) is Output:
-                stream_name = self.__json['Outputs'][stream_out.name]
-                stream_out = Stream(stream_name,stream_out.json,stream_out.dim, 0)
-            self.__update_state_dict[state_in.name] = UpdateState(stream_out, state_in)
-
     def addConnect(self, stream_out, input_list_in):
-        # from nnodely.layers.input import Connect
-        # self.__update_state(stream_out, input_list_in, Connect)
-        # self.update()
         if type(input_list_in) is not list:
             input_list_in = [input_list_in]
         for input in input_list_in:
             self._input_connect[input.name] = stream_out.name
 
     def addClosedLoop(self, stream_out, input_list_in):
-        # from nnodely.layers.input import ClosedLoop
-        # self.__update_state(stream_out, input_list_in, ClosedLoop)
-        # self.update()
         if type(input_list_in) is not list:
             input_list_in = [input_list_in]
         for input in input_list_in:
@@ -181,10 +154,6 @@ class ModelDef():
 
         check(self.__json['Inputs'] | self.__json['States'] != {}, RuntimeError, "No model is defined!")
         json_inputs = self.__json['Inputs'] | self.__json['States']
-
-        # for key,value in self.json['States'].items():
-        #     check(closedloop_name in self.json['States'][key].keys() or connect_name in self.json['States'][key].keys(),
-        #           KeyError, f'Update function is missing for state {key}. Use Connect or ClosedLoop to update the state.')
 
         input_tw_backward, input_tw_forward, input_ns_backward, input_ns_forward = {}, {}, {}, {}
         for key, value in json_inputs.items():
