@@ -51,21 +51,10 @@ class Modely(Memory, Network, Trainer, Loader, Validator, Exporter):
                  visualizer:str|Visualizer|None = 'Standard',
                  exporter:str|Exporter|None = 'Standard',
                  seed:int|None = None,
-                 device:str = 'cpu',
                  workspace:str|None = None,
                  log_internal:bool = False,
                  save_history:bool = False):
         
-        # Set the device
-        if device == 'gpu':
-            if torch.cuda.is_available():
-                self.device = torch.device("cuda")
-            else:
-                log.warning(f'The GPU device is not available [cuda:{torch.cuda.is_available()}] ..switching to CPU device')
-                self.device = torch.device("cpu")
-        else:
-            self.device = torch.device("cpu")
-
         # Visualizer
         if visualizer == 'Standard':
             self.visualizer = TextVisualizer(1)
@@ -89,6 +78,7 @@ class Modely(Memory, Network, Trainer, Loader, Validator, Exporter):
         self._model = None
         self._neuralized = False
         self._traced = False
+        self._device = 'cpu'
 
         Memory.__init__(self)
         Network.__init__(self)

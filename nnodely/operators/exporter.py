@@ -323,7 +323,7 @@ class Exporter:
         model_def.setBuildWindow(self._model_def['Info']['SampleTime'])
         model_def.updateParameters(self._model)
         # To here -------------- Are removed
-        model = Model(model_def.getJson())
+        model = Model(model_def.getJson(), device=self._device)
         model.update()
         self.exporter.exportONNX(model_def, model, inputs_order, outputs_order, name, model_folder)
 

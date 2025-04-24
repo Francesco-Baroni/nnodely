@@ -54,8 +54,7 @@ class Trainer():
     def __get_parameter(self, **parameter):
         assert len(parameter) == 1
         name = list(parameter.keys())[0]
-        self.run_training_params[name] = parameter[name] if parameter[name] is not None else self.run_training_params[
-            name]
+        self.run_training_params[name] = parameter[name] if parameter[name] is not None else self.run_training_params[name]
         return self.run_training_params[name]
 
     def __get_batch_sizes(self, train_batch_size, val_batch_size, test_batch_size):
@@ -197,8 +196,7 @@ class Trainer():
                          step, non_mandatory_inputs, mandatory_inputs, shuffle=False, train=True):
         indexes = copy.deepcopy(batch_indexes)
         json_inputs = self._model_def['States'] | self._model_def['Inputs']
-        aux_losses = torch.zeros(
-            [len(self._model_def['Minimizers']), round((len(indexes) + step) / (batch_size + step))])
+        aux_losses = torch.zeros([len(self._model_def['Minimizers']), round((len(indexes) + step) / (batch_size + step))], device=self._device)
         ## Update with virtual states
         self._model.update(closed_loop=closed_loop, connect=connect)
         X = {}
@@ -226,10 +224,9 @@ class Trainer():
                     window_size = self._input_n_samples[key]
                     dim = json_inputs[key]['dim']
                     if 'type' in json_inputs[key]:
-                        X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=True)
+                        X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, device=self._device, requires_grad=True)
                     else:
-                        X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE,
-                                             requires_grad=False)
+                        X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, device=self._device, requires_grad=False)
                     self._states[key] = X[key]
 
                     if 'init' in json_inputs[key].keys(): ## with init relation
@@ -253,8 +250,7 @@ class Trainer():
                 ## Loss Calculation
                 for ind, (key, value) in enumerate(self._model_def['Minimizers'].items()):
                     loss = self.__loss_functions[key](minimize_out[value['A']], minimize_out[value['B']])
-                    loss = (loss * loss_gains[
-                        key]) if key in loss_gains.keys() else loss  ## Multiply by the gain if necessary
+                    loss = (loss * loss_gains[key]) if key in loss_gains.keys() else loss  ## Multiply by the gain if necessary
                     horizon_losses[ind].append(loss)
 
                 ## Update
@@ -293,10 +289,10 @@ class Trainer():
         check((n_samples - batch_size + 1) > 0, ValueError,
               f"The number of available sample are (n_samples_train - train_batch_size + 1) = {n_samples - batch_size + 1}.")
         if shuffle:
-            randomize = torch.randperm(n_samples)
+            randomize = torch.randperm(n_samples, device=self._device)
             data = {key: val[randomize] for key, val in data.items()}
         ## Initialize the train losses vector
-        aux_losses = torch.zeros([len(self._model_def['Minimizers']), n_samples // batch_size])
+        aux_losses = torch.zeros([len(self._model_def['Minimizers']), n_samples // batch_size], device=self._device)
         for idx in range(0, (n_samples - batch_size + 1), batch_size):
             ## Build the input tensor
             XY = {key: val[idx:idx + batch_size] for key, val in data.items()}
@@ -309,8 +305,7 @@ class Trainer():
             total_loss = 0
             for ind, (key, value) in enumerate(self._model_def['Minimizers'].items()):
                 loss = self.__loss_functions[key](minimize_out[value['A']], minimize_out[value['B']])
-                loss = (loss * loss_gains[
-                    key]) if key in loss_gains.keys() else loss  ## Multiply by the gain if necessary
+                loss = (loss * loss_gains[key]) if key in loss_gains.keys() else loss  ## Multiply by the gain if necessary
                 aux_losses[ind][idx // batch_size] = loss.item()
                 total_loss += loss
             ## Gradient step
@@ -543,7 +538,6 @@ class Trainer():
 
         ## Get dataset for training
         shuffle_data = self.__get_parameter(shuffle_data=shuffle_data)
-
         ## Get the dataset name
         train_dataset = self.__get_parameter(train_dataset=train_dataset)
         # TODO manage multiple datasets
@@ -575,17 +569,17 @@ class Trainer():
             XY_train, XY_val, XY_test = {}, {}, {}
             for key, samples in self._data[dataset].items():
                 if val_size == 0.0 and test_size == 0.0:  ## we have only training set
-                    XY_train[key] = torch.from_numpy(samples).to(TORCH_DTYPE).to(self.device)
+                    XY_train[key] = torch.from_numpy(samples).to(TORCH_DTYPE).to(self._device)
                 elif val_size == 0.0 and test_size != 0.0:  ## we have only training and test set
-                    XY_train[key] = torch.from_numpy(samples[:n_samples_train]).to(TORCH_DTYPE).to(self.device)
-                    XY_test[key] = torch.from_numpy(samples[n_samples_train:]).to(TORCH_DTYPE).to(self.device)
+                    XY_train[key] = torch.from_numpy(samples[:n_samples_train]).to(TORCH_DTYPE).to(self._device)
+                    XY_test[key] = torch.from_numpy(samples[n_samples_train:]).to(TORCH_DTYPE).to(self._device)
                 elif val_size != 0.0 and test_size == 0.0:  ## we have only training and validation set
-                    XY_train[key] = torch.from_numpy(samples[:n_samples_train]).to(TORCH_DTYPE).to(self.device)
-                    XY_val[key] = torch.from_numpy(samples[n_samples_train:]).to(TORCH_DTYPE).to(self.device)
+                    XY_train[key] = torch.from_numpy(samples[:n_samples_train]).to(TORCH_DTYPE).to(self._device)
+                    XY_val[key] = torch.from_numpy(samples[n_samples_train:]).to(TORCH_DTYPE).to(self._device)
                 else:  ## we have training, validation and test set
-                    XY_train[key] = torch.from_numpy(samples[:n_samples_train]).to(TORCH_DTYPE).to(self.device)
-                    XY_val[key] = torch.from_numpy(samples[n_samples_train:-n_samples_test]).to(TORCH_DTYPE).to(self.device)
-                    XY_test[key] = torch.from_numpy(samples[n_samples_train + n_samples_val:]).to(TORCH_DTYPE).to(self.device)
+                    XY_train[key] = torch.from_numpy(samples[:n_samples_train]).to(TORCH_DTYPE).to(self._device)
+                    XY_val[key] = torch.from_numpy(samples[n_samples_train:-n_samples_test]).to(TORCH_DTYPE).to(self._device)
+                    XY_test[key] = torch.from_numpy(samples[n_samples_train + n_samples_val:]).to(TORCH_DTYPE).to(self._device)
 
             ## Set name for resultsAnalysis
             train_dataset = self.__get_parameter(train_dataset=f"train_{dataset}_{train_size:0.2f}")
@@ -611,14 +605,14 @@ class Trainer():
             ## Split into train, validation and test
             XY_train, XY_val, XY_test = {}, {}, {}
             n_samples_train = self._num_of_samples[train_dataset]
-            XY_train = {key: torch.from_numpy(val).to(TORCH_DTYPE).to(self.device) for key, val in self._data[train_dataset].items()}
+            XY_train = {key: torch.from_numpy(val).to(TORCH_DTYPE).to(self._device) for key, val in self._data[train_dataset].items()}
             if validation_dataset in datasets:
                 n_samples_val = self._num_of_samples[validation_dataset]
-                XY_val = {key: torch.from_numpy(val).to(TORCH_DTYPE).to(self.device) for key, val in
+                XY_val = {key: torch.from_numpy(val).to(TORCH_DTYPE).to(self._device) for key, val in
                           self._data[validation_dataset].items()}
             if test_dataset in datasets:
                 n_samples_test = self._num_of_samples[test_dataset]
-                XY_test = {key: torch.from_numpy(val).to(TORCH_DTYPE).to(self.device) for key, val in self._data[test_dataset].items()}
+                XY_test = {key: torch.from_numpy(val).to(TORCH_DTYPE).to(self._device) for key, val in self._data[test_dataset].items()}
 
         for key in XY_train.keys():
             assert n_samples_train == XY_train[key].shape[
@@ -681,9 +675,7 @@ class Trainer():
 
         ## Check the needed keys are in the datasets
         keys = set(self._model_def['Inputs'].keys())
-        keys |= {value['A'] for value in self._model_def['Minimizers'].values()} | {value['B'] for value in
-                                                                                   self._model_def[
-                                                                                       'Minimizers'].values()}
+        keys |= {value['A'] for value in self._model_def['Minimizers'].values()} | {value['B'] for value in self._model_def['Minimizers'].values()}
         keys -= set(self._model_def['Relations'].keys())
         keys -= set(self._model_def['States'].keys())
         keys -= set(self._model_def['Outputs'].keys())
@@ -700,15 +692,12 @@ class Trainer():
                                           (train_batch_size + step))
             check(n_samples_train - train_batch_size - prediction_samples + 1 > 0, ValueError,
                   f"The number of available sample are (n_samples_train ({n_samples_train}) - train_batch_size ({train_batch_size}) - prediction_samples ({prediction_samples}) + 1) = {n_samples_train - train_batch_size - prediction_samples + 1}.")
-            update_per_epochs = (n_samples_train - train_batch_size - prediction_samples + 1) // (
-                        train_batch_size + step) + 1
+            update_per_epochs = (n_samples_train - train_batch_size - prediction_samples + 1) // (train_batch_size + step) + 1
             unused_samples = n_samples_train - list_of_batch_indexes[-1] - train_batch_size - prediction_samples
 
             model_inputs = list(self._model_def['Inputs'].keys())
-            state_closed_loop = [key for key, value in self._model_def['States'].items() if
-                                 'closedLoop' in value.keys()] + list(closed_loop.keys())
-            state_connect = [key for key, value in self._model_def['States'].items() if
-                             'connect' in value.keys()] + list(connect.keys())
+            state_closed_loop = [key for key, value in self._model_def['States'].items() if 'closedLoop' in value.keys()] + list(closed_loop.keys())
+            state_connect = [key for key, value in self._model_def['States'].items() if 'connect' in value.keys()] + list(connect.keys())
             non_mandatory_inputs = state_closed_loop + state_connect
             mandatory_inputs = list(set(model_inputs) - set(non_mandatory_inputs))
 
@@ -772,8 +761,7 @@ class Trainer():
                                                    closed_loop, connect, prediction_samples, val_step,
                                                    non_mandatory_inputs, mandatory_inputs, shuffle=False, train=False)
                 else:
-                    losses = self.__Train(XY_val, n_samples_val, val_batch_size, minimize_gain, shuffle=False,
-                                          train=False)
+                    losses = self.__Train(XY_val, n_samples_val, val_batch_size, minimize_gain, shuffle=False, train=False)
                 ## save the losses
                 for ind, key in enumerate(self._model_def['Minimizers'].keys()):
                     val_losses[key].append(torch.mean(losses[ind]).tolist())
@@ -810,14 +798,11 @@ class Trainer():
         else:
             log.info('The selected model is the LAST model of the training.')
 
-        self.resultAnalysis(train_dataset, XY_train, minimize_gain, closed_loop, connect, prediction_samples, step,
-                            train_batch_size)
+        self.resultAnalysis(train_dataset, XY_train, minimize_gain, closed_loop, connect, prediction_samples, step, train_batch_size)
         if self.run_training_params['n_samples_val'] > 0:
-            self.resultAnalysis(validation_dataset, XY_val, minimize_gain, closed_loop, connect, prediction_samples,
-                                step, val_batch_size)
+            self.resultAnalysis(validation_dataset, XY_val, minimize_gain, closed_loop, connect, prediction_samples, step, val_batch_size)
         if self.run_training_params['n_samples_test'] > 0:
-            self.resultAnalysis(test_dataset, XY_test, minimize_gain, closed_loop, connect, prediction_samples, step,
-                                test_batch_size)
+            self.resultAnalysis(test_dataset, XY_test, minimize_gain, closed_loop, connect, prediction_samples, step, test_batch_size)
 
         self.visualizer.showResults()
 

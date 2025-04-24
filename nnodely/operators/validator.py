@@ -106,9 +106,9 @@ class Validator():
                             window_size = self._input_n_samples[key]
                             dim = json_inputs[key]['dim']
                             if 'type' in json_inputs[key]:
-                                X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=True)
+                                X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, device=self._device, requires_grad=True)
                             else:
-                                X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
+                                X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, device=self._device, requires_grad=False)
                             self._states[key] = X[key]
 
                     for horizon_idx in range(prediction_samples + 1):
@@ -120,8 +120,8 @@ class Validator():
 
                         ## Loss Calculation
                         for key, value in self._model_def['Minimizers'].items():
-                            A[key][horizon_idx].append(minimize_out[value['A']].detach().numpy())
-                            B[key][horizon_idx].append(minimize_out[value['B']].detach().numpy())
+                            A[key][horizon_idx].append(minimize_out[value['A']].detach().cpu().numpy())
+                            B[key][horizon_idx].append(minimize_out[value['B']].detach().cpu().numpy())
                             loss = losses[key](minimize_out[value['A']], minimize_out[value['B']])
                             loss = (loss * minimize_gain[key]) if key in minimize_gain.keys() else loss  ## Multiply by the gain if necessary
                             horizon_losses[key].append(loss)
@@ -132,7 +132,7 @@ class Validator():
                     ## Calculate the total loss
                     for key in self._model_def['Minimizers'].keys():
                         loss = sum(horizon_losses[key]) / (prediction_samples + 1)
-                        total_losses[key].append(loss.detach().numpy())
+                        total_losses[key].append(loss.detach().cpu().numpy())
 
                 for key, value in self._model_def['Minimizers'].items():
                     for horizon_idx in range(prediction_samples + 1):
@@ -155,11 +155,11 @@ class Validator():
                     _, minimize_out, _, _ = self._model(XY)  ## Forward pass
                     ## Loss Calculation
                     for key, value in self._model_def['Minimizers'].items():
-                        A[key].append(minimize_out[value['A']].detach().numpy())
-                        B[key].append(minimize_out[value['B']].detach().numpy())
+                        A[key].append(minimize_out[value['A']].detach().cpu().numpy())
+                        B[key].append(minimize_out[value['B']].detach().cpu().numpy())
                         loss = losses[key](minimize_out[value['A']], minimize_out[value['B']])
                         loss = (loss * minimize_gain[key]) if key in minimize_gain.keys() else loss
-                        total_losses[key].append(loss.detach().numpy())
+                        total_losses[key].append(loss.detach().cpu().numpy())
 
                 for key, value in self._model_def['Minimizers'].items():
                     A[key] = np.concatenate(A[key])

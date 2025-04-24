@@ -435,12 +435,12 @@ class TimeConcatenate(Stream, ToStream):
 
 class Part_Layer(nn.Module):
     #: :noindex:
-    def __init__(self, dim:int, i:int, j:int):
+    def __init__(self, dim:int, i:int, j:int, device):
         super(Part_Layer, self).__init__()
         self.i, self.j = i, j
 
         # Create a binary mask matrix for the desired slice
-        self.W = torch.zeros((j - i, dim))
+        self.W = torch.zeros((j - i, dim), device=device)
         for idx in range(j - i):
             self.W[idx, i + idx] = 1
 
@@ -450,13 +450,13 @@ class Part_Layer(nn.Module):
 
 ## Select elements on the third dimension in the range [i,j]
 def createPart(self, *inputs):
-    return Part_Layer(dim=inputs[0], i=inputs[1][0], j=inputs[1][1])
+    return Part_Layer(dim=inputs[0], i=inputs[1][0], j=inputs[1][1], device=inputs[2])
 
 class Select_Layer(nn.Module):
     #: :noindex:
-    def __init__(self, dim, idx):
+    def __init__(self, dim, idx, device):
         super(Select_Layer, self).__init__()
-        self.W = torch.zeros(dim)
+        self.W = torch.zeros(dim, device=device)
         self.W[idx] = 1
 
     def forward(self, x):
@@ -465,17 +465,17 @@ class Select_Layer(nn.Module):
 
 ## Select an element i on the third dimension
 def createSelect(self, *inputs):
-    return Select_Layer(dim=inputs[0], idx=inputs[1])
+    return Select_Layer(dim=inputs[0], idx=inputs[1], device=inputs[2])
 
 class SamplePart_Layer(nn.Module):
     #: :noindex:
-    def __init__(self, dim, part, offset):
+    def __init__(self, dim, part, offset, device):
         super(SamplePart_Layer, self).__init__()
         back, forw = part[0], part[1]
         self.offset = offset
 
         # Create the selection matrix W
-        self.W = torch.zeros(forw - back, dim)
+        self.W = torch.zeros(forw - back, dim, device=device)
         for i in range(forw - back):
             self.W[i, back + i] = 1
 
@@ -484,6 +484,12 @@ class SamplePart_Layer(nn.Module):
             x = x - x[:, self.offset].unsqueeze(1)
         result = torch.einsum('bij,ki->bkj', x, self.W)
         return result
+    
+def createSamplePart(self, *inputs):
+    if len(inputs) > 3:  ## offset
+        return SamplePart_Layer(dim=inputs[0], part=inputs[1], offset=inputs[2], device=inputs[3])
+    else:
+        return SamplePart_Layer(dim=inputs[0], part=inputs[1], offset=None, device=inputs[2])
 
 class Concatenate_Layer(nn.Module):
     #: :noindex:
@@ -496,12 +502,6 @@ class Concatenate_Layer(nn.Module):
 def createConcatenate(name, *inputs):
     #: :noindex:
     return Concatenate_Layer()
-
-def createSamplePart(self, *inputs):
-    if len(inputs) > 2:  ## offset
-        return SamplePart_Layer(dim=inputs[0], part=inputs[1], offset=inputs[2])
-    else:
-        return SamplePart_Layer(dim=inputs[0], part=inputs[1], offset=None)
 
 class SampleSelect_Layer(nn.Module):
     #: :noindex:
@@ -518,13 +518,13 @@ def createSampleSelect(self, *inputs):
 
 class TimePart_Layer(nn.Module):
     #: :noindex:
-    def __init__(self, dim, part, offset):
+    def __init__(self, dim, part, offset, device):
         super(TimePart_Layer, self).__init__()
         back, forw = part[0], part[1]
         self.offset = offset
 
         # Create the selection matrix W
-        self.W = torch.zeros(size=(forw - back, int(dim)))
+        self.W = torch.zeros(size=(forw - back, int(dim)), device=device)
         for i in range(forw - back):
             self.W[i, back + i] = 1
 
@@ -535,10 +535,10 @@ class TimePart_Layer(nn.Module):
         return result
 
 def createTimePart(self, *inputs):
-    if len(inputs) > 2: ## offset
-        return TimePart_Layer(dim=inputs[0], part=inputs[1], offset=inputs[2])
+    if len(inputs) > 3: ## offset
+        return TimePart_Layer(dim=inputs[0], part=inputs[1], offset=inputs[2], device=inputs[3])
     else:
-        return TimePart_Layer(dim=inputs[0], part=inputs[1], offset=None)
+        return TimePart_Layer(dim=inputs[0], part=inputs[1], offset=None, device=inputs[2])
 
 class TimeConcatenate_Layer(nn.Module):
     #: :noindex:

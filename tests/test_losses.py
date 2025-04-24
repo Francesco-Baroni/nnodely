@@ -44,6 +44,7 @@ class ModelyTrainingTest(unittest.TestCase):
         dataset = {'in1': [1,1,1,1,1,1,1,1,1,1], 'out1': [2,2,2,2,2,2,2,2,2,2], 'out2': [5,5,5,5,5,5,5,5,5,5]}
         test.loadData(name='dataset', source=dataset)
         test.trainModel(optimizer='SGD', num_of_epochs=5, lr=0.5)
+        print(test._prediction.keys())
         self.TestAlmostEqual( [[[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]]], test._prediction['train_dataset_0.70']['error1']['A'])
         self.TestAlmostEqual([[[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]]] ,test._prediction['train_dataset_0.70']['error1']['B'])
         self.TestAlmostEqual( [[[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]]], test._prediction['train_dataset_0.70']['error2']['A'])

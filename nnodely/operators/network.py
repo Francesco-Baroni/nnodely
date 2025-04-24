@@ -117,7 +117,7 @@ class Network():
         self._model_def.addClosedLoop(stream_out, state_list_in)
 
     @enforce_types
-    def neuralizeModel(self, sample_time:float|int|None = None, clear_model:bool = False, model_def:dict|None = None) -> None:
+    def neuralizeModel(self, sample_time:float|int|None = None, device:str|None = 'cpu', clear_model:bool = False, model_def:dict|None = None) -> None:
         """
         Neuralizes the model, preparing it for inference and training. This method creates a neural network model starting from the model definition.
         It will also create all the time windows for the inputs and states.
@@ -156,8 +156,18 @@ class Network():
         for key, state in self._model_def['States'].items():
             check("connect" in state.keys() or  'closedLoop' in state.keys(), KeyError, f'The connect or closed loop missing for state "{key}"')
 
+        # Set the device
+        if device == 'gpu':
+            if torch.cuda.is_available():
+                self._device = torch.device("cuda")
+            else:
+                log.warning(f'The GPU device is not available [cuda:{torch.cuda.is_available()}] ..switching to CPU device')
+                self._device = torch.device("cpu")
+        else:
+            self._device = torch.device("cpu")
+
         self._model_def.setBuildWindow(sample_time)
-        self._model = Model(self._model_def.getJson())
+        self._model = Model(self._model_def.getJson(), self._device)
         self.__addInfo()
 
         self._input_ns_backward = {key:value['ns'][0] for key, value in (self._model_def['Inputs']|self._model_def['States']).items()}
@@ -354,8 +364,7 @@ class Network():
             for idx in range(window_dim):
                 ## Get mandatory data inputs
                 for key in mandatory_inputs:
-                    X[key] = inputs[key][idx:idx + 1] if sampled else inputs[key][:,
-                                                                      idx:idx + self._input_n_samples[key]]
+                    X[key] = inputs[key][idx:idx + 1] if sampled else inputs[key][:,idx:idx + self._input_n_samples[key]]
                     if 'type' in json_inputs[key].keys():
                         X[key] = X[key].requires_grad_(True)
                 ## reset states
@@ -370,8 +379,7 @@ class Network():
                         ## if im in the first reset
                         ## if i have a state in memory
                         ## if i have prediction_samples = 'auto' and not enough samples
-                        elif (key in self._states.keys() and (first or prediction_samples == 'auto')) and (
-                                prediction_samples == 'auto' or prediction_samples == None):
+                        elif (key in self._states.keys() and (first or prediction_samples == 'auto')) and (prediction_samples == 'auto' or prediction_samples == None):
                             X[key] = self._states[key]
                         else:  ## if i have no samples and no states
                             window_size = self._input_n_samples[key]

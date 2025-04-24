@@ -16,7 +16,7 @@ def connect(data_in, rel):
     return virtual
 
 class Model(nn.Module):
-    def __init__(self, model_def):
+    def __init__(self, model_def, device):
         super(Model, self).__init__()
         model_def = copy.deepcopy(model_def)
         self.inputs = model_def['Inputs']
@@ -33,6 +33,7 @@ class Model(nn.Module):
         self.input_ns_backward = {key:value['ns'][0] for key, value in (model_def['Inputs']|model_def['States']).items()}
         self.input_n_samples = {key:value['ntot'] for key, value in (model_def['Inputs']|model_def['States']).items()}
         self.minimizers_keys = [self.minimizers[key]['A'] for key in self.minimizers] + [self.minimizers[key]['B'] for key in self.minimizers]
+        self.device = device
 
         ## Build the network
         self.all_parameters = {}
@@ -128,14 +129,15 @@ class Model(nn.Module):
                     else:
                         layer_inputs[0] = round(layer_inputs[0] / self.sample_time)
                 ## Initialize the relation
+                layer_inputs.append(self.device)
                 self.relation_forward[relation] = func(*layer_inputs)
                 ## Save the inputs needed for the relative relation
                 self.relation_inputs[relation] = input_var
 
         ## Add the gradient to all the relations and parameters that requires it
-        self.relation_forward = nn.ParameterDict(self.relation_forward)
-        self.all_constants = nn.ParameterDict(self.all_constants)
-        self.all_parameters = nn.ParameterDict(self.all_parameters)
+        self.relation_forward = nn.ParameterDict(self.relation_forward).to(self.device)
+        self.all_constants = nn.ParameterDict(self.all_constants).to(self.device)
+        self.all_parameters = nn.ParameterDict(self.all_parameters).to(self.device)
 
         ## list of network outputs
         self.network_output_predictions = set(self.outputs.values())
