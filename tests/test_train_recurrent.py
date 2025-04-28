@@ -236,6 +236,9 @@ class ModelyTrainingTest(unittest.TestCase):
         self.assertEqual([-15.0], test.parameters['b'])
         self.assertListEqual([[-51.0]], test.parameters['a'])
 
+        with self.assertRaises(KeyError):
+            test.trainModel(optimizer='SGD', splits=[100, 0, 0], lr=1, num_of_epochs=2)
+
         dataset = {'in1': [1,1], 'out1': [3,3]}
         test.loadData(name='dataset2', source=dataset)
         test.neuralizeModel(clear_model=True)
@@ -1125,6 +1128,19 @@ class ModelyTrainingTest(unittest.TestCase):
         self.assertListEqual([[1.0]], test.parameters['W'])
         self.assertEqual([1.0], test.parameters['b'])
         self.assertListEqual([[1.0]], test.parameters['a'])
+        test.trainModel(optimizer='SGD', splits=[100, 0, 0], lr=1, num_of_epochs=1)
+        self.assertListEqual([[3.0]], test.parameters['W'])
+        self.assertEqual([3.0], test.parameters['b'])
+        self.assertListEqual([[5.0]], test.parameters['a'])
+        test.trainModel(optimizer='SGD', splits=[100, 0, 0], lr=1, num_of_epochs=1)
+        self.assertListEqual([[-3.0]], test.parameters['W'])
+        self.assertEqual([-3.0], test.parameters['b'])
+        self.assertListEqual([[1.0]], test.parameters['a'])
+
+        test.neuralizeModel(clear_model=True)
+        self.assertListEqual([[1.0]], test.parameters['W'])
+        self.assertEqual([1.0], test.parameters['b'])
+        self.assertListEqual([[1.0]], test.parameters['a'])
         test.trainModel(optimizer='SGD', splits=[100, 0, 0], lr=1, num_of_epochs=2, closed_loop={'in1':'out1','in2':'out2'})
         self.assertListEqual([[-3.0]], test.parameters['W'])
         self.assertEqual([-3.0], test.parameters['b'])
@@ -1187,6 +1203,13 @@ class ModelyTrainingTest(unittest.TestCase):
         self.assertListEqual([[-24.5]], test.parameters['W'])
         self.assertListEqual([-9.0], test.parameters['b'])
         self.assertListEqual([[-4.0]], test.parameters['a'])
+
+        test.neuralizeModel(clear_model=True)
+        test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1)
+        self.assertListEqual([[-24.5]], test.parameters['W'])
+        self.assertListEqual([-9.0], test.parameters['b'])
+        self.assertListEqual([[-4.0]], test.parameters['a'])
+
         with self.assertRaises(ValueError):
             test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, prediction_samples=10)
         # test.neuralizeModel(clear_model=True)
