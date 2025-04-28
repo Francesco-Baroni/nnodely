@@ -13,6 +13,7 @@ from nnodely.layers.input import Input
 from nnodely.layers.output import Output
 
 class Composer(Network):
+    @enforce_types
     def __init__(self):
         check(type(self) is not Composer, TypeError, "Composer class cannot be instantiated directly")
         super().__init__()

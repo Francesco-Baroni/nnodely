@@ -9,6 +9,7 @@ from nnodely.operators.network import Network
 from nnodely.support.utils import check, log, enforce_types
 
 class Loader(Network):
+    @enforce_types
     def __init__(self):
         check(type(self) is not Loader, TypeError, "Loader class cannot be instantiated directly")
         super().__init__()

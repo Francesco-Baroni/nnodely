@@ -9,6 +9,7 @@ from nnodely.operators.network import Network
 from nnodely.support.utils import  check, TORCH_DTYPE, enforce_types
 
 class Validator(Network):
+    @enforce_types
     def __init__(self):
         check(type(self) is not Validator, TypeError, "Validator class cannot be instantiated directly")
         super().__init__()

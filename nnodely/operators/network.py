@@ -4,6 +4,7 @@ from nnodely.support.utils import  TORCH_DTYPE, check, enforce_types
 from nnodely.basic.modeldef import ModelDef
 
 class Network:
+    @enforce_types
     def __init__(self):
         check(type(self) is not Network, TypeError, "Loader class cannot be instantiated directly")
 

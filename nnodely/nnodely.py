@@ -8,10 +8,9 @@ from nnodely.operators.trainer import Trainer
 from nnodely.operators.loader import Loader
 from nnodely.operators.validator import Validator
 from nnodely.operators.exporter import Exporter
-from nnodely.operators.visualizer import Visualizer
 
 # nnodely packages
-from nnodely.visualizer import EmptyVisualizer
+from nnodely.visualizer import EmptyVisualizer, TextVisualizer
 from nnodely.exporter import EmptyExporter
 from nnodely.basic.relation import NeuObj
 from nnodely.support.utils import ReadOnlyDict, enforce_types
@@ -24,7 +23,7 @@ log = nnLogger(__name__, logging.INFO)
 def clearNames(names:str|list|None = None):
     NeuObj.clearNames(names)
 
-class Modely(Composer, Trainer, Loader, Validator, Exporter, Visualizer):
+class Modely(Composer, Trainer, Loader, Validator, Exporter):
     """
     Create the main object, the nnodely object, that will be used to create the network, train and export it.
 
@@ -47,6 +46,7 @@ class Modely(Composer, Trainer, Loader, Validator, Exporter, Visualizer):
     -------
         >>> model = Modely()
     """
+    @enforce_types
     def __init__(self,
                  visualizer:str|EmptyVisualizer|None = 'Standard',
                  exporter:str|EmptyExporter|None = 'Standard',
@@ -59,12 +59,20 @@ class Modely(Composer, Trainer, Loader, Validator, Exporter, Visualizer):
         if seed is not None:
             self.resetSeed(seed)
 
+        # Visualizer
+        if visualizer == 'Standard':
+            self.visualizer = TextVisualizer(1)
+        elif visualizer != None:
+            self.visualizer = visualizer
+        else:
+            self.visualizer = EmptyVisualizer()
+        self.visualizer.setModely(self)
+
         Composer.__init__(self)
         Loader.__init__(self)
         Trainer.__init__(self, log_internal)
         Validator.__init__(self)
         Exporter.__init__(self, exporter, workspace, save_history=save_history)
-        Visualizer.__init__(self, visualizer)
 
     @property
     def neuralized(self):
@@ -98,7 +106,8 @@ class Modely(Composer, Trainer, Loader, Validator, Exporter, Visualizer):
     def json(self):
         return copy.deepcopy(self._model_def._ModelDef__json)
 
-    def resetSeed(self, seed):
+    @enforce_types
+    def resetSeed(self, seed:int) -> None:
         """
         Resets the random seed for reproducibility.
 

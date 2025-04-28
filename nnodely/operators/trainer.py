@@ -515,36 +515,36 @@ class Trainer(Network):
         if self.__log_internal:
             self.__internals = {}
         step = self.__get_parameter(step=step)
-
-        closed_loop = self.__get_parameter(closed_loop=closed_loop)
-        connect = self.__get_parameter(connect=connect)
-        all_closed_loop = self.run_training_params['closed_loop'] = closed_loop | self._model_def._input_closed_loop
-        all_connect = self.run_training_params['connect'] = connect | self._model_def._input_connect
-
         recurrent_train = True
-        if all_closed_loop:
-            for input, output in all_closed_loop.items():
-                check(input in self._model_def['Inputs'], ValueError, f'the tag {input} is not an input variable.')
-                check(output in self._model_def['Outputs'], ValueError,
-                      f'the tag {output} is not an output of the network')
-                log.warning(
-                    f'Recurrent train: closing the loop between the the input ports {input} and the output ports {output} for {prediction_samples} samples')
-        elif all_connect:
-            for connect_in, connect_out in all_connect.items():
-                check(connect_in in self._model_def['Inputs'], ValueError,
-                      f'the tag {connect_in} is not an input variable.')
-                check(connect_out in self._model_def['Outputs'], ValueError,
-                      f'the tag {connect_out} is not an output of the network')
-                log.warning(
-                    f'Recurrent train: connecting the input ports {connect_in} with output ports {connect_out} for {prediction_samples} samples')
-        elif len(self._model_def.recurrentInputs()):  ## if we have input variables we have to do the recurrent train
+
+        ## Close loop information
+        closed_loop = self.__get_parameter(closed_loop=closed_loop)
+        all_closed_loop = self.run_training_params['closed_loop'] = closed_loop | self._model_def._input_closed_loop
+        for input, output in all_closed_loop.items():
+            check(input in self._model_def['Inputs'], ValueError, f'the tag {input} is not an input variable.')
+            check(output in self._model_def['Outputs'], ValueError,
+                  f'the tag {output} is not an output of the network')
             log.warning(
-                f"Recurrent train: update reccurent Input variables {list(self._model_def.recurrentInputs().keys())} for {prediction_samples} samples")
-        else:
-            if prediction_samples != 0:
+                f'Recurrent train: closing the loop between the the input ports {input} and the output ports {output} for {prediction_samples} samples')
+
+        ## Connect information
+        connect = self.__get_parameter(connect=connect)
+        all_connect = self.run_training_params['connect'] = connect | self._model_def._input_connect
+        for connect_in, connect_out in all_connect.items():
+            check(connect_in in self._model_def['Inputs'], ValueError,
+                  f'the tag {connect_in} is not an input variable.')
+            check(connect_out in self._model_def['Outputs'], ValueError,
+                  f'the tag {connect_out} is not an output of the network')
+            log.warning(
+                f'Recurrent train: connecting the input ports {connect_in} with output ports {connect_out} for {prediction_samples} samples')
+
+        ## Disable recurrent training if there are no recurrent variables
+        if len(all_connect|all_closed_loop|self._model_def.recurrentInputs()) == 0 or prediction_samples == None:
+            if prediction_samples != None:
                 log.warning(
-                    f"The value of the prediction_samples={prediction_samples} is not used in not recursive network.")
+                    f"The value of the prediction_samples={prediction_samples} but the network has no recurrent variables.")
             recurrent_train = False
+
         self.run_training_params['recurrent_train'] = recurrent_train
 
         ## Get early stopping
