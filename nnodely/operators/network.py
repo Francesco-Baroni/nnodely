@@ -1,439 +1,63 @@
-import copy, torch
+import  torch
 
-import numpy as np
-
+from nnodely.support.utils import  TORCH_DTYPE, check, enforce_types
 from nnodely.basic.modeldef import ModelDef
-from nnodely.basic.model import Model
-from nnodely.support.utils import check, log, subjson_from_relation, TORCH_DTYPE, NP_DTYPE, argmax_dict, argmin_dict, \
-    enforce_types, subjson_from_output, merge
-from nnodely.basic.relation import Stream, MAIN_JSON
-from nnodely.layers.input import State, Input
-from nnodely.layers.output import Output
 
-class Network():
+class Network:
     def __init__(self):
-        check(type(self) is not Network, TypeError, "Network class cannot be instantiated directly")
+        check(type(self) is not Network, TypeError, "Loader class cannot be instantiated directly")
 
-    def __addInfo(self):
-        total_params = sum(p.numel() for p in self._model.parameters() if p.requires_grad)
-        self._model_def['Info']['num_parameters'] = total_params
-        from nnodely import __version__
-        self._model_def['Info']['nnodely_version'] = __version__
-
-    @enforce_types
-    def addModel(self, name:str, stream_list:list|Output|Stream) -> None:
-        """
-        Adds a new model with the given name along with a list of Outputs.
-
-        Parameters
-        ----------
-        name : str
-            The name of the model.
-        stream_list : list of Stream
-            The list of Outputs stream in the model.
-
-        Example
-        -------
-        Example usage:
-            >>> model = Modely()
-            >>> x = Input('x')
-            >>> out = Output('out', Fir(x.last()))
-            >>> model.addModel('example_model', [out])
-        """
-        inputs = set()
-        all_inputs = set()
-        if type(stream_list) is not list:
-            stream_list = [stream_list]
-
-        subjson = MAIN_JSON
-        json = MAIN_JSON
-        for stream in stream_list:
-            if isinstance(stream, Output):
-                subjson = merge(subjson, subjson_from_output(stream.json, stream.name))
-                json = merge(json, stream.json)
-            else:
-                subjson = merge(subjson, subjson_from_relation(stream.json, stream.name))
-                json = merge(json, stream.json)
-
-        all_inputs = json['Inputs'].keys()
-        needed_inputs = subjson['Inputs'].keys()
-
-        extenal_inputs = set(all_inputs) - set(needed_inputs)
-        check(all_inputs == needed_inputs, RuntimeError, f'Connect or close loop operation on the inputs {list(extenal_inputs)}, that are not used in the model.')
-
-        # for key, state in json['States'].items():
-        #     check("connect" in state.keys() or 'closedLoop' in state.keys(), RuntimeError,
-        #           f'The connect or closed loop operation missing for state "{key}" or the state {key} is not used in the model.')
-
-        try:
-            self._model_def.addModel(name, stream_list)
-        except Exception as e:
-            self._model_def.removeModel(name)
-            raise e
-
-    @enforce_types
-    def removeModel(self, name_list:list) -> None:
-        """
-        Removes models with the given list of names.
-
-        Parameters
-        ----------
-        name_list : list of str
-            The list of model names to remove.
-
-        Example
-        -------
-        Example usage:
-            >>> model.removeModel(['sub_model1', 'sub_model2'])
-        """
-        self._model_def.removeModel(name_list)
-
-    @enforce_types
-    def addConnect(self, stream_out:Output|Stream, input_list_in:list|Input) -> None:
-        """
-        Adds a connection from a relation stream to an input state.
-
-        Parameters
-        ----------
-        stream_out : Stream
-            The relation stream to connect from.
-        state_list_in : Input or list of inputs
-            The input or list of input to connect to.
-
-        Examples
-        --------
-        .. image:: https://colab.research.google.com/assets/colab-badge.svg
-            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/states.ipynb
-            :alt: Open in Colab
-
-        Example:
-            >>> model = Modely()
-            >>> x = Input('x')
-            >>> y = Input('y')
-            >>> relation = Fir(x.last())
-            >>> model.addConnect(relation, y)
-        """
-        self._model_def.addConnect(stream_out, input_list_in)
-
-    @enforce_types
-    def addClosedLoop(self, stream_out:Output|Stream, input_list_in:list|Input) -> None:
-        """
-        Adds a closed loop connection from a relation stream to an input state.
-
-        Parameters
-        ----------
-        stream_out : Stream
-            The relation stream to connect from.
-        state_list_in : Input or list of inputs
-            The Input or the list of input to connect to.
-
-        Examples
-        --------
-        .. image:: https://colab.research.google.com/assets/colab-badge.svg
-            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/states.ipynb
-            :alt: Open in Colab
-
-        Example:
-            >>> model = Modely()
-            >>> x = Input('x')
-            >>> y = Input('y')
-            >>> relation = Fir(x.last())
-            >>> model.addClosedLoop(relation, y)
-        """
-        self._model_def.addClosedLoop(stream_out, input_list_in)
-
-    @enforce_types
-    def neuralizeModel(self, sample_time:float|int|None = None, clear_model:bool = False, model_def:dict|None = None) -> None:
-        """
-        Neuralizes the model, preparing it for inference and training. This method creates a neural network model starting from the model definition.
-        It will also create all the time windows for the inputs and states.
-
-        Parameters
-        ----------
-        sample_time : float or None, optional
-            The sample time for the model. Default is None.
-        clear_model : bool, optional
-            Whether to clear the existing model definition. Default is False.
-        model_def : dict or None, optional
-            A dictionary defining the model. If provided, it overrides the existing model definition. Default is None.
-
-        Raises
-        ------
-        ValueError
-            If sample_time is not None and model_def is provided.
-            If clear_model is True and model_def is provided.
-
-        Example
-        -------
-        Example usage:
-            >>> model = Modely(name='example_model')
-            >>> model.neuralizeModel(sample_time=0.1, clear_model=True)
-        """
-        if model_def is not None:
-            check(sample_time == None, ValueError, 'The sample_time must be None if a model_def is provided')
-            check(clear_model == False, ValueError, 'The clear_model must be False if a model_def is provided')
-            self._model_def = ModelDef(model_def)
-        else:
-            if clear_model:
-                self._model_def.update()
-            else:
-                self._model_def.updateParameters(self._model)
-
-        # for key, state in self._model_def.recurrentInputs().items():
-        #     check("connect" in state.keys() or  'closedLoop' in state.keys(), KeyError, f'The connect or closed loop missing for state "{key}"')
-
-        self._model_def.setBuildWindow(sample_time)
-        self._model = Model(self._model_def.getJson())
-        self.__addInfo()
-
-        self._input_ns_backward = {key:value['ns'][0] for key, value in self._model_def['Inputs'].items()}
-        self._input_ns_forward = {key:value['ns'][1] for key, value in self._model_def['Inputs'].items()}
-        self._max_samples_backward = max(self._input_ns_backward.values())
-        self._max_samples_forward = max(self._input_ns_forward.values())
-        self._input_n_samples = {}
-        for key, value in self._model_def['Inputs'].items():
-            self._input_n_samples[key] = self._input_ns_backward[key] + self._input_ns_forward[key]
-        self._max_n_samples = max(self._input_ns_backward.values()) + max(self._input_ns_forward.values())
-
-        ## Initialize States
-        self.resetStates()
-
-        self._neuralized = True
+        # Models definition
+        self._model_def = ModelDef()
+        self._model = None
+        self._neuralized = False
         self._traced = False
-        self.visualizer.showModel(self._model_def.getJson())
-        self.visualizer.showModelInputWindow()
-        self.visualizer.showBuiltModel()
+
+        # Model components
+        self._states = {}
+        self._input_n_samples = {}
+        self._input_ns_backward = {}
+        self._input_ns_forward = {}
+        self._max_samples_backward = None
+        self._max_samples_forward = None
+        self._max_n_samples = 0
+
+        # Dataset information
+        self._data_loaded = False
+        self._file_count = 0
+        self._num_of_samples = {}
+        self._data = {}
+        self._multifile = {}
+
+        # Training information
+        self._training = {}
+
+    def _removeVirtualStates(self, connect, closed_loop):
+        for key in (connect.keys() | closed_loop.keys()):
+            if key in self._states.keys():
+                del self._states[key]
+
+    def _updateState(self, X, out_closed_loop, out_connect):
+        for key, value in out_connect.items():
+            X[key] = value
+            self._states[key] = X[key].clone().detach()
+        for key, val in out_closed_loop.items():
+            shift = val.shape[1]  ## take the output time dimension
+            X[key] = torch.roll(X[key], shifts=-1, dims=1)  ## Roll the time window
+            X[key][:, -shift:, :] = val  ## substitute with the predicted value
+            self._states[key] = X[key].clone().detach()
 
     @enforce_types
-    def __call__(self, inputs:dict={}, sampled:bool=False, closed_loop:dict={}, connect:dict={}, prediction_samples:str|int|None='auto', num_of_samples:int|None=None) -> dict:
-        """
-        Performs inference on the model.
-
-        Parameters
-        ----------
-        inputs : dict, optional
-            A dictionary of input data. The keys are input names and the values are the corresponding data. Default is an empty dictionary.
-        sampled : bool, optional
-            A boolean indicating whether the inputs are already sampled. Default is False.
-        closed_loop : dict, optional
-            A dictionary specifying closed loop connections. The keys are input names and the values are output names. Default is an empty dictionary.
-        connect : dict, optional
-            A dictionary specifying connections. The keys are input names and the values are output names. Default is an empty dictionary.
-        prediction_samples : str or int, optional
-            The number of prediction samples. Can be 'auto', None or an integer. Default is 'auto'.
-        num_of_samples : str or int, optional
-            The number of samples. Can be 'auto', None or an integer. Default is 'auto'.
-
-        Returns
-        -------
-        dict
-            A dictionary containing the model's prediction outputs.
-
-        Raises
-        ------
-        RuntimeError
-            If the network is not neuralized.
-        ValueError
-            If an input variable is not in the model definition or if an output variable is not in the model definition.
-
-        Examples
-        --------
-        .. image:: https://colab.research.google.com/assets/colab-badge.svg
-            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/inference.ipynb
-            :alt: Open in Colab
-
-        Example usage:
-            >>> model = Modely()
-            >>> x = Input('x')
-            >>> out = Output('out', Fir(x.last()))
-            >>> model.addModel('example_model', [out])
-            >>> model.neuralizeModel()
-            >>> predictions = model(inputs={'x': [1, 2, 3]})
-        """
-
-        ## Copy dict for avoid python bug
-        inputs = copy.deepcopy(inputs)
-        all_closed_loop = copy.deepcopy(closed_loop) | self._model_def._input_closed_loop
-        all_connect = copy.deepcopy(connect) | self._model_def._input_connect
-
-        ## Check neuralize
-        check(self.neuralized, RuntimeError, "The network is not neuralized.")
-
-        ## Check closed loop integrity
-        for close_in, close_out in (closed_loop | connect).items():
-            check(close_in in self._model_def['Inputs'], ValueError, f'the tag "{close_in}" is not an input variable.')
-            check(close_out in self._model_def['Outputs'], ValueError,
-                  f'the tag "{close_out}" is not an output of the network')
-
-        ## List of keys
-        model_inputs = list(self._model_def['Inputs'].keys())
-        json_inputs = self._model_def['Inputs']
-        # state_closed_loop = [key for key, value in self._model_def['States'].items() if
-        #                      'closedLoop' in value.keys()] + list(all_closed_loop.keys())
-        # state_connect = [key for key, value in self._model_def['States'].items() if 'connect' in value.keys()] + list(
-        #     all_connect.keys())
-        extra_inputs = list(set(list(inputs.keys())) - set(model_inputs))
-        non_mandatory_inputs = list(all_closed_loop.keys()) + list(all_connect.keys()) +  list(self._model_def.recurrentInputs().keys())
-        mandatory_inputs = list(set(model_inputs) - set(non_mandatory_inputs))
-
-        ## Remove extra inputs
-        for key in extra_inputs:
-            log.warning(
-                f'The provided input {key} is not used inside the network. the inference will continue without using it')
-            del inputs[key]
-
-        ## Get the number of data windows for each input
-        num_of_windows = {key: len(value) for key, value in inputs.items()} if sampled else {
-            key: len(value) - self._input_n_samples[key] + 1 for key, value in inputs.items()}
-
-        ## Get the maximum inference window
-        if num_of_samples:
-            window_dim = num_of_samples
-            for key in inputs.keys():
-                input_dim = self._model_def['Inputs'][key]['dim']
-                new_samples = num_of_samples - (len(inputs[key]) - self._input_n_samples[key] + 1)
-                if input_dim > 1:
-                    log.warning(f'The variable {key} is filled with {new_samples} samples equal to zeros.')
-                    inputs[key] += [[0 for _ in range(input_dim)] for _ in range(new_samples)]
-                else:
-                    log.warning(f'The variable {key} is filled with {new_samples} samples equal to zeros.')
-                    inputs[key] += [0 for _ in range(new_samples)]
-        elif inputs:
-            windows = []
-            for key in inputs.keys():
-                if key in mandatory_inputs:
-                    n_samples = len(inputs[key]) if sampled else len(inputs[key]) - self._model_def['Inputs'][key]['ntot'] + 1
-                    windows.append(n_samples)
-            if not windows:
-                for key in inputs.keys():
-                    if key in non_mandatory_inputs:
-                        if key in model_inputs:
-                            n_samples = len(inputs[key]) if sampled else len(inputs[key]) - self._model_def['Inputs'][key]['ntot'] + 1
-                        else:
-                            n_samples = len(inputs[key]) if sampled else len(inputs[key]) - self._model_def['States'][key]['ntot'] + 1
-                        windows.append(n_samples)
-            window_dim = min(windows) if windows else 0
-        else:  ## No inputs
-            window_dim = 1 if non_mandatory_inputs else 0
-        check(window_dim > 0, StopIteration, f'Missing samples in the input window')
-
-        if len(set(num_of_windows.values())) > 1:
-            max_ind_key, max_dim = argmax_dict(num_of_windows)
-            min_ind_key, min_dim = argmin_dict(num_of_windows)
-            log.warning(
-                f'Different number of samples between inputs [MAX {num_of_windows[max_ind_key]} = {max_dim}; MIN {num_of_windows[min_ind_key]} = {min_dim}]')
-
-        ## Autofill the missing inputs
-        provided_inputs = list(inputs.keys())
-        missing_inputs = list(set(mandatory_inputs) - set(provided_inputs))
-        if missing_inputs:
-            log.warning(f'Inputs not provided: {missing_inputs}. Autofilling with zeros..')
-            for key in missing_inputs:
-                inputs[key] = np.zeros(
-                    shape=(self._input_n_samples[key] + window_dim - 1, self._model_def['Inputs'][key]['dim']),
-                    dtype=NP_DTYPE).tolist()
-
-        ## Transform inputs in 3D Tensors
-        for key in inputs.keys():
-            input_dim = json_inputs[key]['dim']
-            inputs[key] = torch.from_numpy(np.array(inputs[key])).to(TORCH_DTYPE)
-
-            if input_dim > 1:
-                correct_dim = 3 if sampled else 2
-                check(len(inputs[key].shape) == correct_dim, ValueError,
-                      f'The input {key} must have {correct_dim} dimensions')
-                check(inputs[key].shape[correct_dim - 1] == input_dim, ValueError,
-                      f'The second dimension of the input "{key}" must be equal to {input_dim}')
-
-            if input_dim == 1 and inputs[key].shape[-1] != 1:  ## add the input dimension
-                inputs[key] = inputs[key].unsqueeze(-1)
-            if inputs[key].ndim <= 1:  ## add the batch dimension
-                inputs[key] = inputs[key].unsqueeze(0)
-            if inputs[key].ndim <= 2:  ## add the time dimension
-                inputs[key] = inputs[key].unsqueeze(0)
-
-        ## initialize the resulting dictionary
-        result_dict = {}
-        for key in self._model_def['Outputs'].keys():
-            result_dict[key] = []
-
-        ## Inference
-        calculate_grad = False
-        for key, value in json_inputs.items():
-            if 'type' in value.keys():
-                calculate_grad = True
-                break
-        with torch.enable_grad() if calculate_grad else torch.inference_mode():
-            ## Update with virtual states
-            if prediction_samples is not None:
-                self._model.update(closed_loop=all_closed_loop, connect=all_connect)
-            else:
-                prediction_samples = 0
-            X = {}
-            count = 0
-            first = True
-            for idx in range(window_dim):
-                ## Get mandatory data inputs
-                for key in mandatory_inputs:
-                    X[key] = inputs[key][idx:idx + 1] if sampled else inputs[key][:,
-                                                                      idx:idx + self._input_n_samples[key]]
-                    if 'type' in json_inputs[key].keys():
-                        X[key] = X[key].requires_grad_(True)
-                ## reset states
-                if count == 0 or prediction_samples == 'auto':
-                    init_states = []
-                    count = prediction_samples
-                    for key in non_mandatory_inputs:  ## Get non mandatory data (from inputs, from states, or with zeros)
-                        ## if prediction_samples is 'auto' and i have enough samples
-                        ## if prediction_samples is NOT 'auto' but i have enough extended window (with zeros)
-                        if (key in inputs.keys() and prediction_samples == 'auto' and idx < num_of_windows[key]) or (key in inputs.keys() and prediction_samples != 'auto' and idx < inputs[key].shape[1]):
-                            X[key] = inputs[key][idx:idx + 1] if sampled else inputs[key][:,idx:idx + self._input_n_samples[key]]
-                        ## if im in the first reset
-                        ## if i have a state in memory
-                        ## if i have prediction_samples = 'auto' and not enough samples
-                        elif (key in self._states.keys() and (first or prediction_samples == 'auto')) and (
-                                prediction_samples == 'auto' or prediction_samples == None):
-                            X[key] = self._states[key]
-                        else:  ## if i have no samples and no states
-                            window_size = self._input_n_samples[key]
-                            dim = json_inputs[key]['dim']
-                            X[key] = torch.zeros(size=(1, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
-                            self._states[key] = X[key]
-                            if 'init' in json_inputs[key].keys(): ## with init relation
-                                self._model.connect_update[key] = json_inputs[key]['init']
-                                init_states.append(key)
-                        if 'type' in json_inputs[key].keys():
-                            X[key] = X[key].requires_grad_(True)
-                    first = False
-                else:
-                    # Remove the gradient of the previous forward
-                    for key in X.keys():
-                        if 'type' in json_inputs[key].keys():
-                            X[key] = X[key].detach().requires_grad_(True)
-                    count -= 1
-                ## Forward pass
-                result, _, out_closed_loop, out_connect = self._model(X)
-
-                if init_states:
-                    for key in init_states:
-                        del self._model.connect_update[key]
-                    init_states = []
-
-                ## Append the prediction of the current sample to the result dictionary
-                for key in self._model_def['Outputs'].keys():
-                    if result[key].shape[-1] == 1:
-                        result[key] = result[key].squeeze(-1)
-                        if result[key].shape[-1] == 1:
-                            result[key] = result[key].squeeze(-1)
-                    result_dict[key].append(result[key].detach().squeeze(dim=0).tolist())
-
-                ## Update closed_loop and connect
-                if prediction_samples:
-                    self._updateState(X, out_closed_loop, out_connect)
-
-        ## Remove virtual states
-        self._removeVirtualStates(connect, closed_loop)
-
-        return result_dict
-
+    def resetStates(self, states:set={}, batch:int=1) -> None:
+        if states: ## reset only specific states
+            for key in states:
+                window_size = self._input_n_samples[key]
+                dim = self._model_def['Inputs'][key]['dim']
+                self._states[key] = torch.zeros(size=(batch, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
+        else: ## reset all states
+            self._states = {}
+            for key, state in self._model_def.recurrentInputs().items():
+                window_size = self._input_n_samples[key]
+                dim = state['dim']
+                self._states[key] = torch.zeros(size=(batch, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
 

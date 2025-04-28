@@ -1,6 +1,7 @@
 from pprint import pformat
 
 from nnodely.basic.relation import Stream, NeuObj
+from nnodely.support.utils import enforce_types
 
 from nnodely.support.logger import logging, nnLogger
 log = nnLogger(__name__, logging.CRITICAL)
@@ -25,6 +26,7 @@ class Output(NeuObj):
     dim : dict
         A dictionary containing the dimensions of the output.
     """
+    @enforce_types
     def __init__(self, name:str, relation:Stream):
         """
         Initializes the Output object.

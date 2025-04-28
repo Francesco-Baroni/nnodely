@@ -5,21 +5,17 @@ import numpy as np
 import pandas.api.types as ptypes
 from collections.abc import Sequence, Callable
 
+from nnodely.operators.network import Network
 from nnodely.support.utils import check, log, enforce_types
 
-class Loader:
+class Loader(Network):
     def __init__(self):
         check(type(self) is not Loader, TypeError, "Loader class cannot be instantiated directly")
+        super().__init__()
 
         # Dataaset Parameters
         self.__n_datasets = 0
         self.__datasets_loaded = set()
-
-        self._data_loaded = False
-        self._file_count = 0
-        self._num_of_samples = {}
-        self._data = {}
-        self._multifile = {}
 
     @enforce_types
     def getSamples(self, dataset:str, index:int|None = None, window:int=1) -> dict:

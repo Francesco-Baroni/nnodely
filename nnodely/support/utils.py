@@ -1,4 +1,5 @@
 import copy, torch, inspect, typing
+import types
 
 from collections import OrderedDict
 
@@ -24,7 +25,7 @@ class ReadOnlyDict:
     def __getitem__(self, key):
         value = self._data[key]
         if isinstance(value, dict):
-            return ReadOnlyDict(value)
+            return dict(ReadOnlyDict(value))
         return value
 
     def __len__(self):
@@ -42,6 +43,10 @@ class ReadOnlyDict:
     def values(self):
         return self._data.values()
 
+    def __repr__(self):
+        from pprint import pformat
+        return pformat(self._data)
+
     def __or__(self, other):
         if not isinstance(other, ReadOnlyDict):
             return NotImplemented
@@ -49,14 +54,18 @@ class ReadOnlyDict:
         return ReadOnlyDict(combined_data)
 
     def __str__(self):
-        from nnodely.visualizer.visualizer import color, GREEN
+        from nnodely.visualizer.emptyvisualizer import color, GREEN
         from pprint import pformat
         return color(pformat(self._data), GREEN)
 
     def __eq__(self, other):
         if not isinstance(other, ReadOnlyDict):
-            raise NotImplemented
+            return self._data == other
         return self._data == other._data
+
+    # def to_dict(self):
+    #     # Convert the ReadOnlyDict to a regular dictionary
+    #     return {key: value.to_dict() if isinstance(value, ReadOnlyDict) else value for key, value in self._data.items()}
 
 
 def get_window(obj):
@@ -116,6 +125,8 @@ def subjson_from_relation(json, relation):
                     search(json['Inputs'][rel]['connect'])
                 if 'closed_loop' in json['Inputs'][rel]:
                     search(json['Inputs'][rel]['closed_loop'])
+                # if 'init' in json['Inputs'][rel]:
+                #     search(json['Inputs'][rel]['init'])
         elif rel in json['Constants']:  # Found a constant or parameter
             constants.add(rel)
         elif rel in json['Parameters']:
@@ -203,8 +214,13 @@ def enforce_types(func):
 
         for arg_name, arg in all_args.items():
             if (arg_name in hints.keys() or arg_name in sig.keys()) and not isinstance(arg,sig[arg_name].annotation):
+                class_name = func.__qualname__.split('.')[0]
+                if isinstance(sig[arg_name].annotation, types.UnionType):
+                    type_list = [val.__name__ for val in sig[arg_name].annotation.__args__]
+                else:
+                    type_list = sig[arg_name].annotation.__name__
                 raise TypeError(
-                    f"In Function or Class {func} Expected argument '{arg_name}={arg}' to be of type {sig[arg_name].annotation}, but got {type(arg)}")
+                    f"In Function or Class {class_name} the argument '{arg_name}' to be of type {type_list}, but got {type(arg).__name__}")
 
         # for arg, arg_type in hints.items():
         #     if arg in all_args and not isinstance(all_args[arg], arg_type):

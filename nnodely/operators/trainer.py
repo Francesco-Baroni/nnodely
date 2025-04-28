@@ -6,16 +6,19 @@ from nnodely.basic.modeldef import ModelDef
 from nnodely.basic.model import Model
 from nnodely.basic.optimizer import Optimizer, SGD, Adam
 from nnodely.basic.loss import CustomLoss
-from nnodely.support.utils import tensor_to_list, check, TORCH_DTYPE, enforce_types
+from nnodely.operators.network import Network
+from nnodely.support.utils import tensor_to_list, check, TORCH_DTYPE, enforce_types, ReadOnlyDict
 from nnodely.basic.relation import Stream
 from nnodely.layers.output import Output
 
 from nnodely.support.logger import logging, nnLogger
 log = nnLogger(__name__, logging.CRITICAL)
 
-class Trainer():
-    def __init__(self):
+class Trainer(Network):
+    def __init__(self, log_internal:bool = False):
         check(type(self) is not Trainer, TypeError, "Trainer class cannot be instantiated directly")
+        super().__init__()
+
         # Training Parameters
         self.__standard_train_parameters = {
             'models' : None,
@@ -39,8 +42,17 @@ class Trainer():
         # Optimizer
         self.__optimizer = None
 
+        # Save internal
+        self.__log_internal = log_internal
+        if self.__log_internal == True:
+            self.__internals = {}
+
+    @property
+    def internals(self):
+        return ReadOnlyDict(self.__internals)
+
     def __save_internal(self, key, value):
-        self.internals[key] = tensor_to_list(value)
+        self.__internals[key] = tensor_to_list(value)
 
     def __get_train_parameters(self, training_params):
         run_train_parameters = copy.deepcopy(self.__standard_train_parameters)
@@ -230,9 +242,9 @@ class Trainer():
                                              requires_grad=False)
                     self._states[key] = X[key]
 
-                    if 'init' in json_inputs[key].keys(): ## with init relation
-                        self._model.connect_update[key] = json_inputs[key]['init']
-                        init_states.append(key)
+                    # if 'init' in json_inputs[key].keys(): ## with init relation
+                    #     self._model.connect_update[key] = json_inputs[key]['init']
+                    #     init_states.append(key)
 
 
             for horizon_idx in range(prediction_samples + 1):
@@ -242,7 +254,7 @@ class Trainer():
                 ## Forward pass
                 out, minimize_out, out_closed_loop, out_connect = self._model(X)
 
-                if self.log_internal and train:
+                if self.__log_internal and train:
                     #assert (check_gradient_operations(self._states) == 0)
                     #assert (check_gradient_operations(data) == 0)
                     internals_dict = {'XY': tensor_to_list(X), 'out': out, 'param': self._model.all_parameters,
@@ -263,7 +275,7 @@ class Trainer():
                         del self._model.connect_update[key]
                     init_states = []
 
-                if self.log_internal and train:
+                if self.__log_internal and train:
                     internals_dict['state'] = self._states
                     self.__save_internal('inout_' + str(batch_val) + '_' + str(horizon_idx), internals_dict)
 
@@ -500,8 +512,8 @@ class Trainer():
         check(prediction_samples >= 0, KeyError, 'The sample horizon must be positive!')
 
         ## Check close loop and connect
-        if self.log_internal:
-            self.internals = {}
+        if self.__log_internal:
+            self.__internals = {}
         step = self.__get_parameter(step=step)
 
         closed_loop = self.__get_parameter(closed_loop=closed_loop)

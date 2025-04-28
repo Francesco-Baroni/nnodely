@@ -72,12 +72,12 @@ class ModelyTestVisualizer(unittest.TestCase):
         self._original_stdout = sys.stdout
         self._original_stderr = sys.stderr
         sys.stdout = io.StringIO()
-        #sys.stderr = io.StringIO()
+        sys.stderr = io.StringIO()
 
     def tearDown(self):
         # Ripristina stdout e stderr
         sys.stdout = self._original_stdout
-        #sys.stderr = self._original_stderr
+        sys.stderr = self._original_stderr
 
     def test_export_textvisualizer(self):
         t = TextVisualizer(5)

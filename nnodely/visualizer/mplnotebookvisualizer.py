@@ -9,7 +9,8 @@ from mplplots import plots
 class MPLNotebookVisualizer(TextVisualizer):
     def __init__(self, verbose = 1, *, test = False):
         super().__init__(verbose)
-        if test:
+        self.test = test
+        if self.test:
             plt.ion()
 
     def showEndTraining(self, epoch, train_losses, val_losses):
@@ -24,8 +25,8 @@ class MPLNotebookVisualizer(TextVisualizer):
         for key in self.modely.json['Minimizers'].keys():
             fig = plt.figure()
             ax = fig.add_subplot(111)
-            plots.plot_results(ax, name_data, key, self.modely._prediction[name_data][key]['A'],
-                               self.modely._prediction[name_data][key]['B'], self.modely._model_def['Info']["SampleTime"])
+            plots.plot_results(ax, name_data, key, self.modely.prediction[name_data][key]['A'],
+                               self.modely.prediction[name_data][key]['B'], self.modely._model_def['Info']["SampleTime"])
         plt.show()
 
     def showWeights(self, weights = None):
@@ -40,7 +41,6 @@ class MPLNotebookVisualizer(TextVisualizer):
                     fig = plt.figure()
                     ax = fig.add_subplot(111)
                     plots.plot_fuzzy(ax, fun, x, activ_fun, value['centers'])
-                    plt.show()
                 elif 'code':
                     function_inputs = return_standard_inputs(value, self.modely._model_def, xlim, num_points)
                     function_output, function_input_list = return_function(value, function_inputs)
@@ -59,9 +59,7 @@ class MPLNotebookVisualizer(TextVisualizer):
                         for i, key in enumerate(value['params_and_consts']):
                             params += [function_inputs[i + value['n_input']].tolist()]
                         plots.plot_2d_function(plt, fun, x, params, output, function_input_list)
-                    plt.show()
-
-
+        plt.show()
 
 
 

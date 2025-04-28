@@ -22,7 +22,7 @@ from nnodely.layers.interpolation import Interpolation
 
 # Main nnodely classes
 from nnodely.nnodely import nnodely, Modely, clearNames
-from nnodely.visualizer import Visualizer, TextVisualizer, MPLVisualizer, MPLNotebookVisualizer
+from nnodely.visualizer import TextVisualizer, MPLVisualizer, MPLNotebookVisualizer
 from nnodely.exporter import StandardExporter
 
 # Basic nnodely
@@ -49,7 +49,7 @@ else:
 
 __all__ = [
     'nnodely', 'Modely', 'clearNames',
-    'Input', 'State', 'Connect', 'ClosedLoop',
+    'Input', 'Connect', 'ClosedLoop',
     'Parameter', 'Constant', 'SampleTime',
     'Output',
     'Relu', 'ELU', 'Softmax', 'Sigmoid', 'Identity',
@@ -66,7 +66,7 @@ __all__ = [
     'EquationLearner',
     'Integrate',  'Derivate',
     'Interpolation',
-    'Visualizer', 'TextVisualizer', 'MPLVisualizer', 'MPLNotebookVisualizer',
+    'TextVisualizer', 'MPLVisualizer', 'MPLNotebookVisualizer',
     'StandardExporter',
     'SGD', 'Adam', 'Optimizer',
     'init_negexp', 'init_lin', 'init_constant', 'init_exp',

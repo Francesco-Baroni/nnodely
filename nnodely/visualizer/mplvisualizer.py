@@ -85,7 +85,7 @@ class MPLVisualizer(TextVisualizer):
 
     def showResult(self, name_data):
         super().showResult(name_data)
-        check(name_data in self.modely._performance, ValueError, f"Results not available for {name_data}.")
+        check(name_data in self.modely.performance, ValueError, f"Results not available for {name_data}.")
         if name_data in self.__process_results:
             for key in self.modely._model_def['Minimizers'].keys():
                 if key in self.__process_results[name_data] and self.__process_results[name_data][key].poll() is None:
@@ -100,9 +100,9 @@ class MPLVisualizer(TextVisualizer):
                                                     text=True)
             data = {"name_data": name_data,
                     "key": key,
-                    "performance": self.modely._performance[name_data][key],
-                    "prediction_A": self.modely._prediction[name_data][key]['A'],
-                    "prediction_B": self.modely._prediction[name_data][key]['B'],
+                    "performance": self.modely.performance[name_data][key],
+                    "prediction_A": self.modely.prediction[name_data][key]['A'],
+                    "prediction_B": self.modely.prediction[name_data][key]['B'],
                     "sample_time": self.modely._model_def['Info']["SampleTime"]}
             try:
                 # Send data to the visualizer process

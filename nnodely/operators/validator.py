@@ -2,18 +2,29 @@ import torch
 
 import numpy as np
 
+from nnodely.support.utils import ReadOnlyDict
+
 from nnodely.basic.loss import CustomLoss
+from nnodely.operators.network import Network
 from nnodely.support.utils import  check, TORCH_DTYPE, enforce_types
 
-class Validator():
+class Validator(Network):
     def __init__(self):
         check(type(self) is not Validator, TypeError, "Validator class cannot be instantiated directly")
+        super().__init__()
 
         # Validation Parameters
-        self._performance = {}
-        self._prediction = {}
-        self._training = {}
+        self.__performance = {}
+        self.__prediction = {}
 
+    @property
+    def performance(self):
+        return ReadOnlyDict(self.__performance)
+
+    @property
+    def prediction(self):
+        return ReadOnlyDict(self.__prediction)
+    
     @enforce_types
     def resultAnalysis(self,
                        dataset: str,
@@ -35,8 +46,8 @@ class Validator():
         with torch.enable_grad() if calculate_grad else torch.inference_mode():
             ## Init model for retults analysis
             self._model.eval()
-            self._performance[dataset] = {}
-            self._prediction[dataset] = {}
+            self.__performance[dataset] = {}
+            self.__prediction[dataset] = {}
             A = {}
             B = {}
             total_losses = {}
@@ -169,22 +180,22 @@ class Validator():
             for ind, (key, value) in enumerate(self._model_def['Minimizers'].items()):
                 A_np = np.array(A[key])
                 B_np = np.array(B[key])
-                self._performance[dataset][key] = {}
-                self._performance[dataset][key][value['loss']] = np.mean(total_losses[key]).item()
-                self._performance[dataset][key]['fvu'] = {}
+                self.__performance[dataset][key] = {}
+                self.__performance[dataset][key][value['loss']] = np.mean(total_losses[key]).item()
+                self.__performance[dataset][key]['fvu'] = {}
                 # Compute FVU
                 residual = A_np - B_np
                 error_var = np.var(residual)
                 error_mean = np.mean(residual)
-                #error_var_manual = np.sum((residual-error_mean) ** 2) / (len(self._prediction['B'][ind]) - 0)
+                #error_var_manual = np.sum((residual-error_mean) ** 2) / (len(self.__prediction['B'][ind]) - 0)
                 #print(f"{key} var np:{new_error_var} and var manual:{error_var_manual}")
                 with warnings.catch_warnings(record=True) as w:
-                    self._performance[dataset][key]['fvu']['A'] = (error_var / np.var(A_np)).item()
-                    self._performance[dataset][key]['fvu']['B'] = (error_var / np.var(B_np)).item()
+                    self.__performance[dataset][key]['fvu']['A'] = (error_var / np.var(A_np)).item()
+                    self.__performance[dataset][key]['fvu']['B'] = (error_var / np.var(B_np)).item()
                     if w and np.var(A_np) == 0.0 and  np.var(B_np) == 0.0:
-                        self._performance[dataset][key]['fvu']['A'] = np.nan
-                        self._performance[dataset][key]['fvu']['B'] = np.nan
-                self._performance[dataset][key]['fvu']['total'] = np.mean([self._performance[dataset][key]['fvu']['A'],self._performance[dataset][key]['fvu']['B']]).item()
+                        self.__performance[dataset][key]['fvu']['A'] = np.nan
+                        self.__performance[dataset][key]['fvu']['B'] = np.nan
+                self.__performance[dataset][key]['fvu']['total'] = np.mean([self.__performance[dataset][key]['fvu']['A'],self.__performance[dataset][key]['fvu']['B']]).item()
                 # Compute AIC
                 #normal_dist = norm(0, error_var ** 0.5)
                 #probability_of_residual = normal_dist.pdf(residual)
@@ -201,15 +212,15 @@ class Validator():
                 #print(f"{key} total_params:{total_params}")
                 aic = - 2 * log_likelihood + 2 * total_params
                 #print(f"{key} aic:{aic}")
-                self._performance[dataset][key]['aic'] = {'value':aic,'total_params':total_params,'log_likelihood':log_likelihood}
+                self.__performance[dataset][key]['aic'] = {'value':aic,'total_params':total_params,'log_likelihood':log_likelihood}
                 # Prediction and target
-                self._prediction[dataset][key] = {}
-                self._prediction[dataset][key]['A'] = A_np.tolist()
-                self._prediction[dataset][key]['B'] = B_np.tolist()
+                self.__prediction[dataset][key] = {}
+                self.__prediction[dataset][key]['A'] = A_np.tolist()
+                self.__prediction[dataset][key]['B'] = B_np.tolist()
 
-            self._performance[dataset]['total'] = {}
-            self._performance[dataset]['total']['mean_error'] = np.mean([value for key,value in total_losses.items()])
-            self._performance[dataset]['total']['fvu'] = np.mean([self._performance[dataset][key]['fvu']['total'] for key in self._model_def['Minimizers'].keys()])
-            self._performance[dataset]['total']['aic'] = np.mean([self._performance[dataset][key]['aic']['value']for key in self._model_def['Minimizers'].keys()])
+            self.__performance[dataset]['total'] = {}
+            self.__performance[dataset]['total']['mean_error'] = np.mean([value for key,value in total_losses.items()])
+            self.__performance[dataset]['total']['fvu'] = np.mean([self.__performance[dataset][key]['fvu']['total'] for key in self._model_def['Minimizers'].keys()])
+            self.__performance[dataset]['total']['aic'] = np.mean([self.__performance[dataset][key]['aic']['value']for key in self._model_def['Minimizers'].keys()])
 
         self.visualizer.showResult(dataset)

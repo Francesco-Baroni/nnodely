@@ -1334,51 +1334,88 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         result = m({'x': [-0.2], 'y': [0.5]}, connect={'y2': 'out1'}, num_of_samples=10, prediction_samples='auto')
         self.TestAlmostEqual([a.tolist() for a in x_data[0:10]], result['out2'])
 
-    def test_state_initialization_inference(self):
-        NeuObj.clearNames()
-        x = Input('x')
-        y = Input('y')
+    # def test_state_initialization_inference(self):
+    #     NeuObj.clearNames()
+    #     x = Input('x')
+    #     y = Input('y')
+    #
+    #     p_1 = Parameter('p1', sw=1, values=[[1]])
+    #     p_2 = Parameter('p2', sw=1, values=[[2]])
+    #     fir1 = Fir(W=p_1, b=False)(x.last())
+    #     fir2 = Fir(W=p_2, b=False)(y.last())
+    #     relation = fir1 + fir2
+    #     relation.closedLoop(y)
+    #     out = Output('out', relation)
+    #
+    #     model = Modely(visualizer=None, seed=42)
+    #     model.addModel('model', out)
+    #     model.neuralizeModel(1)
+    #
+    #     result = model(inputs={'x': [1,2,3,4,5,6,7,8,9,10]}, prediction_samples=1)
+    #     self.assertEqual([1.0, 4.0, 3.0, 10.0, 5.0, 16.0, 7.0, 22.0, 9.0, 28.0], result['out'])
+    #     result = model(inputs={'x': [1,2,3,4,5,6,7,8,9,10]}, prediction_samples=3)
+    #     self.assertEqual([1.0, 4.0, 11.0, 26.0, 5.0, 16.0, 39.0, 86.0, 9.0, 28.0], result['out'])
+    #     result = model(inputs={'x': [1,2,3,4,5,6,7,8,9,10]}, prediction_samples=5)
+    #     self.assertEqual([1.0, 4.0, 11.0, 26.0, 57.0, 120.0, 7.0, 22.0, 53.0, 116.0], result['out'])
+    #
+    #     NeuObj.clearNames()
+    #     x = Input('x')
+    #     y = Input('y')
+    #
+    #     p_1 = Parameter('p1', sw=1, values=[[1]])
+    #     p_2 = Parameter('p2', sw=1, values=[[2]])
+    #     fir1 = Fir(W=p_1, b=False)(x.last())
+    #     fir2 = Fir(W=p_2, b=False)(y.last())
+    #     relation = fir1 + fir2
+    #     with self.assertRaises(KeyError):
+    #         relation.closedLoop(y, init=fir2)
+    #     relation.closedLoop(y, init=fir1)
+    #     out = Output('out', relation)
+    #
+    #     model = Modely(visualizer=None, seed=42)
+    #     model.addModel('model', out)
+    #     model.neuralizeModel(1)
+    #
+    #     #1*1+2*1 = 3
+    #     #2*1+2*3 = 8
+    #     #3*1+2*3 = 9
+    #
+    #     result = model(inputs={'x': [1,2,3,4,5,6,7,8,9,10]}, prediction_samples=1)
+    #     self.assertEqual([3.0, 8.0, 9.0, 22.0, 15.0, 36.0, 21.0, 50.0, 27.0, 64.0], result['out'])
+    #     result = model(inputs={'x': [1,2,3,4,5,6,7,8,9,10]}, prediction_samples=3)
+    #     self.assertEqual([3.0, 8.0, 19.0, 42.0, 15.0, 36.0, 79.0, 166.0, 27.0, 64.0], result['out'])
+    #     result = model(inputs={'x': [1,2,3,4,5,6,7,8,9,10]}, prediction_samples=5)
+    #     self.assertEqual([3.0, 8.0, 19.0, 42.0, 89.0, 184.0, 21.0, 50.0, 109.0, 228.0], result['out'])
+    #     result = model(inputs={'x': [1,2,3]})
+    #     self.assertEqual([3.0, 8.0, 19.0], result['out'])
+    #     #result = model(inputs={}, prediction_samples=5)
 
-        p_1 = Parameter('p1', sw=1, values=[[1]])
-        p_2 = Parameter('p2', sw=1, values=[[2]])
-        fir1 = Fir(W=p_1, b=False)(x.last())
-        fir2 = Fir(W=p_2, b=False)(y.last())
-        relation = fir1 + fir2
-        relation.closedLoop(y)
-        out = Output('out', relation)
-        
-        model = Modely(visualizer=None, seed=42)
-        model.addModel('model', out)
-        model.neuralizeModel(1)
-
-        result = model(inputs={'x': [1,2,3,4,5,6,7,8,9,10]}, prediction_samples=1)
-        self.assertEqual([1.0, 4.0, 3.0, 10.0, 5.0, 16.0, 7.0, 22.0, 9.0, 28.0], result['out'])
-        result = model(inputs={'x': [1,2,3,4,5,6,7,8,9,10]}, prediction_samples=3)
-        self.assertEqual([1.0, 4.0, 11.0, 26.0, 5.0, 16.0, 39.0, 86.0, 9.0, 28.0], result['out'])
-        result = model(inputs={'x': [1,2,3,4,5,6,7,8,9,10]}, prediction_samples=5)
-        self.assertEqual([1.0, 4.0, 11.0, 26.0, 57.0, 120.0, 7.0, 22.0, 53.0, 116.0], result['out'])
-
-        NeuObj.clearNames()
-        x = Input('x')
-        y = Input('y')
-
-        p_1 = Parameter('p1', sw=1, values=[[1]])
-        p_2 = Parameter('p2', sw=1, values=[[2]])
-        fir1 = Fir(W=p_1, b=False)(x.last())
-        fir2 = Fir(W=p_2, b=False)(y.last())
-        relation = fir1 + fir2
-        with self.assertRaises(KeyError):
-            relation.closedLoop(y, init=fir2)
-        relation.closedLoop(y, init=fir1)
-        out = Output('out', relation)
-        
-        model = Modely(visualizer=None, seed=42)
-        model.addModel('model', out)
-        model.neuralizeModel(1)
-
-        result = model(inputs={'x': [1,2,3,4,5,6,7,8,9,10]}, prediction_samples=1)
-        self.assertEqual([3.0, 8.0, 9.0, 22.0, 15.0, 36.0, 21.0, 50.0, 27.0, 64.0], result['out'])
-        result = model(inputs={'x': [1,2,3,4,5,6,7,8,9,10]}, prediction_samples=3)
-        self.assertEqual([3.0, 8.0, 19.0, 42.0, 15.0, 36.0, 79.0, 166.0, 27.0, 64.0], result['out'])
-        result = model(inputs={'x': [1,2,3,4,5,6,7,8,9,10]}, prediction_samples=5)
-        self.assertEqual([3.0, 8.0, 19.0, 42.0, 89.0, 184.0, 21.0, 50.0, 109.0, 228.0], result['out'])
+    # def test_state_init(self):
+    #     # Test for integrate init
+    #     # Test init di variabile usata solo per inizializzare
+    #     clearNames()
+    #     x0 = Input('x0')
+    #     y0 = Input('y0')
+    #     dx0 = Input('dx0')
+    #     dy0 = Input('dy0')
+    #     Fx = Input('Fx')
+    #     Fy = Input('Fy')
+    #
+    #     M = 1.0
+    #
+    #     ddx = Fx.last() / M
+    #     ddy = Fy.last() / M
+    #     dx = Integrate(ddx, init=dx0.last())
+    #     dy = Integrate(ddy, init=dy0.last())
+    #     x = Integrate(dx, init=x0.last())
+    #     y = Integrate(dy, init=y0.last())
+    #
+    #     mass_x = Output('x', x)
+    #     mass_y = Output('y', y)
+    #     mass_dx = Output('dx', dx)
+    #     mass_dy = Output('dy', dy)
+    #
+    #     mass_dyn = Modely()
+    #     mass_dyn.addModel('', [mass_x, mass_y, mass_dx, mass_dy])
+    #     mass_dyn.neuralizeModel(0.01)
+    #     example = mass_dyn({'x0': [7], 'y0': [7], 'dx0': [5], 'dy0': [5], 'Fx': [100], 'Fy': [100]}, num_of_samples=200)

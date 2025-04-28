@@ -33,11 +33,11 @@ class Reporter:
 
         for key in self.modely._model_def['Minimizers'].keys():
             c.drawString(100, height - 30, f"Prediction of {key}")
-            for ind, name_data in enumerate(self.modely._prediction.keys()):
+            for ind, name_data in enumerate(self.modely.prediction.keys()):
                 fig = plt.figure(figsize=(10, 5))
                 ax = fig.add_subplot(111)
-                plots.plot_results(ax, name_data, key, self.modely._prediction[name_data][key]['A'],
-                               self.modely._prediction[name_data][key]['B'], self.modely._model_def['Info']["SampleTime"])
+                plots.plot_results(ax, name_data, key, self.modely.prediction[name_data][key]['A'],
+                               self.modely.prediction[name_data][key]['B'], self.modely._model_def['Info']["SampleTime"])
                 # Add a text box with correlation coefficient
                 results = io.BytesIO()
                 plt.savefig(results, format='png')

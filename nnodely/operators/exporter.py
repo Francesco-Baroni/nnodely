@@ -2,25 +2,27 @@ from nnodely.exporter.standardexporter import StandardExporter
 from nnodely.exporter.emptyexporter import EmptyExporter
 from nnodely.basic.model import Model
 from nnodely.basic.modeldef import ModelDef
+from nnodely.operators.network import Network
 from nnodely.support.utils import check, enforce_types
 
 
-class Exporter:
+class Exporter(Network):
     @enforce_types
     def __init__(self, exporter:EmptyExporter|str|None=None, workspace:str|None=None, *, save_history:bool=False):
         check(type(self) is not Exporter, TypeError, "Exporter class cannot be instantiated directly")
+        super().__init__()
 
         # Exporter
         if exporter == 'Standard':
-            self.exporter = StandardExporter(workspace, self.visualizer, save_history=save_history)
+            self.__exporter = StandardExporter(workspace, self.visualizer, save_history=save_history)
         elif exporter != None:
-            self.exporter = exporter
+            self.__exporter = exporter
         else:
-            self.exporter = EmptyExporter()
+            self.__exporter = EmptyExporter()
 
     @enforce_types
     def getWorkspace(self):
-        return self.exporter.getWorkspace()
+        return self.__exporter.getWorkspace()
 
     @enforce_types
     def saveTorchModel(self, name:str='net', model_folder:str|None=None, *, models:str|None=None) -> None:
@@ -52,7 +54,7 @@ class Exporter:
             >>> model.neuralizeModel()
             >>> model.saveTorchModel(name='example_model', model_folder='path/to/save')
         """
-        check(self.neuralized == True, RuntimeError, 'The model is not neuralized yet!')
+        check(self._neuralized == True, RuntimeError, 'The model is not neuralized yet!')
         if models is not None:
             if type(models) is str:
                 models = [models]
@@ -64,7 +66,7 @@ class Exporter:
             model = Model(model_def.getJson())
         else:
             model = self._model
-        self.exporter.saveTorchModel(model, name, model_folder)
+        self.__exporter.saveTorchModel(model, name, model_folder)
 
     @enforce_types
     def loadTorchModel(self, name:str='net', model_folder:str|None=None) -> None:
@@ -95,7 +97,7 @@ class Exporter:
             >>> model.loadTorchModel(name='example_model', model_folder='path/to/load')
         """
         check(self.neuralized == True, RuntimeError, 'The model is not neuralized yet.')
-        self.exporter.loadTorchModel(self._model, name, model_folder)
+        self.__exporter.loadTorchModel(self._model, name, model_folder)
 
     @enforce_types
     def saveModel(self, name:str='net', model_path:str|None=None, *, models:str|list|None=None) -> None:
@@ -139,7 +141,7 @@ class Exporter:
         else:
             model_def = self._model_def
         check(model_def.isDefined(), RuntimeError, "The network has not been defined.")
-        self.exporter.saveModel(model_def.getJson(), name, model_path)
+        self.__exporter.saveModel(model_def.getJson(), name, model_path)
 
     @enforce_types
     def loadModel(self, name:str='net', model_folder:str|None=None) -> None:
@@ -168,7 +170,7 @@ class Exporter:
             >>> model = Modely()
             >>> model.loadModel(name='example_model', model_folder='path/to/load')
         """
-        model_def = self.exporter.loadModel(name, model_folder)
+        model_def = self.__exporter.loadModel(name, model_folder)
         check(model_def, RuntimeError, "Error to load the network.")
         self._model_def = ModelDef(model_def)
         self._model = None
@@ -224,8 +226,8 @@ class Exporter:
         check(self._traced == False, RuntimeError,
               'The model is traced and cannot be exported to Python.\n Run neuralizeModel() to recreate a standard model.')
         check(self.neuralized == True, RuntimeError, 'The model is not neuralized yet.')
-        self.exporter.saveModel(model_def.getJson(), name, model_path)
-        self.exporter.exportPythonModel(model_def, model, name, model_path)
+        self.__exporter.saveModel(model_def.getJson(), name, model_path)
+        self.__exporter.exportPythonModel(model_def, model, name, model_path)
 
     @enforce_types
     def importPythonModel(self, name:str='net', model_folder:str|None=None) -> None:
@@ -254,10 +256,10 @@ class Exporter:
             >>> model = Modely()
             >>> model.importPythonModel(name='example_model', model_folder='path/to/import')
         """
-        model_def = self.exporter.loadModel(name, model_folder)
+        model_def = self.__exporter.loadModel(name, model_folder)
         check(model_def is not None, RuntimeError, "Error to load the network.")
         self.neuralizeModel(model_def=model_def)
-        self._model = self.exporter.importPythonModel(name, model_folder)
+        self._model = self.__exporter.importPythonModel(name, model_folder)
         self._traced = True
         self._model_def.updateParameters(self._model)
 
@@ -323,7 +325,7 @@ class Exporter:
         model_def.updateParameters(self._model)
         model = Model(model_def.getJson())
         model.update()
-        self.exporter.exportONNX(model_def, model, inputs_order, outputs_order, name, model_folder)
+        self.__exporter.exportONNX(model_def, model, inputs_order, outputs_order, name, model_folder)
 
     @enforce_types
     def onnxInference(self, inputs:dict, path:str) -> dict:
@@ -371,7 +373,7 @@ class Exporter:
                                 'y':np.ones(shape=(1, 1, 1)).astype(np.float32)}
             >>> predictions = Modely().onnxInference(dummy_input, onnx_model_path)
         """
-        return self.exporter.onnxInference(inputs, path)
+        return self.__exporter.onnxInference(inputs, path)
 
     @enforce_types
     def exportReport(self, name:str='net', model_folder:None=None) -> None:
@@ -397,4 +399,4 @@ class Exporter:
             >>> model.trainModel(train_dataset='train_dataset', validation_dataset='val_dataset', num_of_epochs=10)
             >>> model.exportReport(name='example_model', model_folder='path/to/export')
         """
-        self.exporter.exportReport(self, name, model_folder)
+        self.__exporter.exportReport(self, name, model_folder)

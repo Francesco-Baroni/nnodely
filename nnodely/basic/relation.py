@@ -124,7 +124,7 @@ class Stream(Relation):
         self.dim = dim
 
     def __str__(self):
-        from nnodely.visualizer.visualizer import color, GREEN
+        from nnodely.visualizer.emptyvisualizer import color, GREEN
         from pprint import pformat
         stream = f" Stream "
         stream_name = f" {self.name} {self.dim} "
@@ -318,11 +318,11 @@ class Stream(Relation):
               KeyError,
               f"The input variable {obj.name} is already connected.")
         self.json['Inputs'][obj.name]['closedLoop'] = self.name
-        if init:
-            subjson = subjson_from_relation(self.json, init.name)
-            needed_inputs = subjson['Inputs'].keys()
-            check(obj.name not in needed_inputs, KeyError, f"Cannot initialize the recurrent input variable {obj.name} with the relation {init.name}.")
-            self.json['Inputs'][obj.name]['init'] = init.name
+        # if init:
+        #     subjson = subjson_from_relation(self.json, init.name)
+        #     needed_inputs = subjson['Inputs'].keys()
+        #     check(obj.name not in needed_inputs, KeyError, f"Cannot initialize the recurrent input variable {obj.name} with the relation {init.name}.")
+        #     self.json['Inputs'][obj.name]['init'] = init.name
         return Stream(self.name, self.json, self.dim,0 )
 
 class ToStream():

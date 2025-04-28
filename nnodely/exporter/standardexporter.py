@@ -1,6 +1,6 @@
 import os, torch
 
-from nnodely.visualizer import Visualizer
+from nnodely.visualizer import EmptyVisualizer
 from nnodely.exporter.emptyexporter import EmptyExporter
 from nnodely.exporter.reporter import Reporter
 from nnodely.exporter.export import save_model, load_model, export_python_model, export_pythononnx_model, export_onnx_model, import_python_model, import_onnx_model, onnx_inference
@@ -11,7 +11,7 @@ log = nnLogger(__name__, logging.CRITICAL)
 
 class StandardExporter(EmptyExporter):
     @enforce_types
-    def __init__(self, workspace:str|None=None, visualizer:Visualizer|None=None, *, save_history:bool=False):
+    def __init__(self, workspace:str|None=None, visualizer:EmptyVisualizer|None=None, *, save_history:bool=False):
         super().__init__(workspace, visualizer, save_history)
 
     def getWorkspace(self):

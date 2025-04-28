@@ -24,13 +24,15 @@ class Integrate(Stream, ToStream):
     method : is the integration method
     """
     @enforce_types
-    def __init__(self, output:Stream, *, method:str = 'euler') -> Stream:
+    def __init__(self, output:Stream, *, name:str|None = None, init:Stream|None = None, method:str = 'euler') -> Stream:
         from nnodely.layers.input import Input, ClosedLoop
-        s = Input(output.name + "_int" + str(NeuObj.count), dimensions=output.dim['dim'])
+        if name is None:
+            name = output.name + "_int" + str(NeuObj.count)
+        s = Input(name, dimensions=output.dim['dim'])
         check(method in SOLVERS, ValueError, f"The method '{method}' is not supported yet")
         solver = SOLVERS[method]()
         new_s = s.last() + solver.integrate(output)
-        out = ClosedLoop(new_s, s)
+        out = ClosedLoop(new_s, s, init=init)
         super().__init__(new_s.name, out.json, new_s.dim)
 
 class Derivate(Stream, ToStream):
