@@ -15,6 +15,7 @@ pow_relation_name = 'Pow'
 
 # Unary operators
 neg_relation_name = 'Neg'
+sign_relation_name = 'Sign'
 
 # Merge operator
 sum_relation_name = 'Sum'
@@ -170,6 +171,24 @@ class Neg(Stream, ToStream):
         super().__init__(neg_relation_name+str(Stream.count), obj.json, obj.dim)
         self.json['Relations'][self.name] = [neg_relation_name,[obj.name]]
 
+class Sign(Stream, ToStream):
+    """
+        Implement the sign function given an input. 
+
+        :param input: the input for the sign function
+        :type obj: Tensor
+
+        Example:
+            >>> x = Sign(x)
+    """
+    @enforce_types
+    def __init__(self, obj:Stream|Parameter|Constant) -> Stream:
+        obj = toStream(obj)
+        check(type(obj) is Stream, TypeError,
+              f"The type of {obj} is {type(obj)} and is not supported for sign operation.")
+        super().__init__(sign_relation_name+str(Stream.count), obj.json, obj.dim)
+        self.json['Relations'][self.name] = [sign_relation_name,[obj.name]]
+
 class Sum(Stream, ToStream):
     @enforce_types
     def __init__(self, obj:Stream|Parameter|Constant) -> Stream:
@@ -274,6 +293,18 @@ def createNeg(self, *inputs):
     #: :noindex:
     return Neg_Layer()
 
+class Sign_Layer(nn.Module):
+    #: :noindex:
+    def __init__(self):
+        super(Sign_Layer, self).__init__()
+
+    def forward(self, x):
+        return torch.sign(x)
+
+def createSign(self, *inputs):
+    #: :noindex:
+    return Sign_Layer()
+
 class Sum_Layer(nn.Module):
     #: :noindex:
     def __init__(self):
@@ -294,6 +325,7 @@ setattr(Model, div_relation_name, createDiv)
 setattr(Model, pow_relation_name, createPow)
 
 setattr(Model, neg_relation_name, createNeg)
+setattr(Model, sign_relation_name, createSign)
 
 setattr(Model, sum_relation_name, createSum)
 
