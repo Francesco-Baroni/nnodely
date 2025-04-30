@@ -2,6 +2,7 @@ import unittest, os, sys
 import numpy as np
 
 from nnodely import *
+from nnodely.support import earlystopping
 from nnodely.basic.relation import NeuObj
 from nnodely.support.logger import logging, nnLogger
 
@@ -1162,3 +1163,22 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         list_of_batch_indexes = range(0, n_samples - batch_size + 1, batch_size)
         self.assertEqual(len(list_of_batch_indexes), test.run_training_params['update_per_epochs'])
         self.assertEqual(n_samples - list_of_batch_indexes[-1] - batch_size, test.run_training_params['unused_samples'])
+
+    def test_early_stopping_and_select_model(self):
+        #log.setAllLevel(logging.INFO)
+        x = Input('x')
+        y_target = Input('y_target')
+        y = Output('y',Fir(b=True)(x.last()))
+        data_in1 = np.linspace(0, 5, 100)
+        data_in2 = np.linspace(10, 15, 100)
+        dataset = {'x': data_in1, 'y_target': data_in2}
+        test = Modely(visualizer=None)
+        test.addModel('model1', y)
+        test.addMinimize('error', y, y_target.last())
+        test.neuralizeModel()
+        test.loadData('data', dataset)
+        test.trainModel(lr = 1, num_of_epochs = 200,early_stopping=earlystopping.early_stop_patience,
+                        early_stopping_params={'patience':5,'error':'error'},
+                        select_model=earlystopping.select_best_model)
+        #log.setAllLevel(logging.CRITICAL)
+
