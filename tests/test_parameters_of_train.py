@@ -302,6 +302,9 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         self.assertEqual(len(list_of_batch_indexes), test.run_training_params['update_per_epochs'])
         self.assertEqual(n_samples - list_of_batch_indexes[-1] - batch_size, test.run_training_params['unused_samples'])
 
+        test.trainModel(splits=[70, 20, 10], training_params=training_params, num_of_epochs=100)
+        self.assertEqual(100, test.run_training_params['num_of_epochs'])
+
     def test_build_dataset_batch2(self):
         NeuObj.clearNames()
         input1 = Input('in1')
@@ -1116,7 +1119,13 @@ class ModelyTrainingTestParameter(unittest.TestCase):
                          test.run_training_params['optimizer_params'])
 
         test.trainModel(optimizer=optimizer, training_params=training_params, add_optimizer_defaults={'lr': 0.3},
-                        add_optimizer_params=[{'params': ['a'], 'lr': 0.1}, {'params': ['b'], 'lr': 0.2}])
+                        add_optimizer_params=[{'params': ['a'], 'lr': 0.23}, {'params': ['b'], 'lr': 0.2}])
+        self.assertEqual({'lr': 0.3}, test.run_training_params['optimizer_defaults'])
+        self.assertEqual([{'params': 'a', 'lr': 0.23}, {'params': 'b', 'lr': 0.2}, {'params': 'w'}],
+                         test.run_training_params['optimizer_params'])
+
+        test.trainModel(optimizer=optimizer, training_params=training_params, add_optimizer_defaults={'lr': 0.3},
+                        add_optimizer_params=[{'params': ['b'], 'lr': 0.2}])
         self.assertEqual({'lr': 0.3}, test.run_training_params['optimizer_defaults'])
         self.assertEqual([{'params': 'a', 'lr': 0.1}, {'params': 'b', 'lr': 0.2}, {'params': 'w'}],
                          test.run_training_params['optimizer_params'])

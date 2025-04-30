@@ -4,7 +4,6 @@ import types
 from collections import OrderedDict
 
 import numpy as np
-from contextlib import suppress
 from pprint import pformat
 from functools import wraps
 from typing import get_type_hints
