@@ -34,9 +34,10 @@ class Network:
         self._training = {}
 
     def _removeVirtualStates(self, connect, closed_loop):
-        for key in (connect.keys() | closed_loop.keys()):
-            if key in self._states.keys():
-                del self._states[key]
+        if connect or closed_loop:
+            for key in (connect.keys() | closed_loop.keys()):
+                if key in self._states.keys():
+                    del self._states[key]
 
     def _updateState(self, X, out_closed_loop, out_connect):
         for key, value in out_connect.items():
