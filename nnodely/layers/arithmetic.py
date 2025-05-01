@@ -12,6 +12,7 @@ sub_relation_name = 'Sub'
 mul_relation_name = 'Mul'
 div_relation_name = 'Div'
 pow_relation_name = 'Pow'
+atan2_relation_name = 'Atan2'
 
 # Unary operators
 neg_relation_name = 'Neg'
@@ -153,6 +154,28 @@ class Pow(Stream, ToStream):
         super().__init__(pow_relation_name + str(Stream.count),merge(obj1.json,obj2.json),dim)
         self.json['Relations'][self.name] = [pow_relation_name,[obj1.name,obj2.name]]
 
+class Atan2(Stream, ToStream):
+    """
+        Implement the atan2 function given an input y and an input x. 
+
+        See also:
+            Official PyTorch atan2 documentation:
+            `torch.atan2 <https://pytorch.org/docs/stable/generated/torch.atan2.html>`_
+
+        :param y: the first input
+        :type obj: Tensor
+        :param x: the second input
+        :type obj: float or Tensor
+
+        Example:
+            >>> atan2 = Atan2(y, x)
+    """
+    @enforce_types
+    def __init__(self, obj1:Stream|Parameter|Constant|int|float, obj2:Stream|Parameter|Constant|int|float) -> Stream:
+        obj1, obj2, dim = aritmetic_cheks(self, obj1, obj2, 'atan2 operators (Atan2)')
+        super().__init__(atan2_relation_name + str(Stream.count),merge(obj1.json,obj2.json),dim)
+        self.json['Relations'][self.name] = [atan2_relation_name,[obj1.name,obj2.name]]
+
 class Neg(Stream, ToStream):
     """
         Implement the negate function given an input. 
@@ -281,6 +304,18 @@ def createPow(name, *inputs):
     #: :noindex:
     return Pow_Layer()
 
+class Atan2_Layer(nn.Module):
+    #: :noindex:
+    def __init__(self):
+        super(Atan2_Layer, self).__init__()
+
+    def forward(self, *inputs):
+        return torch.atan2(inputs[0], inputs[1])
+
+def createAtan2(name, *inputs):
+    #: :noindex:
+    return Atan2_Layer()
+
 class Neg_Layer(nn.Module):
     #: :noindex:
     def __init__(self):
@@ -323,6 +358,7 @@ setattr(Model, sub_relation_name, createSub)
 setattr(Model, mul_relation_name, createMul)
 setattr(Model, div_relation_name, createDiv)
 setattr(Model, pow_relation_name, createPow)
+setattr(Model, atan2_relation_name, createAtan2)
 
 setattr(Model, neg_relation_name, createNeg)
 setattr(Model, sign_relation_name, createSign)
