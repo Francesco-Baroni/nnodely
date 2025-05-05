@@ -169,8 +169,8 @@ class Trainer(Network):
         training_params['optimizer_defaults'] = optimizer.optimizer_defaults
         return optimizer.get_torch_optimizer()
 
-
     def __get_batch_indexes(self, training_params, dataset_name, n_samples, batch_size, prediction_samples, step, type='train'):
+        #TODO Test multidataset with forbidden indexes with split and not split
         available_samples = n_samples - prediction_samples
         batch_indexes = list(range(available_samples))
         if dataset_name in self._multifile.keys():
@@ -485,6 +485,7 @@ class Trainer(Network):
             tp['update_per_epochs'] = (n_samples_train - train_batch_size - prediction_samples + 1) // (train_batch_size + step) + 1
             tp['unused_samples'] = n_samples_train - list_of_batch_indexes[-1] - train_batch_size - prediction_samples
 
+            #TODO ma se uso invece che split uso diversi dataset? funziona?
             tp['list_of_batch_indexes_train'], tp['train_step'] = self.__get_batch_indexes(tp, tp['train_dataset'], tp['n_samples_train'], tp['train_batch_size'],
                                                                                prediction_samples, step, type='train')
             if tp['n_samples_val'] > 0:
@@ -508,6 +509,41 @@ class Trainer(Network):
         check(sum(tp['splits']) == 100, ValueError, 'Training, Validation and Test splits must sum up to 100.')
         check(tp['splits'][0] > 0, ValueError, 'The training split cannot be zero.')
 
+    def __get_mandatory_inputs(self, training_params, all_closed_loop, all_connect):
+        model_inputs = list(self._model_def['Inputs'].keys())
+        training_params['non_mandatory_inputs'] = non_mandatory_inputs = list(all_closed_loop.keys()) + list(all_connect.keys()) + list(
+            self._model_def.recurrentInputs().keys())
+        training_params['mandatory_inputs'] = list(set(model_inputs) - set(non_mandatory_inputs))
+
+    def __check_needed_keys(self, all_closed_loop, all_connect, XY_train):
+        keys = set(self._model_def['Inputs'].keys())
+        keys |= {value['A'] for value in self._model_def['Minimizers'].values()} | {value['B'] for value in
+                                                                                    self._model_def[
+                                                                                        'Minimizers'].values()}
+        keys -= set(self._model_def['Relations'].keys())
+        keys -= set(self._model_def.recurrentInputs().keys())
+        keys -= set(self._model_def['Outputs'].keys())
+        keys -= set(all_connect.keys())
+        keys -= set(all_closed_loop.keys())
+        check(set(keys).issubset(set(XY_train.keys())), KeyError,
+              f"Not all the mandatory keys {keys} are present in the training dataset {set(XY_train.keys())}.")
+
+    def __training_info(self, tp):
+        ## Define the loss functions
+        minimize_gain = tp['minimize_gain']
+        tp['minimizers'] = {}
+        for name, values in self._model_def['Minimizers'].items():
+            self.__loss_functions[name] = CustomLoss(values['loss'])
+            tp['minimizers'][name] = {}
+            tp['minimizers'][name]['A'] = values['A']
+            tp['minimizers'][name]['B'] = values['B']
+            tp['minimizers'][name]['loss'] = values['loss']
+            if name in minimize_gain:
+                tp['minimizers'][name]['gain'] = minimize_gain[name]
+
+        if 'early_stopping' in tp:
+            tp['early_stopping'] = tp['early_stopping'].__name__
+
     @to_training_params # Move all user parameters to the dict training_params
     @enforce_types
     def trainModel(self, *,
@@ -515,7 +551,8 @@ class Trainer(Network):
                    #TODO verify the name validation in all user names
                    train_dataset: str | None = None, validation_dataset: str | None = None, test_dataset: str | None = None,
                    splits: list = [70, 20, 10], #TODO add dataset variable used when there is only one dataset?
-                   # TODO prediction_samples = None as default parameter?
+                   #TODO added the preshapped dataset
+                   #TODO prediction_samples = None as default parameter?
                    closed_loop: dict = {}, connect: dict = {}, step: int = 0, prediction_samples: int | None = 0,
                    shuffle_data: bool = True,
                    early_stopping: Callable | None = None, early_stopping_params: dict | None = {},
@@ -675,47 +712,14 @@ class Trainer(Network):
         ## Evaluate the number of updates for epochs and the unsued samples and batch indexes
         self.__setup_batch_indexes(training_params, n_samples_train, train_batch_size, recurrent_train, prediction_samples, step)
 
-        model_inputs = list(self._model_def['Inputs'].keys())
-        non_mandatory_inputs = list(all_closed_loop.keys()) + list(all_connect.keys()) + list(
-            self._model_def.recurrentInputs().keys())
-        mandatory_inputs = list(set(model_inputs) - set(non_mandatory_inputs))
-        training_params['mandatory_inputs'] = mandatory_inputs
-        training_params['non_mandatory_inputs'] = non_mandatory_inputs
+        ## Get the mandatory inputs
+        self.__get_mandatory_inputs(training_params, all_closed_loop, all_connect)
 
-        ## Define the loss functions
-        minimize_gain = training_params['minimize_gain']
-        training_params['minimizers'] = {}
-        for name, values in self._model_def['Minimizers'].items():
-            self.__loss_functions[name] = CustomLoss(values['loss'])
-            training_params['minimizers'][name] = {}
-            training_params['minimizers'][name]['A'] = values['A']
-            training_params['minimizers'][name]['B'] = values['B']
-            training_params['minimizers'][name]['loss'] = values['loss']
-            if name in minimize_gain:
-                training_params['minimizers'][name]['gain'] = minimize_gain[name]
-
-        if 'early_stopping' in training_params:
-            training_params['early_stopping'] = early_stopping.__name__
-
-        ## Create the train, validation and test loss dictionaries
-        train_losses, val_losses = {}, {}
-        for key in self._model_def['Minimizers'].keys():
-            train_losses[key] = []
-            if n_samples_val > 0:
-                val_losses[key] = []
+        ## Get the printable training info from the structure
+        self.__training_info(training_params)
 
         ## Check the needed keys are in the datasets
-        keys = set(self._model_def['Inputs'].keys())
-        keys |= {value['A'] for value in self._model_def['Minimizers'].values()} | {value['B'] for value in
-                                                                                   self._model_def[
-                                                                                       'Minimizers'].values()}
-        keys -= set(self._model_def['Relations'].keys())
-        keys -= set(self._model_def.recurrentInputs().keys())
-        keys -= set(self._model_def['Outputs'].keys())
-        keys -= set(all_connect.keys())
-        keys -= set(all_closed_loop.keys())
-        check(set(keys).issubset(set(XY_train.keys())), KeyError,
-              f"Not all the mandatory keys {keys} are present in the training dataset {set(XY_train.keys())}.")
+        self.__check_needed_keys(all_closed_loop, all_connect, XY_train)
 
         if recurrent_train:
             if n_samples_val > 0:
@@ -728,16 +732,10 @@ class Trainer(Network):
 
         self.run_training_params = training_params
 
-        ## Set the gradient to true if necessary
-        json_inputs = self._model_def['Inputs']
-        for key in json_inputs.keys():
-            if 'type' in json_inputs[key]:
-                if key in XY_train:
-                    XY_train[key].requires_grad_(True)
-                if key in XY_val:
-                    XY_val[key].requires_grad_(True)
-                if key in XY_test:
-                    XY_test[key].requires_grad_(True)
+        ## Get the early stopping function
+        if 'early_stopping' in training_params:
+            early_stopping = training_params['early_stopping']
+            early_stopping_params = training_params['early_stopping_params']
 
         ## Get variables for the training
         num_of_epochs = training_params['num_of_epochs']
@@ -750,10 +748,29 @@ class Trainer(Network):
         ## Show the training parameters
         self.visualizer.showTrainParams()
 
+        ## Training pararation
         import time
         ## start the train timer
         start = time.time()
         self.visualizer.showStartTraining()
+
+        ## Create the train, validation and test loss dictionaries
+        train_losses, val_losses = {}, {}
+        for key in self._model_def['Minimizers'].keys():
+            train_losses[key] = []
+            if n_samples_val > 0:
+                val_losses[key] = []
+
+        ## Set the gradient to true if necessary
+        json_inputs = self._model_def['Inputs']
+        for key in json_inputs.keys():
+            if 'type' in json_inputs[key]:
+                if key in XY_train:
+                    XY_train[key].requires_grad_(True)
+                if key in XY_val:
+                    XY_val[key].requires_grad_(True)
+                if key in XY_test:
+                    XY_test[key].requires_grad_(True)
 
         ## Update with virtual states
         self._model.update(closed_loop=all_closed_loop, connect=all_connect)
