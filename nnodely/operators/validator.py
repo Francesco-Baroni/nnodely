@@ -28,8 +28,8 @@ class Validator(Network):
     
     @enforce_types
     def resultAnalysis(self,
-                       dataset: str,
-                       data: dict | None = None,
+                       dataset: str | None = None,
+                       XY: dict | None = None,
                        minimize_gain: dict = {},
                        closed_loop: dict = {},
                        connect: dict = {},
@@ -37,14 +37,9 @@ class Validator(Network):
                        step: int = 0,
                        batch_size: int | None = None
                        ) -> None:
+
         import warnings
-        json_inputs = self.json['Inputs']
-        calculate_grad = False
-        for key, value in json_inputs.items():
-            if 'type' in value.keys():
-                calculate_grad = True
-                break
-        with torch.enable_grad() if calculate_grad else torch.inference_mode():
+        with torch.enable_grad() if self._caluclate_grad() else torch.inference_mode():
             ## Init model for retults analysis
             self._model.eval()
             self.__performance[dataset] = {}
@@ -62,10 +57,11 @@ class Validator(Network):
             if (closed_loop or connect or len(self._model_def.recurrentInputs()) > 0) and prediction_samples is not None:
                 recurrent = True
 
-            if data is None:
+            if XY is None:
                 check(dataset in self._data.keys(), ValueError, f'The dataset {dataset} is not loaded!')
-                data = {key: torch.from_numpy(val).to(TORCH_DTYPE) for key, val in self._data[dataset].items()}
-            n_samples = len(data[list(data.keys())[0]])
+                XY = {key: torch.from_numpy(val).to(TORCH_DTYPE) for key, val in self._data[dataset].items()}
+            #TODO check that the dataset name is not already laaded if I pass XY
+            n_samples = len(XY[list(XY.keys())[0]])
 
             if recurrent:
                 batch_size = batch_size if batch_size is not None else n_samples - prediction_samples
@@ -84,6 +80,7 @@ class Validator(Network):
                         A[key].append([])
                         B[key].append([])
 
+                #TODO this is not correct the data are not depending on train val test
                 list_of_batch_indexes = list(range(n_samples - prediction_samples))
                 ## Remove forbidden indexes in case of a multi-file dataset
                 if dataset in self._multifile.keys(): ## Multi-file Dataset
@@ -111,13 +108,13 @@ class Validator(Network):
                     ## Reset
                     horizon_losses = {key: [] for key in self._model_def['Minimizers'].keys()}
                     for key in non_mandatory_inputs:
-                        if key in data.keys():
+                        if key in XY.keys():
                             ## with data
-                            X[key] = data[key][idxs]
+                            X[key] = XY[key][idxs]
                         else:  ## with zeros
                             window_size = self._input_n_samples[key]
-                            dim = json_inputs[key]['dim']
-                            if 'type' in json_inputs[key]:
+                            dim = self.json['Inputs'][key]['dim']
+                            if 'type' in self.json['Inputs'][key]:
                                 X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=True)
                             else:
                                 X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
@@ -126,7 +123,7 @@ class Validator(Network):
                     for horizon_idx in range(prediction_samples + 1):
                         ## Get data
                         for key in mandatory_inputs:
-                            X[key] = data[key][[idx+horizon_idx for idx in idxs]]
+                            X[key] = XY[key][[idx+horizon_idx for idx in idxs]]
                         ## Forward pass
                         out, minimize_out, out_closed_loop, out_connect = self._model(X)
 
@@ -161,10 +158,10 @@ class Validator(Network):
 
                 for idx in range(0, (n_samples - batch_size + 1), batch_size):
                     ## Build the input tensor
-                    XY = {key: val[idx:idx + batch_size] for key, val in data.items()}
+                    X = {key: val[idx:idx + batch_size] for key, val in XY.items()}
 
                     ## Model Forward
-                    _, minimize_out, _, _ = self._model(XY)  ## Forward pass
+                    _, minimize_out, _, _ = self._model(X)  ## Forward pass
                     ## Loss Calculation
                     for key, value in self._model_def['Minimizers'].items():
                         A[key].append(minimize_out[value['A']].detach().numpy())
