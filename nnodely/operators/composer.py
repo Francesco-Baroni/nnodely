@@ -44,9 +44,6 @@ class Composer(Network):
             >>> out = Output('out', Fir(x.last()))
             >>> model.addModel('example_model', [out])
         """
-
-        if type(stream_list) is not list:
-            stream_list = [stream_list]
         self._model_def.addModel(name, stream_list)
 
     @enforce_types

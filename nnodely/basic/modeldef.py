@@ -125,17 +125,10 @@ class ModelDef():
         if isinstance(stream_list, (Output,Stream)):
             stream_list = [stream_list]
 
-        subjson = MAIN_JSON
         json = MAIN_JSON
         for stream in stream_list:
-            subjson = merge(subjson, subjson_from_output(stream.json, stream.name))
             json = merge(json, stream.json)
-
-        all_inputs = json['Inputs'].keys()
-        needed_inputs = subjson['Inputs'].keys()
-
-        extenal_inputs = set(all_inputs) - set(needed_inputs)
-        check(all_inputs == needed_inputs, RuntimeError, f'Connect or close loop operation on the inputs {list(extenal_inputs)}, that are not used in the model.')
+        self.__checkModel(json)
 
         if type(stream_list) is list:
             check(name not in self.__model_dict.keys(), ValueError, f"The name '{name}' of the model is already used")
