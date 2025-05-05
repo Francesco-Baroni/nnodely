@@ -7,38 +7,38 @@
 [![Coverage Status](https://readthedocs.org/projects/nnodely/badge/?version=latest&style=default)](https://nnodely.readthedocs.io/en/latest/)
 
 <a name="readme-top"></a>
-# Model-structured neural network framework for the modeling and control of physical systems
+# Model-Structured Neural Networks for modeling, control and estimation of physical systems
 
-Modeling, control, and estimation of physical systems are fundamental to a wide range of engineering applications. 
-However, integrating data-driven methods like neural networks into these domains presents significant challenges, 
-particularly when it comes to embedding prior domain knowledge into traditional deep learning frameworks. 
-To bridge this gap, we introduce *nnodely* (where "nn" can be read as "m," forming *Modely*), 
-an innovative framework that facilitates the creation and deployment of Model-Structured Neural Networks (MSNNs). 
-MSNNs merge the flexibility of neural networks with structures grounded in physical principles and control theory, 
-providing a powerful tool for representing and managing complex physical systems. Moreover, a MSNN thanks to the reduced
-number of parameters needs fewer data for training and can be used in real-time applications.
+Modeling, control, and estimation of physical systems are central to many engineering disciplines. While data-driven methods like neural networks offer powerful tools, they often struggle to **incorporate prior domain knowledge**, limiting their interpretability, generalizability, and safety.
 
-## Why use nnodely
+To bridge this gap, we present ***nnodely*** (where "nn" can be read as "m," forming *Modely*) — a framework that facilitates the creation and deployment of **Model-Structured Neural Networks** (**MS-NNs**). 
+MS-NNs combine the learning capabilities of neural networks with structural **priors** grounded in **physics, control and estimation theory**, enabling:
 
-The framework's goal is to allow the users fast modeling and control of a any mechanical systems using 
-a hybrind approach between neural networks and physical models.
+- **Reduced training data** requirements
+- **Generalization** to unseen scenarios
+- **Real-time** deployment in real-world applications
 
-The main motivation of the framework are to:
-- Modeling, control and estimation of physical systems, whose internal dynamics may be partially unknown;
-- Speed-up the development of MSNN, which is complex to design using standard deep-learning framework;
-- Support professionals with classical modeling backgrounds, such as physicists and engineers, in using 
-data-driven approaches (but embedding knowledge inside) to address their challenges;
-- A repository of incremental know-how that effectively collects approaches with the same purpose, i.e. building an
-increasingly advanced library of MSNNs for various applications.
+## Why use nnodely?
 
-The nnodely framework guides users through six structured phases to model and control physical systems using 
-neural networks. It begins with **Neural Models Definition**, where the architecture of the MSNNs are specified. 
-Next is **Dataset Creation**, preparing the data needed for training and validation. 
-In **Neural Models Composition**, models are integrated to represent complex systems also including a controller if is needed. 
-**Neural Models Training** follows, optimizing parameters to ensure accurate representation of the target system or a part of it. 
-In **Neural Model Validation**, the trained models are tested for reliability. 
-Finally, **Network Export** enables the deployment of validated models into practical applications. nnodely support
-a Pytorch (nnodely independent) and ONNX export.
+The framework's goal is to allow **fast prototyping** of MS-NNs for modeling, control and estimation of physical systems, by embedding prior domain knowledge into the neural networks' architecture.
+
+#### Core Objectives
+
+- **Model**, **control**, or **estimate** physical systems with unknown internal dynamics or parameters.
+- **Accelerate** the **development** of MS-NNs, which are often hard to implement in general-purpose deep learning frameworks.
+- Support researchers, engineers and domain experts to integrate data-driven models into their workflow — without discarding established knowledge.
+- Serve as a repository of **reusable components** and best practices for MS-NN design **across diverse applications**.
+
+#### Workflow Overview
+
+nnodely guides users through **six** structured **phases** to define, train, and deploy MS-NNs effectively:
+
+1. **Neural Model Definition**: Build the MS-NN architecture using intuitive and modular design functions.
+2. **Dataset Creation**: Simplify loading and preprocessing of training, validation, and test data.
+3. **Neural Model Composition**: Assemble complex models by combining multiple neural components (e.g., models, controllers, estimators) in a unified training framework.
+4. **Neural Model Training**: Train the MS-NN's parameters with user-defined loss functions.
+5. **Neural Model Validation**: Assess the performance and reliability of the trained model.
+6. **Model Export**: Deploy MS-NNs using standard formats. nnodely supports export to native PyTorch (nnodely-independent) and ONNX for broader compatibility.
 
 <!-- TABLE OF CONTENTS -->
 <details>
@@ -79,75 +79,78 @@ You can install the nnodely framework from PyPI via:
   ```
 
 ### Applications and use cases
-The application of nnodely in some additional use cases are shown in 
-https://github.com/tonegas/nnodely-applications.
 
-### How to contribute to the project
+Some examples of application of nnodely in different fields are collected in the following open-source repository: [nnodely-applications](https://github.com/tonegas/nnodely-applications)
+
+### How to contribute
 Download the source code and install the dependencies using the following commands:
   ```sh
   git clone git@github.com:tonegas/nnodely.git
   pip install -r requirements.txt
   ```
-Give your contribution, open a pull request...
 
-Or create an issue...
+To contribute to the nnodely framework, you can:
+- Open a pull request, if you have a new feature or bug fix.
+- Open an issue, if you have a question or suggestion.
+- Contact us via email at [gastone.rosatipapini@unitn.it](mailto:gastone.rosatipapini@unitn.it) or [mattia.piccinini@tum.de](mailto:mattia.piccinini@tum.de) to directly **collaborate** with us **on your project**!
+
+We are very happy to collaborate with you!
  
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <a name="basicfunctionalities"></a>
 ## Basic Example
+
+This example shows how to use nnodely to create a model-structured neural network (MS-NN) for a simple **mass-spring-damper mechanical system**.
+
 <a name="structuredneuralmodel"></a>
 ### Build the neural model
-
-The neural model, is based of a model-structured neural network, and is defined by a list of inputs by a list of outputs and by a list of relationships that link the inputs to the outputs.
-
-Let's assume we want to model one of the best-known linear mechanical systems, the mass-spring-damper system.
 
 <p align="center">
 <img src="https://raw.githubusercontent.com/tonegas/nnodely/main/imgs/massspringdamper.png" width="250" alt="linearsys" >
 </p>
 
-The system is defined as the following equation:
+The system to be modeled is defined by the following equation:
 ```math
 M \ddot x  = - k x - c \dot x + F
 ```
 
-Suppose we want to estimate the value of the future position of the mass given the initial position and the external force.
+Suppose we want to **estimate** the value of the **future position** of the mass, given the initial position and the external force.
 
-In the nnodely framework we can build an estimator in this form:
+The MS-NN model is defined by a list of inputs and outputs, and by a list of relationships that link the inputs to the outputs.
+In nnodely, we can build an estimator in this form:
 ```python
 x = Input('x')
 F = Input('F')
-x_z_est = Output('x_z_est', Fir(x.tw(1))+Fir(F.last()))
+x_z_est = Output('x_z_est', Fir(x.tw(1)) + Fir(F.last()))
 ```
 
-The first thing we define the input variable of the system.
-Input variabiles can be created using the `Input` function.
-In our system we have two inputs the position of the mass, `x`, and the external force, `F`, exerted on the mass.
-The `Output` function is used to define an output of our model.
-The `Output` gets two inputs, the first is the name of the output and the second is the structure of the estimator.
+Input variables can be created using the `Input` function.
+In our system, we have two inputs: the position of the mass, `x`, and the external force exerted on the mass, `F`.
+The `Output` function is used to define a model's output.
+The `Output` function has two inputs: the first is the name (string) of the output, and the second is the structure of the estimator.
 
 Let's explain some of the functions used:
 1. The `tw(...)` function is used to extract a time window from a signal. 
-In particular we extract a time window of 1 second.
-2. The `last()` function that is used to get the last force applied to the mass.
-3. The `Fir(...)` function to build an FIR filter with the tunable parameters on our input variable.
+In particular, we extract a time window $T_w$ of 1 second.
+2. The `last()` function that is used to get the last force sample applied to the mass, i.e., the force at the current time step.
+3. The `Fir(...)` function to build an FIR (finite impulse response) filter with one learnable parameters on our input variable.
 
-So we are creating an estimator for the variable `x` at the instant following the observation (the future position of the mass) by building an 
-observer that has a mathematical structure equal to the one shown below:
+Hence, we are creating an estimator for the variable `x` at the next time step (i.e., the future position of the mass), by building an observer with the following mathematical structure:
 ```math
 x[1] = \sum_{k=0}^{N_x-1} x[-k]\cdot h_x[(N_x-1)-k] + F[0]\cdot h_F
 ```
-Where the variables $N_x$, and $h_f$ also the values of the vectors $h_x$ are still unknowns.
-Regarding $N_x$, we know that the window lasts one second but we do not know how many samples it corresponds to and this depends on the discretization interval.
-The formulation above is equivalent to the formulation of the discrete time response of the system
-if we choose $N_x = 3$ and $h_x$ equal to the characteristic polynomial and $h_f = T^2/M$ (with $T$ sample time).
-Our formulation is more general and can take into account the noise of the measured variable using a bigger time window.
-The estimator can also be seen as the composition of the force contributions due to the position and velocity of the mass plus the contribution of external forces.
+where $x[1]$ is the next position of the mass, $F[0]$ is the last sample of the force, $N_x$ is the number of samples in the time window of the input variable `x`, $h_x$ is the vector of learnable parameters of the FIR filter on `x`, and $h_f$ is the single learnable parameter of the FIR filter on `F`.
+
+For the input variable `x`, we are using a time window $T_w = 1$ second, which means that we are using the last $N_x$ samples of the variable `x` to estimate the next position of the mass. The value of $N_x$ is equal to $T_w/T_s$, where $T_s$ is the sampling time used to sample the input variable `x`.
+
+In a particular case, our MS-NN formulation becomes equivalent to the discrete-time response of the mass-spring-damper system. This happens when we choose the following values: $N_x = 3$, $h_x$ equal to the characteristic polynomial of the system, and $h_f = T_s^2/m$, where $T_s$ is the sampling time and $m$ is the mass of the system. 
+
+However, our formulation is more general and can take better adapt to model mismatches and noise levels in the measured variables. This improved learning potential can be achieved by using a larger number of samples $N_x$ in the time window of the input variable `x`. 
 
 <a name="neuralizemodel"></a>
-### Neuralize the neural model
-Let's now try to train our observer using the data we have.
+### Neuralize the model
+Let's now try to train our MS-NN observer using the data we have.
 We perform:
 ```python
 mass_spring_damper = Modely()
@@ -155,41 +158,38 @@ mass_spring_damper.addModel('x_z_est', x_z_est)
 mass_spring_damper.addMinimize('next-pos', x.z(-1), x_z_est, 'mse')
 mass_spring_damper.neuralizeModel(0.2)
 ```
-Let's create a **nnodely** object, and add one output to the network using the `addModel` function.
-This function is needed for create an output on the model. In this example it is not mandatory because the same output is added also to the `minimizeError` function.
-In order to train our model/estimator the function `addMinimize` is used to add a loss function to the list of losses.
-This function takes:
-1. The name of the error, it is presented in the results and during the training.
-2. The second and third inputs are the variable that will be minimized, the order is not important.
-3. The minimization function used, in  this case 'mse'.
-In the function `addMinimize` is used the `z(-1)` function. This function get from the dataset the future value of a variable 
-(in our case the position of the mass), the next instant, using the **Z-transform** notation, `z(-1)` is equivalent to `next()` function.
-The function `z(...)` method can be used on an `Input` variable to get a time shifted value.
+The first line creates a nnodely object, while the second line adds one output to the model using the `addModel` function. 
+To train our model, we use the function `addMinimize` to add a loss function to the list of losses. This function uses the following inputs:
 
-The obective of the minimization is to reduce the error between
-`x_z` that represent one sample of the next position of the mass get from the dataset and 
-`x_z_est` is one sample of the output of our estimator.
-The matematical formulation is as follow:
+1. The first input is the name of the error (`'next-pos'` in this case).
+2. The second and third inputs are the variables whose difference we want to minimize. 
+3. The fourth input is the loss function to be used, in this case the mean square error ('mse').
+
+In the function `addMinimize`, we apply the `z(-1)` method to the variable `x` to get the next position of the mass, i.e., the value of `x` at the next time step. Indeed, the `z(-1)` function uses the **Z-transform** notation, and `z(-1)` is equivalent to `next()` operator.
+The function `z(...)` can be used on an `Input` variable to get a time-shifted value.
+
+Hence, our training objective is to minimize the mean square error between `x_z`, which represents the next position of the mass, and `x_z_est`, which represents the output of our estimator:
 ```math
 \frac{1}{n} \sum_{i=0}^{n} (x_{z_i} - x_{{z\_est}_i})^2
 ```
-where `n` represents the number of sample in the dataset.
+where `n` represents the number of samples in the dataset.
 
-Finally the function `neuralizeModel` is used to perform the discretization. The parameter of the function is the sampling time and it will be chosen based on the data we have available.
+Finally, the function `neuralizeModel` is used to create a discrete-time MS-NN model. The input parameter of this function is the sampling time $T_s$, and is chosen based on the data we have available. In this example, we have a sampling time of $T_s = 0.2$ seconds.
 
 <a name="loaddataset"></a>
 ### Load the dataset
+
+The training dataset is then loaded. nnodely has access to all the files that are in a source folder.
 
 ```python
 data_struct = ['time','x','dx','F']
 data_folder = './tutorials/datasets/mass-spring-damper/data/'
 mass_spring_damper.loadData(name='mass_spring_dataset', source=data_folder, format=data_struct, delimiter=';')
 ```
-Finally, the dataset is loaded. **nnodely** loads all the files that are in a source folder.
 
 <a name="trainmodel"></a>
 ### Train the neural network
-Using the dataset created the training is performed on the model.
+Using the loaded dataset, we now train the neural model.
 
 ```python
 mass_spring_damper.trainModel()
@@ -197,32 +197,34 @@ mass_spring_damper.trainModel()
 
 <a name="testmodel"></a>
 ### Test the neural model
-In order to test the results we need to create a input, in this case is defined by:
-1. `x` with 5 sample because the sample time is 0.2 and the window of `x`is 1 second.
-2. `F` is one sample because only the last sample is needed.
+After training the model, we can test it using a new dataset. Let us create a new simple example to test the model, using the following inputs:
 
 ```python
 sample = {'F':[0.5], 'x':[0.25, 0.26, 0.27, 0.28, 0.29]}
 results = mass_spring_damper(sample)
 print(results)
 ```
-The result variable is structured as follow:
+
+Note that the input variable `x` is a list of 5 samples, as the sampling time $T_s$ is 0.2 seconds and the time window $T_w$ of the input variable `x` is 1 second. For the input variable `F`, we have only one sample, as we are using the last sample of the force applied to the mass.
+
+The resulting output variable is structured as follows:
 ```shell
 >> {'x_z_est':[0.4]}
 ```
-The value represents the output of our estimator (means the next position of the mass) and is close as possible to `x.next()` get from the dataset.
-The network can be tested also using a bigger time window
+where the value represents the output of our estimator (i.e., the next position of the mass).
+
+Our model can be tested also using a bigger time window:
 ```python
 sample = {'F':[0.5, 0.6], 'x':[0.25, 0.26, 0.27, 0.28, 0.29, 0.30]}
 results = mass_spring_damper(sample)
 print(results)
 ```
-The value of `x` is build using a moving time window.
-The result variable is structured as follow:
+where the value of `x` is built using a moving time window.
+The resulting model output is structured as follows:
 ```shell
 >> {'x_z_est':[0.4, 0.42]}
 ```
-The same output can be generated calling the network using the flag `sampled=True` in this way: 
+Note that the same output can be obtained by calling the model using the flag `sampled=True`, in this way: 
 ```python
 sample = {'F':[[0.5],[0.6]], 'x':[[0.25, 0.26, 0.27, 0.28, 0.29],[0.26, 0.27, 0.28, 0.29, 0.30]]}
 results = mass_spring_damper(sample,sampled=True)
@@ -268,12 +270,12 @@ This operation is presented in [[1]](#1).
 
 <a name="testsfolder"></a>
 ### Tests Folder
-This folder contains the unittest of the library in particular each file test a specific functionality.
+This folder contains the unit tests of the library. Each file tests a specific functionality.
 
 <a name="examplesfolder"></a>
-### Examples of usage Folder
+### Examples Folder
 The files in the examples folder are a collection of the functionality of the library.
-Each file present in deep a specific functionality or function of the framework.
+Each file presents a specific functionality of the framework.
 This folder is useful to understand the flexibility and capability of the framework.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -326,6 +328,16 @@ Journal of Computational Physics. https://doi.org/10.1016/j.jcp.2018.10.045 (loo
 Wojciech Marian Czarnecki, Simon Osindero, Max Jaderberg, Grzegorz Świrszcz, Razvan Pascanu. (2017).
 Sobolev Training for Neural Networks.
 arXiv. https://doi.org/10.48550/arXiv.1706.04859 (look the [[code]](https://github.com/tonegas/nnodely-applications/blob/main/sobolev/Sobolev_learning.ipynb))
+
+<a id="9">[9]</a> 
+Mattia Piccinini, Matteo Zumerle, Johannes Betz, Gastone Pietro Rosati Papini. (2025).
+A Road Friction-Aware Anti-Lock Braking System Based on Model-Structured Neural Networks.
+IEEE Open Journal of Intelligent Transportation Systems. https://doi.org/10.1109/OJITS.2025.3563347 (look at the [[code]](https://github.com/tonegas/nnodely-applications/tree/main/vehicle/road_friction_aware_ABS))
+
+<a id="10">[10]</a> 
+Mauro Da Lio, Mattia Piccinini, Francesco Biral. (2023).
+Robust and Sample-Efficient Estimation of Vehicle Lateral Velocity Using Neural Networks With Explainable Structure Informed by Kinematic Principles.
+IEEE Transactions on Intelligent Transportation Systems. https://doi.org/10.1109/TITS.2023.3303776
 
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
