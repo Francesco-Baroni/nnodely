@@ -33,6 +33,12 @@ class Network:
         # Training information
         self._training = {}
 
+    def _caluclate_grad(self):
+        for key, value in self._model_def['Inputs'].items():
+            if 'type' in value.keys():
+                return True
+        return False
+
     def _removeVirtualStates(self, connect, closed_loop):
         if connect or closed_loop:
             for key in (connect.keys() | closed_loop.keys()):

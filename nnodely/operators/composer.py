@@ -362,12 +362,7 @@ class Composer(Network):
             result_dict[key] = []
 
         ## Inference
-        calculate_grad = False
-        for key, value in json_inputs.items():
-            if 'type' in value.keys():
-                calculate_grad = True
-                break
-        with ((((torch.enable_grad() if calculate_grad else torch.inference_mode())))):
+        with (torch.enable_grad() if self._caluclate_grad() else torch.inference_mode()):
             ## Update with virtual states
             if prediction_samples is not None:
                 self._model.update(closed_loop=all_closed_loop, connect=all_connect)
