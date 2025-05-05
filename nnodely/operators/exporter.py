@@ -328,7 +328,7 @@ class Exporter(Network):
         self.__exporter.exportONNX(model_def, model, inputs_order, outputs_order, name, model_folder)
 
     @enforce_types
-    def onnxInference(self, inputs:dict, path:str) -> dict:
+    def onnxInference(self, inputs:dict, name:str='net', model_folder:str|None=None) -> dict:
         """
         Run an inference session using an onnx model previously exported using the nnodely framework.
 
@@ -373,7 +373,7 @@ class Exporter(Network):
                                 'y':np.ones(shape=(1, 1, 1)).astype(np.float32)}
             >>> predictions = Modely().onnxInference(dummy_input, onnx_model_path)
         """
-        return self.__exporter.onnxInference(inputs, path)
+        return self.__exporter.onnxInference(inputs, name, model_folder)
 
     @enforce_types
     def exportReport(self, name:str='net', model_folder:None=None) -> None:

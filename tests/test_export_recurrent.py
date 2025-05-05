@@ -583,10 +583,11 @@ class ModelyExportTest(unittest.TestCase):
 
         # Connection outside models in model 2
         #Dout closed_loop to Cin1
+        #Cout connect to Din2
 
         # Connection outside models between models
         #Dout closed_loop to Ain1
-        #Aout connected to Din2
+        #Aout connected to Din3
         #Bout closed_loop to Cin2
 
         result_path = 'results'
@@ -617,6 +618,7 @@ class ModelyExportTest(unittest.TestCase):
         Cin2 = Input('Cin2')
         Din1 = Input('Din1')
         Din2 = Input('Din2')
+        Din3 = Input('Din3')
 
         pC = Parameter('PC', sw=1, values=[[-1.0]])
         pD = Parameter('PD', sw=1, values=[[2.0]])
@@ -624,12 +626,12 @@ class ModelyExportTest(unittest.TestCase):
         Cout = (Cin1.last() + Cin2.last()) * pC
         Cout.connect(Din1)
 
-        Dout = (Din1.last() + Din2.last()) * pD
+        Dout = (Din1.last() + Din2.last() + Din3.last()) * pD
 
         modelC = Output('Cout',Cout)
         modelD = Output('Dout',Dout)
 
-        m = Modely(workspace=result_path, visualizer=None, seed=5)
+        m = Modely(workspace=result_path, visualizer=TextVisualizer(), seed=5)
 
         with self.assertRaises(RuntimeError):
             m.addModel('modelA', [modelA])
@@ -639,9 +641,26 @@ class ModelyExportTest(unittest.TestCase):
         m.addModel('model1', [modelA, modelB])
         m.addModel('model2', [modelC, modelD])
 
+        init_inputs = {'Din3': [1], 'Din2': [1], 'Cin1': [1], 'Cin2': [1], 'Ain1': [1], 'Bin3': [1]}
+        init_states = {'Din1': [1], 'Bin2':[1], 'Ain2':[1], 'Bin1': [1]}
+        init_states_diff = {'Din1': [12], 'Bin2': [1], 'Ain2': [1], 'Bin1': [12]}
+
+        # Target with states = 0.0
+        results_target = {'Dout': [(-2.0 + 1.0 + 1.0) * 2.0],
+                          'Cout': [(1.0 + 1.0) * -1.0],
+                          'Bout': [(3.0 + 1.0 + 0.0) * -5.0],
+                          'Aout': [(1.0 + 0.0) * 3.0]}
+
+        # Target with states = 1.0
+        results_target_state = {'Dout': [(-2.0 + 1.0 + 1.0) * 2.0],
+                                'Cout': [(1.0 + 1.0) * -1.0],
+                                'Bout': [(6.0 + 1.0 + 1.0) * -5.0],
+                                'Aout': [(1.0 + 1.0) * 3.0]}
+
         m.neuralizeModel()
-        results = m({'Din2':[1], 'Cin1':[1], 'Cin2':[1], 'Ain1':[1], 'Bin3':[1]})
-        self.assertEqual({'Dout': [-2.0], 'Cout': [-2.0], 'Bout': [(3.0+1.0+0.0)*-5.0], 'Aout': [(1.0+0.0)*3.0]}, results)
+        self.assertEqual(results_target, m(init_inputs))
+        self.assertEqual(results_target_state, m(init_inputs|init_states))
+        self.assertEqual(results_target_state, m(init_inputs|init_states_diff))
 
         ## Test loading of all models
         m.saveTorchModel()
@@ -650,58 +669,142 @@ class ModelyExportTest(unittest.TestCase):
         l.addModel('model2', [modelC, modelD])
         l.neuralizeModel()
         l.loadTorchModel()
-        results = l({'Din2': [1], 'Cin1': [1], 'Cin2': [1], 'Ain1': [1], 'Bin3': [1]})
-        self.assertEqual({'Dout': [-2.0], 'Cout': [-2.0], 'Bout': [-20.0], 'Aout': [3.0]}, results)
+        self.assertEqual(results_target, l(init_inputs))
+        self.assertEqual(results_target_state, l(init_inputs|init_states))
+        self.assertEqual(results_target_state, l(init_inputs|init_states_diff))
 
         m.saveModel()
         l = Modely(workspace=result_path, visualizer=None, seed=5)
         l.loadModel()
         l.neuralizeModel()
-        results = l({'Din2': [1], 'Cin1': [1], 'Cin2': [1], 'Ain1': [1], 'Bin3': [1]})
-        self.assertEqual({'Dout': [-2.0], 'Cout': [-2.0], 'Bout': [-20.0], 'Aout': [3.0]}, results)
+        self.assertEqual(results_target, l(init_inputs))
+        self.assertEqual(results_target_state, l(init_inputs|init_states))
+        self.assertEqual(results_target_state, l(init_inputs|init_states_diff))
 
         m.exportPythonModel()
         l = Modely(workspace=result_path, visualizer=None, seed=5)
         l.importPythonModel()
-        results = l({'Din2': [1], 'Cin1': [1], 'Cin2': [1], 'Ain1': [1], 'Bin3': [1]})
-        self.assertEqual({'Dout': [-2.0], 'Cout': [-2.0], 'Bout': [-20.0], 'Aout': [3.0]}, results)
+        self.assertEqual(results_target, l(init_inputs))
+        self.assertEqual(results_target_state, l(init_inputs|init_states))
+        self.assertEqual(results_target_state, l(init_inputs|init_states_diff))
 
-        m.exportONNX()
-        returrent_var_init = {'Din1':np.array([[[1]]]).astype(np.float32),
-                              'Bin2':np.array([[[1]]]).astype(np.float32),
-                              'Ain2':np.array([[[1]]]).astype(np.float32),
-                              'Bin1':np.array([[[1]]]).astype(np.float32)}
-        results = Modely(workspace=result_path, visualizer=None).onnxInference(returrent_var_init |
-                        {'Din2': np.array([[[1]]]).astype(np.float32),
-                         'Cin1': np.array([[[1]]]).astype(np.float32),
-                         'Cin2': np.array([[[1]]]).astype(np.float32),
-                         'Ain1':np.array([[[1]]]).astype(np.float32),
-                         'Bin3': np.array([[[1]]]).astype(np.float32)})
-        self.assertEqual({'Dout': [-2.0], 'Cout': [-2.0], 'Bout': [-20.0], 'Aout': [3.0]}, results)
+        m.exportONNX(outputs_order=['Dout', 'Cout', 'Bout', 'Aout'])
+        recurrent_var_init = {'Din1':np.array([[[7.0]]]).astype(np.float32),
+                              'Bin2':np.array([[[0]]]).astype(np.float32),
+                              'Ain2':np.array([[[0]]]).astype(np.float32),
+                              'Bin1':np.array([[[12.0]]]).astype(np.float32)}
+        results = Modely(workspace=result_path, visualizer=None).onnxInference(recurrent_var_init |
+                        {'Din2': np.array([[[[1]]]]).astype(np.float32),
+                         'Din3': np.array([[[[1]]]]).astype(np.float32),
+                         'Cin1': np.array([[[[1]]]]).astype(np.float32),
+                         'Cin2': np.array([[[[1]]]]).astype(np.float32),
+                         'Ain1':np.array([[[[1]]]]).astype(np.float32),
+                         'Bin3': np.array([[[[1]]]]).astype(np.float32)})
+        self.assertEqual([[[[[0.0]]]], [[[[-2.0]]]], [[[[-20.0]]]], [[[[3.0]]]]], results)
 
         ## Testing loading of model1
+        results_target_m1 = {'Bout': [-20.0], 'Aout': [3.0]}
+        results_target_state_m1 = {'Bout': [(6.0 + 1.0 + 1.0) * -5.0],
+                                'Aout': [(1.0 + 1.0) * 3.0]}
         m.saveTorchModel(models='model1')
         l = Modely(workspace=result_path, visualizer=None, seed=5)
         l.addModel('model1', [modelA, modelB])
         l.neuralizeModel()
         l.loadTorchModel(name='net_model1')
-        results = l({'Din2':[1], 'Cin1':[1], 'Cin2':[1], 'Ain1':[1], 'Bin3':[1]})
-        self.assertEqual({'Bout': [-20.0], 'Aout': [3.0]}, results)
+        self.assertEqual(results_target_m1, l(init_inputs))
+        self.assertEqual(results_target_state_m1, l(init_inputs | init_states))
+        self.assertEqual(results_target_state_m1, l(init_inputs | init_states_diff))
 
         m.saveModel(models='model1')
         l = Modely(workspace=result_path, visualizer=None, seed=5)
         l.loadModel(name='net_model1')
         l.neuralizeModel()
-        results = l({'Din2':[1], 'Cin1':[1], 'Cin2':[1], 'Ain1':[1], 'Bin3':[1]})
-        self.assertEqual({'Bout': [-20.0], 'Aout': [3.0]}, results)
+        self.assertEqual(results_target_m1, l(init_inputs))
+        self.assertEqual(results_target_state_m1, l(init_inputs | init_states))
+        self.assertEqual(results_target_state_m1, l(init_inputs | init_states_diff))
 
         # TODO FIX
         # m.exportPythonModel(models='model1')
         # l = Modely(workspace=result_path, visualizer=None, seed=5)
         # l.importPythonModel(name='net_model1')
-        # results = l({'Din2':[1], 'Cin1':[1], 'Cin2':[1], 'Ain1':[1], 'Bin3':[1]})
-        # self.assertEqual({'Bout': [-20.0], 'Aout': [3.0]}, results)
+        # self.assertEqual(results_target_m1, l(init_inputs))
+        # self.assertEqual(results_target_state_m1, l(init_inputs | init_states))
+        # self.assertEqual(results_target_state_m1, l(init_inputs | init_states_diff))
         # TODO FIX
+
+        m.exportONNX(models='model1', outputs_order=['Bout', 'Aout'])
+        recurrent_var_init = {'Bin2':np.array([[[0]]]).astype(np.float32),
+                              'Ain2':np.array([[[0]]]).astype(np.float32),
+                              'Bin1':np.array([[[12.0]]]).astype(np.float32)}
+        results = Modely(workspace=result_path, visualizer=None).onnxInference(recurrent_var_init |
+                        {'Ain1':np.array([[[[1]]]]).astype(np.float32),
+                         'Bin3': np.array([[[[1]]]]).astype(np.float32)}, name='net_model1')
+        self.assertEqual([[[[[-20.0]]]], [[[[3.0]]]]], results)
+
+        ### Add the connect on model2 ###
+        m.addConnect(Cout,Din2)
+        m.addClosedLoop(Dout,Cin1)
+        m.neuralizeModel()
+
+        init_inputs_2 = {'Din3': [1],  'Cin2': [1], 'Ain1': [1], 'Bin3': [1]}
+        init_states_2 = {'Din1': [1],  'Cin1': [1], 'Din2': [1], 'Bin2':[1], 'Ain2':[1], 'Bin1': [1]}
+        init_states_diff_2 = {'Din1': [12], 'Cin1': [1], 'Din2': [30], 'Bin2': [1], 'Ain2': [1], 'Bin1': [12]}
+
+        # Target with states = 0.0
+        results_target_2 = {'Dout': [(-1.0 - 1.0 + 1.0) * 2.0],
+                          'Cout': [(0.0 + 1.0) * -1.0],
+                          'Bout': [(3.0 + 1.0 + 0.0) * -5.0],
+                          'Aout': [(1.0 + 0.0) * 3.0]}
+
+        # Target with states = 1.0
+        results_target_state_2 = {'Dout': [(-2.0 - 2.0 + 1.0) * 2.0],
+                                'Cout': [(1.0 + 1.0) * -1.0],
+                                'Bout': [(6.0 + 1.0 + 1.0) * -5.0],
+                                'Aout': [(1.0 + 1.0) * 3.0]}
+
+        self.assertEqual(results_target_2, m(init_inputs_2))
+        self.assertEqual(results_target_state_2, m(init_inputs_2|init_states_2))
+        self.assertEqual(results_target_state_2, m(init_inputs_2|init_states_diff_2))
+
+        ## Test loading of all models
+        # m.saveTorchModel()
+        # l = Modely(workspace=result_path, visualizer=None, seed=5)
+        # l.addModel('model1', [modelA, modelB])
+        # l.addModel('model2', [modelC, modelD])
+        # l.neuralizeModel()
+        # l.loadTorchModel()
+        # self.assertEqual(results_target, l(init_inputs))
+        # self.assertEqual(results_target_state, l(init_inputs|init_states))
+        # self.assertEqual(results_target_state, l(init_inputs|init_states_diff))
+        #
+        # m.saveModel()
+        # l = Modely(workspace=result_path, visualizer=None, seed=5)
+        # l.loadModel()
+        # l.neuralizeModel()
+        # self.assertEqual(results_target_2, l(init_inputs_2))
+        # self.assertEqual(results_target_state_2, l(init_inputs_2|init_states_2))
+        # self.assertEqual(results_target_state_2, l(init_inputs_2|init_states_diff_2))
+        #
+        # m.exportPythonModel()
+        # l = Modely(workspace=result_path, visualizer=None, seed=5)
+        # l.importPythonModel()
+        # self.assertEqual(results_target, l(init_inputs))
+        # self.assertEqual(results_target_state, l(init_inputs|init_states))
+        # self.assertEqual(results_target_state, l(init_inputs|init_states_diff))
+        #
+        # m.exportONNX(outputs_order=['Dout', 'Cout', 'Bout', 'Aout'])
+        # recurrent_var_init = {'Din1': np.array([[[7.0]]]).astype(np.float32),
+        #                       'Bin2': np.array([[[0]]]).astype(np.float32),
+        #                       'Ain2': np.array([[[0]]]).astype(np.float32),
+        #                       'Bin1': np.array([[[12.0]]]).astype(np.float32)}
+        # results = Modely(workspace=result_path, visualizer=None).onnxInference(recurrent_var_init |
+        #                                        {'Din2': np.array([[[[1]]]]).astype(np.float32),
+        #                                         'Din3': np.array([[[[1]]]]).astype(np.float32),
+        #                                         'Cin1': np.array([[[[1]]]]).astype(np.float32),
+        #                                         'Cin2': np.array([[[[1]]]]).astype(np.float32),
+        #                                         'Ain1': np.array([[[[1]]]]).astype(np.float32),
+        #                                         'Bin3': np.array([[[[1]]]]).astype(np.float32)})
+        # self.assertEqual([[[[[0.0]]]], [[[[-2.0]]]], [[[[-20.0]]]], [[[[3.0]]]]], results)
 
 
         log.setAllLevel(logging.CRITICAL)

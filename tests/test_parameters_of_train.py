@@ -258,7 +258,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         NeuObj.clearNames()
         input1 = Input('in1')
         output = Input('out')
-        rel1 = Fir(input1.tw(0.05))
+        rel1 = Output('out1',Fir(input1.tw(0.05)))
 
         test = Modely(visualizer=None)
         test.addMinimize('out', output.z(-1), rel1)
@@ -309,7 +309,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         NeuObj.clearNames()
         input1 = Input('in1')
         output = Input('out')
-        rel1 = Fir(input1.tw(0.05))
+        rel1 = Output('out1',Fir(input1.tw(0.05)))
 
         test = Modely(visualizer=None)
         test.addMinimize('out', output.z(-1), rel1)
@@ -354,9 +354,9 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         NeuObj.clearNames()
         input1 = Input('in1')
         output = Input('out')
-        rel1 = Fir(input1.tw(0.05))
+        rel1 = Output('out1',Fir(input1.tw(0.05)))
 
-        test = Modely(visualizer=None)
+        test = Modely(workspace='results', visualizer=TextVisualizer())
         test.addMinimize('out', output.next(), rel1)
         test.addModel('model', rel1)
         test.neuralizeModel(0.01)
@@ -402,7 +402,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         NeuObj.clearNames()
         input1 = Input('in1')
         output = Input('out')
-        rel1 = Fir(input1.tw(0.05))
+        rel1 = Output('out1',Fir(input1.tw(0.05)))
 
         test = Modely(visualizer=None)
         test.addMinimize('out', output.z(-1), rel1)
@@ -450,7 +450,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         NeuObj.clearNames()
         input1 = Input('in1')
         output = Input('out')
-        rel1 = Fir(input1.tw(0.05))
+        rel1 = Output('out1',Fir(input1.tw(0.05)))
 
         test = Modely(visualizer=None)
         test.addMinimize('out', output.next(), rel1)

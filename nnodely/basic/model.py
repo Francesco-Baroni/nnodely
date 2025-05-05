@@ -31,12 +31,11 @@ class Model(nn.Module):
         self.sample_time = model_def['Info']['SampleTime']
         self.functions = model_def['Functions']
 
-        #self.state_model_main = model_def['States']
-        self.minimizers = model_def['Minimizers']
-        #self.states = model_def['States']#copy.deepcopy(self.state_model_main)
+        self.minimizers = model_def['Minimizers'] if 'Minimizers' in model_def else {}
+        self.minimizers_keys = [self.minimizers[key]['A'] for key in self.minimizers] + [self.minimizers[key]['B'] for key in self.minimizers]
+
         self.input_ns_backward = {key:value['ns'][0] for key, value in model_def['Inputs'].items()}
         self.input_n_samples = {key:value['ntot'] for key, value in model_def['Inputs'].items()}
-        self.minimizers_keys = [self.minimizers[key]['A'] for key in self.minimizers] + [self.minimizers[key]['B'] for key in self.minimizers]
 
         ## Build the network
         self.all_parameters = {}

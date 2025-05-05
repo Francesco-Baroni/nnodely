@@ -25,7 +25,7 @@ class Composer(Network):
         self._model_def['Info']['nnodely_version'] = __version__
 
     @enforce_types
-    def addModel(self, name:str, stream_list:list|Output|Stream) -> None:
+    def addModel(self, name:str, stream_list:list|Output) -> None:
         """
         Adds a new model with the given name along with a list of Outputs.
 
@@ -44,36 +44,10 @@ class Composer(Network):
             >>> out = Output('out', Fir(x.last()))
             >>> model.addModel('example_model', [out])
         """
-        inputs = set()
-        all_inputs = set()
+
         if type(stream_list) is not list:
             stream_list = [stream_list]
-
-        subjson = MAIN_JSON
-        json = MAIN_JSON
-        for stream in stream_list:
-            if isinstance(stream, Output):
-                subjson = merge(subjson, subjson_from_output(stream.json, stream.name))
-                json = merge(json, stream.json)
-            else:
-                subjson = merge(subjson, subjson_from_relation(stream.json, stream.name))
-                json = merge(json, stream.json)
-
-        all_inputs = json['Inputs'].keys()
-        needed_inputs = subjson['Inputs'].keys()
-
-        extenal_inputs = set(all_inputs) - set(needed_inputs)
-        check(all_inputs == needed_inputs, RuntimeError, f'Connect or close loop operation on the inputs {list(extenal_inputs)}, that are not used in the model.')
-
-        # for key, state in json['States'].items():
-        #     check("connect" in state.keys() or 'closedLoop' in state.keys(), RuntimeError,
-        #           f'The connect or closed loop operation missing for state "{key}" or the state {key} is not used in the model.')
-
-        try:
-            self._model_def.addModel(name, stream_list)
-        except Exception as e:
-            self._model_def.removeModel(name)
-            raise e
+        self._model_def.addModel(name, stream_list)
 
     @enforce_types
     def removeModel(self, name_list:list) -> None:

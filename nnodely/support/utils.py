@@ -62,51 +62,8 @@ class ReadOnlyDict:
             return self._data == other
         return self._data == other._data
 
-    # def to_dict(self):
-    #     # Convert the ReadOnlyDict to a regular dictionary
-    #     return {key: value.to_dict() if isinstance(value, ReadOnlyDict) else value for key, value in self._data.items()}
-
-
 def get_window(obj):
     return 'tw' if 'tw' in obj.dim else ('sw' if 'sw' in obj.dim else None)
-
-# def get_inputs(json, relation):
-#     # Get all the inputs needed to compute a specific relation from the json graph
-#     inputs = []
-#
-#     def search(rel):
-#         if rel in (json['Inputs'] | json['States']):  # Found an input
-#             inputs.append(rel)
-#             if rel in json['States']:
-#                 if 'connect' in json['States'][rel]:
-#                     search(json['States'][rel]['connect'])
-#                 if 'closed_loop' in json['States'][rel]:
-#                     search(json['States'][rel]['closed_loop'])
-#         elif rel in json['Relations']:  # Another relation
-#             for sub_rel in json['Relations'][rel][1]:
-#                 search(sub_rel)
-#
-#     for rel in json['Relations'][relation][1]:
-#         search(rel)
-#
-#     return inputs
-
-# def subjson(json, models:str|list):
-#     from nnodely.basic.relation import MAIN_JSON
-#     if type(models) is not str:
-#         sub_json = {}
-#         for model in models:
-#             check(model in json['Models'],AttributeError, f"Model [{model}] not found!")
-#             for category, items in json['Models'][model].items():
-#                 sub_json[category] = {key:value for key, value in json[category].items() if key in items}
-#             sub_json['Models'] = {}
-#             for model in models:
-#                 sub_json['Models'][model] = {key:value for key,value in json['Models'][model].items()}
-#     else:
-#         sub_json = copy.deepcopy(json)
-#         sub_json['Minimizers'] = {}
-#         sub_json['Info'] = {}
-#     return sub_json
 
 def subjson_from_relation(json, relation):
     # Get all the inputs needed to compute a specific relation from the json graph

@@ -2,7 +2,7 @@ import copy
 
 import numpy as np
 
-from nnodely.support.utils import check, merge, subjson_from_model
+from nnodely.support.utils import check, merge, subjson_from_model, subjson_from_output
 from nnodely.basic.relation import MAIN_JSON, Stream
 from nnodely.layers.output import Output
 
@@ -34,6 +34,19 @@ class ModelDef():
     def __setitem__(self, key, value):
         self.__json[key] = value
 
+    def __checkModel(self, json):
+        all_inputs = json['Inputs'].keys()
+        all_outputs = json['Outputs'].keys()
+
+        subjson = MAIN_JSON
+        for name in all_outputs:
+            subjson = merge(subjson, subjson_from_output(json, name))
+        needed_inputs = subjson['Inputs'].keys()
+
+        extenal_inputs = set(all_inputs) - set(needed_inputs)
+        check(all_inputs == needed_inputs, RuntimeError,
+              f'Connect or close loop operation on the inputs {list(extenal_inputs)}, that are not used in the model.')
+
     def recurrentInputs(self):
         return {key:value for key, value in self.__json['Inputs'].items() if ('closedLoop' in value.keys() or 'connect' in value.keys())}
 
@@ -41,7 +54,9 @@ class ModelDef():
         if models is None:
             return copy.deepcopy(self.__json)
         else:
-            return copy.deepcopy(subjson_from_model(self.__json, models))
+            json = subjson_from_model(self.__json, models)
+            self.__checkModel(json)
+            return copy.deepcopy(json)
 
     def getSampleTime(self):
         check(self.__sample_time is not None, AttributeError, "Sample time is not defined the model is not neuralized!")
@@ -64,9 +79,8 @@ class ModelDef():
                 self.__json['Models'] = {}
             for model_name, model_params in model_dict.items():
                 self.__json['Models'][model_name] = {
-                    'Inputs': [], 'States': [], 'Outputs': [],
-                    'Parameters': [],'Constants': [],'Functions': [], 'Relations': []}
-                parameters, constants, inputs, states, functions, relations = set(), set(), set(), set(), set(), set()
+                    'Inputs': [], 'Outputs': [], 'Parameters': [], 'Constants': [], 'Functions': [], 'Relations': []}
+                parameters, constants, inputs, functions, relations = set(), set(), set(), set(), set()
                 for param in model_params:
                     self.__json['Models'][model_name]['Outputs'].append(param.name)
                     parameters |= set(param.json['Parameters'].keys())
@@ -110,12 +124,30 @@ class ModelDef():
     def addModel(self, name, stream_list):
         if isinstance(stream_list, (Output,Stream)):
             stream_list = [stream_list]
+
+        subjson = MAIN_JSON
+        json = MAIN_JSON
+        for stream in stream_list:
+            subjson = merge(subjson, subjson_from_output(stream.json, stream.name))
+            json = merge(json, stream.json)
+
+        all_inputs = json['Inputs'].keys()
+        needed_inputs = subjson['Inputs'].keys()
+
+        extenal_inputs = set(all_inputs) - set(needed_inputs)
+        check(all_inputs == needed_inputs, RuntimeError, f'Connect or close loop operation on the inputs {list(extenal_inputs)}, that are not used in the model.')
+
         if type(stream_list) is list:
             check(name not in self.__model_dict.keys(), ValueError, f"The name '{name}' of the model is already used")
             self.__model_dict[name] = copy.deepcopy(stream_list)
         else:
             raise TypeError(f'stream_list is type {type(stream_list)} but must be an Output or Stream or a list of them')
-        self.update()
+
+        try:
+            self.update()
+        except Exception as e:
+            self.removeModel(name)
+            raise e
 
     def removeModel(self, name_list):
         if type(name_list) is str:
