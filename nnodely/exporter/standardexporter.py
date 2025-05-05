@@ -3,7 +3,7 @@ import os, torch
 from nnodely.visualizer import EmptyVisualizer
 from nnodely.exporter.emptyexporter import EmptyExporter
 from nnodely.exporter.reporter import Reporter
-from nnodely.exporter.export import save_model, load_model, export_python_model, export_pythononnx_model, export_onnx_model, import_python_model, import_onnx_model, onnx_inference
+from nnodely.exporter.export import save_model, load_model, export_python_model, export_pythononnx_model, export_onnx_model, import_python_model, onnx_inference
 from nnodely.support.utils import check, enforce_types
 
 from nnodely.support.logger import logging, nnLogger
@@ -94,18 +94,16 @@ class StandardExporter(EmptyExporter):
         model = import_python_model(file_name.replace('.py', '_onnx'), model_folder)
         export_onnx_model(model_def, model, onnx_model_path, inputs_order, outputs_order, name=name+'_onnx')
         self.visualizer.exportModel('Onnx Model', onnx_model_path)
-
-    def importONNX(self, name = 'net', model_folder = None):
+    
+    def onnxInference(self, inputs, name:str='net', model_folder:str|None=None):
         try:
             model_folder = self.workspace_folder if model_folder is None else model_folder
-            model = import_onnx_model(name, model_folder)
-            self.visualizer.importModel('Onnx Model', os.path.join(model_folder,name+'.py'))
+            model_folder = os.path.join(model_folder, 'onnx')
+            file_name = name + ".onnx"
+            onnx_model_path = os.path.join(model_folder, file_name)
         except Exception as e:
-            log.warning(f"The module {name} it is not found in the folder {model_folder}.\nError: {e}")
-        return model
-    
-    def onnxInference(self, inputs, path):
-        return onnx_inference(inputs, path)
+            check(False, RuntimeError, f"The module {name} it is not found in the folder {model_folder}.\nError: {e}")
+        return onnx_inference(inputs, onnx_model_path)
             
 
     def exportReport(self, n4m, name = 'net', model_folder = None):

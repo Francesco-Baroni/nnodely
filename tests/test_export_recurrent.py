@@ -138,14 +138,22 @@ class ModelyExportTest(unittest.TestCase):
         test.exportONNX(['x','y','z'],['out']) # Export the onnx model
 
         ## ONNX IMPORT
-        onnx_model_path = os.path.join(result_path, 'onnx', 'net.onnx')
         dummy_input = {'x':np.ones(shape=(3, 1, 1, 1)).astype(np.float32),
                        'y':np.ones(shape=(1, 1, 1)).astype(np.float32),
                        'z':np.ones(shape=(1, 1, 1)).astype(np.float32)}
-        outputs = Modely(visualizer=None).onnxInference(dummy_input,onnx_model_path)
+        outputs = Modely(visualizer=None,workspace=result_path).onnxInference(dummy_input)
         # Get the output
         expected_output = np.array([[[[3.]]], [[[5.]]], [[[7.]]]], dtype=np.float32)
         self.assertEqual(outputs[0].tolist(), expected_output.tolist())
+
+        # The connected variable is not needed
+        sample = {'x':[3],'z':[5]}
+        inference_result = test(sample)
+        dummy_input = {'x':3*np.ones(shape=(1, 1, 1, 1)).astype(np.float32),
+                       'y':7*np.ones(shape=(1, 1, 1)).astype(np.float32),
+                       'z':5*np.ones(shape=(1, 1, 1)).astype(np.float32)}
+        outputs = Modely(visualizer=None, workspace=result_path).onnxInference(dummy_input)
+        self.assertEqual(outputs[0][0][0], inference_result['out'])
 
         if os.path.exists(test.getWorkspace()):
             shutil.rmtree(test.getWorkspace())
@@ -168,8 +176,7 @@ class ModelyExportTest(unittest.TestCase):
         output_nodely = test({'num_cycle':np.ones(shape=(10)).astype(np.float32).tolist(), 'x':np.ones(shape=(1)).astype(np.float32).tolist()})
 
         ## ONNX IMPORT
-        onnx_model_path = os.path.join(result_path, 'onnx', 'net.onnx')
-        outputs = Modely(visualizer=None).onnxInference(inputs={'num_cycle':np.ones(shape=(10, 1, 1, 1)).astype(np.float32), 'x':np.ones(shape=(1, 1, 1)).astype(np.float32)}, path=onnx_model_path)
+        outputs = Modely(visualizer=None,workspace=result_path).onnxInference(inputs={'num_cycle':np.ones(shape=(10, 1, 1, 1)).astype(np.float32), 'x':np.ones(shape=(1, 1, 1)).astype(np.float32)})
         self.assertEqual(output_nodely['out1'], outputs[0].squeeze().tolist())
         self.assertEqual(output_nodely['out2'], outputs[1].squeeze().tolist())
 
@@ -322,7 +329,6 @@ class ModelyExportTest(unittest.TestCase):
     def test_export_onnx_module_recurrent(self):
         result_path = 'results'
         test = Modely(visualizer=None, seed=42, workspace= result_path)
-        onnx_model_path = os.path.join(result_path, 'onnx', 'net.onnx')
         input1 = Input('input1')
         input2 = Input('input2', dimensions=3)
         input3 = Input('input3')
@@ -357,7 +363,7 @@ class ModelyExportTest(unittest.TestCase):
                             'input4': np.random.rand(1,1,4,3).astype(np.float32)}
         recurrent_sample['state1'] = np.random.rand(1,1,1).astype(np.float32)
         recurrent_sample['state2'] = np.random.rand(1,1,3).astype(np.float32)
-        inference = Modely(visualizer=None).onnxInference(recurrent_sample, onnx_model_path)
+        inference = Modely(visualizer=None).onnxInference(recurrent_sample, model_folder=test.getWorkspace())
         self.assertListEqual(list(inference[0].shape), [1,1,1,1])
         self.assertListEqual(list(inference[1].shape), [1,1,1,3])
         self.assertListEqual(list(inference[2].shape), [1,1,1,1])
@@ -374,7 +380,7 @@ class ModelyExportTest(unittest.TestCase):
                             'input4': np.random.rand(5,1,4,3).astype(np.float32)}
         recurrent_sample['state1'] = np.random.rand(1,1,1).astype(np.float32)
         recurrent_sample['state2'] = np.random.rand(1,1,3).astype(np.float32)
-        inference = Modely(visualizer=None).onnxInference(recurrent_sample, onnx_model_path)
+        inference = Modely(visualizer=None,workspace=result_path).onnxInference(recurrent_sample)
         self.assertListEqual(list(inference[0].shape), [5,1,1,1])
         self.assertListEqual(list(inference[1].shape), [5,1,1,3])
         self.assertListEqual(list(inference[2].shape), [5,1,1,1])
@@ -391,7 +397,7 @@ class ModelyExportTest(unittest.TestCase):
                             'input4': np.random.rand(5,2,4,3).astype(np.float32)}
         recurrent_sample['state1'] = np.random.rand(2,1,1).astype(np.float32)
         recurrent_sample['state2'] = np.random.rand(2,1,3).astype(np.float32)
-        inference = Modely(visualizer=None).onnxInference(recurrent_sample, onnx_model_path)
+        inference = Modely(visualizer=None).onnxInference(recurrent_sample, model_folder=result_path, name='net')
         self.assertListEqual(list(inference[0].shape), [5,2,1,1])
         self.assertListEqual(list(inference[1].shape), [5,2,1,3])
         self.assertListEqual(list(inference[2].shape), [5,2,1,1])
@@ -524,15 +530,14 @@ class ModelyExportTest(unittest.TestCase):
         model_inference = vehicle(model_sample, sampled=True, prediction_samples=1)
 
         ## ONNX IMPORT
-        onnx_model_path = os.path.join(result_path, 'onnx', network_name+'.onnx')
         onnx_sample = {key: (np.expand_dims(value, axis=1).astype(np.float32) if key != 'vel' else value)  for key, value in model_sample.items()}
-        outputs = Modely(visualizer=None).onnxInference(onnx_sample, onnx_model_path)
+        outputs = Modely(visualizer=None).onnxInference(onnx_sample, name=network_name, model_folder=result_path)
         self.assertEqual(outputs[0][0], model_inference['accelleration'])
 
         model_sample = vehicle.getSamples('dataset', window=3)
         onnx_sample = {key: (np.expand_dims(value, axis=1).astype(np.float32) if key != 'vel' else np.expand_dims(np.array(value[0], dtype=np.float32), axis=0))  for key, value in model_sample.items()}
         model_inference = vehicle(model_sample, sampled=True, prediction_samples=3)
-        outputs = Modely(visualizer=None).onnxInference(onnx_sample, onnx_model_path)
+        outputs = Modely(visualizer=None, workspace=result_path).onnxInference(onnx_sample, name=network_name)
         self.assertEqual(outputs[0].squeeze().tolist(), model_inference['accelleration'])
 
         if os.path.exists(vehicle.getWorkspace()):
@@ -556,9 +561,8 @@ class ModelyExportTest(unittest.TestCase):
         sample = [14, 1, 2, 3, 4, 5, 6]
         results = test({'inin':sample})
 
-        onnx_model_path = os.path.join(result_path, 'onnx', network_name+'.onnx')
         test.exportONNX(inputs_order=['inin','SamplePart1_sw1'],outputs_order=['out61','out62'],name=network_name)
-        outputs = Modely(visualizer=None).onnxInference({'inin':np.array([[[[14],[1],[2],[3],[4],[5],[6]]]]).astype(np.float32),'SamplePart1_sw1':np.array([[[0],[0],[0],[0],[0],[0]]]).astype(np.float32)}, onnx_model_path)
+        outputs = Modely(visualizer=None, workspace=result_path).onnxInference({'inin':np.array([[[[14],[1],[2],[3],[4],[5],[6]]]]).astype(np.float32),'SamplePart1_sw1':np.array([[[0],[0],[0],[0],[0],[0]]]).astype(np.float32)}, name=network_name)
         self.assertEqual(outputs[0].squeeze().tolist(), results['out61'][0])
         self.assertEqual(outputs[1].squeeze().tolist(), results['out62'][0])
         self.assertEqual(results['out61'][0], results['out62'][0])
@@ -567,57 +571,138 @@ class ModelyExportTest(unittest.TestCase):
             shutil.rmtree(test.getWorkspace())
 
     def test_partial_model_export(self):
+        #We have 4 networks, A, B, C and D
+
+        # Connection inside model 1
+        #Aout is connected to Bin1
+        #Bout is closed_loop to Ain2
+        #Bout is clodes_loop to Bin2
+
+        # Connection inside model 2
+        #Cout is connected to Din1
+
+        # Connection outside models in model 2
+        #Dout closed_loop to Cin1
+
+        # Connection outside models between models
+        #Dout closed_loop to Ain1
+        #Aout connected to Din2
+        #Bout closed_loop to Cin2
+
         result_path = 'results'
         NeuObj.clearNames()
-        x = Input('x')
-        y = Input('y')
-        x_last = x.last()
-        y_last = y.last()
-        p1 = Parameter('p1', sw=1, values=[[1.2]])
-        fun = Sin(x_last) + Fir(W=p1)(x_last) + Cos(y_last)
-        out_der = Derivate(fun, x_last) + Derivate(fun, y_last)
+        log.setAllLevel(logging.INFO)
 
-        x2 = Input('x2') # TODO no state in this case
-        after_connect = Connect(out_der,x2)
-        #x2.connect(out_der)
+        #Network A and B -> Model1
+        Ain1 = Input('Ain1')
+        Ain2 = Input('Ain2')
+        Bin1 = Input('Bin1')
+        Bin2 = Input('Bin2')
+        Bin3 = Input('Bin3')
 
-        y2 = Input('y2')
-        x2_last = x2.last()
-        y2_last = y2.last()
-        p2 = Parameter('p2', sw=1, values=[[1.2]])
-        fun2 = Sin(x2_last) + Fir(W=p2)(x2_last) + Cos(y2_last)
-        out_der2 = Derivate(fun2, x2_last) + Derivate(fun2, y2_last)
+        pA = Parameter('PA', sw=1, values=[[3.0]])
+        pB = Parameter('PB', sw=1, values=[[-5.0]])
 
-        out1 = Output('out1', out_der)
-        out1_connect = Output('out1_connect', after_connect)
+        Aout = (Ain1.last() + Ain2.last()) * pA
+        Aout.connect(Bin1)
 
-        out2 = Output('out2', out_der2)
+        Bout = (Bin1.last() + Bin2.last() + Bin3.last())*pB
+        Bout.closedLoop(Ain2)
+        Bout.closedLoop(Bin2)
+
+        modelA = Output('Aout',Aout)
+        modelB = Output('Bout',Bout)
+
+        Cin1 = Input('Cin1')
+        Cin2 = Input('Cin2')
+        Din1 = Input('Din1')
+        Din2 = Input('Din2')
+
+        pC = Parameter('PC', sw=1, values=[[-1.0]])
+        pD = Parameter('PD', sw=1, values=[[2.0]])
+
+        Cout = (Cin1.last() + Cin2.last()) * pC
+        Cout.connect(Din1)
+
+        Dout = (Din1.last() + Din2.last()) * pD
+
+        modelC = Output('Cout',Cout)
+        modelD = Output('Dout',Dout)
 
         m = Modely(workspace=result_path, visualizer=None, seed=5)
 
-        # This model define a connection on an external variable
-        # with self.assertRaises(RuntimeError):
-        #     m.addModel('modelA', [out1_connect])
-        #
-        m.addModel('modelA', [out1,out2])
-        #
-        # with self.assertRaises(RuntimeError):
-        #     m.addModel('modelB', [out2])
+        with self.assertRaises(RuntimeError):
+            m.addModel('modelA', [modelA])
+        with self.assertRaises(RuntimeError):
+            m.addModel('modelB', [modelB])
 
-        # m.addModel('modelB', out1)
-        #
-        # m.neuralizeModel()
-        #
-        # m.saveModel(models = 'modelB')
-        # # Test ModelA
-        # t = Modely(visualizer=None, workspace=m.getWorkspace())
-        # t.loadModel()
-        # mA = Modely(workspace=result_path, visualizer=TextVisualizer(), seed=5)
-        # mA.addModel('modelA', [out1])
-        # mA.neuralizeModel()
-        #self.assertEqual(t.json, mA.json)
+        m.addModel('model1', [modelA, modelB])
+        m.addModel('model2', [modelC, modelD])
 
-        # m.exportPythonModel(models = 'modelA')
-        # m.saveTorchModel(models = 'modelA')
-        # m.exportONNX(['x','y'], ['out1'], models = 'modelA')
+        m.neuralizeModel()
+        results = m({'Din2':[1], 'Cin1':[1], 'Cin2':[1], 'Ain1':[1], 'Bin3':[1]})
+        self.assertEqual({'Dout': [-2.0], 'Cout': [-2.0], 'Bout': [(3.0+1.0+0.0)*-5.0], 'Aout': [(1.0+0.0)*3.0]}, results)
+
+        ## Test loading of all models
+        m.saveTorchModel()
+        l = Modely(workspace=result_path, visualizer=None, seed=5)
+        l.addModel('model1', [modelA, modelB])
+        l.addModel('model2', [modelC, modelD])
+        l.neuralizeModel()
+        l.loadTorchModel()
+        results = l({'Din2': [1], 'Cin1': [1], 'Cin2': [1], 'Ain1': [1], 'Bin3': [1]})
+        self.assertEqual({'Dout': [-2.0], 'Cout': [-2.0], 'Bout': [-20.0], 'Aout': [3.0]}, results)
+
+        m.saveModel()
+        l = Modely(workspace=result_path, visualizer=None, seed=5)
+        l.loadModel()
+        l.neuralizeModel()
+        results = l({'Din2': [1], 'Cin1': [1], 'Cin2': [1], 'Ain1': [1], 'Bin3': [1]})
+        self.assertEqual({'Dout': [-2.0], 'Cout': [-2.0], 'Bout': [-20.0], 'Aout': [3.0]}, results)
+
+        m.exportPythonModel()
+        l = Modely(workspace=result_path, visualizer=None, seed=5)
+        l.importPythonModel()
+        results = l({'Din2': [1], 'Cin1': [1], 'Cin2': [1], 'Ain1': [1], 'Bin3': [1]})
+        self.assertEqual({'Dout': [-2.0], 'Cout': [-2.0], 'Bout': [-20.0], 'Aout': [3.0]}, results)
+
+        m.exportONNX()
+        returrent_var_init = {'Din1':np.array([[[1]]]).astype(np.float32),
+                              'Bin2':np.array([[[1]]]).astype(np.float32),
+                              'Ain2':np.array([[[1]]]).astype(np.float32),
+                              'Bin1':np.array([[[1]]]).astype(np.float32)}
+        results = Modely(workspace=result_path, visualizer=None).onnxInference(returrent_var_init |
+                        {'Din2': np.array([[[1]]]).astype(np.float32),
+                         'Cin1': np.array([[[1]]]).astype(np.float32),
+                         'Cin2': np.array([[[1]]]).astype(np.float32),
+                         'Ain1':np.array([[[1]]]).astype(np.float32),
+                         'Bin3': np.array([[[1]]]).astype(np.float32)})
+        self.assertEqual({'Dout': [-2.0], 'Cout': [-2.0], 'Bout': [-20.0], 'Aout': [3.0]}, results)
+
+        ## Testing loading of model1
+        m.saveTorchModel(models='model1')
+        l = Modely(workspace=result_path, visualizer=None, seed=5)
+        l.addModel('model1', [modelA, modelB])
+        l.neuralizeModel()
+        l.loadTorchModel(name='net_model1')
+        results = l({'Din2':[1], 'Cin1':[1], 'Cin2':[1], 'Ain1':[1], 'Bin3':[1]})
+        self.assertEqual({'Bout': [-20.0], 'Aout': [3.0]}, results)
+
+        m.saveModel(models='model1')
+        l = Modely(workspace=result_path, visualizer=None, seed=5)
+        l.loadModel(name='net_model1')
+        l.neuralizeModel()
+        results = l({'Din2':[1], 'Cin1':[1], 'Cin2':[1], 'Ain1':[1], 'Bin3':[1]})
+        self.assertEqual({'Bout': [-20.0], 'Aout': [3.0]}, results)
+
+        # TODO FIX
+        # m.exportPythonModel(models='model1')
+        # l = Modely(workspace=result_path, visualizer=None, seed=5)
+        # l.importPythonModel(name='net_model1')
+        # results = l({'Din2':[1], 'Cin1':[1], 'Cin2':[1], 'Ain1':[1], 'Bin3':[1]})
+        # self.assertEqual({'Bout': [-20.0], 'Aout': [3.0]}, results)
+        # TODO FIX
+
+
+        log.setAllLevel(logging.CRITICAL)
 

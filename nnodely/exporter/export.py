@@ -426,9 +426,3 @@ def onnx_inference(inputs, path, optimize_graph=False):
         input_data[item.name] = inputs[item.name]
     # Run inference
     return session.run(output_data, input_data)
-
-def import_onnx_model(name, model_folder):
-    import onnxruntime as ort
-    model_path = os.path.join(model_folder, name + '.onnx')
-    return ort.InferenceSession(model_path)
-

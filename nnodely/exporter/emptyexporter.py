@@ -41,7 +41,7 @@ class EmptyExporter:
     def importPythonModel(self, name = 'net', model_folder = None):
         pass
 
-    def onnxInference(self, inputs:dict, path:str):
+    def onnxInference(self, inputs:dict, name:str='net', model_folder:str|None=None):
         pass
 
     def exportReport(self, name = 'net', model_folder = None):
