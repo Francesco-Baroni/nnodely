@@ -47,7 +47,7 @@ class Composer(Network):
         self._model_def.addModel(name, stream_list)
 
     @enforce_types
-    def removeModel(self, name_list:list) -> None:
+    def removeModel(self, name_list:list|str) -> None:
         """
         Removes models with the given list of names.
 
@@ -149,10 +149,11 @@ class Composer(Network):
             check(clear_model == False, ValueError, 'The clear_model must be False if a model_def is provided')
             self._model_def = ModelDef(model_def)
         else:
-            if clear_model:
-                self._model_def.update()
-            else:
-                self._model_def.updateParameters(self._model)
+            # if clear_model:
+            self._model_def.updateParameters(clear_model = clear_model, model = self._model)
+                #self._model_def.update()
+            # else:
+            #     self._model_def.updateParameters(self._model)
 
         # for key, state in self._model_def.recurrentInputs().items():
         #     check("connect" in state.keys() or  'closedLoop' in state.keys(), KeyError, f'The connect or closed loop missing for state "{key}"')
@@ -228,8 +229,8 @@ class Composer(Network):
 
         ## Copy dict for avoid python bug
         inputs = copy.deepcopy(inputs)
-        all_closed_loop = copy.deepcopy(closed_loop) | self._model_def._input_closed_loop
-        all_connect = copy.deepcopy(connect) | self._model_def._input_connect
+        all_closed_loop = copy.deepcopy(closed_loop) #| self._model_def._input_closed_loop
+        all_connect = copy.deepcopy(connect) #| self._model_def._input_connect
 
         ## Check neuralize
         check(self.neuralized, RuntimeError, "The network is not neuralized.")

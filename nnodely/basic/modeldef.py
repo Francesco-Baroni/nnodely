@@ -2,7 +2,7 @@ import copy
 
 import numpy as np
 
-from nnodely.support.utils import check, merge, subjson_from_model, subjson_from_output
+from nnodely.support.utils import check, merge, subjson_from_model, subjson_from_output, subjson_from_relation
 from nnodely.basic.relation import MAIN_JSON, Stream
 from nnodely.layers.output import Output
 
@@ -20,10 +20,10 @@ class ModelDef():
             self.__sample_time = self.__json['Info']["SampleTime"]
         else:
             self.__sample_time = None
-        self.__model_dict = {}
-        self.__minimize_dict = {}
-        self._input_connect = {}
-        self._input_closed_loop = {}
+        # self.__model_dict = {}
+        # self.__minimize_dict = {}
+        #self._input_connect = {}
+        #self._input_closed_loop = {}
 
     def __contains__(self, key):
         return key in self.__json
@@ -44,6 +44,7 @@ class ModelDef():
         needed_inputs = subjson['Inputs'].keys()
 
         extenal_inputs = set(all_inputs) - set(needed_inputs)
+
         check(all_inputs == needed_inputs, RuntimeError,
               f'Connect or close loop operation on the inputs {list(extenal_inputs)}, that are not used in the model.')
 
@@ -65,61 +66,79 @@ class ModelDef():
     def isDefined(self):
         return self.__json is not None
 
-    def update(self, model_def = None, model_dict = None, minimize_dict = None, update_state_dict = None):
-        self.__json = copy.deepcopy(model_def) if model_def is not None else copy.deepcopy(self.__json_base)
-        model_dict = copy.deepcopy(model_dict) if model_dict is not None else self.__model_dict
-        minimize_dict = copy.deepcopy(minimize_dict) if minimize_dict is not None else self.__minimize_dict
-
-        # Add models to the model_def
-        for key, stream_list in model_dict.items():
-            for stream in stream_list:
-                self.__json = merge(self.__json, stream.json)
-        if len(model_dict) > 1:
-            if 'Models' not in self.__json:
-                self.__json['Models'] = {}
-            for model_name, model_params in model_dict.items():
-                self.__json['Models'][model_name] = {
-                    'Inputs': [], 'Outputs': [], 'Parameters': [], 'Constants': [], 'Functions': [], 'Relations': []}
-                parameters, constants, inputs, functions, relations = set(), set(), set(), set(), set()
-                for param in model_params:
-                    self.__json['Models'][model_name]['Outputs'].append(param.name)
-                    parameters |= set(param.json['Parameters'].keys())
-                    constants |= set(param.json['Constants'].keys())
-                    inputs |= set(param.json['Inputs'].keys())
-                    functions |= set(param.json['Functions'].keys())
-                    relations |= set(param.json['Relations'].keys())
-                self.__json['Models'][model_name]['Parameters'] = list(parameters)
-                self.__json['Models'][model_name]['Constants'] = list(constants)
-                self.__json['Models'][model_name]['Inputs'] = list(inputs)
-                self.__json['Models'][model_name]['Functions'] = list(functions)
-                self.__json['Models'][model_name]['Relations'] = list(relations)
-        elif len(model_dict) == 1:
-            self.__json['Models'] = list(model_dict.keys())[0]
-
-        if 'Minimizers' not in self.__json:
-            self.__json['Minimizers'] = {}
-        for key, minimize in minimize_dict.items():
-            self.__json = merge(self.__json, minimize['A'].json)
-            self.__json = merge(self.__json, minimize['B'].json)
-            self.__json['Minimizers'][key] = {}
-            self.__json['Minimizers'][key]['A'] = minimize['A'].name
-            self.__json['Minimizers'][key]['B'] = minimize['B'].name
-            self.__json['Minimizers'][key]['loss'] = minimize['loss']
-
-        if "SampleTime" in self.__json['Info']:
-            self.__sample_time = self.__json['Info']["SampleTime"]
+    # def update(self, model_def = None, model_dict = None, minimize_dict = None, update_state_dict = None):
+    #     self.__json = copy.deepcopy(model_def) if model_def is not None else copy.deepcopy(self.__json_base)
+    #     model_dict = copy.deepcopy(model_dict) if model_dict is not None else self.__model_dict
+    #     minimize_dict = copy.deepcopy(minimize_dict) if minimize_dict is not None else self.__minimize_dict
+    #
+    #     # Add models to the model_def
+    #     for key, stream_list in model_dict.items():
+    #         for stream in stream_list:
+    #             self.__json = merge(self.__json, stream.json)
+    #     if len(model_dict) > 1:
+    #         if 'Models' not in self.__json:
+    #             self.__json['Models'] = {}
+    #         for model_name, model_params in model_dict.items():
+    #             self.__json['Models'][model_name] = {
+    #                 'Inputs': [], 'Outputs': [], 'Parameters': [], 'Constants': [], 'Functions': [], 'Relations': []}
+    #             parameters, constants, inputs, functions, relations = set(), set(), set(), set(), set()
+    #             for param in model_params:
+    #                 self.__json['Models'][model_name]['Outputs'].append(param.name)
+    #                 parameters |= set(param.json['Parameters'].keys())
+    #                 constants |= set(param.json['Constants'].keys())
+    #                 inputs |= set(param.json['Inputs'].keys())
+    #                 functions |= set(param.json['Functions'].keys())
+    #                 relations |= set(param.json['Relations'].keys())
+    #             self.__json['Models'][model_name]['Parameters'] = list(parameters)
+    #             self.__json['Models'][model_name]['Constants'] = list(constants)
+    #             self.__json['Models'][model_name]['Inputs'] = list(inputs)
+    #             self.__json['Models'][model_name]['Functions'] = list(functions)
+    #             self.__json['Models'][model_name]['Relations'] = list(relations)
+    #     elif len(model_dict) == 1:
+    #         self.__json['Models'] = list(model_dict.keys())[0]
+    #
+    #     if 'Minimizers' not in self.__json:
+    #         self.__json['Minimizers'] = {}
+    #     for key, minimize in minimize_dict.items():
+    #         self.__json = merge(self.__json, minimize['A'].json)
+    #         self.__json = merge(self.__json, minimize['B'].json)
+    #         self.__json['Minimizers'][key] = {}
+    #         self.__json['Minimizers'][key]['A'] = minimize['A'].name
+    #         self.__json['Minimizers'][key]['B'] = minimize['B'].name
+    #         self.__json['Minimizers'][key]['loss'] = minimize['loss']
+    #
+    #     if "SampleTime" in self.__json['Info']:
+    #         self.__sample_time = self.__json['Info']["SampleTime"]
 
     def addConnect(self, stream_out, input_list_in):
         if type(input_list_in) is not list:
             input_list_in = [input_list_in]
         for input in input_list_in:
-            self._input_connect[input.name] = stream_out.name
+            # self._input_connect[input.name] = stream_out.name
+            outputs = self.__json['Outputs']
+            stream_name =  outputs[stream_out.name] if stream_out.name in outputs.keys() else stream_out.name
+            self.__json['Inputs'][input.name]['connect'] = stream_name
+            #TODO checkif stream_out it is prensent in the __json
 
     def addClosedLoop(self, stream_out, input_list_in):
         if type(input_list_in) is not list:
             input_list_in = [input_list_in]
         for input in input_list_in:
-            self._input_closed_loop[input.name] = stream_out.name
+            # self._input_closed_loop[input.name] = stream_out.name
+            outputs = self.__json['Outputs']
+            stream_name =  outputs[stream_out.name] if stream_out.name in outputs.keys() else stream_out.name
+            self.__json['Inputs'][input.name]['closedLoop'] = stream_name
+            # TODO checkif stream_out it is prensent in the __json
+
+    def __get_models_json(self, json):
+        model_json = {}
+        model_json['Parameters'] = list(json['Parameters'].keys())
+        model_json['Constants'] = list(json['Constants'].keys())
+        model_json['Inputs'] = list(json['Inputs'].keys())
+        model_json['Outputs'] = list(json['Outputs'].keys())
+        model_json['Functions'] = list(json['Functions'].keys())
+        model_json['Relations'] = list(json['Relations'].keys())
+        return model_json
 
     def addModel(self, name, stream_list):
         if isinstance(stream_list, (Output,Stream)):
@@ -128,44 +147,120 @@ class ModelDef():
         json = MAIN_JSON
         for stream in stream_list:
             json = merge(json, stream.json)
-        self.__checkModel(json)
+        self.__checkModel(json)  # TODO Change to warning if the input is outside the model
 
-        if type(stream_list) is list:
-            check(name not in self.__model_dict.keys(), ValueError, f"The name '{name}' of the model is already used")
-            self.__model_dict[name] = copy.deepcopy(stream_list)
+        if 'Models' not in self.__json:
+            self.__json = merge(self.__json, json)
+            self.__json['Models'] = name
         else:
-            raise TypeError(f'stream_list is type {type(stream_list)} but must be an Output or Stream or a list of them')
+            models_names = set(self.__json['Models']) if type(self.__json['Models']) is str else set(self.__json['Models'].keys())
+            check(name not in models_names, ValueError,
+                  f"The name '{name}' of the model is already used")
+            if type(self.__json['Models']) is str:
+                self.__json['Models'] = {self.__json['Models']: self.__get_models_json(self.__json)}
+            self.__json = merge(self.__json, json)
+            self.__json['Models'][name] = self.__get_models_json(json)
 
-        try:
-            self.update()
-        except Exception as e:
-            self.removeModel(name)
-            raise e
+        # for stream in stream_list:
+        #     self.__json = merge(self.__json, stream.json)
+        # self.__checkModel(self.__json)
+        #
+        # if type(stream_list) is list:
+        #     check(name not in self.__model_dict.keys(), ValueError, f"The name '{name}' of the model is already used")
+        #     self.__model_dict[name] = copy.deepcopy(stream_list)
+        # else:
+        #     raise TypeError(f'stream_list is type {type(stream_list)} but must be an Output or Stream or a list of them')
+
+        # try:
+        #     self.update()
+        # except Exception as e:
+        #     self.removeModel(name)
+        #     raise e
 
     def removeModel(self, name_list):
+        if 'Models' not in self.__json:
+            raise ValueError("No Models are defined")
+        models_names = set([self.__json['Models']]) if type(self.__json['Models']) is str else set(self.__json['Models'].keys())
+
         if type(name_list) is str:
             name_list = [name_list]
         if type(name_list) is list:
             for name in name_list:
-                check(name in self.__model_dict, IndexError, f"The name {name} is not part of the available models")
-                del self.__model_dict[name]
-        self.update()
+                check(name in models_names, IndexError, f"The name {name} is not part of the available models")
+
+        models_names -= set(name_list)
+        new_json = subjson_from_model(self.__json, list(models_names))
+
+        if 'Minimizers' in self.__json:
+            minimizers = set(self.__json['Minimizers'].keys())
+            rel_A = [self.__json['Minimizers'][key]['A'] for key in minimizers]
+            rel_B = [self.__json['Minimizers'][key]['B'] for key in minimizers]
+            relations_name = set(rel_A) | set(rel_B)
+            minimizers_json = subjson_from_relation(self.__json, list(relations_name))
+            new_json = merge(new_json, minimizers_json)
+
+        self.__json = copy.deepcopy(new_json)
+
+        # if type(name_list) is list:
+        #     for name in name_list:
+        #         check(name in self.__model_dict, IndexError, f"The name {name} is not part of the available models")
+        #         del self.__model_dict[name]
+        # self.update()
 
     def addMinimize(self, name, streamA, streamB, loss_function='mse'):
         check(isinstance(streamA, (Output, Stream)), TypeError, 'streamA must be an instance of Output or Stream')
         check(isinstance(streamB, (Output, Stream)), TypeError, 'streamA must be an instance of Output or Stream')
-        #check(streamA.dim == streamB.dim, ValueError, f'Dimension of streamA={streamA.dim} and streamB={streamB.dim} are not equal.')
-        self.__minimize_dict[name]={'A':copy.deepcopy(streamA), 'B': copy.deepcopy(streamB), 'loss':loss_function}
-        self.update()
+        # check(streamA.dim == streamB.dim, ValueError, f'Dimension of streamA={streamA.dim} and streamB={streamB.dim} are not equal.')
+
+        if 'Minimizers' not in self.__json:
+            self.__json['Minimizers'] = {}
+
+        streams = merge(streamA.json, streamB.json)
+        streamA_name = streamA.json['Outputs'][streamA.name] if isinstance(streamA, Output) else streamA.name
+        streamB_name = streamB.json['Outputs'][streamB.name] if isinstance(streamB, Output) else streamB.name
+        self.__json = merge(self.__json, streams)
+        self.__json['Minimizers'][name] = {}
+        self.__json['Minimizers'][name]['A'] = streamA_name
+        self.__json['Minimizers'][name]['B'] = streamB_name
+        self.__json['Minimizers'][name]['loss'] = loss_function
+
+        # self.__minimize_dict[name]={'A':copy.deepcopy(streamA), 'B': copy.deepcopy(streamB), 'loss':loss_function}
+        # self.update()
 
     def removeMinimize(self, name_list):
+        # # TODO to remove a minimizer we need to find the subjson of all the other minimizers and models
+        # # Test removeMinimizer
+        # if type(name_list) is str:
+        #     name_list = [name_list]
+        # if type(name_list) is list:
+        #     for name in name_list:
+        #         check(name in self.__minimize_dict, IndexError, f"The name {name} is not part of the available minimizers")
+        #         del self.__minimize_dict[name]
+        # self.update()
+
+        if 'Minimizers' not in self.__json:
+            raise ValueError("No Minimizers are defined")
+
         if type(name_list) is str:
             name_list = [name_list]
         if type(name_list) is list:
             for name in name_list:
-                check(name in self.__minimize_dict, IndexError, f"The name {name} is not part of the available minimuzes")
-                del self.__minimize_dict[name]
-        self.update()
+                check(name in self.__json['Minimizers'].keys(), IndexError,
+                      f"The name {name} is not part of the available minimizers")
+
+        models_names = set([self.__json['Models']]) if type(self.__json['Models']) is str else set(self.__json['Models'].keys())
+        new_json = subjson_from_model(self.__json, list(models_names))
+
+        if 'Minimizers' in self.__json:
+            remaning_minimizers = set(self.__json['Minimizers'].keys()) - set(name_list)
+            rel_A = [self.__json['Minimizers'][key]['A'] for key in remaning_minimizers]
+            rel_B = [self.__json['Minimizers'][key]['B'] for key in remaning_minimizers]
+            relations_name = set(rel_A) | set(rel_B)
+            if len(relations_name) != 0:
+                minimizers_json = subjson_from_relation(self.__json, list(relations_name))
+                new_json = merge(new_json, minimizers_json)
+
+        self.__json = copy.deepcopy(new_json)
 
     def setBuildWindow(self, sample_time = None):
         check(self.__json is not None, RuntimeError, "No model is defined!")
@@ -220,10 +315,16 @@ class ModelDef():
                 if v['values'] == "SampleTime":
                     v['values'] = self.__sample_time
 
-    def updateParameters(self, model):
-        if model is not None:
+    def updateParameters(self, model = None, *, clear_model = False):
+        if clear_model:
+            for key in self.__json['Parameters'].keys():
+                if 'init_values' in self.__json['Parameters'][key]:
+                    self.__json['Parameters'][key]['values'] = self.__json['Parameters'][key]['init_values']
+                elif 'values' in self.__json['Parameters'][key]:
+                    del self.__json['Parameters'][key]['values']
+        elif model is not None:
             for key in self.__json['Parameters'].keys():
                 if key in model.all_parameters:
                     self.__json['Parameters'][key]['values'] = model.all_parameters[key].tolist()
-                    if 'init_fun' in self.__json['Parameters'][key]:
-                        del self.__json['Parameters'][key]['init_fun']
+
+    #231

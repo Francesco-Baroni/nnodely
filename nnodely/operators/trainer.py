@@ -519,7 +519,7 @@ class Trainer(Network):
 
         ## Close loop information
         closed_loop = self.__get_parameter(closed_loop=closed_loop)
-        all_closed_loop = self.run_training_params['closed_loop'] = closed_loop | self._model_def._input_closed_loop
+        all_closed_loop = self.run_training_params['closed_loop'] = closed_loop #| self._model_def._input_closed_loop
         for input, output in all_closed_loop.items():
             check(input in self._model_def['Inputs'], ValueError, f'the tag {input} is not an input variable.')
             check(output in self._model_def['Outputs'], ValueError,
@@ -529,7 +529,7 @@ class Trainer(Network):
 
         ## Connect information
         connect = self.__get_parameter(connect=connect)
-        all_connect = self.run_training_params['connect'] = connect | self._model_def._input_connect
+        all_connect = self.run_training_params['connect'] = connect #| self._model_def._input_connect
         for connect_in, connect_out in all_connect.items():
             check(connect_in in self._model_def['Inputs'], ValueError,
                   f'the tag {connect_in} is not an input variable.')

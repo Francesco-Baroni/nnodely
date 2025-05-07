@@ -203,9 +203,10 @@ class Parameter(NeuObj, Relation):
             # deepcopy dimention information inside Parameters
             self.json['Parameters'][self.name] = copy.deepcopy(self.dim)
             if type(values) in (int, float):
-                self.json['Parameters'][self.name]['values'] = [values]
+                self.json['Parameters'][self.name]['init_values'] = [values]
             else:
-                self.json['Parameters'][self.name]['values'] = values
+                self.json['Parameters'][self.name]['init_values'] = values
+            self.json['Parameters'][self.name]['values'] = self.json['Parameters'][self.name]['init_values']
 
         if init is not None:
             check('values' not in self.json['Parameters'][self.name], ValueError, f"The parameter {self.name} is already initialized.")

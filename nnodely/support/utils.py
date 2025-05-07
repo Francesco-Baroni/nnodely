@@ -113,7 +113,6 @@ def subjson_from_relation(json, relation):
     sub_json['Parameters'] = {key: value for key, value in json['Parameters'].items() if key in parameters}
     sub_json['Functions'] = {key: value for key, value in json['Functions'].items() if key in functions}
     sub_json['Outputs'] = {}
-    sub_json['Minimizers'] = {}
     sub_json['Info'] = {}
     return sub_json
 
@@ -131,8 +130,11 @@ def subjson_from_output(json, outputs:str|list):
 def subjson_from_model(json, models:str|list):
     from nnodely.basic.relation import MAIN_JSON
     sub_json = copy.deepcopy(MAIN_JSON)
-    if type(models) is str:
-        check(models in json['Models'], AttributeError, f"Model [{models}] not found!")
+    models_names = set([json['Models']]) if type(json['Models']) is str else set(json['Models'].keys())
+    if type(models) is str or len(models) == 1:
+        if len(models) == 1:
+            models = models[0]
+        check(models in models_names, AttributeError, f"Model [{models}] not found!")
         if type(json['Models']) is str:
             outputs = set(json['Outputs'].keys())
         else:
@@ -142,10 +144,10 @@ def subjson_from_model(json, models:str|list):
         outputs = set()
         sub_json['Models'] = {}
         for model in models:
-            check(model in json['Models'].keys(), AttributeError, f"Model [{model}] not found!")
+            check(model in models_names, AttributeError, f"Model [{model}] not found!")
             outputs |= set(json['Models'][model]['Outputs'])
             sub_json['Models'][model] = {key: value for key, value in json['Models'][model].items()}
-
+    # TODO Check if the model have some closed loop or connection outside the model
     return merge(sub_json, subjson_from_output(json, outputs))
 
 def enforce_types(func):
