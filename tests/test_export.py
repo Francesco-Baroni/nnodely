@@ -165,7 +165,6 @@ class ModelyExportTest(unittest.TestCase):
         # The old_out is the same as the new_out_after_load because the model is loaded with the same parameters
         self.test.neuralizeModel(0.5)
         old_out = self.test({'x': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'y': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})
-        #self.test.neuralizeModel()  #TODO Remove neuralizeModel in some places# Load the parameter from torch model to nnodely model json
         self.test.saveModel()  # Save the model with and without parameter values
         self.test.neuralizeModel(clear_model=True)  # Create a new torch model
         new_out = self.test({'x': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'y': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})

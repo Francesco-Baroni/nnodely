@@ -633,7 +633,7 @@ class ModelyExportTest(unittest.TestCase):
 
         m = Modely(workspace=result_path, visualizer=None)
 
-        with self.assertRaises(RuntimeError): #TODO
+        with self.assertRaises(RuntimeError):
             m.addModel('modelA', [modelA])
         with self.assertRaises(RuntimeError):
             m.addModel('modelB', [modelB])
@@ -894,3 +894,147 @@ class ModelyExportTest(unittest.TestCase):
         self.assertEqual([[[[[-2.0]]]], [[[[-6.0]]]]], results)
         #log.setAllLevel(logging.CRITICAL)
 
+    def test_partial_model_export_extern_connection(self):
+        result_path = 'results'
+        NeuObj.clearNames()
+        #Network A and B -> Model1
+        Ain1 = Input('Ain1')
+        Bin1 = Input('Bin1')
+
+        pA = Parameter('PA', sw=1, values=[[3.0]])
+        pB = Parameter('PB', sw=1, values=[[-5.0]])
+
+        Aout = Ain1.last() * pA
+        Bout = Bin1.last() * pB
+
+        modelA = Output('Aout',Aout)
+        modelB = Output('Bout',Bout)
+
+        Cin1 = Input('Cin1')
+        Din1 = Input('Din1')
+
+        pC = Parameter('PC', sw=1, values=[[-1.0]])
+        pD = Parameter('PD', sw=1, values=[[2.0]])
+
+        Cout = Cin1.last() * pC
+        Dout = Din1.last() * pD
+
+        modelC = Output('Cout',Cout)
+        modelD = Output('Dout',Dout)
+
+        m = Modely(workspace=result_path, visualizer=None)
+
+        m.addModel('model1', [modelA, modelB])
+        m.addModel('model2', [modelC, modelD])
+        m.addConnect(Cout,Bin1)
+        m.addConnect(Aout,Din1)
+        m.addClosedLoop(Dout,Ain1)
+        m.addClosedLoop(Bout,Cin1)
+
+        init_states = {'Ain1': [1], 'Bin1':[2], 'Cin1':[3], 'Din1': [4]}
+        init_states_diff = {'Ain1': [1], 'Bin1':[12], 'Cin1':[3], 'Din1': [12]}
+
+        # Target with states = 0.0
+        results_target = {'Dout': [3.0 * 2.0],
+                          'Cout': [3.0 * -1.0],
+                          'Bout': [-3.0 * -5.0],
+                          'Aout': [1.0 * 3.0]}
+
+        m.neuralizeModel()
+        self.assertEqual(results_target, m(init_states))
+        self.assertEqual(results_target, m(init_states_diff))
+
+        ## Test loading of all models
+        m.saveTorchModel()
+        l = Modely(workspace=result_path, visualizer=None)
+        l.addModel('model1', [modelA, modelB])
+        l.addModel('model2', [modelC, modelD])
+        l.addConnect(Cout,Bin1)
+        l.addConnect(Aout,Din1)
+        l.addClosedLoop(Dout,Ain1)
+        l.addClosedLoop(Bout,Cin1)
+        l.neuralizeModel()
+        l.parameters['PA'] = [[22.0]]
+        l.loadTorchModel()
+        self.assertEqual(results_target, l(init_states))
+        self.assertEqual(results_target, l(init_states_diff))
+
+        m.saveModel()
+        l = Modely(workspace=result_path, visualizer=None)
+        l.loadModel()
+        l.neuralizeModel()
+        self.assertEqual(results_target, l(init_states))
+        self.assertEqual(results_target, l(init_states_diff))
+
+        m.exportPythonModel()
+        l = Modely(workspace=result_path, visualizer=None)
+        l.importPythonModel()
+        self.assertEqual(results_target, l(init_states))
+        self.assertEqual(results_target, l(init_states_diff))
+
+        with self.assertRaises(TypeError):
+            m.exportONNX(outputs_order=['Dout', 'Cout', 'Bout', 'Aout'])
+
+        # ## Testing loading of model1
+        # # Target with states = 0.0
+        # results_target_m2 = {'Dout': [4.0 * 2.0],
+        #                      'Cout': [3.0 * -1.0]}
+        # m.saveTorchModel(models='model2')
+        # l = Modely(workspace=result_path, visualizer=None)
+        # l.addModel('model2', [modelC, modelD])
+        # l.neuralizeModel()
+        # l.parameters['PD'] = [[22.0]]
+        # l.loadTorchModel(name='net_model2')
+        # self.assertEqual(results_target_m2, l(init_states))
+        # self.assertEqual(results_target_state_m2, l(init_inputs | init_states))
+        # self.assertEqual(results_target_state_m2, l(init_inputs | init_states_diff))
+        # l2 = Modely(workspace=result_path, visualizer=None)
+        # l2.addModel('model2', [modelC, modelD])
+        # l2.addConnect(Cout, Din2)
+        # l2.addClosedLoop(Dout, Cin1)
+        # l2.neuralizeModel()
+        # l2.parameters['PD'] = [[22.0]]
+        # with self.assertRaises(FileNotFoundError):
+        #     l2.loadTorchModel(name='net_m22', model_folder='test')
+        # l2.loadTorchModel(name='net_model2')
+        # self.assertEqual(results_target_2_m2, l2(init_inputs_2))
+        # self.assertEqual(results_target_state_2_m2, l2(init_inputs_2 | init_states_2))
+        # self.assertEqual(results_target_state_2_m2, l2(init_inputs_2 | init_states_diff_2))
+        #
+        # m.saveModel(models='model2')
+        # l = Modely(workspace=result_path, visualizer=None)
+        # with self.assertRaises(FileNotFoundError):
+        #     l.loadModel(name='_model2')
+        # l.loadModel(name='net_model2')
+        # l.neuralizeModel()
+        # self.assertEqual(results_target_2_m2, l(init_inputs_2))
+        # self.assertEqual(results_target_state_2_m2, l(init_inputs_2 | init_states_2))
+        # self.assertEqual(results_target_state_2_m2, l(init_inputs_2 | init_states_diff_2))
+        #
+        # m.exportPythonModel(models='model2')
+        # l = Modely(workspace=result_path, visualizer=None)
+        # with self.assertRaises(FileNotFoundError):
+        #     l.importPythonModel(name='net_model22')
+        # l.importPythonModel(name='net_model2')
+        # self.assertEqual(results_target_2_m2, l(init_inputs_2))
+        # self.assertEqual(results_target_state_2_m2, l(init_inputs_2 | init_states_2))
+        # self.assertEqual(results_target_state_2_m2, l(init_inputs_2 | init_states_diff_2))
+        #
+        # m.exportONNX(models='model2', outputs_order=['Cout', 'Dout'])
+        # init_inputs_2_ox = {'Din3': np.array([[[[1.0]]]]).astype(np.float32),
+        #                     'Cin2': np.array([[[[1.0]]]]).astype(np.float32)}
+        # init_states_2_ox = {'Din1': np.array([[[12.0]]]).astype(np.float32),
+        #                     'Cin1': np.array([[[0.0]]]).astype(np.float32),
+        #                     'Din2': np.array([[[20.0]]]).astype(np.float32)}
+        # init_states_diff_2_ox = {'Din1': np.array([[[12.0]]]).astype(np.float32),
+        #                          'Cin1': np.array([[[1.0]]]).astype(np.float32),
+        #                          'Din2': np.array([[[23.0]]]).astype(np.float32)}
+        # with self.assertRaises(FileNotFoundError):
+        #     Modely(workspace=result_path, visualizer=None).onnxInference(init_inputs_2_ox | init_states_2_ox,
+        #                                                                  name='net_models2')
+        # results = Modely(workspace=result_path, visualizer=None).onnxInference(init_inputs_2_ox | init_states_2_ox,
+        #                                                                        name='net_model2')
+        # self.assertEqual([[[[[-1.0]]]], [[[[-2.0]]]]], results)
+        # results = Modely(workspace=result_path, visualizer=None).onnxInference(
+        #     init_inputs_2_ox | init_states_diff_2_ox, name='net_model2')
+        # self.assertEqual([[[[[-2.0]]]], [[[[-6.0]]]]], results)
