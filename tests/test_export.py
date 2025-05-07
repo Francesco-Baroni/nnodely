@@ -37,9 +37,9 @@ class ModelyExportTest(unittest.TestCase):
         def myFun(K1, p1, p2):
             return K1 * p1 * p2
 
-        K_x = Parameter('k_x', dimensions=1, tw=1, init=init_constant, init_params={'value': 1})
+        K_x = Parameter('k_x', dimensions=1, tw=1, init='init_constant', init_params={'value': 1})
         K_y = Parameter('k_y', dimensions=1, tw=1)
-        w = Parameter('w', dimensions=1, tw=1, init=init_constant, init_params={'value': 1})
+        w = Parameter('w', dimensions=1, tw=1, init='init_constant', init_params={'value': 1})
         t = Parameter('t', dimensions=1, tw=1)
         c_v = Constant('c_v', tw=1, values=[[1], [2]])
         c = 5
