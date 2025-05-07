@@ -631,9 +631,9 @@ class ModelyExportTest(unittest.TestCase):
         modelC = Output('Cout',Cout)
         modelD = Output('Dout',Dout)
 
-        m = Modely(workspace=result_path, visualizer=TextVisualizer(), seed=5)
+        m = Modely(workspace=result_path, visualizer=None, seed=5)
 
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(RuntimeError): #TODO
             m.addModel('modelA', [modelA])
         with self.assertRaises(RuntimeError):
             m.addModel('modelB', [modelB])

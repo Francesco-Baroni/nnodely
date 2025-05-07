@@ -585,7 +585,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
 
         ## Model2
         input2 = Input('in2')
-        input3 = Input('in3') # TODO Convert to input
+        input3 = Input('in3')
         b = Parameter('b', dimensions=1, tw=0.05, values=[[1],[1],[1],[1],[1]])
         c = Parameter('c', dimensions=1, tw=0.03, values=[[1],[1],[1]])
         output2 = Output('out2', Fir(W=b)(input2.tw(0.05))+Fir(W=c)(input3.tw(0.03)))

@@ -356,7 +356,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         output = Input('out')
         rel1 = Output('out1',Fir(input1.tw(0.05)))
 
-        test = Modely(workspace='results', visualizer=TextVisualizer())
+        test = Modely(workspace='results', visualizer=None)
         test.addMinimize('out', output.next(), rel1)
         test.addModel('model', rel1)
         test.neuralizeModel(0.01)
