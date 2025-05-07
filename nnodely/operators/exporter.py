@@ -218,6 +218,7 @@ class Exporter(Network):
             model_def.setBuildWindow(self._model_def['Info']['SampleTime'])
             model_def.updateParameters(self._model)
             model = Model(model_def.getJson())
+            model.update()
         else:
             model_def = self._model_def
             model = self._model

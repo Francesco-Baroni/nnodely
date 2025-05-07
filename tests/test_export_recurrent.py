@@ -723,14 +723,12 @@ class ModelyExportTest(unittest.TestCase):
         self.assertEqual(results_target_state_m1, l(init_inputs | init_states))
         self.assertEqual(results_target_state_m1, l(init_inputs | init_states_diff))
 
-        # TODO FIX
-        # m.exportPythonModel(models='model1')
-        # l = Modely(workspace=result_path, visualizer=None, seed=5)
-        # l.importPythonModel(name='net_model1')
-        # self.assertEqual(results_target_m1, l(init_inputs))
-        # self.assertEqual(results_target_state_m1, l(init_inputs | init_states))
-        # self.assertEqual(results_target_state_m1, l(init_inputs | init_states_diff))
-        # TODO FIX
+        m.exportPythonModel(models='model1')
+        l = Modely(workspace=result_path, visualizer=None, seed=5)
+        l.importPythonModel(name='net_model1')
+        self.assertEqual(results_target_m1, l(init_inputs))
+        self.assertEqual(results_target_state_m1, l(init_inputs | init_states))
+        self.assertEqual(results_target_state_m1, l(init_inputs | init_states_diff))
 
         m.exportONNX(models='model1', outputs_order=['Bout', 'Aout'])
         recurrent_var_init = {'Bin2':np.array([[[0]]]).astype(np.float32),
@@ -767,16 +765,16 @@ class ModelyExportTest(unittest.TestCase):
         self.assertEqual(results_target_state_2, m(init_inputs_2|init_states_diff_2))
 
         ## Test loading of all models
-        # m.saveTorchModel()
-        # l = Modely(workspace=result_path, visualizer=None, seed=5)
-        # l.addModel('model1', [modelA, modelB])
-        # l.addModel('model2', [modelC, modelD])
-        # l.neuralizeModel()
-        # l.loadTorchModel()
-        # self.assertEqual(results_target, l(init_inputs))
-        # self.assertEqual(results_target_state, l(init_inputs|init_states))
-        # self.assertEqual(results_target_state, l(init_inputs|init_states_diff))
-        #
+        m.saveTorchModel()
+        l = Modely(workspace=result_path, visualizer=None, seed=5)
+        l.addModel('model1', [modelA, modelB])
+        l.addModel('model2', [modelC, modelD])
+        l.neuralizeModel()
+        l.loadTorchModel()
+        self.assertEqual(results_target, l(init_inputs))
+        self.assertEqual(results_target_state, l(init_inputs|init_states))
+        self.assertEqual(results_target_state, l(init_inputs|init_states_diff))
+        
         # m.saveModel()
         # l = Modely(workspace=result_path, visualizer=None, seed=5)
         # l.loadModel()
@@ -784,14 +782,14 @@ class ModelyExportTest(unittest.TestCase):
         # self.assertEqual(results_target_2, l(init_inputs_2))
         # self.assertEqual(results_target_state_2, l(init_inputs_2|init_states_2))
         # self.assertEqual(results_target_state_2, l(init_inputs_2|init_states_diff_2))
-        #
+        
         # m.exportPythonModel()
         # l = Modely(workspace=result_path, visualizer=None, seed=5)
         # l.importPythonModel()
         # self.assertEqual(results_target, l(init_inputs))
         # self.assertEqual(results_target_state, l(init_inputs|init_states))
         # self.assertEqual(results_target_state, l(init_inputs|init_states_diff))
-        #
+        
         # m.exportONNX(outputs_order=['Dout', 'Cout', 'Bout', 'Aout'])
         # recurrent_var_init = {'Din1': np.array([[[7.0]]]).astype(np.float32),
         #                       'Bin2': np.array([[[0]]]).astype(np.float32),
@@ -807,5 +805,5 @@ class ModelyExportTest(unittest.TestCase):
         # self.assertEqual([[[[[0.0]]]], [[[[-2.0]]]], [[[[-20.0]]]], [[[[3.0]]]]], results)
 
 
-        log.setAllLevel(logging.CRITICAL)
+        # log.setAllLevel(logging.CRITICAL)
 
