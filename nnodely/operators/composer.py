@@ -64,7 +64,7 @@ class Composer(Network):
         self._model_def.removeModel(name_list)
 
     @enforce_types
-    def addConnect(self, stream_out:str|Output|Stream, input_in:str|Input) -> None:
+    def addConnect(self, stream_out:str|Output|Stream, input_in:str|Input, local:bool=False) -> None:
         """
         Adds a connection from a relation stream to an input state.
 
@@ -93,10 +93,10 @@ class Composer(Network):
             stream_name = outputs[stream_out.name] if stream_out.name in outputs.keys() else stream_out.name
         if isinstance(input_in, Input):
             input_name = input_in.name
-        self._model_def.addConnect(stream_name, input_name)
+        self._model_def.addConnect(stream_name, input_name, local)
 
     @enforce_types
-    def addClosedLoop(self, stream_out:str|Output|Stream, input_in:str|Input) -> None:
+    def addClosedLoop(self, stream_out:str|Output|Stream, input_in:str|Input, local:bool=False) -> None:
         """
         Adds a closed loop connection from a relation stream to an input state.
 
@@ -125,7 +125,7 @@ class Composer(Network):
             stream_name = outputs[stream_out.name] if stream_out.name in outputs.keys() else stream_out.name
         if isinstance(input_in, Input):
             input_name = input_in.name
-        self._model_def.addClosedLoop(stream_name, input_name)
+        self._model_def.addClosedLoop(stream_name, input_name, local)
 
     @enforce_types
     def removeConnection(self, input_in:str|Input) -> None:
@@ -378,7 +378,7 @@ class Composer(Network):
             if 'type' in value.keys():
                 calculate_grad = True
                 break
-        with ((((torch.enable_grad() if calculate_grad else torch.inference_mode())))):
+        with (torch.enable_grad() if calculate_grad else torch.inference_mode()):
             ## Update with virtual states
             if prediction_samples is not None:
                 self._model.update(closed_loop=all_closed_loop, connect=all_connect)

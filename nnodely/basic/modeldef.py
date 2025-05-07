@@ -62,27 +62,31 @@ class ModelDef:
     def isDefined(self):
         return self.__json is not None
 
-    def addConnect(self, stream_name:str, input_name:str):
+    def addConnect(self, stream_name:str, input_name:str, local:bool = False):
         input_name = check_and_get_list(input_name, set(self.__json['Inputs'].keys()),
                                        lambda name: f"The name {name} is not part of the available inputs")[0]
         stream_name = check_and_get_list(stream_name, set(self.__json['Relations'].keys()),
                                         lambda name: f"The name {name} is not part of the available relations")[0]
         self.__json['Inputs'][input_name]['connect'] = stream_name
+        self.__json['Inputs'][input_name]['local'] = int(local)
 
-    def addClosedLoop(self, stream_name:str, input_name:str):
+    def addClosedLoop(self, stream_name:str, input_name:str, local:bool = False):
         input_name = check_and_get_list(input_name, set(self.__json['Inputs'].keys()),
                                        lambda name: f"The name {name} is not part of the available inputs")[0]
         stream_name = check_and_get_list(stream_name, set(self.__json['Relations'].keys()),
                                         lambda name: f"The name {name} is not part of the available relations")[0]
         self.__json['Inputs'][input_name]['closedLoop'] = stream_name
+        self.__json['Inputs'][input_name]['local'] = int(local)
 
     def removeConnection(self, name_list:str|list[str]):
         name_list = check_and_get_list(name_list, set(self.__json['Inputs'].keys()), lambda name: f"The name {name} is not part of the available inputs")
         for input_in in name_list:
             if 'closedLoop' in self.__json['Inputs'][input_in].keys():
                 del self.__json['Inputs'][input_in]['closedLoop']
+                del self.__json['Inputs'][input_in]['local']
             elif 'connect' in self.__json['Inputs'][input_in].keys():
                 del self.__json['Inputs'][input_in]['connect']
+                del self.__json['Inputs'][input_in]['local']
             else:
                 raise ValueError(f"The input '{input_in}' has no connection or closed loop defined")
 

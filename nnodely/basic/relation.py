@@ -287,9 +287,10 @@ class Stream(Relation):
         check('closedLoop' not in self.json['Inputs'][obj.name] or 'connect' not in self.json['Inputs'][obj.name], KeyError,
               f"The input variable {obj.name} is already connected.")
         self.json['Inputs'][obj.name]['connect'] = self.name
-        return Stream(self.name, self.json, self.dim,0 )
+        self.json['Inputs'][obj.name]['local'] = 1
 
-    def closedLoop(self, obj, init = None):
+
+    def closedLoop(self, obj):
         """
         Creates a closed loop connection with a given state object.
 
@@ -318,12 +319,13 @@ class Stream(Relation):
               KeyError,
               f"The input variable {obj.name} is already connected.")
         self.json['Inputs'][obj.name]['closedLoop'] = self.name
+        self.json['Inputs'][obj.name]['local'] = 1
         # if init:
         #     subjson = subjson_from_relation(self.json, init.name)
         #     needed_inputs = subjson['Inputs'].keys()
         #     check(obj.name not in needed_inputs, KeyError, f"Cannot initialize the recurrent input variable {obj.name} with the relation {init.name}.")
         #     self.json['Inputs'][obj.name]['init'] = init.name
-        return Stream(self.name, self.json, self.dim,0 )
+        # return Stream(self.name, self.json, self.dim,0 )
 
 class ToStream():
     def __new__(cls, *args, **kwargs):

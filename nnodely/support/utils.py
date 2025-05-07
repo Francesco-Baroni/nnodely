@@ -91,9 +91,9 @@ def subjson_from_relation(json, relation):
         if rel in json['Inputs']:  # Found an input
             inputs.add(rel)
             if rel in json['Inputs']:
-                if 'connect' in json['Inputs'][rel]:
+                if 'connect' in json['Inputs'][rel] and json['Inputs'][rel]['local'] == False:
                     search(json['Inputs'][rel]['connect'])
-                if 'closed_loop' in json['Inputs'][rel]:
+                if 'closed_loop' in json['Inputs'][rel] and json['Inputs'][rel]['local'] == False:
                     search(json['Inputs'][rel]['closed_loop'])
                 # if 'init' in json['Inputs'][rel]:
                 #     search(json['Inputs'][rel]['init'])
