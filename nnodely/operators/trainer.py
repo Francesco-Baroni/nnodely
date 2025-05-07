@@ -27,7 +27,8 @@ class Trainer():
             'optimizer' : 'Adam',
             'lr' : 0.001, 'lr_param' : {},
             'optimizer_params' : [], 'add_optimizer_params' : [],
-            'optimizer_defaults' : {}, 'add_optimizer_defaults' : {}
+            'optimizer_defaults' : {}, 'add_optimizer_defaults' : {},
+            'weights_function' : None
         }
 
         # Training Losses
@@ -257,10 +258,15 @@ class Trainer():
                     internals_dict['state'] = self._states
                     self.__save_internal('inout_' + str(batch_val) + '_' + str(horizon_idx), internals_dict)
 
-            ## Calculate the total loss
+            ## Calculate the total loss            
             total_loss = 0
             for ind in range(len(self._model_def['Minimizers'])):
-                loss = sum(horizon_losses[ind]) / (prediction_samples + 1)
+                if self.run_training_params['weights_function'] is not None:
+                    # TODO: check if the weights function is correct (types, return type, dimensions, etc.)
+                    weights = self.run_training_params['weights_function'](len(horizon_losses[ind]))
+                    loss = torch.sum(torch.stack(horizon_losses[ind]) * weights)/torch.sum(weights)
+                else:
+                    loss = sum(horizon_losses[ind]) / (prediction_samples + 1)
                 aux_losses[ind][batch_val] = loss.item()
                 total_loss += loss
 
