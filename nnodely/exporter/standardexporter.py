@@ -26,8 +26,10 @@ class StandardExporter(EmptyExporter):
     def loadTorchModel(self, model, name = 'net', model_folder = None): #TODO, model = None):
         file_name = name + ".pt"
         model_path = os.path.join(self.workspace_folder, file_name) if model_folder is None else os.path.join(model_folder,file_name)
+        check(os.path.exists(model_path), FileNotFoundError, f"The model {name} it is not found in the folder {model_folder}")
         model.load_state_dict(torch.load(model_path))
         self.visualizer.loadModel('Torch Model',model_path)
+        #TODO Update the model parameters....
 
     def saveModel(self, model_def, name = 'net', model_folder = None):
         # Combine the folder path and file name to form the complete file path
@@ -49,7 +51,7 @@ class StandardExporter(EmptyExporter):
             model_def = load_model(model_path)
             self.visualizer.loadModel('JSON Model', model_path)
         except Exception as e:
-            check(False, RuntimeError, f"The file {model_path} it is not found or not conformed.\n Error: {e}")
+            check(False, FileNotFoundError, f"The file {model_path} it is not found or not conformed.\n Error: {e}")
         return model_def
 
     def exportPythonModel(self, model_def, model, name = 'net', model_folder = None):
@@ -66,7 +68,7 @@ class StandardExporter(EmptyExporter):
             self.visualizer.importModel('Python Torch Model', os.path.join(model_folder,name+'.py'))
         except Exception as e:
             model = None
-            check(False, RuntimeError, f"The module {name} it is not found in the folder {model_folder}.\nError: {e}")
+            check(False, FileNotFoundError, f"The model {name} it is not found in the folder {model_folder}.\nError: {e}")
         return model
 
     def exportONNX(self, model_def, model, inputs_order=None, outputs_order=None, name = 'net', model_folder = None):
@@ -96,13 +98,11 @@ class StandardExporter(EmptyExporter):
         self.visualizer.exportModel('Onnx Model', onnx_model_path)
     
     def onnxInference(self, inputs, name:str='net', model_folder:str|None=None):
-        try:
-            model_folder = self.workspace_folder if model_folder is None else model_folder
-            model_folder = os.path.join(model_folder, 'onnx')
-            file_name = name + ".onnx"
-            onnx_model_path = os.path.join(model_folder, file_name)
-        except Exception as e:
-            check(False, RuntimeError, f"The module {name} it is not found in the folder {model_folder}.\nError: {e}")
+        model_folder = self.workspace_folder if model_folder is None else model_folder
+        model_folder = os.path.join(model_folder, 'onnx')
+        file_name = name + ".onnx"
+        onnx_model_path = os.path.join(model_folder, file_name)
+        check(os.path.exists(onnx_model_path), FileNotFoundError, f"The model {name} it is not found in the folder {model_folder}")
         return onnx_inference(inputs, onnx_model_path)
             
 
