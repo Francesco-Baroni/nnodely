@@ -128,6 +128,34 @@ class Composer(Network):
         self._model_def.addClosedLoop(stream_name, input_name)
 
     @enforce_types
+    def removeConnection(self, input_in:str|Input) -> None:
+        """
+        Remove a closed loop or connect connection from an input state.
+
+        Parameters
+        ----------
+        input_in : Input or name of the input of inputs
+            The Input to disconnect.
+
+        Examples
+        --------
+        .. image:: https://colab.research.google.com/assets/colab-badge.svg
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/states.ipynb
+            :alt: Open in Colab
+
+        Example:
+            >>> model = Modely()
+            >>> x = Input('x')
+            >>> y = Input('y')
+            >>> relation = Fir(x.last())
+            >>> model.addConnect(relation, y)
+            >>> model.removeConnection(y)
+        """
+        if isinstance(input_in, Input):
+            input_name = input_in.name
+        self._model_def.removeConnection(input_name)
+
+    @enforce_types
     def neuralizeModel(self, sample_time:float|int|None = None, clear_model:bool = False, model_def:dict|None = None) -> None:
         """
         Neuralizes the model, preparing it for inference and training. This method creates a neural network model starting from the model definition.
