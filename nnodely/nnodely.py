@@ -13,7 +13,7 @@ from nnodely.operators.exporter import Exporter
 from nnodely.visualizer import EmptyVisualizer, TextVisualizer
 from nnodely.exporter import EmptyExporter
 from nnodely.basic.relation import NeuObj
-from nnodely.support.utils import ReadOnlyDict, enforce_types
+from nnodely.support.utils import ReadOnlyDict, ParamDict, enforce_types
 
 from nnodely.support.logger import logging, nnLogger
 log = nnLogger(__name__, logging.INFO)
@@ -92,7 +92,14 @@ class Modely(Composer, Trainer, Loader, Validator, Exporter):
 
     @property
     def parameters(self):
-        return ReadOnlyDict({key:value.detach().numpy().tolist() for key,value in self._model.all_parameters.items()})
+        if self._neuralized:
+            return ParamDict(self._model_def['Parameters'], self._model.all_parameters)
+        else:
+            return ParamDict(self._model_def['Parameters'])
+
+    # @property
+    # def parameters(self):
+    #     return ReadOnlyDict({key: value.detach().numpy().tolist() for key, value in self._model.all_parameters.items()})
 
     @property
     def constants(self):

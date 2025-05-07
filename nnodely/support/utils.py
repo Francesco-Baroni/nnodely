@@ -62,6 +62,20 @@ class ReadOnlyDict:
             return self._data == other
         return self._data == other._data
 
+class ParamDict(ReadOnlyDict):
+    def __init__(self, data, internal_data = None):
+        super().__init__(data)
+        self._internal_data = internal_data if internal_data is not None else {}
+
+    def __setitem__(self, key, value):
+        self._data[key]['values'] = value
+        self._internal_data[key] = self._internal_data[key].new_tensor(value)
+
+    def __getitem__(self, key):
+        value = self._data[key]['values'] if 'values' in self._data[key] else None
+        return value
+
+
 def get_window(obj):
     return 'tw' if 'tw' in obj.dim else ('sw' if 'sw' in obj.dim else None)
 

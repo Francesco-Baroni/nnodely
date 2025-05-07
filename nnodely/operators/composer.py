@@ -188,7 +188,7 @@ class Composer(Network):
             self._model_def = ModelDef(model_def)
         else:
             # if clear_model:
-            self._model_def.updateParameters(clear_model = clear_model, model = self._model)
+            self._model_def.updateParameters(model = None, clear_model = clear_model)
                 #self._model_def.update()
             # else:
             #     self._model_def.updateParameters(self._model)
@@ -214,6 +214,7 @@ class Composer(Network):
 
         self._neuralized = True
         self._traced = False
+        self._model_def.updateParameters(self._model)
         self.visualizer.showModel(self._model_def.getJson())
         self.visualizer.showModelInputWindow()
         self.visualizer.showBuiltModel()
