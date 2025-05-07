@@ -43,7 +43,7 @@ def export_python_model(model_def, model, model_path):
     # Get the symbolic tracer
     with torch.no_grad():
         trace = symbolic_trace(model)
-        #print('TRACED MODEL \n', trace.code)
+        # print('TRACED MODEL \n', trace.code)
 
     ## Standard way to modify the graph
     # # Replace all _tensor_constant variables with their constant values
@@ -235,10 +235,10 @@ def export_python_model(model_def, model, model_path):
             file.write("            for key, value in results.items():\n")
             file.write("                results[key].append(out[key])\n")
             file.write("            for key, val in closed_loop.items():\n")
-            file.write("                shift = val.size(1)\n")
+            #file.write("                shift = val.size(1)\n")
             file.write("                self.states[key] = nnodely_basic_model_connect(self.states[key], val)\n")
-            file.write("            for key, value in connect.items():\n") 
-            file.write("                self.states[key] = value\n")
+            #file.write("            for key, value in connect.items():\n") 
+            #file.write("                self.states[key] = value\n")
             file.write("        return results\n")
 
 def export_pythononnx_model(model_def, model_path, model_onnx_path, input_order=None, outputs_order=None):
