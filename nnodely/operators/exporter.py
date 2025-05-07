@@ -101,7 +101,6 @@ class Exporter(Network):
 
     @enforce_types
     def saveModel(self, name:str='net', model_path:str|None=None, *, models:str|list|None=None) -> None:
-        ## TODO: Add tests passing the attribute 'models'
         """
         Saves the neural network model definition in a json file.
 

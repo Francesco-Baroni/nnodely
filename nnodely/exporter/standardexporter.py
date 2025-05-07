@@ -23,7 +23,7 @@ class StandardExporter(EmptyExporter):
         torch.save(model.state_dict(), model_path)
         self.visualizer.saveModel('Torch Model', model_path)
 
-    def loadTorchModel(self, model, name = 'net', model_folder = None): #TODO, model = None):
+    def loadTorchModel(self, model, name = 'net', model_folder = None):
         file_name = name + ".pt"
         model_path = os.path.join(self.workspace_folder, file_name) if model_folder is None else os.path.join(model_folder,file_name)
         check(os.path.exists(model_path), FileNotFoundError, f"The model {name} it is not found in the folder {model_folder}")

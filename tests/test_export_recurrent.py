@@ -895,6 +895,7 @@ class ModelyExportTest(unittest.TestCase):
         #log.setAllLevel(logging.CRITICAL)
 
     def test_partial_model_export_extern_connection(self):
+        # TODO add the local connection
         result_path = 'results'
         NeuObj.clearNames()
         #Network A and B -> Model1
@@ -904,8 +905,8 @@ class ModelyExportTest(unittest.TestCase):
         pA = Parameter('PA', sw=1, values=[[3.0]])
         pB = Parameter('PB', sw=1, values=[[-5.0]])
 
-        Aout = Ain1.last() * pA
-        Bout = Bin1.last() * pB
+        Aout = (Ain1.last() * pA).sw(1)
+        Bout = (Bin1.last() * pB).tw(1)
 
         modelA = Output('Aout',Aout)
         modelB = Output('Bout',Bout)

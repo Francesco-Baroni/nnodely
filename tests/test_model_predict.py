@@ -1484,7 +1484,7 @@ class ModelyPredictTest(unittest.TestCase):
     def test_sw_on_stream_sw_complex(self):
         NeuObj.clearNames()
         input = Input('in1')
-        state = Input('state') # TODO to be transfered to the Input
+        state = Input('state')
 
         sw_3 = input.sw(3)
         sw_7 = input.sw(7)

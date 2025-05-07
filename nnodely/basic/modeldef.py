@@ -97,7 +97,7 @@ class ModelDef:
         json = MAIN_JSON
         for stream in stream_list:
             json = merge(json, stream.json)
-        check_model(json)  # TODO Change to warning if the input is outside the model
+        check_model(json)
 
         if 'Models' not in self.__json:
             self.__json = merge(self.__json, json)

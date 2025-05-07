@@ -161,7 +161,6 @@ def subjson_from_model(json, models:str|list):
             check(model in models_names, AttributeError, f"Model [{model}] not found!")
             outputs |= set(json['Models'][model]['Outputs'])
             sub_json['Models'][model] = {key: value for key, value in json['Models'][model].items()}
-    # TODO Check if the model have some closed loop or connection outside the model
     return merge(sub_json, subjson_from_output(json, outputs))
 
 def enforce_types(func):
