@@ -22,11 +22,6 @@ Input module
         :inherited-members:
         :exclude-members: count, resetCount
 
-    .. autoclass:: nnodely.layers.input.State
-        :undoc-members:
-        :inherited-members:
-        :exclude-members: count, resetCount
-
 Output module
 -------------
 

@@ -1,11 +1,11 @@
 import copy
 
 from nnodely.basic.relation import NeuObj, Stream, ToStream
-from nnodely.support.utils import check, merge, enforce_types, subjson_from_relation
+from nnodely.support.utils import check, merge, enforce_types
 from nnodely.layers.part import SamplePart, TimePart
 from nnodely.layers.timeoperation import Derivate, Integrate
 
-class InputState(NeuObj):
+class Input(NeuObj):
     """
     Represents an Input or State in the neural network model.
 
@@ -33,7 +33,7 @@ class InputState(NeuObj):
     json : dict
         A dictionary containing the configuration of the Input or the State.
     """
-    def __init__(self, json_name:str, name:str, dimensions:int = 1):
+    def __init__(self, name:str, dimensions:int = 1):
         """
         Initializes the InputState object.
 
@@ -48,8 +48,7 @@ class InputState(NeuObj):
         """
         NeuObj.__init__(self, name)
         check(type(dimensions) == int, TypeError,"The dimensions must be a integer")
-        self.json_name = json_name
-        self.json[self.json_name][self.name] = {'dim': dimensions, 'tw': [0, 0], 'sw': [0,0] }
+        self.json['Inputs'][self.name] = {'dim': dimensions, 'tw': [0, 0], 'sw': [0,0] }
         self.dim = {'dim': dimensions}
 
     @enforce_types
@@ -79,17 +78,17 @@ class InputState(NeuObj):
         dim = copy.deepcopy(self.dim)
         json = copy.deepcopy(self.json)
         if type(tw) is list:
-            json[self.json_name][self.name]['tw'] = tw
+            json['Inputs'][self.name]['tw'] = tw
             tw = tw[1] - tw[0]
         else:
-            json[self.json_name][self.name]['tw'][0] = -tw
+            json['Inputs'][self.name]['tw'][0] = -tw
         check(tw > 0, ValueError, "The time window must be positive")
         dim['tw'] = tw
         if offset is not None:
-            check(json[self.json_name][self.name]['tw'][0] <= offset < json[self.json_name][self.name]['tw'][1],
+            check(json['Inputs'][self.name]['tw'][0] <= offset < json['Inputs'][self.name]['tw'][1],
                   IndexError,
                   "The offset must be inside the time window")
-        return TimePart(Stream(self.name, json, dim), json[self.json_name][self.name]['tw'][0], json[self.json_name][self.name]['tw'][1], offset)
+        return TimePart(Stream(self.name, json, dim), json['Inputs'][self.name]['tw'][0], json['Inputs'][self.name]['tw'][1], offset)
 
 
     @enforce_types
@@ -133,23 +132,23 @@ class InputState(NeuObj):
         if type(sw) is list:
             check(type(sw[0]) == int and type(sw[1]) == int, TypeError, "The sample window must be integer")
             check(sw[1] > sw[0], TypeError, "The dimension of the sample window must be positive")
-            json[self.json_name][self.name]['sw'] = sw
+            json['Inputs'][self.name]['sw'] = sw
             sw = sw[1] - sw[0]
         else:
             check(type(sw) == int, TypeError, "The sample window must be integer")
-            json[self.json_name][self.name]['sw'][0] = -sw
+            json['Inputs'][self.name]['sw'][0] = -sw
         check(sw > 0, ValueError, "The sample window must be positive")
         dim['sw'] = sw
         if offset is not None:
-            check(json[self.json_name][self.name]['sw'][0] <= offset < json[self.json_name][self.name]['sw'][1],
+            check(json['Inputs'][self.name]['sw'][0] <= offset < json['Inputs'][self.name]['sw'][1],
                   IndexError,
                   "The offset must be inside the sample window")
-        return SamplePart(Stream(self.name, json, dim), json[self.json_name][self.name]['sw'][0], json[self.json_name][self.name]['sw'][1], offset)
+        return SamplePart(Stream(self.name, json, dim), json['Inputs'][self.name]['sw'][0], json['Inputs'][self.name]['sw'][1], offset)
 
     @enforce_types
     def z(self, delay:int) -> Stream:
         """
-        Considering the Zeta transform notation. The function is used to selects a unitary delay from the Input or the State.
+        Considering the Zeta transform notation. The function is used to selects a unitary delay from the Input.
 
         Parameters
         ----------
@@ -171,9 +170,9 @@ class InputState(NeuObj):
         dim = copy.deepcopy(self.dim)
         json = copy.deepcopy(self.json)
         sw = [(-delay) - 1, (-delay)]
-        json[self.json_name][self.name]['sw'] = sw
+        json['Inputs'][self.name]['sw'] = sw
         dim['sw'] = sw[1] - sw[0]
-        return SamplePart(Stream(self.name, json, dim), json[self.json_name][self.name]['sw'][0], json[self.json_name][self.name]['sw'][1], None)
+        return SamplePart(Stream(self.name, json, dim), json['Inputs'][self.name]['sw'][0], json['Inputs'][self.name]['sw'][1], None)
 
     @enforce_types
     def last(self) -> Stream:
@@ -227,16 +226,6 @@ class InputState(NeuObj):
             for i in range(-order):
                 o = Integrate(o, method = method)
         return o
-
-class Input(InputState):
-    @enforce_types
-    def __init__(self, name:str, dimensions:int = 1):
-        InputState.__init__(self, 'Inputs', name, dimensions)
-
-class State(InputState):
-    @enforce_types
-    def __init__(self, name:str, dimensions:int = 1):
-        InputState.__init__(self, 'States', name, dimensions)
 
 
 # connect operation

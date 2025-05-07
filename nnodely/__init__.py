@@ -2,7 +2,7 @@ import sys
 import logging
 
 # Network input, outputs and parameters
-from nnodely.layers.input import Input, State, Connect, ClosedLoop
+from nnodely.layers.input import Input, Connect, ClosedLoop
 from nnodely.layers.parameter import Parameter, Constant, SampleTime
 from nnodely.layers.output import Output
 
