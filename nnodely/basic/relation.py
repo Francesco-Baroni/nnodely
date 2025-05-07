@@ -160,7 +160,7 @@ class Stream(Relation):
         if type(tw) is list:
             check(0 >= tw[1] > tw[0] and tw[0] < 0, ValueError, "The dimension of the sample window must be in the past.")
         s = Input(self.name+"_tw"+str(NeuObj.count),dimensions=self.dim['dim'])
-        out_connect = Connect(self, s)
+        out_connect = Connect(self, s, local=True)
         win_input = s.tw(tw, offset)
         return Stream(win_input.name, merge(win_input.json, out_connect.json), win_input.dim,0 )
 
@@ -187,7 +187,7 @@ class Stream(Relation):
         if type(sw) is list:
             check(0 >= sw[1] > sw[0] and sw[0] < 0, ValueError, "The dimension of the sample window must be in the past.")
         s = Input(self.name+"_sw"+str(NeuObj.count),dimensions=self.dim['dim'])
-        out_connect = Connect(self, s)
+        out_connect = Connect(self, s, local=True)
         win_input = s.sw(sw, offset)
         return Stream(win_input.name, merge(win_input.json, out_connect.json), win_input.dim,0 )
 

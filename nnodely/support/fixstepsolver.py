@@ -22,5 +22,5 @@ class Trapezoidal(FixedStepSolver):
         from nnodely.layers.input import Input, ClosedLoop
         s = Input(obj.name + "_der" + str(NeuObj.count), dimensions=obj.dim['dim'])
         new_s = ((obj - obj.sw([-2, -1])) * 2.0) / self.dt - s.last()
-        out = ClosedLoop(new_s, s)
+        out = ClosedLoop(new_s, s, local=True)
         return out

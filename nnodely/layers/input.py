@@ -234,7 +234,7 @@ closedloop_name = 'closedLoop'
 
 class Connect(Stream, ToStream):
     @enforce_types
-    def __init__(self, obj1:Stream, obj2:Input, local:bool=False) -> Stream:
+    def __init__(self, obj1:Stream, obj2:Input, *, local:bool=False) -> Stream:
         super().__init__(obj1.name,merge(obj1.json, obj2.json),obj1.dim)
         check(closedloop_name not in self.json['Inputs'][obj2.name] or connect_name not in self.json['Inputs'][obj2.name],
               KeyError,f"The state variable {obj2.name} is already connected.")

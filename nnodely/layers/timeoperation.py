@@ -32,7 +32,7 @@ class Integrate(Stream, ToStream):
         check(method in SOLVERS, ValueError, f"The method '{method}' is not supported yet")
         solver = SOLVERS[method]()
         new_s = s.last() + solver.integrate(output)
-        out = ClosedLoop(new_s, s, init=init)
+        out = ClosedLoop(new_s, s, init=init, local=True)
         super().__init__(new_s.name, out.json, new_s.dim)
 
 class Derivate(Stream, ToStream):
