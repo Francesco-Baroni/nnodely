@@ -64,7 +64,7 @@ class Composer(Network):
         self._model_def.removeModel(name_list)
 
     @enforce_types
-    def addConnect(self, stream_out:Output|Stream, input_list_in:list|Input) -> None:
+    def addConnect(self, stream_out:str|Output|Stream, input_in:str|Input) -> None:
         """
         Adds a connection from a relation stream to an input state.
 
@@ -88,10 +88,15 @@ class Composer(Network):
             >>> relation = Fir(x.last())
             >>> model.addConnect(relation, y)
         """
-        self._model_def.addConnect(stream_out, input_list_in)
+        if isinstance(stream_out, (Output, Stream)):
+            outputs = self._model_def['Outputs']
+            stream_name = outputs[stream_out.name] if stream_out.name in outputs.keys() else stream_out.name
+        if isinstance(input_in, Input):
+            input_name = input_in.name
+        self._model_def.addConnect(stream_name, input_name)
 
     @enforce_types
-    def addClosedLoop(self, stream_out:Output|Stream, input_list_in:list|Input) -> None:
+    def addClosedLoop(self, stream_out:str|Output|Stream, input_in:str|Input) -> None:
         """
         Adds a closed loop connection from a relation stream to an input state.
 
@@ -115,7 +120,12 @@ class Composer(Network):
             >>> relation = Fir(x.last())
             >>> model.addClosedLoop(relation, y)
         """
-        self._model_def.addClosedLoop(stream_out, input_list_in)
+        if isinstance(stream_out, (Output, Stream)):
+            outputs = self._model_def['Outputs']
+            stream_name = outputs[stream_out.name] if stream_out.name in outputs.keys() else stream_out.name
+        if isinstance(input_in, Input):
+            input_name = input_in.name
+        self._model_def.addClosedLoop(stream_name, input_name)
 
     @enforce_types
     def neuralizeModel(self, sample_time:float|int|None = None, clear_model:bool = False, model_def:dict|None = None) -> None:
