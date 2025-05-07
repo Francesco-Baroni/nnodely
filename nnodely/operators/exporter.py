@@ -322,6 +322,7 @@ class Exporter(Network):
         else:
             models = self._model_def['Models'] if type(self._model_def['Models']) is str else self._model_def['Models'].keys()
             model_def = ModelDef(self._model_def.getJson(models))
+        check(len(model_def.recurrentInputs().keys()) < len(model_def['Inputs'].keys()), TypeError, "The network has only recurrent inputs.")
         model_def.setBuildWindow(self._model_def['Info']['SampleTime'])
         model_def.updateParameters(self._model)
         model = Model(model_def.getJson())
