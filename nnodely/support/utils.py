@@ -1,4 +1,4 @@
-import copy, torch, inspect, typing
+import copy, torch, inspect
 import types
 
 from collections import OrderedDict
@@ -228,6 +228,39 @@ def tensor_to_list(data):
     else:
         # Altri tipi di dati rimangono invariati
         return data
+
+def get_models_json(json):
+    model_json = {}
+    model_json['Parameters'] = list(json['Parameters'].keys())
+    model_json['Constants'] = list(json['Constants'].keys())
+    model_json['Inputs'] = list(json['Inputs'].keys())
+    model_json['Outputs'] = list(json['Outputs'].keys())
+    model_json['Functions'] = list(json['Functions'].keys())
+    model_json['Relations'] = list(json['Relations'].keys())
+    return model_json
+
+def check_and_get_list(name_list, available_names, error_fun):
+    if type(name_list) is str:
+        name_list = [name_list]
+    if type(name_list) is list:
+        for name in name_list:
+            check(name in available_names, IndexError,  error_fun(name))
+    return name_list
+
+def check_model(json):
+    all_inputs = json['Inputs'].keys()
+    all_outputs = json['Outputs'].keys()
+
+    from nnodely.basic.relation import MAIN_JSON
+    subjson = MAIN_JSON
+    for name in all_outputs:
+        subjson = merge(subjson, subjson_from_output(json, name))
+    needed_inputs = subjson['Inputs'].keys()
+    extenal_inputs = set(all_inputs) - set(needed_inputs)
+
+    check(all_inputs == needed_inputs, RuntimeError,
+          f'Connect or close loop operation on the inputs {list(extenal_inputs)}, that are not used in the model.')
+    return json
 
 # Codice per comprimere le relazioni
         #print(self.json['Relations'])

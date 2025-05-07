@@ -2,19 +2,20 @@ import copy
 
 import numpy as np
 
-from nnodely.support.utils import check, merge, subjson_from_model, subjson_from_output, subjson_from_relation
+from nnodely.support.utils import check, merge, subjson_from_model, subjson_from_relation, check_model, check_and_get_list, get_models_json
 from nnodely.basic.relation import MAIN_JSON, Stream
 from nnodely.layers.output import Output
 
 from nnodely.support.logger import logging, nnLogger
 log = nnLogger(__name__, logging.INFO)
 
-class ModelDef():
+
+class ModelDef:
     def __init__(self, model_def = MAIN_JSON):
         # Models definition
         self.__json_base = copy.deepcopy(model_def)
 
-        # Inizialize the model definition
+        # Initialize the model definition
         self.__json = copy.deepcopy(self.__json_base)
         if "SampleTime" in self.__json['Info']:
             self.__sample_time = self.__json['Info']["SampleTime"]
@@ -29,38 +30,6 @@ class ModelDef():
 
     def __setitem__(self, key, value):
         self.__json[key] = value
-
-    # This function verifies that all the connection are internal to the model
-    def __checkModel(self, json):
-        all_inputs = json['Inputs'].keys()
-        all_outputs = json['Outputs'].keys()
-
-        subjson = MAIN_JSON
-        for name in all_outputs:
-            subjson = merge(subjson, subjson_from_output(json, name))
-        needed_inputs = subjson['Inputs'].keys()
-        extenal_inputs = set(all_inputs) - set(needed_inputs)
-
-        check(all_inputs == needed_inputs, RuntimeError,
-              f'Connect or close loop operation on the inputs {list(extenal_inputs)}, that are not used in the model.')
-
-    def __checkList(self, name_list, available_names, error_fun):
-        if type(name_list) is str:
-            name_list = [name_list]
-        if type(name_list) is list:
-            for name in name_list:
-                check(name in available_names, IndexError,  error_fun(name))
-        return name_list
-
-    def __get_models_json(self, json):
-        model_json = {}
-        model_json['Parameters'] = list(json['Parameters'].keys())
-        model_json['Constants'] = list(json['Constants'].keys())
-        model_json['Inputs'] = list(json['Inputs'].keys())
-        model_json['Outputs'] = list(json['Outputs'].keys())
-        model_json['Functions'] = list(json['Functions'].keys())
-        model_json['Relations'] = list(json['Relations'].keys())
-        return model_json
 
     def __rebuild_json(self, models_names, minimizers):
         new_json = subjson_from_model(self.__json, list(models_names))
@@ -83,7 +52,7 @@ class ModelDef():
             return copy.deepcopy(self.__json)
         else:
             json = subjson_from_model(self.__json, models)
-            self.__checkModel(json)
+            check_model(json)
             return copy.deepcopy(json)
 
     def getSampleTime(self):
@@ -94,28 +63,28 @@ class ModelDef():
         return self.__json is not None
 
     def addConnect(self, stream_name:str, input_name:str):
-        input_name = self.__checkList(input_name, set(self.__json['Inputs'].keys()),
-                                     lambda name: f"The name {name} is not part of the available inputs")[0]
-        stream_name = self.__checkList(stream_name, set(self.__json['Relations'].keys()),
-                                     lambda name: f"The name {name} is not part of the available relations")[0]
+        input_name = check_and_get_list(input_name, set(self.__json['Inputs'].keys()),
+                                       lambda name: f"The name {name} is not part of the available inputs")[0]
+        stream_name = check_and_get_list(stream_name, set(self.__json['Relations'].keys()),
+                                        lambda name: f"The name {name} is not part of the available relations")[0]
         self.__json['Inputs'][input_name]['connect'] = stream_name
 
     def addClosedLoop(self, stream_name:str, input_name:str):
-        input_name = self.__checkList(input_name, set(self.__json['Inputs'].keys()),
-                                     lambda name: f"The name {name} is not part of the available inputs")[0]
-        stream_name = self.__checkList(stream_name, set(self.__json['Relations'].keys()),
-                                     lambda name: f"The name {name} is not part of the available relations")[0]
+        input_name = check_and_get_list(input_name, set(self.__json['Inputs'].keys()),
+                                       lambda name: f"The name {name} is not part of the available inputs")[0]
+        stream_name = check_and_get_list(stream_name, set(self.__json['Relations'].keys()),
+                                        lambda name: f"The name {name} is not part of the available relations")[0]
         self.__json['Inputs'][input_name]['closedLoop'] = stream_name
 
     def removeConnection(self, name_list:str|list[str]):
-        name_list = self.__checkList(name_list, set(self.__json['Inputs'].keys()), lambda name: f"The name {name} is not part of the available inputs")
-        for input in name_list:
-            if 'closedLoop' in self.__json['Inputs'][input.name].keys():
-                del self.__json['Inputs'][input.name]['closedLoop']
-            elif 'connect' in self.__json['Inputs'][input.name].keys():
-                del self.__json['Inputs'][input.name]['connect']
+        name_list = check_and_get_list(name_list, set(self.__json['Inputs'].keys()), lambda name: f"The name {name} is not part of the available inputs")
+        for input_in in name_list:
+            if 'closedLoop' in self.__json['Inputs'][input_in].keys():
+                del self.__json['Inputs'][input_in]['closedLoop']
+            elif 'connect' in self.__json['Inputs'][input_in].keys():
+                del self.__json['Inputs'][input_in]['connect']
             else:
-                raise ValueError(f"The input '{input.name}' has no connection or closed loop defined")
+                raise ValueError(f"The input '{input_in}' has no connection or closed loop defined")
 
     def addModel(self, name:str, stream_list):
         if isinstance(stream_list, Output):
@@ -124,7 +93,7 @@ class ModelDef():
         json = MAIN_JSON
         for stream in stream_list:
             json = merge(json, stream.json)
-        self.__checkModel(json)  # TODO Change to warning if the input is outside the model
+        check_model(json)  # TODO Change to warning if the input is outside the model
 
         if 'Models' not in self.__json:
             self.__json = merge(self.__json, json)
@@ -134,15 +103,15 @@ class ModelDef():
             check(name not in models_names, ValueError,
                   f"The name '{name}' of the model is already used")
             if type(self.__json['Models']) is str:
-                self.__json['Models'] = {self.__json['Models']: self.__get_models_json(self.__json)}
+                self.__json['Models'] = {self.__json['Models']: get_models_json(self.__json)}
             self.__json = merge(self.__json, json)
-            self.__json['Models'][name] = self.__get_models_json(json)
+            self.__json['Models'][name] = get_models_json(json)
 
     def removeModel(self, name_list):
         if 'Models' not in self.__json:
             raise ValueError("No Models are defined")
-        models_names = set([self.__json['Models']]) if type(self.__json['Models']) is str else set(self.__json['Models'].keys())
-        name_list = self.__checkList(name_list, models_names, lambda name: f"The name {name} is not part of the available models")
+        models_names = {self.__json['Models']} if type(self.__json['Models']) is str else set(self.__json['Models'].keys())
+        name_list = check_and_get_list(name_list, models_names, lambda name: f"The name {name} is not part of the available models")
         models_names -= set(name_list)
         minimizers = set(self.__json['Minimizers'].keys()) if 'Minimizers' in self.__json else None
         self.__json = self.__rebuild_json(models_names, minimizers)
@@ -167,10 +136,10 @@ class ModelDef():
     def removeMinimize(self, name_list):
         if 'Minimizers' not in self.__json:
             raise ValueError("No Minimizers are defined")
-        name_list = self.__checkList(name_list, self.__json['Minimizers'].keys(),  lambda name:f"The name {name} is not part of the available minimizers")
-        models_names = set([self.__json['Models']]) if type(self.__json['Models']) is str else set(self.__json['Models'].keys())
-        remaning_minimizers = set(self.__json['Minimizers'].keys()) - set(name_list) if 'Minimizers' in self.__json else None
-        self.__json = self.__rebuild_json(models_names, remaning_minimizers)
+        name_list = check_and_get_list(name_list, self.__json['Minimizers'].keys(), lambda name: f"The name {name} is not part of the available minimizers")
+        models_names = {self.__json['Models']} if type(self.__json['Models']) is str else set(self.__json['Models'].keys())
+        remaining_minimizers = set(self.__json['Minimizers'].keys()) - set(name_list) if 'Minimizers' in self.__json else None
+        self.__json = self.__rebuild_json(models_names, remaining_minimizers)
 
     def setBuildWindow(self, sample_time = None):
         check(self.__json is not None, RuntimeError, "No model is defined!")
@@ -189,7 +158,7 @@ class ModelDef():
         input_tw_backward, input_tw_forward, input_ns_backward, input_ns_forward = {}, {}, {}, {}
         for key, value in json_inputs.items():
             if value['sw'] == [0,0] and value['tw'] == [0,0]:
-                assert(False), f"Input '{key}' has no time window or sample window"
+                assert False, f"Input '{key}' has no time window or sample window"
             if value['sw'] == [0, 0] and self.__sample_time is not None:
                 ## check if value['tw'] is a multiple of sample_time
                 absolute_tw = abs(value['tw'][0]) + abs(value['tw'][1])
@@ -237,4 +206,3 @@ class ModelDef():
                 if key in model.all_parameters:
                     self.__json['Parameters'][key]['values'] = model.all_parameters[key].tolist()
 
-    #231
