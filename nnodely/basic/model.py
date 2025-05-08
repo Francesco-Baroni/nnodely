@@ -20,8 +20,7 @@ class Model(nn.Module):
         super(Model, self).__init__()
         model_def = copy.deepcopy(model_def)
 
-        self.states = {key: value for key, value in model_def['Inputs'].items() if
-                       ('closedLoop' in value.keys() or 'connect' in value.keys())}
+        self.states = {key: value for key, value in model_def['Inputs'].items() if ('closedLoop' in value.keys() or 'connect' in value.keys())}
 
         self.inputs = model_def['Inputs']
         self.outputs = model_def['Outputs']
@@ -46,16 +45,15 @@ class Model(nn.Module):
         self.connect_update = {}
 
         ## Define the correct slicing
-        json_inputs = self.inputs
         for _, items in self.relations.items():
             if items[0] == 'SamplePart':
-                if items[1][0] in json_inputs.keys():
+                if items[1][0] in self.inputs.keys():
                     items[3][0] = self.input_ns_backward[items[1][0]] + items[3][0]
                     items[3][1] = self.input_ns_backward[items[1][0]] + items[3][1]
                     if len(items) > 4: ## Offset
                         items[4] = self.input_ns_backward[items[1][0]] + items[4]
             if items[0] == 'TimePart':
-                if items[1][0] in json_inputs.keys():
+                if items[1][0] in self.inputs.keys():
                     items[3][0] = self.input_ns_backward[items[1][0]] + round(items[3][0]/self.sample_time)
                     items[3][1] = self.input_ns_backward[items[1][0]] + round(items[3][1]/self.sample_time)
                     if len(items) > 4: ## Offset
@@ -103,7 +101,6 @@ class Model(nn.Module):
         for relation, inputs in self.relations.items():
             ## Take the relation name and the inputs needed to solve the relation
             rel_name, input_var = inputs[0], inputs[1]
-            
             ## Create All the Relations
             func = getattr(self,rel_name)
             if func:
@@ -139,17 +136,14 @@ class Model(nn.Module):
         self.relation_forward = nn.ParameterDict(self.relation_forward)
         self.all_constants = nn.ParameterDict(self.all_constants)
         self.all_parameters = nn.ParameterDict(self.all_parameters)
-
         ## list of network outputs
         self.network_output_predictions = set(self.outputs.values())
-
         ## list of network minimization outputs
         self.network_output_minimizers = []
         for _,value in self.minimizers.items():
             self.network_output_minimizers.append(self.outputs[value['A']]) if value['A'] in self.outputs.keys() else self.network_output_minimizers.append(value['A'])
             self.network_output_minimizers.append(self.outputs[value['B']]) if value['B'] in self.outputs.keys() else self.network_output_minimizers.append(value['B'])
         self.network_output_minimizers = set(self.network_output_minimizers)
-
         ## list of all the network Outputs
         self.network_outputs = self.network_output_predictions.union(self.network_output_minimizers)
 

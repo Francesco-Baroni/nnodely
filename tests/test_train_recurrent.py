@@ -193,7 +193,7 @@ class ModelyTrainingTest(unittest.TestCase):
         b = Parameter('b', values=1)
         output2 = Output('out2-net', Linear(W=W,b=b)(inout.last()))
 
-        test = Modely(visualizer=None, seed=42)
+        test = Modely(visualizer=TextVisualizer(), seed=42)
         test.addModel('model', [output1,output2])
         test.addMinimize('error', target.last(), output2)
         test.neuralizeModel()

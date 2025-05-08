@@ -27,7 +27,7 @@ class StandardExporter(EmptyExporter):
         file_name = name + ".pt"
         model_path = os.path.join(self.workspace_folder, file_name) if model_folder is None else os.path.join(model_folder,file_name)
         check(os.path.exists(model_path), FileNotFoundError, f"The model {name} it is not found in the folder {model_folder}")
-        model.load_state_dict(torch.load(model_path))
+        model.load_state_dict(torch.load(model_path, weights_only=True))
         self.visualizer.loadModel('Torch Model',model_path)
         #TODO Update the model parameters....
 

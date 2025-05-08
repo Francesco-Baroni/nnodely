@@ -159,7 +159,7 @@ class ModelDef:
         check(self.__json['Inputs'] != {}, RuntimeError, "No model is defined!")
         json_inputs = self.__json['Inputs']
 
-        input_tw_backward, input_tw_forward, input_ns_backward, input_ns_forward = {}, {}, {}, {}
+        input_ns_backward, input_ns_forward = {}, {}
         for key, value in json_inputs.items():
             if value['sw'] == [0,0] and value['tw'] == [0,0]:
                 assert False, f"Input '{key}' has no time window or sample window"
