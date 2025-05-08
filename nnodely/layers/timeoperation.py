@@ -24,7 +24,7 @@ class Integrate(Stream, ToStream):
     method : is the integration method
     """
     @enforce_types
-    def __init__(self, output:Stream, *, name:str|None = None, init:Stream|None = None, method:str = 'euler') -> Stream:
+    def __init__(self, output:Stream, *, name:str|None = None, method:str = 'euler') -> Stream:
         from nnodely.layers.input import Input, ClosedLoop
         if name is None:
             name = output.name + "_int" + str(NeuObj.count)
@@ -32,7 +32,7 @@ class Integrate(Stream, ToStream):
         check(method in SOLVERS, ValueError, f"The method '{method}' is not supported yet")
         solver = SOLVERS[method]()
         new_s = s.last() + solver.integrate(output)
-        out = ClosedLoop(new_s, s, init=init, local=True)
+        out = ClosedLoop(new_s, s, local=True)
         super().__init__(new_s.name, out.json, new_s.dim)
 
 class Derivate(Stream, ToStream):
@@ -45,6 +45,7 @@ class Derivate(Stream, ToStream):
     """
     @enforce_types
     def __init__(self, output:Stream, input:Stream = None, *, method:str = 'euler') -> Stream:
+        # TODO add the name also for derivate
         if input is None:
             check(method in SOLVERS, ValueError, f"The method '{method}' is not supported yet")
             solver = SOLVERS[method]()
