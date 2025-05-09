@@ -349,6 +349,26 @@ def argmax_dict(iterable: dict):
 def argmin_dict(iterable: dict):
     return min(iterable.items(), key=lambda x: x[1])
 
+def binary_cheks(self, obj1, obj2, name):
+    from nnodely.basic.relation import Stream, toStream
+    obj1,obj2 = toStream(obj1),toStream(obj2)
+    check(type(obj1) is Stream,TypeError,
+          f"The type of {obj1} is {type(obj1)} and is not supported for add operation.")
+    check(type(obj2) is Stream,TypeError,
+          f"The type of {obj2} is {type(obj2)} and is not supported for add operation.")
+    window_obj1 = get_window(obj1)
+    window_obj2 = get_window(obj2)
+    if window_obj1 is not None and window_obj2 is not None:
+        check(window_obj1==window_obj2, TypeError,
+              f"For {name} the time window type must match or None but they were {window_obj1} and {window_obj2}.")
+        check(obj1.dim[window_obj1] == obj2.dim[window_obj2], ValueError,
+              f"For {name} the time window must match or None but they were {window_obj1}={obj1.dim[window_obj1]} and {window_obj2}={obj2.dim[window_obj2]}.")
+    check(obj1.dim['dim'] == obj2.dim['dim'] or obj1.dim == {'dim':1} or obj2.dim == {'dim':1}, ValueError,
+          f"For {name} the dimension of {obj1.name} = {obj1.dim} must be the same of {obj2.name} = {obj2.dim}.")
+    dim = obj1.dim | obj2.dim
+    dim['dim'] = max(obj1.dim['dim'], obj2.dim['dim'])
+    return obj1, obj2, dim
+
 # Function used to verified the number of gradient operations in the graph
 # def count_gradient_operations(grad_fn):
 #     count = 0
