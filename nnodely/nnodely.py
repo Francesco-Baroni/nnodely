@@ -97,10 +97,6 @@ class Modely(Composer, Trainer, Loader, Validator, Exporter):
         else:
             return ParamDict(self._model_def['Parameters'])
 
-    # @property
-    # def parameters(self):
-    #     return ReadOnlyDict({key: value.detach().numpy().tolist() for key, value in self._model.all_parameters.items()})
-
     @property
     def constants(self):
         return ReadOnlyDict({key:value.detach().numpy().tolist() for key,value in self._model.all_constants})

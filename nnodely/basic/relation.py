@@ -206,7 +206,7 @@ class Stream(Relation):
         return SamplePart(delayed_input,sw[0]-sw[0],sw[1]-sw[0])
 
     @enforce_types
-    def z(self, delay:int|float) -> "Stream":
+    def z(self, delay:int|float, *, name:str|None = None) -> "Stream":
         """
         Considering the Zeta transform notation. The function is used to delay a Stream.
         The value of the delay can be only positive.
@@ -223,10 +223,10 @@ class Stream(Relation):
         """
         check(delay > 0, ValueError, "The delay must be a positive integer")
         check('sw' in self.dim, TypeError, "The stream is not defined in samples but in time")
-        return self.sw([-self.dim['sw']-delay,-delay])
+        return self.sw([-self.dim['sw']-delay,-delay], name = name)
 
     @enforce_types
-    def delay(self, delay:int|float, *, name:str=None) -> "Stream":
+    def delay(self, delay:int|float, *, name:str|None = None) -> "Stream":
         """
         The function is used to delay a Stream.
         The value of the delay can be only positive.
@@ -245,7 +245,7 @@ class Stream(Relation):
         from nnodely.layers.part import TimePart
         check(delay > 0, ValueError, "The delay must be a positive integer")
         check('tw' in self.dim, TypeError, "The stream is not defined in time but in sample")
-        return self.tw([-self.dim['tw']-delay,-delay], name=name)
+        return self.tw([-self.dim['tw']-delay,-delay], name = name)
 
     @enforce_types
     def s(self, order:int, *, int_name:str|None = None, der_name:str|None = None, method:str = 'euler') -> "Stream":
@@ -269,10 +269,10 @@ class Stream(Relation):
         check(order != 0, ValueError, "The order must be a positive or negative integer not a zero")
         if order > 0:
             for i in range(order):
-                o = Derivate(self, method = method, der_name = der_name, int_name = int_name)
+                o = Derivate(self, der_name = der_name, int_name = int_name, method = method)
         elif order < 0:
             for i in range(-order):
-                o = Integrate(self, method = method, der_name = der_name, int_name = int_name)
+                o = Integrate(self, der_name = der_name, int_name = int_name, method = method)
         return o
 
     def connect(self, obj:"Input") -> "Stream":

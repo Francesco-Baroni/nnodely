@@ -202,7 +202,7 @@ class Input(NeuObj):
         return self.z(-1)
 
     @enforce_types
-    def s(self, order:int,  method:str = 'euler') -> Stream:
+    def s(self, order:int, der_name = der_name, int_name = int_name, method:str = 'euler') -> Stream:
         """
         Considering the Laplace transform notation. The function is used to operate an integral or derivate operation on the input.
         The order of the integral or the derivative operation is indicated by the order parameter.
@@ -223,11 +223,11 @@ class Input(NeuObj):
         if order > 0:
             o = self.last()
             for i in range(order):
-                o = Derivate(o, method = method)
+                o = Derivate(o, der_name = der_name, int_name = int_namemethod = method)
         elif order < 0:
             o = self.last()
             for i in range(-order):
-                o = Integrate(o, method = method)
+                o = Integrate(o, der_name = der_name, int_name = int_name, method = method)
         return o
 
     @enforce_types
