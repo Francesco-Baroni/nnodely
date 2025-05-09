@@ -161,9 +161,9 @@ class ModelDef:
 
         input_ns_backward, input_ns_forward = {}, {}
         for key, value in json_inputs.items():
-            if value['sw'] == [0,0] and value['tw'] == [0,0]:
+            if 'sw' not in value and 'tw' not in value:
                 assert False, f"Input '{key}' has no time window or sample window"
-            if value['sw'] == [0, 0] and self.__sample_time is not None:
+            if 'sw' not in value and self.__sample_time is not None:
                 ## check if value['tw'] is a multiple of sample_time
                 absolute_tw = abs(value['tw'][0]) + abs(value['tw'][1])
                 check(round(absolute_tw % self.__sample_time) == 0, ValueError,
@@ -171,8 +171,12 @@ class ModelDef:
                 input_ns_backward[key] = round(-value['tw'][0] / self.__sample_time)
                 input_ns_forward[key] = round(value['tw'][1] / self.__sample_time)
             elif self.__sample_time is not None:
-                input_ns_backward[key] = max(round(-value['tw'][0] / self.__sample_time), -value['sw'][0])
-                input_ns_forward[key] = max(round(value['tw'][1] / self.__sample_time), value['sw'][1])
+                if 'tw' in value:
+                    input_ns_backward[key] = max(round(-value['tw'][0] / self.__sample_time), -value['sw'][0])
+                    input_ns_forward[key] = max(round(value['tw'][1] / self.__sample_time), value['sw'][1])
+                else:
+                    input_ns_backward[key] = -value['sw'][0]
+                    input_ns_forward[key] =  value['sw'][1]
             else:
                 check(value['tw'] == [0,0], RuntimeError, f"Sample time is not defined for input '{key}'")
                 input_ns_backward[key] = -value['sw'][0]

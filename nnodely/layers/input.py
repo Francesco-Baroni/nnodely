@@ -48,7 +48,7 @@ class Input(NeuObj):
         """
         NeuObj.__init__(self, name)
         check(type(dimensions) == int, TypeError,"The dimensions must be a integer")
-        self.json['Inputs'][self.name] = {'dim': dimensions, 'tw': [0, 0], 'sw': [0,0] }
+        self.json['Inputs'][self.name] = {'dim': dimensions }
         self.dim = {'dim': dimensions}
 
     @enforce_types
@@ -78,10 +78,12 @@ class Input(NeuObj):
         dim = copy.deepcopy(self.dim)
         json = copy.deepcopy(self.json)
         if type(tw) is list:
+            check(len(tw) == 2, TypeError, "The time window must be a list of two elements.")
+            check(tw[1] > tw[0], ValueError, "The dimension of the sample window must be positive")
             json['Inputs'][self.name]['tw'] = tw
             tw = tw[1] - tw[0]
         else:
-            json['Inputs'][self.name]['tw'][0] = -tw
+            json['Inputs'][self.name]['tw'] = [-tw, 0]
         check(tw > 0, ValueError, "The time window must be positive")
         dim['tw'] = tw
         if offset is not None:
@@ -130,13 +132,14 @@ class Input(NeuObj):
         dim = copy.deepcopy(self.dim)
         json = copy.deepcopy(self.json)
         if type(sw) is list:
+            check(len(sw) == 2, TypeError, "The sample window must be a list of two elements.")
             check(type(sw[0]) == int and type(sw[1]) == int, TypeError, "The sample window must be integer")
-            check(sw[1] > sw[0], TypeError, "The dimension of the sample window must be positive")
+            check(sw[1] > sw[0], ValueError, "The dimension of the sample window must be positive")
             json['Inputs'][self.name]['sw'] = sw
             sw = sw[1] - sw[0]
         else:
             check(type(sw) == int, TypeError, "The sample window must be integer")
-            json['Inputs'][self.name]['sw'][0] = -sw
+            json['Inputs'][self.name]['sw'] = [-sw, 0]
         check(sw > 0, ValueError, "The sample window must be positive")
         dim['sw'] = sw
         if offset is not None:
@@ -227,6 +230,69 @@ class Input(NeuObj):
                 o = Integrate(o, method = method)
         return o
 
+    @enforce_types
+    def connect(self, obj:Stream) -> "Input":
+        """
+        Update and return the current Input with a given Stream object.
+
+        Parameters
+        ----------
+        obj : Stream
+            The Stream object for update the Input.
+
+        Returns
+        -------
+        Input
+            A Input with the connection to the obj Stream
+
+        Raises
+        ------
+        TypeError
+            If the provided object is not of type Input.
+        KeyError
+            If the Input variable is already connected.
+        """
+        check(type(obj) is Stream, TypeError,
+              f"The {obj} must be a Stream and not a {type(obj)}.")
+        self.json = merge(self.json, obj.json)
+        check('closedLoop' not in self.json['Inputs'][self.name] or 'connect' not in self.json['Inputs'][self.name], KeyError,
+              f"The Input variable {self.name} is already connected.")
+        self.json['Inputs'][self.name]['connect'] = obj.name
+        self.json['Inputs'][self.name]['local'] = 1
+        return self
+
+    @enforce_types
+    def closedLoop(self, obj:Stream) -> "Input":
+        """
+        Update and return the current Input in a closed loop with a given Stream object.
+
+        Parameters
+        ----------
+        obj : Stream
+            The Stream object for update the Input.
+
+        Returns
+        -------
+        Input
+            A Input with the connection to the obj Stream
+
+        Raises
+        ------
+        TypeError
+            If the provided object is not of type Input.
+        KeyError
+            If the Input variable is already connected.
+        """
+        from nnodely.layers.input import Input
+        check(type(obj) is Stream, TypeError,
+              f"The {obj} must be a Stream and not a {type(obj)}.")
+        self.json = merge(self.json, obj.json)
+        check('closedLoop' not in self.json['Inputs'][self.name] or 'connect' not in self.json['Inputs'][self.name],
+              KeyError,
+              f"The Input variable {self.name} is already connected.")
+        self.json['Inputs'][self.name]['closedLoop'] = self.name
+        self.json['Inputs'][self.name]['local'] = 1
+        return self
 
 # connect operation
 connect_name = 'connect'
