@@ -24,16 +24,16 @@ class Integrate(Stream, ToStream):
     method : is the integration method
     """
     @enforce_types
-    def __init__(self, output:Stream, *, name:str|None = None, method:str = 'euler') -> Stream:
-        from nnodely.layers.input import Input, ClosedLoop
-        if name is None:
-            name = output.name + "_int" + str(NeuObj.count)
+    def __init__(self, output:Stream, *,
+                 int_name:str|None = None, der_name:str|None = None, method:str = 'euler') -> Stream:
+        if int_name is None:
+            int_name = output.name + "_int" + str(NeuObj.count)
+        if der_name is None:
+            der_name = output.name + "_der" + str(NeuObj.count)
         check(method in SOLVERS, ValueError, f"The method '{method}' is not supported yet")
-        solver = SOLVERS[method]()
-        s = Input(name, dimensions=output.dim['dim'])
-        new_s = s.last() + solver.integrate(output)
-        out = ClosedLoop(new_s, s, local=True)
-        super().__init__(new_s.name, out.json, new_s.dim)
+        solver = SOLVERS[method](int_name,der_name)
+        output_int = solver.integrate(output)
+        super().__init__(output_int.name, output_int.json, output_int.dim)
 
 class Derivate(Stream, ToStream):
     """
@@ -44,18 +44,17 @@ class Derivate(Stream, ToStream):
     method : is the derivative method
     """
     @enforce_types
-    def __init__(self, output:Stream, input:Stream = None, *, name:str|None = None, method:str = 'euler') -> Stream:
-        # TODO add the name also for derivate
+    def __init__(self, output:Stream, input:Stream = None, *,
+                 int_name:str|None = None, der_name:str|None = None, method:str = 'euler') -> Stream:
         if input is None:
-            from nnodely.layers.input import Input, Connect
-            if name is None:
-                name = output.name + "_int" + str(NeuObj.count)
+            if int_name is None:
+                int_name = output.name + "_int" + str(NeuObj.count)
+            if der_name is None:
+                der_name = output.name + "_der" + str(NeuObj.count)
             check(method in SOLVERS, ValueError, f"The method '{method}' is not supported yet")
-            solver = SOLVERS[method]()
-            s = Input(name, dimensions=output.dim['dim'])
-            output = Connect(output, s, local=True)
-            output_dt = solver.derivate(output, s.sw([-2, -1]))
-            super().__init__(output_dt.name, output_dt.json, output_dt.dim)
+            solver = SOLVERS[method](int_name,der_name)
+            output_der = solver.derivate(output)
+            super().__init__(output_der.name, output_der.json, output_der.dim)
         else:
             super().__init__(der_relation_name + str(Stream.count), merge(output.json,input.json), input.dim)
             self.json['Relations'][self.name] = [der_relation_name, [output.name, input.name]]
