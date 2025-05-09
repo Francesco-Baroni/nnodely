@@ -238,8 +238,7 @@ class Trainer(Network):
                     if 'type' in json_inputs[key]:
                         X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=True)
                     else:
-                        X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE,
-                                             requires_grad=False)
+                        X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
                     self._states[key] = X[key]
 
                     # if 'init' in json_inputs[key].keys(): ## with init relation
