@@ -138,7 +138,7 @@ class Stream(Relation):
         return self.__str__()
 
     @enforce_types
-    def tw(self, tw:float|int|list, offset:float|int|None = None) -> "Stream":
+    def tw(self, tw:float|int|list, offset:float|int|None = None, *, name:str|None = None) -> "Stream":
         """
         Selects a time window on Stream. It is possible to create a smaller or bigger time window on the stream.
         The Time Window must be in the past not in the future.
@@ -149,6 +149,8 @@ class Stream(Relation):
             The time window represents the time in the past. If a list, it should contain the start and end times, both indexes must be in the past.
         offset : float, int, optional
             The offset for the sample window. Default is None.
+        name : str, None
+            The name of the internal variable
 
         Returns
         -------
@@ -156,16 +158,21 @@ class Stream(Relation):
             A Stream representing the TimePart object with the selected time window.
 
         """
-        from nnodely.layers.input import Input, Connect
+        from nnodely.layers.input import Input
+        from nnodely.layers.part import TimePart
+        if name is None:
+            name = self.name+"_tw"+str(NeuObj.count)
         if type(tw) is list:
             check(0 >= tw[1] > tw[0] and tw[0] < 0, ValueError, "The dimension of the sample window must be in the past.")
-        s = Input(self.name+"_tw"+str(NeuObj.count),dimensions=self.dim['dim'])
-        out_connect = Connect(self, s, local=True)
-        win_input = s.tw(tw, offset)
-        return Stream(win_input.name, merge(win_input.json, out_connect.json), win_input.dim,0 )
+        if 'tw' not in self.dim:
+            self.dim['tw'] = 0
+        if type(tw) is not list:
+            tw = [-tw,0]
+        delayed_input = Input(name, dimensions=self.dim['dim']).connect(self).tw([tw[0],0], offset)
+        return TimePart(delayed_input,tw[0]-tw[0],tw[1]-tw[0])
 
     @enforce_types
-    def sw(self, sw:int|list, offset:int|None = None) -> "Stream":
+    def sw(self, sw:int|list, offset:int|None = None, *, name:str|None = None) -> "Stream":
         """
         Selects a sample window on Stream. It is possible to create a smaller or bigger window on the stream.
         The Sample Window must be in the past not in the future.
@@ -176,6 +183,8 @@ class Stream(Relation):
             The sample window represents the number of steps in the past. If a list, it should contain the start and end indices, both indexes must be in the past.
         offset : int, optional
             The offset for the sample window. Default is None.
+        name : str, None
+            The name of the internal variable
 
         Returns
         -------
@@ -183,13 +192,18 @@ class Stream(Relation):
             A Stream representing the SamplePart object with the selected samples.
 
         """
-        from nnodely.layers.input import Input, Connect
+        from nnodely.layers.input import Input
+        from nnodely.layers.part import SamplePart
+        if name is None:
+            name = self.name+"_sw"+str(NeuObj.count)
         if type(sw) is list:
             check(0 >= sw[1] > sw[0] and sw[0] < 0, ValueError, "The dimension of the sample window must be in the past.")
-        s = Input(self.name+"_sw"+str(NeuObj.count),dimensions=self.dim['dim'])
-        out_connect = Connect(self, s, local=True)
-        win_input = s.sw(sw, offset)
-        return Stream(win_input.name, merge(win_input.json, out_connect.json), win_input.dim,0 )
+        if 'sw' not in self.dim:
+            self.dim['sw'] = 0
+        if type(sw) is not list:
+            sw = [-sw,0]
+        delayed_input = Input(name, dimensions=self.dim['dim']).connect(self).sw([sw[0],0], offset)
+        return SamplePart(delayed_input,sw[0]-sw[0],sw[1]-sw[0])
 
     @enforce_types
     def z(self, delay:int|float) -> "Stream":
@@ -212,7 +226,7 @@ class Stream(Relation):
         return self.sw([-self.dim['sw']-delay,-delay])
 
     @enforce_types
-    def delay(self, delay:int|float) -> "Stream":
+    def delay(self, delay:int|float, *, name:str=None) -> "Stream":
         """
         The function is used to delay a Stream.
         The value of the delay can be only positive.
@@ -227,12 +241,14 @@ class Stream(Relation):
         Stream
             A Stream representing the delayed Stream
         """
+        from nnodely.layers.input import Input
+        from nnodely.layers.part import TimePart
         check(delay > 0, ValueError, "The delay must be a positive integer")
         check('tw' in self.dim, TypeError, "The stream is not defined in time but in sample")
-        return self.tw([-self.dim['tw']-delay,-delay])
+        return self.tw([-self.dim['tw']-delay,-delay], name=name)
 
     @enforce_types
-    def s(self, order:int, method:str = 'euler') -> "Stream":
+    def s(self, order:int, *, int_name:str|None = None, der_name:str|None = None, method:str = 'euler') -> "Stream":
         """
         Considering the Laplace transform notation. The function is used to operate an integral or derivate operation on a Stream.
         The order of the integral or the derivative operation is indicated by the order parameter.
@@ -253,25 +269,25 @@ class Stream(Relation):
         check(order != 0, ValueError, "The order must be a positive or negative integer not a zero")
         if order > 0:
             for i in range(order):
-                o = Derivate(self, method = method)
+                o = Derivate(self, method = method, der_name = der_name, int_name = int_name)
         elif order < 0:
             for i in range(-order):
-                o = Integrate(self, method = method)
+                o = Integrate(self, method = method, der_name = der_name, int_name = int_name)
         return o
 
-    def connect(self, obj) -> "Stream":
+    def connect(self, obj:"Input") -> "Stream":
         """
-        Connects the current stream to a given input object.
+        Update the Stream adding a connects with a given input object.
 
         Parameters
         ----------
         obj : Input
-            The input object to connect to.
+            The Input object to connect to.
 
         Returns
         -------
         Stream
-            A new Stream object representing the connected input.
+            A Stream of the signal that updates the Inputs with the connection.
 
         Raises
         ------
@@ -288,21 +304,21 @@ class Stream(Relation):
               f"The input variable {obj.name} is already connected.")
         self.json['Inputs'][obj.name]['connect'] = self.name
         self.json['Inputs'][obj.name]['local'] = 1
+        return self
 
-
-    def closedLoop(self, obj):
+    def closedLoop(self, obj:"Input") -> "Stream":
         """
-        Creates a closed loop connection with a given state object.
+        Update the Stream adding a closed loop connection with a given state object.
 
         Parameters
         ----------
-        obj : State
-            The state object to create a closed loop with.
+        obj : Input
+            The Input object to create a closed loop with.
 
         Returns
         -------
         Stream
-            A new Stream object representing the closed loop state.
+            A Stream of the signal that updates the Inputs with the connection.
 
         Raises
         ------
@@ -326,6 +342,7 @@ class Stream(Relation):
         #     check(obj.name not in needed_inputs, KeyError, f"Cannot initialize the recurrent input variable {obj.name} with the relation {init.name}.")
         #     self.json['Inputs'][obj.name]['init'] = init.name
         # return Stream(self.name, self.json, self.dim,0 )
+        return self
 
 class ToStream():
     def __new__(cls, *args, **kwargs):
