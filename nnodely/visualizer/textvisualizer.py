@@ -202,7 +202,7 @@ class TextVisualizer(EmptyVisualizer):
             self.__paramjson("models:", par['models'])
             self.__paramjson("num of epochs:", par['num_of_epochs'])
             self.__param("update per epochs:", f"{n_update}")
-            if par['recurrent_train']:
+            if par['prediction_samples'] >= 0:
                 self.__info("└>(n_samples-batch_size-prediction_samples+1)/(batch_size+step-1)+1")
             else:
                 self.__info("└>(n_samples-batch_size)/batch_size+1")
@@ -214,7 +214,7 @@ class TextVisualizer(EmptyVisualizer):
                 self.__param('early stopping:', par['early_stopping'])
                 self.__paramjson('early stopping params:', par['early_stopping_params'])
 
-            if par['recurrent_train']:
+            if par['prediction_samples'] >= 0:
                 self.__param("prediction samples:", f"{par['prediction_samples']}")
                 self.__param("step:", f"{par['step']}")
                 self.__paramjson("closed loop:", par['closed_loop'])
@@ -224,7 +224,7 @@ class TextVisualizer(EmptyVisualizer):
             self.__param("\t- num of samples:", f"{n_samples}")
             self.__param("\t- batch size:", f"{batch_size}")
             self.__param("\t- unused samples:", f"{unused_samples}")
-            if par['recurrent_train']:
+            if par['prediction_samples'] >= 0:
                 self.__info("\t  └>n_samples-prediction_samples-update_per_epochs*(batch_size+step-1)")
             else:
                 self.__info("\t  └>n_samples-update_per_epochs*batch_size")

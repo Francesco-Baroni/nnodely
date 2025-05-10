@@ -596,7 +596,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         test.neuralizeModel(0.01)
 
         ## Without connect
-        results = test(inputs={'in1':[[1],[2],[3],[4],[5],[6],[7],[8],[9]], 'in2':[[1],[2],[3],[4],[5],[6],[7],[8],[9]], 'in3':[[1],[2],[3],[4],[5],[6]]}, prediction_samples=None)
+        results = test(inputs={'in1':[[1],[2],[3],[4],[5],[6],[7],[8],[9]], 'in2':[[1],[2],[3],[4],[5],[6],[7],[8],[9]], 'in3':[[1],[2],[3],[4],[5],[6]]}, prediction_samples=-1)
         self.assertEqual(results['out1'], [15.0, 20.0, 25.0, 30.0])
         self.assertEqual(results['out2'], [21.0, 29.0, 37.0, 45.0])
 
@@ -937,7 +937,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
                          test({'in1': [[1.0, 2.0], [2.0, 3.0]], 'in2': [-10, -16, -5, 2, 3]},  num_of_samples=5))
         self.assertEqual({'out1': [[-10.0, -16.0], [-16.0,1.0], [1.0,1.0], [1.0,1.0], [1.0,1.0]],
                           'out2': [[[-34.0, -86.0]],[[-8.0,-40.0]],[[8.0,8.0]],[[8.0,18.0]],[[3.0,9.0]]]},
-                         test({'in1': [[1.0, 2.0], [2.0, 3.0]], 'in2': [-10, -16, -5, 2, 3]},  prediction_samples=None, num_of_samples=5))
+                         test({'in1': [[1.0, 2.0], [2.0, 3.0]], 'in2': [-10, -16, -5, 2, 3]},  prediction_samples=-1, num_of_samples=5))
 
         #-34*-1+ -86*-5+1 = 465.0
         #-140*-1+ -230*-5+1 = 465.0
@@ -1127,7 +1127,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         self.assertEqual((5,), np.array(result['out']).shape)
         self.assertEqual([14.0, 3*4+2*3+2*1, 5*3+4*2+3*1, 26*3+5*2+4*1, 92*3+26*2+1*5], result['out'])
 
-        result = test({'in1': [1, 2, 3, 4, 5]},closed_loop={'in1':'out'}, prediction_samples=None)
+        result = test({'in1': [1, 2, 3, 4, 5]},closed_loop={'in1':'out'}, prediction_samples=-1)
         self.assertEqual((3,), np.array(result['out']).shape)
         self.assertEqual([14.0,3*4+2*3+2*1,5*3+4*2+3*1], result['out'])
 
@@ -1147,7 +1147,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         self.assertEqual((3,), np.array(result['out']).shape)
         self.assertEqual([14.0,3*14+2*3+2*1,50*3+14*2+3*1], result['out'])
 
-        result = test({'in1': [1, 2, 3, 4, 5]},closed_loop={'in1':'out'}, prediction_samples=None, num_of_samples = 5)
+        result = test({'in1': [1, 2, 3, 4, 5]},closed_loop={'in1':'out'}, prediction_samples=-1, num_of_samples = 5)
         self.assertEqual((5,), np.array(result['out']).shape)
         self.assertEqual([14.0,3*4+2*3+2*1,5*3+4*2+3*1,0*3+5*2+4*1,0*3+0*2+5*1], result['out'])
 
@@ -1199,7 +1199,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         self.assertEqual([14.0, 3*4+2*3+2*1, 5*3+4*2+3*1, 26*3+5*2+4*1, 92*3+26*2+1*5], result['out'])
 
         test.resetStates()
-        result = test({'in1': [1, 2, 3, 4, 5]}, prediction_samples=None)
+        result = test({'in1': [1, 2, 3, 4, 5]}, prediction_samples=-1)
         self.assertEqual((3,), np.array(result['out']).shape)
         self.assertEqual([14.0,3*4+2*3+2*1,5*3+4*2+3*1], result['out'])
 
@@ -1224,7 +1224,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         self.assertEqual([14.0,3*14+2*3+2*1,50*3+14*2+3*1], result['out'])
 
         test.resetStates()
-        result = test({'in1': [1, 2, 3, 4, 5]}, prediction_samples=None, num_of_samples = 5)
+        result = test({'in1': [1, 2, 3, 4, 5]}, prediction_samples=-1, num_of_samples = 5)
         self.assertEqual((5,), np.array(result['out']).shape)
         self.assertEqual([14.0,3*4+2*3+2*1,5*3+4*2+3*1,0*3+5*2+4*1,0*3+0*2+5*1], result['out'])
 

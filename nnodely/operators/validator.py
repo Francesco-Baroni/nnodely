@@ -1,8 +1,8 @@
-import torch
+import torch, warnings
 
 import numpy as np
 
-from nnodely.support.utils import ReadOnlyDict
+from nnodely.support.utils import ReadOnlyDict, get_batch_size
 
 from nnodely.basic.loss import CustomLoss
 from nnodely.operators.network import Network
@@ -37,14 +37,8 @@ class Validator(Network):
                        step: int = 0,
                        batch_size: int | None = None
                        ) -> None:
-        import warnings
-        json_inputs = self.json['Inputs']
-        calculate_grad = False
-        for key, value in json_inputs.items():
-            if 'type' in value.keys():
-                calculate_grad = True
-                break
-        with torch.enable_grad() if calculate_grad else torch.inference_mode():
+
+        with torch.enable_grad() if self._get_gradient_on_inference() else torch.inference_mode():
             ## Init model for retults analysis
             self._model.eval()
             self.__performance[dataset] = {}
@@ -68,15 +62,9 @@ class Validator(Network):
             n_samples = len(data[list(data.keys())[0]])
 
             if recurrent:
-                batch_size = batch_size if batch_size is not None else n_samples - prediction_samples
+                batch_size = get_batch_size(n_samples, batch_size, prediction_samples)
 
-                model_inputs = list(self._model_def['Inputs'].keys())
-
-                state_closed_loop = [key for key, value in self._model_def['Inputs'].items() if 'closedLoop' in value.keys()] + list(closed_loop.keys())
-                state_connect = [key for key, value in self._model_def['Inputs'].items() if 'connect' in value.keys()] + list(connect.keys())
-
-                non_mandatory_inputs = state_closed_loop + state_connect
-                mandatory_inputs = list(set(model_inputs) - set(non_mandatory_inputs))
+                mandatory_inputs, non_mandatory_inputs = self._get_mandatory_inputs(connect,closed_loop)
 
                 for key, value in self._model_def['Minimizers'].items():
                     total_losses[key], A[key], B[key] = [], [], []
@@ -116,8 +104,8 @@ class Validator(Network):
                             X[key] = data[key][idxs]
                         else:  ## with zeros
                             window_size = self._input_n_samples[key]
-                            dim = json_inputs[key]['dim']
-                            if 'type' in json_inputs[key]:
+                            dim = self._model_def['Inputs'][key]['dim']
+                            if 'type' in self._model_def['Inputs'][key]:
                                 X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=True)
                             else:
                                 X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
@@ -225,3 +213,4 @@ class Validator(Network):
             self.__performance[dataset]['total']['aic'] = np.mean([self.__performance[dataset][key]['aic']['value']for key in self._model_def['Minimizers'].keys()])
 
         self.visualizer.showResult(dataset)
+#227

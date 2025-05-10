@@ -128,5 +128,15 @@ class Modely(Composer, Trainer, Loader, Validator, Exporter):
         random.seed(seed)  ## set the random module seed
         np.random.seed(seed)  ## set the numpy seed
 
+    def trainAndAnalyze(self, *args, **kwargs):
+        """
+        Train and analyze the model.
+
+        This method is a wrapper that calls the train() and analyze() methods in sequence.
+
+        :param args: Positional arguments to be passed to the train() method.
+        :param kwargs: Keyword arguments to be passed to the train() method.
+        """
+        self.trainModel(*args, **kwargs)
 
 nnodely = Modely

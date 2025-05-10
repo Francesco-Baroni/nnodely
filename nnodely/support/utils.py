@@ -242,6 +242,10 @@ def tensor_to_list(data):
         # Altri tipi di dati rimangono invariati
         return data
 
+def get_batch_size(n_samples, batch_size = 0, predicion_samples = 0):
+    predicion_samples = 0 if predicion_samples == -1 else predicion_samples #This value is used to disconnect the connect
+    return batch_size if batch_size < n_samples - predicion_samples else max(0, n_samples - predicion_samples)
+
 def get_models_json(json):
     model_json = {}
     model_json['Parameters'] = list(json['Parameters'].keys())

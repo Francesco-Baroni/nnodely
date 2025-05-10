@@ -220,7 +220,7 @@ class Composer(Network):
         self.visualizer.showBuiltModel()
 
     @enforce_types
-    def __call__(self, inputs:dict={}, sampled:bool=False, closed_loop:dict={}, connect:dict={}, prediction_samples:str|int|None='auto', num_of_samples:int|None=None) -> dict:
+    def __call__(self, inputs:dict={}, sampled:bool=False, closed_loop:dict={}, connect:dict={}, prediction_samples:str|int='auto', num_of_samples:int|None=None) -> dict:
         """
         Performs inference on the model.
 
@@ -283,10 +283,6 @@ class Composer(Network):
         ## List of keys
         model_inputs = list(self._model_def['Inputs'].keys())
         json_inputs = self._model_def['Inputs']
-        # state_closed_loop = [key for key, value in self._model_def['States'].items() if
-        #                      'closedLoop' in value.keys()] + list(all_closed_loop.keys())
-        # state_connect = [key for key, value in self._model_def['States'].items() if 'connect' in value.keys()] + list(
-        #     all_connect.keys())
         extra_inputs = list(set(list(inputs.keys())) - set(model_inputs))
         non_mandatory_inputs = list(all_closed_loop.keys()) + list(all_connect.keys()) +  list(self._model_def.recurrentInputs().keys())
         mandatory_inputs = list(set(model_inputs) - set(non_mandatory_inputs))
@@ -373,14 +369,9 @@ class Composer(Network):
             result_dict[key] = []
 
         ## Inference
-        calculate_grad = False
-        for key, value in json_inputs.items():
-            if 'type' in value.keys():
-                calculate_grad = True
-                break
-        with (torch.enable_grad() if calculate_grad else torch.inference_mode()):
+        with (torch.enable_grad() if self._get_gradient_on_inference() else torch.inference_mode()):
             ## Update with virtual states
-            if prediction_samples is not None:
+            if prediction_samples == 'auto' or prediction_samples >= 0:
                 self._model.update(closed_loop=all_closed_loop, connect=all_connect)
             else:
                 prediction_samples = 0

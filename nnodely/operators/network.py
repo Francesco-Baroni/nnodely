@@ -49,6 +49,19 @@ class Network:
             X[key][:, -shift:, :] = val  ## substitute with the predicted value
             self._states[key] = X[key].clone().detach()
 
+    def _get_gradient_on_inference(self):
+        for key, value in self._model_def['Inputs'].items():
+            if 'type' in value.keys():
+                return True
+        return False
+
+    def _get_mandatory_inputs(self, connect, closed_loop):
+        model_inputs = list(self._model_def['Inputs'].keys())
+        non_mandatory_inputs = \
+            list(closed_loop.keys()) + list(connect.keys()) + list(self._model_def.recurrentInputs().keys())
+        mandatory_inputs = list(set(model_inputs) - set(non_mandatory_inputs))
+        return mandatory_inputs, non_mandatory_inputs
+
     @enforce_types
     def resetStates(self, states:set={}, batch:int=1) -> None:
         if states: ## reset only specific states

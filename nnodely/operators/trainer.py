@@ -7,7 +7,7 @@ from nnodely.basic.model import Model
 from nnodely.basic.optimizer import Optimizer, SGD, Adam
 from nnodely.basic.loss import CustomLoss
 from nnodely.operators.network import Network
-from nnodely.support.utils import tensor_to_list, check, TORCH_DTYPE, enforce_types, ReadOnlyDict
+from nnodely.support.utils import tensor_to_list, check, TORCH_DTYPE, enforce_types, ReadOnlyDict, get_batch_size
 from nnodely.basic.relation import Stream
 from nnodely.layers.output import Output
 
@@ -239,10 +239,9 @@ class Trainer(Network):
 
     def __setup_recurrent_train(self, tp, prediction_samples, step, closed_loop, connect):
         ## Prediction samples
-        tp['recurrent_train'] = True
         step = self.__get_parameter(tp, step=step)
         prediction_samples = self.__get_parameter(tp, prediction_samples=prediction_samples)
-        check(prediction_samples >= 0, KeyError, 'The sample horizon must be positive!')
+        check(prediction_samples >= -1, KeyError, 'The sample horizon must be positive or -1 for disconnect connection!')
 
         ## Close loop information
         closed_loop = self.__get_parameter(tp, closed_loop=closed_loop)
@@ -257,20 +256,21 @@ class Trainer(Network):
         connect = self.__get_parameter(tp, connect=connect)
         for connect_in, connect_out in connect.items():
             check(connect_in in self._model_def['Inputs'], ValueError,
-f'the tag {connect_in} is not an input variable.')
+                  f'the tag {connect_in} is not an input variable.')
             check(connect_out in self._model_def['Outputs'], ValueError,
                   f'the tag {connect_out} is not an output of the network')
             log.warning(
                 f'Recurrent train: connecting the input ports {connect_in} with output ports {connect_out} for {prediction_samples} samples')
 
         ## Disable recurrent training if there are no recurrent variables
-        if len(connect|closed_loop|self._model_def.recurrentInputs()) == 0 or prediction_samples == None:
-            if prediction_samples != None:
+        if len(connect|closed_loop|self._model_def.recurrentInputs()) == 0:
+            if prediction_samples >= 0:
                 log.warning(
                     f"The value of the prediction_samples={prediction_samples} but the network has no recurrent variables.")
-            tp['recurrent_train'] = False
+            # TODO disconnect connect with prediction_samples = None
+            tp['prediction_samples'] = -1
 
-        return tp['recurrent_train'], prediction_samples, step, closed_loop, connect
+        return tp['prediction_samples'], step, closed_loop, connect
 
     def __setup_dataset(self, tp, shuffle_data, train_dataset, validation_dataset, test_dataset, splits):
         ## Get dataset for training
@@ -370,24 +370,13 @@ f'the tag {connect_in} is not an input variable.')
         self.__get_parameter(tp, train_batch_size=train_batch_size)
         self.__get_parameter(tp, val_batch_size=val_batch_size)
         self.__get_parameter(tp, test_batch_size=test_batch_size)
-
-        if tp['recurrent_train']:
-            if tp['train_batch_size'] > tp['n_samples_train']:
-                tp['train_batch_size'] = tp['n_samples_train'] - tp['prediction_samples']
-            if tp['val_batch_size'] is None or tp['val_batch_size'] > tp['n_samples_val']:
-                tp['val_batch_size'] = max(0, tp['n_samples_val'] - tp['prediction_samples'])
-            if tp['test_batch_size'] is None or tp['test_batch_size'] > tp['n_samples_test']:
-                tp['test_batch_size'] = max(0, tp['n_samples_test'] -tp['prediction_samples'])
-        else:
-            if tp['train_batch_size'] > tp['n_samples_train']:
-                tp['train_batch_size'] = tp['n_samples_train']
-            if tp['val_batch_size'] is None or tp['val_batch_size'] > tp['n_samples_val']:
-                tp['val_batch_size'] = tp['n_samples_val']
-            if tp['test_batch_size'] is None or tp['test_batch_size'] > tp['n_samples_test']:
-                tp['test_batch_size'] = tp['n_samples_test']
+        tp['train_batch_size'] = get_batch_size(tp['n_samples_train'], tp['train_batch_size'], tp['prediction_samples'])
+        tp['val_batch_size'] = get_batch_size(tp['n_samples_val'], tp['val_batch_size'], tp['prediction_samples'])
+        tp['test_batch_size'] = get_batch_size(tp['n_samples_test'], tp['test_batch_size'], tp['prediction_samples'])
 
         check(tp['train_batch_size'] > 0, ValueError,
-              f'The auto train_batch_size ({tp["train_batch_size"]}) = n_samples_train ({tp["n_samples_train"]}) - prediction_samples ({tp["prediction_samples"]}), must be greater than 0.')
+              f'The auto train_batch_size ({tp["train_batch_size"]}) = n_samples_train ({tp["n_samples_train"]}) '
+              f'- prediction_samples ({tp["prediction_samples"]}), must be greater than 0.')
 
         return tp['train_batch_size'], tp['val_batch_size'], tp['test_batch_size']
 
@@ -497,7 +486,7 @@ f'the tag {connect_in} is not an input variable.')
         val_dataset, n_samples_val, val_batch_size = tp['validation_dataset'], tp['n_samples_val'], tp['val_batch_size']
         prediction_samples, step, closed_loop, connect = tp['prediction_samples'], tp['step'], tp['closed_loop'], tp['connect']
         tp['list_of_batch_indexes_train'], tp['train_step'], tp['list_of_batch_indexes_val'], tp['val_step'] = 0, 0, 0, 0
-        if tp['recurrent_train']:
+        if tp['prediction_samples'] >= 0:
             list_of_batch_indexes = \
                 range(0, (n_samples_train - train_batch_size - prediction_samples + 1), (train_batch_size + step))
             check(n_samples_train - train_batch_size - prediction_samples + 1 > 0, ValueError,
@@ -514,13 +503,6 @@ f'the tag {connect_in} is not an input variable.')
             tp['update_per_epochs'] = (n_samples_train - train_batch_size) // train_batch_size + 1
             tp['unused_samples'] = n_samples_train - tp['update_per_epochs'] * train_batch_size
         return tp['list_of_batch_indexes_train'], tp['train_step'], tp['list_of_batch_indexes_val'], tp['val_step']
-
-    def __get_mandatory_inputs(self, tp):
-        model_inputs = list(self._model_def['Inputs'].keys())
-        tp['non_mandatory_inputs'] = \
-            list(tp['closed_loop'].keys()) + list(tp['connect'].keys()) + list(self._model_def.recurrentInputs().keys())
-        tp['mandatory_inputs'] = list(set(model_inputs) - set(tp['non_mandatory_inputs']))
-        return tp['mandatory_inputs'], tp['non_mandatory_inputs']
 
     def __training_info(self, tp, select_model, select_model_params, early_stopping, early_stopping_params, num_of_epochs, minimize_gain):
         ## Get early stopping
@@ -698,7 +680,7 @@ f'the tag {connect_in} is not an input variable.')
         self.__get_train_parameters(tp, training_params)
 
         # Setup recurrent train info
-        recurrent_train, prediction_samples, step, closed_loop, connect = \
+        prediction_samples, step, closed_loop, connect = \
             self.__setup_recurrent_train(tp, prediction_samples, step, closed_loop, connect)
 
         ## Get the dataset
@@ -719,7 +701,7 @@ f'the tag {connect_in} is not an input variable.')
         self.__setup_batch_indexes(tp)
 
         ## Define mandatory inputs
-        mandatory_inputs, non_mandatory_inputs = self.__get_mandatory_inputs(tp)
+        mandatory_inputs, non_mandatory_inputs = self._get_mandatory_inputs(connect, closed_loop)
 
         ## Get the training parameters
         minimize_gain, num_of_epochs = self.__training_info(tp, select_model, select_model_params, early_stopping, early_stopping_params, num_of_epochs, minimize_gain)
@@ -736,11 +718,10 @@ f'the tag {connect_in} is not an input variable.')
         del self.run_training_params['minimize_gain']
         del self.run_training_params['lr']
         del self.run_training_params['lr_param']
-        if not recurrent_train:
+        if prediction_samples < 0:
             del self.run_training_params['connect']
             del self.run_training_params['closed_loop']
             del self.run_training_params['step']
-            del self.run_training_params['prediction_samples']
         if early_stopping is None:
             del self.run_training_params['early_stopping']
             del self.run_training_params['early_stopping_params']
@@ -781,7 +762,7 @@ f'the tag {connect_in} is not an input variable.')
         for epoch in range(num_of_epochs):
             ## TRAIN
             self._model.train()
-            if recurrent_train:
+            if prediction_samples >= 0:
                 losses = self.__recurrentTrain(XY_train, list_of_batch_indexes_train, train_batch_size, minimize_gain,
                                                prediction_samples, train_step, non_mandatory_inputs,
                                                mandatory_inputs, shuffle=shuffle_data, train=True)
@@ -795,7 +776,7 @@ f'the tag {connect_in} is not an input variable.')
             if n_samples_val > 0:
                 ## VALIDATION
                 self._model.eval()
-                if recurrent_train:
+                if prediction_samples >= 0:
                     losses = self.__recurrentTrain(XY_val, list_of_batch_indexes_val, val_batch_size, minimize_gain,
                                                    prediction_samples, val_step, non_mandatory_inputs,
                                                    mandatory_inputs, shuffle=False, train=False)
@@ -846,7 +827,6 @@ f'the tag {connect_in} is not an input variable.')
         if self.run_training_params['n_samples_test'] > 0:
             self.resultAnalysis(tp['test_dataset_name'], XY_test, minimize_gain, closed_loop, connect, prediction_samples, step,
                                 test_batch_size)
-
         self.visualizer.showResults()
 
         ## Remove virtual states
