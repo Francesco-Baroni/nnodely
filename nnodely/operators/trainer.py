@@ -76,7 +76,6 @@ class Trainer(Network):
             if train:
                 self.__optimizer.zero_grad()  ## Reset the gradient
             ## Reset
-            init_states = []
             horizon_losses = {ind: [] for ind in range(len(self._model_def['Minimizers']))}
             for key in non_mandatory_inputs:
                 if key in data.keys(): ## with data
@@ -89,11 +88,6 @@ class Trainer(Network):
                     else:
                         X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
                     self._states[key] = X[key]
-
-                    # if 'init' in json_inputs[key].keys(): ## with init relation
-                    #     self._model.connect_update[key] = json_inputs[key]['init']
-                    #     init_states.append(key)
-
 
             for horizon_idx in range(prediction_samples + 1):
                 ## Get data
@@ -116,11 +110,7 @@ class Trainer(Network):
 
                 ## Update
                 self._updateState(X, out_closed_loop, out_connect)
-                ## remove initialization in closed_loop
-                if init_states:
-                    for key in init_states:
-                        del self._model.connect_update[key]
-                    init_states = []
+
 
                 if self.__log_internal and train:
                     internals_dict['state'] = self._states
@@ -241,35 +231,9 @@ class Trainer(Network):
         ## Prediction samples
         step = self.__get_parameter(tp, step=step)
         prediction_samples = self.__get_parameter(tp, prediction_samples=prediction_samples)
-        check(prediction_samples >= -1, KeyError, 'The sample horizon must be positive or -1 for disconnect connection!')
-
-        ## Close loop information
         closed_loop = self.__get_parameter(tp, closed_loop=closed_loop)
-        for input, output in closed_loop.items():
-            check(input in self._model_def['Inputs'], ValueError, f'the tag {input} is not an input variable.')
-            check(output in self._model_def['Outputs'], ValueError,
-                  f'the tag {output} is not an output of the network')
-            log.warning(
-                f'Recurrent train: closing the loop between the the input ports {input} and the output ports {output} for {prediction_samples} samples')
-
-        ## Connect information
         connect = self.__get_parameter(tp, connect=connect)
-        for connect_in, connect_out in connect.items():
-            check(connect_in in self._model_def['Inputs'], ValueError,
-                  f'the tag {connect_in} is not an input variable.')
-            check(connect_out in self._model_def['Outputs'], ValueError,
-                  f'the tag {connect_out} is not an output of the network')
-            log.warning(
-                f'Recurrent train: connecting the input ports {connect_in} with output ports {connect_out} for {prediction_samples} samples')
-
-        ## Disable recurrent training if there are no recurrent variables
-        if len(connect|closed_loop|self._model_def.recurrentInputs()) == 0:
-            if prediction_samples >= 0:
-                log.warning(
-                    f"The value of the prediction_samples={prediction_samples} but the network has no recurrent variables.")
-            # TODO disconnect connect with prediction_samples = None
-            tp['prediction_samples'] = -1
-
+        tp['prediction_samples'] = self._setup_recurrent_variables(prediction_samples, closed_loop, connect)
         return tp['prediction_samples'], step, closed_loop, connect
 
     def __setup_dataset(self, tp, shuffle_data, train_dataset, validation_dataset, test_dataset, splits):

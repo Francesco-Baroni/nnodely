@@ -33,7 +33,7 @@ class Validator(Network):
                        minimize_gain: dict = {},
                        closed_loop: dict = {},
                        connect: dict = {},
-                       prediction_samples: int | str | None = None,
+                       prediction_samples: int | str = -1, #TODO uniform to training set to 0
                        step: int = 0,
                        batch_size: int | None = None
                        ) -> None:
@@ -52,18 +52,15 @@ class Validator(Network):
             for name, values in self._model_def['Minimizers'].items():
                 losses[name] = CustomLoss(values['loss'])
 
-            recurrent = False
-            if (closed_loop or connect or len(self._model_def.recurrentInputs()) > 0) and prediction_samples is not None:
-                recurrent = True
-
             if data is None:
                 check(dataset in self._data.keys(), ValueError, f'The dataset {dataset} is not loaded!')
                 data = {key: torch.from_numpy(val).to(TORCH_DTYPE) for key, val in self._data[dataset].items()}
             n_samples = len(data[list(data.keys())[0]])
 
-            if recurrent:
-                batch_size = get_batch_size(n_samples, batch_size, prediction_samples)
+            batch_size = get_batch_size(n_samples, batch_size, prediction_samples)
+            prediction_samples = self._setup_recurrent_variables(prediction_samples, closed_loop, connect)
 
+            if prediction_samples >= 0:
                 mandatory_inputs, non_mandatory_inputs = self._get_mandatory_inputs(connect,closed_loop)
 
                 for key, value in self._model_def['Minimizers'].items():
@@ -141,9 +138,6 @@ class Validator(Network):
                     total_losses[key] = np.mean(total_losses[key])
 
             else:
-                if batch_size is None:
-                    batch_size = n_samples
-
                 for key, value in self._model_def['Minimizers'].items():
                     total_losses[key], A[key], B[key] = [], [], []
 

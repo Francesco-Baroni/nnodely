@@ -3,6 +3,9 @@ import  torch
 from nnodely.support.utils import  TORCH_DTYPE, check, enforce_types
 from nnodely.basic.modeldef import ModelDef
 
+from nnodely.support.logger import logging, nnLogger
+log = nnLogger(__name__, logging.CRITICAL)
+
 class Network:
     @enforce_types
     def __init__(self):
@@ -61,6 +64,36 @@ class Network:
             list(closed_loop.keys()) + list(connect.keys()) + list(self._model_def.recurrentInputs().keys())
         mandatory_inputs = list(set(model_inputs) - set(non_mandatory_inputs))
         return mandatory_inputs, non_mandatory_inputs
+
+    def _setup_recurrent_variables(self, prediction_samples, closed_loop, connect):
+        ## Prediction samples
+        check(prediction_samples >= -1, KeyError, 'The sample horizon must be positive or -1 for disconnect connection!')
+
+        ## Close loop information
+        for input, output in closed_loop.items():
+            check(input in self._model_def['Inputs'], ValueError, f'the tag {input} is not an input variable.')
+            check(output in self._model_def['Outputs'], ValueError,
+                  f'the tag {output} is not an output of the network')
+            log.warning(
+                f'Recurrent train: closing the loop between the the input ports {input} and the output ports {output} for {prediction_samples} samples')
+
+        ## Connect information
+        for connect_in, connect_out in connect.items():
+            check(connect_in in self._model_def['Inputs'], ValueError,
+                  f'the tag {connect_in} is not an input variable.')
+            check(connect_out in self._model_def['Outputs'], ValueError,
+                  f'the tag {connect_out} is not an output of the network')
+            log.warning(
+                f'Recurrent train: connecting the input ports {connect_in} with output ports {connect_out} for {prediction_samples} samples')
+
+        ## Disable recurrent training if there are no recurrent variables
+        if len(connect|closed_loop|self._model_def.recurrentInputs()) == 0:
+            if prediction_samples >= 0:
+                log.warning(
+                    f"The value of the prediction_samples={prediction_samples} but the network has no recurrent variables.")
+            prediction_samples = -1
+
+        return prediction_samples
 
     @enforce_types
     def resetStates(self, states:set={}, batch:int=1) -> None:
