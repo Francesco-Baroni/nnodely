@@ -42,39 +42,6 @@ class Trainer(Network):
         # Optimizer
         self.__optimizer = None
 
-
-    # def __Train(self, data, n_samples, batch_size, loss_gains, shuffle=True, train=True):
-    #
-    #     if shuffle:
-    #         randomize = torch.randperm(n_samples)
-    #         data = {key: val[randomize] for key, val in data.items()}
-    #     ## Initialize the train losses vector
-    #     aux_losses = torch.zeros([len(self._model_def['Minimizers']), n_samples // batch_size])
-    #     for idx in range(0, (n_samples - batch_size + 1), batch_size):
-    #         ## Build the input tensor
-    #         XY = {key: val[idx:idx + batch_size] for key, val in data.items()}
-    #         ## Reset gradient
-    #         if train:
-    #             self.__optimizer.zero_grad()
-    #         ## Model Forward
-    #         _, minimize_out, _, _ = self._model(XY)  ## Forward pass
-    #         ## Loss Calculation
-    #         total_loss = 0
-    #         for ind, (key, value) in enumerate(self._model_def['Minimizers'].items()):
-    #             loss = self.__loss_functions[key](minimize_out[value['A']], minimize_out[value['B']])
-    #             loss = (loss * loss_gains[
-    #                 key]) if key in loss_gains.keys() else loss  ## Multiply by the gain if necessary
-    #             aux_losses[ind][idx // batch_size] = loss.item()
-    #             total_loss += loss
-    #         ## Gradient step
-    #         if train:
-    #             total_loss.backward()
-    #             self.__optimizer.step()
-    #             self.visualizer.showWeightsInTrain(batch=idx // batch_size)
-    #
-    #     ## return the losses
-    #     return aux_losses
-
     @enforce_types
     def addMinimize(self, name:str, streamA:Stream|Output, streamB:Stream|Output, loss_function:str='mse') -> None:
         """
@@ -646,8 +613,6 @@ class Trainer(Network):
                 losses = self._inference(XY_train, n_samples_train, train_batch_size, minimize_gain,
                                          self.__loss_functions, shuffle=shuffle_data, optimizer=self.__optimizer)
 
-                # losses = self.__Train(XY_train, n_samples_train, train_batch_size, minimize_gain, shuffle=shuffle_data,
-                #                       train=True)
             ## save the losses
             for ind, key in enumerate(self._model_def['Minimizers'].keys()):
                 train_losses[key].append(torch.mean(losses[ind]).tolist())
@@ -664,8 +629,7 @@ class Trainer(Network):
                 else:
                     losses = self._inference(XY_val, n_samples_val, val_batch_size, minimize_gain,
                                              self.__loss_functions)
-                    # losses = self.__Train(XY_val, n_samples_val, val_batch_size, minimize_gain, shuffle=False,
-                    #                       train=False)
+
                 self._set_log_internal(setted_log_internal)
 
                 ## save the losses
