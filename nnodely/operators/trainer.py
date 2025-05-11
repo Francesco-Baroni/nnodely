@@ -15,7 +15,7 @@ from nnodely.support.logger import logging, nnLogger
 log = nnLogger(__name__, logging.CRITICAL)
 
 class Trainer(Network):
-    def __init__(self, log_internal:bool = False):
+    def __init__(self):
         check(type(self) is not Trainer, TypeError, "Trainer class cannot be instantiated directly")
         super().__init__()
 
@@ -42,61 +42,28 @@ class Trainer(Network):
         # Optimizer
         self.__optimizer = None
 
-        # Save internal
-        self.__log_internal = log_internal
-        if self.__log_internal == True:
-            self.__internals = {}
-
-    @property
-    def internals(self):
-        return ReadOnlyDict(self.__internals)
-
-    def __save_internal(self, key, value):
-        self.__internals[key] = tensor_to_list(value)
-
     def __recurrentTrain(self, data, batch_indexes, batch_size, loss_gains, prediction_samples,
                          step, non_mandatory_inputs, mandatory_inputs, shuffle=False, train=True):
         indexes = copy.deepcopy(batch_indexes)
-        json_inputs = self._model_def['Inputs']
-        aux_losses = torch.zeros(
-            [len(self._model_def['Minimizers']), round((len(indexes) + step) / (batch_size + step))])
+        aux_losses = \
+            torch.zeros([len(self._model_def['Minimizers']), round((len(indexes) + step) / (batch_size + step))])
         X = {}
         batch_val = 0
         while len(indexes) >= batch_size:
-            idxs = random.sample(indexes, batch_size) if shuffle else indexes[:batch_size]
-            for num in idxs:
-                indexes.remove(num)
-            if step > 0:
-                if len(indexes) >= step:
-                    step_idxs = random.sample(indexes, step) if shuffle else indexes[:step]
-                    for num in step_idxs:
-                        indexes.remove(num)
-                else:
-                    indexes = []
+            selected_indexes = self._get_not_mandatory_inputs(data, X, non_mandatory_inputs, indexes, batch_size, step, shuffle)
+
+            horizon_losses = {ind: [] for ind in range(len(self._model_def['Minimizers']))}
             if train:
                 self.__optimizer.zero_grad()  ## Reset the gradient
-            ## Reset
-            horizon_losses = {ind: [] for ind in range(len(self._model_def['Minimizers']))}
-            for key in non_mandatory_inputs:
-                if key in data.keys(): ## with data
-                    X[key] = data[key][idxs]
-                else:  ## with zeros
-                    window_size = self._input_n_samples[key]
-                    dim = json_inputs[key]['dim']
-                    if 'type' in json_inputs[key]:
-                        X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=True)
-                    else:
-                        X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
-                    self._states[key] = X[key]
 
             for horizon_idx in range(prediction_samples + 1):
                 ## Get data
                 for key in mandatory_inputs:
-                    X[key] = data[key][[idx + horizon_idx for idx in idxs]]
+                    X[key] = data[key][[idx + horizon_idx for idx in selected_indexes]]
                 ## Forward pass
                 out, minimize_out, out_closed_loop, out_connect = self._model(X)
 
-                if self.__log_internal and train:
+                if self._log_internal and train:
                     #assert (check_gradient_operations(self._states) == 0)
                     #assert (check_gradient_operations(data) == 0)
                     internals_dict = {'XY': tensor_to_list(X), 'out': out, 'param': self._model.all_parameters,
@@ -112,9 +79,9 @@ class Trainer(Network):
                 self._updateState(X, out_closed_loop, out_connect)
 
 
-                if self.__log_internal and train:
+                if self._log_internal and train:
                     internals_dict['state'] = self._states
-                    self.__save_internal('inout_' + str(batch_val) + '_' + str(horizon_idx), internals_dict)
+                    self._save_internal('inout_' + str(batch_val) + '_' + str(horizon_idx), internals_dict)
 
             ## Calculate the total loss
             total_loss = 0
@@ -674,8 +641,7 @@ class Trainer(Network):
         self.__check_needed_keys(tp)
 
         ## Check close loop and connect
-        if self.__log_internal:
-            self.__internals = {}
+        self._clean_log_internal()
 
         self.run_training_params = tp
         ## Clean the dict of the training parameter
@@ -727,9 +693,13 @@ class Trainer(Network):
             ## TRAIN
             self._model.train()
             if prediction_samples >= 0:
-                losses = self.__recurrentTrain(XY_train, list_of_batch_indexes_train, train_batch_size, minimize_gain,
-                                               prediction_samples, train_step, non_mandatory_inputs,
-                                               mandatory_inputs, shuffle=shuffle_data, train=True)
+                # losses = self.__recurrentTrain(XY_train, list_of_batch_indexes_train, train_batch_size, minimize_gain,
+                #                                prediction_samples, train_step, non_mandatory_inputs,
+                #                                mandatory_inputs, shuffle=shuffle_data, train=True)
+                losses = self._recurrent_inference(XY_train, list_of_batch_indexes_train, train_batch_size, minimize_gain,
+                                                   prediction_samples, train_step, non_mandatory_inputs,
+                                                   mandatory_inputs, self.__loss_functions,
+                                                   shuffle=shuffle_data, optimizer=self.__optimizer)
             else:
                 losses = self.__Train(XY_train, n_samples_train, train_batch_size, minimize_gain, shuffle=shuffle_data,
                                       train=True)
@@ -740,13 +710,21 @@ class Trainer(Network):
             if n_samples_val > 0:
                 ## VALIDATION
                 self._model.eval()
+                setted_log_internal = self._log_internal
+                self._set_log_internal(False)  # TODO To remove when the function is moved outside the train
                 if prediction_samples >= 0:
-                    losses = self.__recurrentTrain(XY_val, list_of_batch_indexes_val, val_batch_size, minimize_gain,
-                                                   prediction_samples, val_step, non_mandatory_inputs,
-                                                   mandatory_inputs, shuffle=False, train=False)
+                    # losses = self.__recurrentTrain(XY_val, list_of_batch_indexes_val, val_batch_size, minimize_gain,
+                    #                                prediction_samples, val_step, non_mandatory_inputs,
+                    #                                mandatory_inputs, shuffle=False, train=False)
+
+                    losses = self._recurrent_inference(XY_val, list_of_batch_indexes_val, val_batch_size, minimize_gain,
+                                                       prediction_samples, val_step, non_mandatory_inputs,
+                                                       mandatory_inputs, self.__loss_functions)
                 else:
                     losses = self.__Train(XY_val, n_samples_val, val_batch_size, minimize_gain, shuffle=False,
                                           train=False)
+                self._set_log_internal(setted_log_internal)
+
                 ## save the losses
                 for ind, key in enumerate(self._model_def['Minimizers'].keys()):
                     val_losses[key].append(torch.mean(losses[ind]).tolist())
@@ -783,6 +761,8 @@ class Trainer(Network):
         else:
             log.info('The selected model is the LAST model of the training.')
 
+        setted_log_internal = self._log_internal
+        self._set_log_internal(False) #TODO To remove when the function is moved outside the train
         self.resultAnalysis(tp['train_dataset_name'], XY_train, minimize_gain, closed_loop, connect, prediction_samples, step,
                             train_batch_size)
         if self.run_training_params['n_samples_val'] > 0:
@@ -792,6 +772,7 @@ class Trainer(Network):
             self.resultAnalysis(tp['test_dataset_name'], XY_test, minimize_gain, closed_loop, connect, prediction_samples, step,
                                 test_batch_size)
         self.visualizer.showResults()
+        self._set_log_internal(setted_log_internal)
 
         ## Remove virtual states
         self._removeVirtualStates(connect, closed_loop)

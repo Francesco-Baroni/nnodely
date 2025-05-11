@@ -1,6 +1,9 @@
-import  torch
+import copy
 
-from nnodely.support.utils import  TORCH_DTYPE, check, enforce_types
+import numpy as np
+import  torch, random
+
+from nnodely.support.utils import TORCH_DTYPE, check, enforce_types, tensor_to_list
 from nnodely.basic.modeldef import ModelDef
 
 from nnodely.support.logger import logging, nnLogger
@@ -36,6 +39,19 @@ class Network:
         # Training information
         self._training = {}
 
+        # Save internal
+        self._log_internal = False
+        self._internals = {}
+
+    def _save_internal(self, key, value):
+        self._internals[key] = tensor_to_list(value)
+
+    def _set_log_internal(self, log_internal:bool):
+        self._log_internal = log_internal
+
+    def _clean_log_internal(self):
+        self._internals = {}
+
     def _removeVirtualStates(self, connect, closed_loop):
         if connect or closed_loop:
             for key in (connect.keys() | closed_loop.keys()):
@@ -64,6 +80,96 @@ class Network:
             list(closed_loop.keys()) + list(connect.keys()) + list(self._model_def.recurrentInputs().keys())
         mandatory_inputs = list(set(model_inputs) - set(non_mandatory_inputs))
         return mandatory_inputs, non_mandatory_inputs
+
+    def _get_not_mandatory_inputs(self, data, X, non_mandatory_inputs, remaning_indexes, batch_size, step, shuffle = False):
+        related_indexes = random.sample(remaning_indexes, batch_size) if shuffle else remaning_indexes[:batch_size]
+        for num in related_indexes:
+            remaning_indexes.remove(num)
+        if step > 0:
+            if len(remaning_indexes) >= step:
+                step_idxs = random.sample(remaning_indexes, step) if shuffle else remaning_indexes[:step]
+                for num in step_idxs:
+                    remaning_indexes.remove(num)
+            else:
+                remaning_indexes.clear()
+
+        for key in non_mandatory_inputs:
+            if key in data.keys(): ## with data
+                X[key] = data[key][related_indexes]
+            else:  ## with zeros
+                window_size = self._input_n_samples[key]
+                dim = self._model_def['Inputs'][key]['dim']
+                if 'type' in self._model_def['Inputs'][key]:
+                    X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=True)
+                else:
+                    X[key] = torch.zeros(size=(batch_size, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
+                self._states[key] = X[key]
+        return related_indexes
+
+    def _recurrent_inference(self, data, batch_indexes, batch_size, loss_gains, prediction_samples,
+                             step, non_mandatory_inputs, mandatory_inputs, loss_functions,
+                             shuffle = False, optimizer = None,
+                             total_losses = None, A = None, B = None):
+        indexes = copy.deepcopy(batch_indexes)
+        aux_losses = \
+            torch.zeros([len(self._model_def['Minimizers']), round((len(indexes) + step) / (batch_size + step))])
+        X = {}
+        batch_val = 0
+        while len(indexes) >= batch_size:
+            selected_indexes = self._get_not_mandatory_inputs(data, X, non_mandatory_inputs, indexes, batch_size, step, shuffle)
+
+            horizon_losses = {ind: [] for ind in range(len(self._model_def['Minimizers']))}
+            if optimizer:
+                optimizer.zero_grad()  ## Reset the gradient
+
+            for horizon_idx in range(prediction_samples + 1):
+                ## Get data
+                for key in mandatory_inputs:
+                    X[key] = data[key][[idx + horizon_idx for idx in selected_indexes]]
+                ## Forward pass
+                out, minimize_out, out_closed_loop, out_connect = self._model(X)
+
+                if self._log_internal:
+                    #assert (check_gradient_operations(self._states) == 0)
+                    #assert (check_gradient_operations(data) == 0)
+                    internals_dict = {'XY': tensor_to_list(X), 'out': out, 'param': self._model.all_parameters,
+                                      'closedLoop': self._model.closed_loop_update, 'connect': self._model.connect_update}
+
+                ## Loss Calculation
+                for ind, (key, value) in enumerate(self._model_def['Minimizers'].items()):
+                    if A is not None:
+                        A[key][horizon_idx].append(minimize_out[value['A']].detach().numpy())
+                    if B is not None:
+                        B[key][horizon_idx].append(minimize_out[value['B']].detach().numpy())
+                    loss = loss_functions[key](minimize_out[value['A']], minimize_out[value['B']])
+                    loss = (loss * loss_gains[key]) if key in loss_gains.keys() else loss  ## Multiply by the gain if necessary
+                    horizon_losses[ind].append(loss)
+
+                ## Update
+                self._updateState(X, out_closed_loop, out_connect)
+
+                if self._log_internal:
+                    internals_dict['state'] = self._states
+                    self._save_internal('inout_' + str(batch_val) + '_' + str(horizon_idx), internals_dict)
+
+            ## Calculate the total loss
+            total_loss = 0
+            for ind, key in enumerate(self._model_def['Minimizers'].keys()):
+                loss = sum(horizon_losses[ind]) / (prediction_samples + 1)
+                aux_losses[ind][batch_val] = loss.item()
+                if total_losses is not None:
+                    total_losses[key].append(loss.detach().numpy())
+                total_loss += loss
+
+            ## Gradient Step
+            if optimizer:
+                total_loss.backward()  ## Backpropagate the error
+                optimizer.step()
+                self.visualizer.showWeightsInTrain(batch=batch_val)
+            batch_val += 1
+
+        ## return the losses
+        return aux_losses
 
     def _setup_recurrent_variables(self, prediction_samples, closed_loop, connect):
         ## Prediction samples

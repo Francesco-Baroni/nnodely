@@ -70,9 +70,16 @@ class Modely(Composer, Trainer, Loader, Validator, Exporter):
 
         Composer.__init__(self)
         Loader.__init__(self)
-        Trainer.__init__(self, log_internal)
+        Trainer.__init__(self)
         Validator.__init__(self)
         Exporter.__init__(self, exporter, workspace, save_history=save_history)
+
+        self._set_log_internal(log_internal)
+        self._clean_log_internal()
+
+    @property
+    def internals(self):
+        return ReadOnlyDict(self._internals)
 
     @property
     def neuralized(self):
@@ -130,12 +137,6 @@ class Modely(Composer, Trainer, Loader, Validator, Exporter):
 
     def trainAndAnalyze(self, *args, **kwargs):
         """
-        Train and analyze the model.
-
-        This method is a wrapper that calls the train() and analyze() methods in sequence.
-
-        :param args: Positional arguments to be passed to the train() method.
-        :param kwargs: Keyword arguments to be passed to the train() method.
         """
         self.trainModel(*args, **kwargs)
 
