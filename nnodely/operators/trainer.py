@@ -670,19 +670,6 @@ class Trainer(Network):
         else:
             log.info('The selected model is the LAST model of the training.')
 
-        # setted_log_internal = self._log_internal
-        # self._set_log_internal(False) #TODO To remove when the function is moved outside the train
-        # self.resultAnalysis(tp['train_dataset_name'], XY_train, minimize_gain, closed_loop, connect, prediction_samples, step,
-        #                     train_batch_size)
-        # if self.run_training_params['n_samples_val'] > 0:
-        #     self.resultAnalysis(tp['validation_dataset_name'], XY_val, minimize_gain, closed_loop, connect, prediction_samples,
-        #                         step, val_batch_size)
-        # if self.run_training_params['n_samples_test'] > 0:
-        #     self.resultAnalysis(tp['test_dataset_name'], XY_test, minimize_gain, closed_loop, connect, prediction_samples, step,
-        #                         test_batch_size)
-        # self.visualizer.showResults()
-        # self._set_log_internal(setted_log_internal)
-
         ## Remove virtual states
         self._removeVirtualStates(connect, closed_loop)
 

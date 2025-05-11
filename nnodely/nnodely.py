@@ -139,7 +139,7 @@ class Modely(Composer, Trainer, Loader, Validator, Exporter):
         """
         """
         tp = self.trainModel(*args, **kwargs)
-
+        #TODO add a test that use recurrent in train because I remove the virtual states probably the analysis will not work
         self.resultAnalysis(tp['train_dataset_name'], tp['XY_train'], tp['minimize_gain'],
                             tp['closed_loop'], tp['connect'], tp['prediction_samples'], tp['step'],
                             tp['train_batch_size'])
