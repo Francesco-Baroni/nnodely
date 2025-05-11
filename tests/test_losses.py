@@ -43,7 +43,7 @@ class ModelyTrainingTest(unittest.TestCase):
 
         dataset = {'in1': [1,1,1,1,1,1,1,1,1,1], 'out1': [2,2,2,2,2,2,2,2,2,2], 'out2': [5,5,5,5,5,5,5,5,5,5]}
         test.loadData(name='dataset', source=dataset)
-        test.trainModel(optimizer='SGD', num_of_epochs=5, lr=0.5)
+        test.trainAndAnalyze(optimizer='SGD', num_of_epochs=5, lr=0.5)
         self.TestAlmostEqual( [[[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]]], test.prediction['train_dataset_0.70']['error1']['A'])
         self.TestAlmostEqual([[[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]]] ,test.prediction['train_dataset_0.70']['error1']['B'])
         self.TestAlmostEqual( [[[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]]], test.prediction['train_dataset_0.70']['error2']['A'])
@@ -60,7 +60,7 @@ class ModelyTrainingTest(unittest.TestCase):
         self.TestAlmostEqual(test.performance['test_dataset_0.10']['total']['mean_error'], (test._training['error1']['val'][-1]+test._training['error2']['val'][-1])/2.0)
 
         test.neuralizeModel(clear_model=True)
-        test.trainModel(optimizer='SGD', splits=[60,20,20], num_of_epochs=5, lr=0.5, train_batch_size=2)
+        test.trainAndAnalyze(optimizer='SGD', splits=[60,20,20], num_of_epochs=5, lr=0.5, train_batch_size=2)
         self.TestAlmostEqual( [[[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]]], test.prediction['train_dataset_0.60']['error1']['A'])
         self.TestAlmostEqual([[[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]]] ,test.prediction['train_dataset_0.60']['error1']['B'])
         self.TestAlmostEqual( [[[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]]], test.prediction['train_dataset_0.60']['error2']['A'])
@@ -91,7 +91,7 @@ class ModelyTrainingTest(unittest.TestCase):
 
         dataset = {'in1': [1,1,1,1,1,1,1,1,1,1], 'out1': [2,2,2,2,2,2,2,2,2,2], 'out2': [5,5,5,5,5,5,5,5,5,5]}
         test.loadData(name='dataset', source=dataset)
-        test.trainModel(optimizer='SGD', num_of_epochs=5, lr=0.5, shuffle_data=False)
+        test.trainAndAnalyze(optimizer='SGD', num_of_epochs=5, lr=0.5, shuffle_data=False)
         self.TestAlmostEqual([[[[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]]]], test.prediction['train_dataset_0.70']['error1']['A'])
         self.TestAlmostEqual([[[[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]]]] ,test.prediction['train_dataset_0.70']['error1']['B'])
         self.TestAlmostEqual([[[[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]]]], test.prediction['train_dataset_0.70']['error2']['A'])
@@ -108,7 +108,7 @@ class ModelyTrainingTest(unittest.TestCase):
         self.TestAlmostEqual(test.performance['test_dataset_0.10']['total']['mean_error'], (test._training['error1']['val'][-1]+test._training['error2']['val'][-1])/2.0)
 
         test.neuralizeModel(clear_model=True)
-        test.trainModel(optimizer='SGD', splits=[60,20,20], num_of_epochs=5, lr=0.5, train_batch_size=2)
+        test.trainAndAnalyze(optimizer='SGD', splits=[60,20,20], num_of_epochs=5, lr=0.5, train_batch_size=2)
         self.TestAlmostEqual([[[[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]]]], test.prediction['train_dataset_0.60']['error1']['A'])
         self.TestAlmostEqual([[[[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]]]] ,test.prediction['train_dataset_0.60']['error1']['B'])
         self.TestAlmostEqual([[[[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]]]], test.prediction['train_dataset_0.60']['error2']['A'])
@@ -123,10 +123,10 @@ class ModelyTrainingTest(unittest.TestCase):
 
         test.neuralizeModel(clear_model=True)
         with self.assertRaises(ValueError):
-            test.trainModel(optimizer='SGD', splits=[60,20,20], num_of_epochs=5, lr=0.5, train_batch_size=2, prediction_samples=4)
+            test.trainAndAnalyze(optimizer='SGD', splits=[60,20,20], num_of_epochs=5, lr=0.5, train_batch_size=2, prediction_samples=4)
 
         test.neuralizeModel(clear_model=True)
-        test.trainModel(optimizer='SGD', splits=[50, 50, 0], num_of_epochs=5, lr=0.001, train_batch_size=2, prediction_samples=3)
+        test.trainAndAnalyze(optimizer='SGD', splits=[50, 50, 0], num_of_epochs=5, lr=0.001, train_batch_size=2, prediction_samples=3)
 
         self.TestAlmostEqual([[[[2.0]], [[2.0]]], [[[2.0]], [[2.0]]], [[[2.0]], [[2.0]]], [[[2.0]], [[2.0]]]], test.prediction['train_dataset_0.50']['error1']['A'])
         self.TestAlmostEqual([[[[1.1285]], [[1.1285]]], [[[1.2735]], [[1.2735]]], [[[1.4371]], [[1.4371]]], [[[1.6217]], [[1.6217]]]] ,test.prediction['train_dataset_0.50']['error1']['B'])
@@ -154,7 +154,7 @@ class ModelyTrainingTest(unittest.TestCase):
 
         dataset = {'in1': [1,1,1,1,1,1,1,1,1,1], 'out1': [2,2,2,2,2,2,2,2,2,2], 'out2': [5,5,5,5,5,5,5,5,5,5]}
         test.loadData(name='dataset', source=dataset)
-        test.trainModel(optimizer='SGD', splits=[50, 50, 0], num_of_epochs=5, lr=0.001, train_batch_size=2, prediction_samples=3, closed_loop={'in1': 'out'})
+        test.trainAndAnalyze(optimizer='SGD', splits=[50, 50, 0], num_of_epochs=5, lr=0.001, train_batch_size=2, prediction_samples=3, closed_loop={'in1': 'out'})
 
         self.TestAlmostEqual([[[[2.0]], [[2.0]]], [[[2.0]], [[2.0]]], [[[2.0]], [[2.0]]], [[[2.0]], [[2.0]]]], test.prediction['train_dataset_0.50']['error1']['A'])
         self.TestAlmostEqual([[[[1.1285]], [[1.1285]]], [[[1.2735]], [[1.2735]]], [[[1.4371]], [[1.4371]]], [[[1.6217]], [[1.6217]]]] ,test.prediction['train_dataset_0.50']['error1']['B'])
@@ -184,7 +184,7 @@ class ModelyTrainingTest(unittest.TestCase):
         
         dataset = {'in1': [1], 'out1': [4], 'out2':[[0.0,0.0,0.0,0.0,1.0]]}
         test.loadData(name='dataset', source=dataset)
-        test.trainModel(optimizer='SGD', train_dataset='dataset', train_batch_size=1, num_of_epochs=1, lr=0.0)
+        test.trainAndAnalyze(optimizer='SGD', train_dataset='dataset', train_batch_size=1, num_of_epochs=1, lr=0.0)
         loss = torch.nn.CrossEntropyLoss()
         self.assertAlmostEqual(1.2314292192459106, loss(torch.tensor(test.prediction['dataset']['error1']['A']).squeeze(), torch.tensor(test.prediction['dataset']['error1']['B'], dtype=torch.long).squeeze()).item())
         self.assertAlmostEqual(1.2314292192459106, loss(torch.tensor(test.prediction['dataset']['error2']['A']).squeeze(), torch.tensor(test.prediction['dataset']['error2']['B'], dtype=torch.float32).squeeze()).item())

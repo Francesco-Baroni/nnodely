@@ -534,20 +534,21 @@ class Trainer(Network):
         train_batch_size, val_batch_size, test_batch_size = \
             self.__get_batch_sizes(tp, train_batch_size, val_batch_size, test_batch_size)
 
+        ## Define batch indexes
+        list_of_batch_indexes_train, train_step, list_of_batch_indexes_val, val_step = \
+            self.__setup_batch_indexes(tp)
+
         ## Define the optimizer
         self.__optimizer = \
             self.__inizilize_optimizer(tp, optimizer, optimizer_params, optimizer_defaults, add_optimizer_params,
                                                add_optimizer_defaults, models, lr, lr_param)
 
-        ## Define batch indexes
-        list_of_batch_indexes_train, train_step, list_of_batch_indexes_val, val_step = \
-        self.__setup_batch_indexes(tp)
-
         ## Define mandatory inputs
         mandatory_inputs, non_mandatory_inputs = self._get_mandatory_inputs(connect, closed_loop)
 
         ## Get the training parameters
-        minimize_gain, num_of_epochs = self.__training_info(tp, select_model, select_model_params, early_stopping, early_stopping_params, num_of_epochs, minimize_gain)
+        minimize_gain, num_of_epochs = \
+            self.__training_info(tp, select_model, select_model_params, early_stopping, early_stopping_params, num_of_epochs, minimize_gain)
 
         ## Check the needed keys are in the datasets
         self.__check_needed_keys(tp)
@@ -557,13 +558,13 @@ class Trainer(Network):
 
         self.run_training_params = tp
         ## Clean the dict of the training parameter
-        del self.run_training_params['minimize_gain']
+        #del self.run_training_params['minimize_gain']
         del self.run_training_params['lr']
         del self.run_training_params['lr_param']
-        if prediction_samples < 0:
-            del self.run_training_params['connect']
-            del self.run_training_params['closed_loop']
-            del self.run_training_params['step']
+        #if prediction_samples < 0:
+            #del self.run_training_params['connect']
+            #del self.run_training_params['closed_loop']
+            #del self.run_training_params['step']
         if early_stopping is None:
             del self.run_training_params['early_stopping']
             del self.run_training_params['early_stopping_params']
@@ -597,6 +598,7 @@ class Trainer(Network):
         self.visualizer.showStartTraining()
 
         ## Update with virtual states
+        #TODO Added the case of prediction_samples = -1 removed the connect
         self._model.update(closed_loop=closed_loop, connect=connect)
 
         self.resetStates()  ## Reset the states
@@ -668,22 +670,24 @@ class Trainer(Network):
         else:
             log.info('The selected model is the LAST model of the training.')
 
-        setted_log_internal = self._log_internal
-        self._set_log_internal(False) #TODO To remove when the function is moved outside the train
-        self.resultAnalysis(tp['train_dataset_name'], XY_train, minimize_gain, closed_loop, connect, prediction_samples, step,
-                            train_batch_size)
-        if self.run_training_params['n_samples_val'] > 0:
-            self.resultAnalysis(tp['validation_dataset_name'], XY_val, minimize_gain, closed_loop, connect, prediction_samples,
-                                step, val_batch_size)
-        if self.run_training_params['n_samples_test'] > 0:
-            self.resultAnalysis(tp['test_dataset_name'], XY_test, minimize_gain, closed_loop, connect, prediction_samples, step,
-                                test_batch_size)
-        self.visualizer.showResults()
-        self._set_log_internal(setted_log_internal)
+        # setted_log_internal = self._log_internal
+        # self._set_log_internal(False) #TODO To remove when the function is moved outside the train
+        # self.resultAnalysis(tp['train_dataset_name'], XY_train, minimize_gain, closed_loop, connect, prediction_samples, step,
+        #                     train_batch_size)
+        # if self.run_training_params['n_samples_val'] > 0:
+        #     self.resultAnalysis(tp['validation_dataset_name'], XY_val, minimize_gain, closed_loop, connect, prediction_samples,
+        #                         step, val_batch_size)
+        # if self.run_training_params['n_samples_test'] > 0:
+        #     self.resultAnalysis(tp['test_dataset_name'], XY_test, minimize_gain, closed_loop, connect, prediction_samples, step,
+        #                         test_batch_size)
+        # self.visualizer.showResults()
+        # self._set_log_internal(setted_log_internal)
 
         ## Remove virtual states
         self._removeVirtualStates(connect, closed_loop)
 
         ## Get trained model from torch and set the model_def
         self._model_def.updateParameters(self._model)
+
+        return tp
 #840

@@ -69,6 +69,7 @@ class Validator(Network):
                         A[key].append([])
                         B[key].append([])
 
+                #TODO FIXME
                 list_of_batch_indexes = list(range(n_samples - prediction_samples))
                 ## Remove forbidden indexes in case of a multi-file dataset
                 if dataset in self._multifile.keys(): ## Multi-file Dataset
@@ -78,6 +79,7 @@ class Validator(Network):
                         list_of_batch_indexes, step = self.__get_batch_indexes(dataset, n_samples, prediction_samples, batch_size, step, type='val')
                     else:
                         list_of_batch_indexes, step = self.__get_batch_indexes(dataset, n_samples, prediction_samples, batch_size, step, type='test')
+                #FIXME
 
                 ## Update with virtual states
                 self._model.update(closed_loop=closed_loop, connect=connect)
