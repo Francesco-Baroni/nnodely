@@ -97,19 +97,22 @@ class Validator(Network):
                 for key, value in self._model_def['Minimizers'].items():
                     total_losses[key], A[key], B[key] = [], [], []
 
-                for idx in range(0, (n_samples - batch_size + 1), batch_size):
-                    ## Build the input tensor
-                    XY = {key: val[idx:idx + batch_size] for key, val in data.items()}
+                self._inference(data, n_samples, batch_size, minimize_gain, losses,
+                                total_losses = total_losses, A = A, B = B)
 
-                    ## Model Forward
-                    _, minimize_out, _, _ = self._model(XY)  ## Forward pass
-                    ## Loss Calculation
-                    for key, value in self._model_def['Minimizers'].items():
-                        A[key].append(minimize_out[value['A']].detach().numpy())
-                        B[key].append(minimize_out[value['B']].detach().numpy())
-                        loss = losses[key](minimize_out[value['A']], minimize_out[value['B']])
-                        loss = (loss * minimize_gain[key]) if key in minimize_gain.keys() else loss
-                        total_losses[key].append(loss.detach().numpy())
+                # for idx in range(0, (n_samples - batch_size + 1), batch_size):
+                #     ## Build the input tensor
+                #     XY = {key: val[idx:idx + batch_size] for key, val in data.items()}
+                #
+                #     ## Model Forward
+                #     _, minimize_out, _, _ = self._model(XY)  ## Forward pass
+                #     ## Loss Calculation
+                #     for key, value in self._model_def['Minimizers'].items():
+                #         A[key].append(minimize_out[value['A']].detach().numpy())
+                #         B[key].append(minimize_out[value['B']].detach().numpy())
+                #         loss = losses[key](minimize_out[value['A']], minimize_out[value['B']])
+                #         loss = (loss * minimize_gain[key]) if key in minimize_gain.keys() else loss
+                #         total_losses[key].append(loss.detach().numpy())
 
                 for key, value in self._model_def['Minimizers'].items():
                     A[key] = np.concatenate(A[key])

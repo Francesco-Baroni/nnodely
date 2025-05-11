@@ -106,6 +106,44 @@ class Network:
                 self._states[key] = X[key]
         return related_indexes
 
+    def _inference(self, data, n_samples, batch_size, loss_gains, loss_functions,
+                    shuffle = False, optimizer = None,
+                    total_losses = None, A = None, B = None):
+        if shuffle:
+            randomize = torch.randperm(n_samples)
+            data = {key: val[randomize] for key, val in data.items()}
+        ## Initialize the train losses vector
+        aux_losses = torch.zeros([len(self._model_def['Minimizers']), n_samples // batch_size])
+        for idx in range(0, (n_samples - batch_size + 1), batch_size):
+            ## Build the input tensor
+            XY = {key: val[idx:idx + batch_size] for key, val in data.items()}
+            ## Reset gradient
+            if optimizer:
+                optimizer.zero_grad()
+            ## Model Forward
+            _, minimize_out, _, _ = self._model(XY)  ## Forward pass
+            ## Loss Calculation
+            total_loss = 0
+            for ind, (key, value) in enumerate(self._model_def['Minimizers'].items()):
+                if A is not None:
+                    A[key].append(minimize_out[value['A']].detach().numpy())
+                if B is not None:
+                    B[key].append(minimize_out[value['B']].detach().numpy())
+                loss = loss_functions[key](minimize_out[value['A']], minimize_out[value['B']])
+                loss = (loss * loss_gains[key]) if key in loss_gains.keys() else loss
+                if total_losses is not None:
+                    total_losses[key].append(loss.detach().numpy())
+                aux_losses[ind][idx // batch_size] = loss.item()
+                total_loss += loss
+            ## Gradient step
+            if optimizer:
+                total_loss.backward()
+                optimizer.step()
+                self.visualizer.showWeightsInTrain(batch=idx // batch_size)
+
+        ## return the losses
+        return aux_losses
+
     def _recurrent_inference(self, data, batch_indexes, batch_size, loss_gains, prediction_samples,
                              step, non_mandatory_inputs, mandatory_inputs, loss_functions,
                              shuffle = False, optimizer = None,
@@ -142,7 +180,7 @@ class Network:
                     if B is not None:
                         B[key][horizon_idx].append(minimize_out[value['B']].detach().numpy())
                     loss = loss_functions[key](minimize_out[value['A']], minimize_out[value['B']])
-                    loss = (loss * loss_gains[key]) if key in loss_gains.keys() else loss  ## Multiply by the gain if necessary
+                    loss = (loss * loss_gains[key]) if key in loss_gains.keys() else loss
                     horizon_losses[ind].append(loss)
 
                 ## Update

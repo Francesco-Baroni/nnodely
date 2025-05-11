@@ -43,38 +43,37 @@ class Trainer(Network):
         self.__optimizer = None
 
 
-    def __Train(self, data, n_samples, batch_size, loss_gains, shuffle=True, train=True):
-        check((n_samples - batch_size + 1) > 0, ValueError,
-              f"The number of available sample are (n_samples_train - train_batch_size + 1) = {n_samples - batch_size + 1}.")
-        if shuffle:
-            randomize = torch.randperm(n_samples)
-            data = {key: val[randomize] for key, val in data.items()}
-        ## Initialize the train losses vector
-        aux_losses = torch.zeros([len(self._model_def['Minimizers']), n_samples // batch_size])
-        for idx in range(0, (n_samples - batch_size + 1), batch_size):
-            ## Build the input tensor
-            XY = {key: val[idx:idx + batch_size] for key, val in data.items()}
-            ## Reset gradient
-            if train:
-                self.__optimizer.zero_grad()
-            ## Model Forward
-            _, minimize_out, _, _ = self._model(XY)  ## Forward pass
-            ## Loss Calculation
-            total_loss = 0
-            for ind, (key, value) in enumerate(self._model_def['Minimizers'].items()):
-                loss = self.__loss_functions[key](minimize_out[value['A']], minimize_out[value['B']])
-                loss = (loss * loss_gains[
-                    key]) if key in loss_gains.keys() else loss  ## Multiply by the gain if necessary
-                aux_losses[ind][idx // batch_size] = loss.item()
-                total_loss += loss
-            ## Gradient step
-            if train:
-                total_loss.backward()
-                self.__optimizer.step()
-                self.visualizer.showWeightsInTrain(batch=idx // batch_size)
-
-        ## return the losses
-        return aux_losses
+    # def __Train(self, data, n_samples, batch_size, loss_gains, shuffle=True, train=True):
+    #
+    #     if shuffle:
+    #         randomize = torch.randperm(n_samples)
+    #         data = {key: val[randomize] for key, val in data.items()}
+    #     ## Initialize the train losses vector
+    #     aux_losses = torch.zeros([len(self._model_def['Minimizers']), n_samples // batch_size])
+    #     for idx in range(0, (n_samples - batch_size + 1), batch_size):
+    #         ## Build the input tensor
+    #         XY = {key: val[idx:idx + batch_size] for key, val in data.items()}
+    #         ## Reset gradient
+    #         if train:
+    #             self.__optimizer.zero_grad()
+    #         ## Model Forward
+    #         _, minimize_out, _, _ = self._model(XY)  ## Forward pass
+    #         ## Loss Calculation
+    #         total_loss = 0
+    #         for ind, (key, value) in enumerate(self._model_def['Minimizers'].items()):
+    #             loss = self.__loss_functions[key](minimize_out[value['A']], minimize_out[value['B']])
+    #             loss = (loss * loss_gains[
+    #                 key]) if key in loss_gains.keys() else loss  ## Multiply by the gain if necessary
+    #             aux_losses[ind][idx // batch_size] = loss.item()
+    #             total_loss += loss
+    #         ## Gradient step
+    #         if train:
+    #             total_loss.backward()
+    #             self.__optimizer.step()
+    #             self.visualizer.showWeightsInTrain(batch=idx // batch_size)
+    #
+    #     ## return the losses
+    #     return aux_losses
 
     @enforce_types
     def addMinimize(self, name:str, streamA:Stream|Output, streamB:Stream|Output, loss_function:str='mse') -> None:
@@ -248,6 +247,9 @@ class Trainer(Network):
         tp['val_batch_size'] = get_batch_size(tp['n_samples_val'], tp['val_batch_size'], tp['prediction_samples'])
         tp['test_batch_size'] = get_batch_size(tp['n_samples_test'], tp['test_batch_size'], tp['prediction_samples'])
 
+        check((tp['n_samples_train'] - tp['train_batch_size'] + 1) > 0, ValueError,
+              f"The number of available sample are (n_samples_train - train_batch_size + 1)"
+              f" = {tp['n_samples_train'] - tp['train_batch_size'] + 1}.")
         check(tp['train_batch_size'] > 0, ValueError,
               f'The auto train_batch_size ({tp["train_batch_size"]}) = n_samples_train ({tp["n_samples_train"]}) '
               f'- prediction_samples ({tp["prediction_samples"]}), must be greater than 0.')
@@ -641,8 +643,11 @@ class Trainer(Network):
                                                    mandatory_inputs, self.__loss_functions,
                                                    shuffle=shuffle_data, optimizer=self.__optimizer)
             else:
-                losses = self.__Train(XY_train, n_samples_train, train_batch_size, minimize_gain, shuffle=shuffle_data,
-                                      train=True)
+                losses = self._inference(XY_train, n_samples_train, train_batch_size, minimize_gain,
+                                         self.__loss_functions, shuffle=shuffle_data, optimizer=self.__optimizer)
+
+                # losses = self.__Train(XY_train, n_samples_train, train_batch_size, minimize_gain, shuffle=shuffle_data,
+                #                       train=True)
             ## save the losses
             for ind, key in enumerate(self._model_def['Minimizers'].keys()):
                 train_losses[key].append(torch.mean(losses[ind]).tolist())
@@ -657,8 +662,10 @@ class Trainer(Network):
                                                        prediction_samples, val_step, non_mandatory_inputs,
                                                        mandatory_inputs, self.__loss_functions)
                 else:
-                    losses = self.__Train(XY_val, n_samples_val, val_batch_size, minimize_gain, shuffle=False,
-                                          train=False)
+                    losses = self._inference(XY_val, n_samples_val, val_batch_size, minimize_gain,
+                                             self.__loss_functions)
+                    # losses = self.__Train(XY_val, n_samples_val, val_batch_size, minimize_gain, shuffle=False,
+                    #                       train=False)
                 self._set_log_internal(setted_log_internal)
 
                 ## save the losses
