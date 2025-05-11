@@ -93,42 +93,6 @@ class Validator(Network):
                             B[key][horizon_idx] = np.concatenate(B[key][horizon_idx])
                     if total_losses is not None:
                         total_losses[key] = np.mean(total_losses[key])
-
-                # while len(list_of_batch_indexes) >= batch_size:
-                #     selected_indexes = self._get_not_mandatory_inputs(data, X, non_mandatory_inputs, list_of_batch_indexes,
-                #                                                       batch_size, step)
-                #
-                #     horizon_losses = {key: [] for key in self._model_def['Minimizers'].keys()}
-                #
-                #     for horizon_idx in range(prediction_samples + 1):
-                #         ## Get data
-                #         for key in mandatory_inputs:
-                #             X[key] = data[key][[idx+horizon_idx for idx in selected_indexes]]
-                #         ## Forward pass
-                #         out, minimize_out, out_closed_loop, out_connect = self._model(X)
-                #
-                #         ## Loss Calculation
-                #         for key, value in self._model_def['Minimizers'].items():
-                #             A[key][horizon_idx].append(minimize_out[value['A']].detach().numpy())
-                #             B[key][horizon_idx].append(minimize_out[value['B']].detach().numpy())
-                #             loss = losses[key](minimize_out[value['A']], minimize_out[value['B']])
-                #             loss = (loss * minimize_gain[key]) if key in minimize_gain.keys() else loss  ## Multiply by the gain if necessary
-                #             horizon_losses[key].append(loss)
-                #
-                #         ## Update
-                #         self._updateState(X, out_closed_loop, out_connect)
-                #
-                #     ## Calculate the total loss
-                #     for key in self._model_def['Minimizers'].keys():
-                #         loss = sum(horizon_losses[key]) / (prediction_samples + 1)
-                #         total_losses[key].append(loss.detach().numpy())
-                #
-                # for key, value in self._model_def['Minimizers'].items():
-                #     for horizon_idx in range(prediction_samples + 1):
-                #         A[key][horizon_idx] = np.concatenate(A[key][horizon_idx])
-                #         B[key][horizon_idx] = np.concatenate(B[key][horizon_idx])
-                #     total_losses[key] = np.mean(total_losses[key])
-
             else:
                 for key, value in self._model_def['Minimizers'].items():
                     total_losses[key], A[key], B[key] = [], [], []
