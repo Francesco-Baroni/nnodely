@@ -42,63 +42,63 @@ class Trainer(Network):
         # Optimizer
         self.__optimizer = None
 
-    def __recurrentTrain(self, data, batch_indexes, batch_size, loss_gains, prediction_samples,
-                         step, non_mandatory_inputs, mandatory_inputs, shuffle=False, train=True):
-        indexes = copy.deepcopy(batch_indexes)
-        aux_losses = \
-            torch.zeros([len(self._model_def['Minimizers']), round((len(indexes) + step) / (batch_size + step))])
-        X = {}
-        batch_val = 0
-        while len(indexes) >= batch_size:
-            selected_indexes = self._get_not_mandatory_inputs(data, X, non_mandatory_inputs, indexes, batch_size, step, shuffle)
-
-            horizon_losses = {ind: [] for ind in range(len(self._model_def['Minimizers']))}
-            if train:
-                self.__optimizer.zero_grad()  ## Reset the gradient
-
-            for horizon_idx in range(prediction_samples + 1):
-                ## Get data
-                for key in mandatory_inputs:
-                    X[key] = data[key][[idx + horizon_idx for idx in selected_indexes]]
-                ## Forward pass
-                out, minimize_out, out_closed_loop, out_connect = self._model(X)
-
-                if self._log_internal and train:
-                    #assert (check_gradient_operations(self._states) == 0)
-                    #assert (check_gradient_operations(data) == 0)
-                    internals_dict = {'XY': tensor_to_list(X), 'out': out, 'param': self._model.all_parameters,
-                                      'closedLoop': self._model.closed_loop_update, 'connect': self._model.connect_update}
-
-                ## Loss Calculation
-                for ind, (key, value) in enumerate(self._model_def['Minimizers'].items()):
-                    loss = self.__loss_functions[key](minimize_out[value['A']], minimize_out[value['B']])
-                    loss = (loss * loss_gains[key]) if key in loss_gains.keys() else loss  ## Multiply by the gain if necessary
-                    horizon_losses[ind].append(loss)
-
-                ## Update
-                self._updateState(X, out_closed_loop, out_connect)
-
-
-                if self._log_internal and train:
-                    internals_dict['state'] = self._states
-                    self._save_internal('inout_' + str(batch_val) + '_' + str(horizon_idx), internals_dict)
-
-            ## Calculate the total loss
-            total_loss = 0
-            for ind in range(len(self._model_def['Minimizers'])):
-                loss = sum(horizon_losses[ind]) / (prediction_samples + 1)
-                aux_losses[ind][batch_val] = loss.item()
-                total_loss += loss
-
-            ## Gradient Step
-            if train:
-                total_loss.backward()  ## Backpropagate the error
-                self.__optimizer.step()
-                self.visualizer.showWeightsInTrain(batch=batch_val)
-            batch_val += 1
-
-        ## return the losses
-        return aux_losses
+    # def __recurrentTrain(self, data, batch_indexes, batch_size, loss_gains, prediction_samples,
+    #                      step, non_mandatory_inputs, mandatory_inputs, shuffle=False, train=True):
+    #     indexes = copy.deepcopy(batch_indexes)
+    #     aux_losses = \
+    #         torch.zeros([len(self._model_def['Minimizers']), round((len(indexes) + step) / (batch_size + step))])
+    #     X = {}
+    #     batch_val = 0
+    #     while len(indexes) >= batch_size:
+    #         selected_indexes = self._get_not_mandatory_inputs(data, X, non_mandatory_inputs, indexes, batch_size, step, shuffle)
+    #
+    #         horizon_losses = {ind: [] for ind in range(len(self._model_def['Minimizers']))}
+    #         if train:
+    #             self.__optimizer.zero_grad()  ## Reset the gradient
+    #
+    #         for horizon_idx in range(prediction_samples + 1):
+    #             ## Get data
+    #             for key in mandatory_inputs:
+    #                 X[key] = data[key][[idx + horizon_idx for idx in selected_indexes]]
+    #             ## Forward pass
+    #             out, minimize_out, out_closed_loop, out_connect = self._model(X)
+    #
+    #             if self._log_internal and train:
+    #                 #assert (check_gradient_operations(self._states) == 0)
+    #                 #assert (check_gradient_operations(data) == 0)
+    #                 internals_dict = {'XY': tensor_to_list(X), 'out': out, 'param': self._model.all_parameters,
+    #                                   'closedLoop': self._model.closed_loop_update, 'connect': self._model.connect_update}
+    #
+    #             ## Loss Calculation
+    #             for ind, (key, value) in enumerate(self._model_def['Minimizers'].items()):
+    #                 loss = self.__loss_functions[key](minimize_out[value['A']], minimize_out[value['B']])
+    #                 loss = (loss * loss_gains[key]) if key in loss_gains.keys() else loss  ## Multiply by the gain if necessary
+    #                 horizon_losses[ind].append(loss)
+    #
+    #             ## Update
+    #             self._updateState(X, out_closed_loop, out_connect)
+    #
+    #
+    #             if self._log_internal and train:
+    #                 internals_dict['state'] = self._states
+    #                 self._save_internal('inout_' + str(batch_val) + '_' + str(horizon_idx), internals_dict)
+    #
+    #         ## Calculate the total loss
+    #         total_loss = 0
+    #         for ind in range(len(self._model_def['Minimizers'])):
+    #             loss = sum(horizon_losses[ind]) / (prediction_samples + 1)
+    #             aux_losses[ind][batch_val] = loss.item()
+    #             total_loss += loss
+    #
+    #         ## Gradient Step
+    #         if train:
+    #             total_loss.backward()  ## Backpropagate the error
+    #             self.__optimizer.step()
+    #             self.visualizer.showWeightsInTrain(batch=batch_val)
+    #         batch_val += 1
+    #
+    #     ## return the losses
+    #     return aux_losses
 
     def __Train(self, data, n_samples, batch_size, loss_gains, shuffle=True, train=True):
         check((n_samples - batch_size + 1) > 0, ValueError,
