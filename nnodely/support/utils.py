@@ -171,9 +171,11 @@ def subjson_from_model(json, models:str|list):
         if 'connect' in value and (value['local'] == 0 and value['connect'] not in final_json['Relations'].keys()):
             del final_json['Inputs'][key]['connect']
             del final_json['Inputs'][key]['local']
-        if 'closed_loop' in value and (value['local'] == 0 and value['closed_loop'] not in final_json['Relations'].keys()):
-            del final_json['Inputs'][key]['closed_loop']
+            log.warning(f'The input {key} is "connect" outside the model connection removed for subjson')
+        if 'closedLoop' in value and (value['local'] == 0 and value['closedLoop'] not in final_json['Relations'].keys()):
+            del final_json['Inputs'][key]['closedLoop']
             del final_json['Inputs'][key]['local']
+            log.warning(f'The input {key} is "closedLoop" outside the model connection removed for subjson')
     return final_json
 
 def enforce_types(func):

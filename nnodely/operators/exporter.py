@@ -326,6 +326,8 @@ class Exporter(Network):
         else:
             model_def = self._model_def
             model = self._model
+        check(len(model_def.recurrentInputs().keys()) < len(model_def['Inputs'].keys()), TypeError,
+              "The network is autonomous only state variable are present.")
         model.update()
         self.__exporter.exportONNX(model_def, model, inputs_order, outputs_order, name, model_folder)
 

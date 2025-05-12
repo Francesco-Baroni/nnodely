@@ -1,4 +1,4 @@
-import sys, os, unittest
+import sys, os, unittest, copy
 
 import numpy as np
 
@@ -670,8 +670,11 @@ class ModelyJsonTest(unittest.TestCase):
         self.assertEqual(sorted(list(subjson_B['Parameters'].keys())), sorted(['W3', 'W4']))
         self.assertEqual(sorted(list(subjson_A['Outputs'].keys())), sorted(['out1', 'out2']))
         self.assertEqual(sorted(list(subjson_B['Outputs'].keys())), sorted(['out3', 'out4']))
+        yval = copy.deepcopy(nn.json['Inputs']['y'])
+        del yval['closedLoop']
+        del yval['local']
         self.assertEqual(subjson_A['Inputs']['y'], nn.json['Inputs']['y'])
-        self.assertEqual(subjson_B['Inputs']['y'], nn.json['Inputs']['y'])
+        self.assertEqual(subjson_B['Inputs']['y'], yval)
 
         aa = Modely(visualizer=None)
         aa.addModel('model_A', [out1, out2])
@@ -680,14 +683,7 @@ class ModelyJsonTest(unittest.TestCase):
 
         bb = Modely(visualizer=None)
         bb.addModel('model_B', [out3, out4])
-        #self.assertEqual(subjson_B, bb.json) # TODO FIX Including the control on the export
-
-        # This is not equal becouse the subjson is not neuralized
-        # nn.neuralizeModel(2.0)
-        # aa.neuralizeModel(2.0)
-        # bb.neuralizeModel(2.0)
-        # self.assertEqual(subjson(nn.json, 'model_A'), aa.json)
-        # self.assertEqual(subjson(nn.json, 'model_B'), bb.json)
+        self.assertEqual(subjson_B, bb.json)
 
     def test_add_remove_models(self):
         Stream.resetCount()
