@@ -207,6 +207,7 @@ class Stream(Relation):
 
     @enforce_types
     def z(self, delay:int|float, *, name:str|None = None) -> "Stream":
+        # TODO fix the convetion z-1 means a dealy z+1 means unitary advance
         """
         Considering the Zeta transform notation. The function is used to delay a Stream.
         The value of the delay can be only positive.
@@ -241,8 +242,6 @@ class Stream(Relation):
         Stream
             A Stream representing the delayed Stream
         """
-        from nnodely.layers.input import Input
-        from nnodely.layers.part import TimePart
         check(delay > 0, ValueError, "The delay must be a positive integer")
         check('tw' in self.dim, TypeError, "The stream is not defined in time but in sample")
         return self.tw([-self.dim['tw']-delay,-delay], name = name)

@@ -304,15 +304,18 @@ class ModelyExportTest(unittest.TestCase):
         os.makedirs(self.result_path, exist_ok=True)
 
         self.test.neuralizeModel(0.5, clear_model=True)
+        # Export all network with minimize
+        self.test.exportONNX(inputs_order=['x', 'y', 'z'], outputs_order=['out', 'out2', 'out3', 'out4', 'out5', 'out6'])  # Export the onnx model
         # Export the all models in onnx format
-        self.test.exportONNX(inputs_order=['x', 'y'], outputs_order=['out', 'out2', 'out3', 'out4', 'out5', 'out6'])  # Export the onnx model
+        self.test.exportONNX(models=['modelA','modelB','modelC','modelD'], inputs_order=['x', 'y'], outputs_order=['out', 'out2', 'out3', 'out4', 'out5', 'out6'])  # Export the onnx model
         # Export only the modelB in onnx format
         self.test.exportONNX(inputs_order=['x', 'y'], outputs_order=['out3', 'out4', 'out2'], models=['modelB'])  # Export the onnx model
         self.assertTrue(os.path.exists(os.path.join(self.test.getWorkspace(), 'onnx', 'net.onnx')))
+        self.assertTrue(os.path.exists(os.path.join(self.test.getWorkspace(), 'onnx', 'net_modelA_modelB_modelC_modelD.onnx')))
         self.assertTrue(os.path.exists(os.path.join(self.test.getWorkspace(), 'onnx', 'net_modelB.onnx')))
 
         if os.path.exists(self.test.getWorkspace()):
-            shutil.rmtree(self.test.getWorkspace())
+           shutil.rmtree(self.test.getWorkspace())
 
     def test_export_report(self):
         if os.path.exists(self.test.getWorkspace()):

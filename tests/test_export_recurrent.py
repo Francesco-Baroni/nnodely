@@ -186,6 +186,7 @@ class ModelyExportTest(unittest.TestCase):
     def test_export_and_import_onnx_module_complex(self):
         # Create nnodely structure
         result_path = 'results'
+        network_name = 'vehicle'
         vehicle = Modely(visualizer=None, seed=2, workspace=result_path)
 
         # Dimensions of the layers
@@ -212,7 +213,7 @@ class ModelyExportTest(unittest.TestCase):
         out = Output('accelleration', air_drag_force+breaking_force+gravity_force+engine_force)
 
         # Add the neural model to the nnodely structure and neuralization of the model
-        vehicle.addModel('acc',[out])
+        vehicle.addModel('acc',out)
         vehicle.addMinimize('acc_error', acc.last(), out, loss_function='rmse')
         vehicle.neuralizeModel(0.05)
 
@@ -222,19 +223,18 @@ class ModelyExportTest(unittest.TestCase):
         vehicle.loadData(name='dataset', source=data_folder, format=data_struct, skiplines=1)
 
         # Inference
-        sample = vehicle.getSamples('dataset', window=1)
-        model_inference = vehicle(sample, sampled=True)
+        model_sample = vehicle.getSamples('dataset', window=1)
+        model_inference = vehicle(model_sample, sampled=True, prediction_samples=1)
 
         ## Export the Onnx Model
-        vehicle.exportONNX(['vel','brk','gear','trq','alt'],['accelleration'])
+        vehicle.exportONNX(['vel','brk','gear','trq','alt'],['accelleration'], network_name, models='acc')
 
-        ## Onnx Import
-        # onnx_model_path = os.path.join(result_path, 'onnx', 'net.onnx')
-        # outputs = Modely(visualizer=None).onnxInference(sample, onnx_model_path)
-        # self.assertEqual(outputs[0][0][0].tolist(), model_inference['accelleration'])
-        #
-        # if os.path.exists(vehicle.getWorkspace()):
-        #     shutil.rmtree(vehicle.getWorkspace())
+        # Onnx Import
+        outputs = Modely(visualizer=None).onnxInference(model_sample, name=network_name, model_folder=result_path)
+        self.assertEqual(outputs[0][0], model_inference['accelleration'])
+
+        if os.path.exists(vehicle.getWorkspace()):
+            shutil.rmtree(vehicle.getWorkspace())
 
     def test_export_python_module_recurrent(self):
         NeuObj.clearNames()
@@ -826,6 +826,7 @@ class ModelyExportTest(unittest.TestCase):
         results = Modely(workspace=result_path, visualizer=None).onnxInference(init_inputs_2_ox | init_states_diff_2_ox)
         self.assertEqual([[[[[-6.0]]]], [[[[-2.0]]]], [[[[-40.0]]]], [[[[6.0]]]]], results)
 
+
         ## Testing loading of model1
         # Target with states = 0.0
         results_target_m2 = {'Dout': [(-2.0 + 1.0 + 1.0) * 2.0],
@@ -895,7 +896,6 @@ class ModelyExportTest(unittest.TestCase):
         #log.setAllLevel(logging.CRITICAL)
 
     def test_partial_model_export_extern_connection(self):
-        # TODO add the local connection
         result_path = 'results'
         NeuObj.clearNames()
         #Network A and B -> Model1
@@ -905,8 +905,8 @@ class ModelyExportTest(unittest.TestCase):
         pA = Parameter('PA', sw=1, values=[[3.0]])
         pB = Parameter('PB', sw=1, values=[[-5.0]])
 
-        Aout = (Ain1.last() * pA).sw(1)
-        Bout = (Bin1.last() * pB).tw(1)
+        Aout = (Ain1.last() * pA).sw(1, name='AoutD')
+        Bout = (Bin1.last() * pB).tw(1, name='BoutD')
 
         modelA = Output('Aout',Aout)
         modelB = Output('Bout',Bout)
@@ -914,16 +914,16 @@ class ModelyExportTest(unittest.TestCase):
         Cin1 = Input('Cin1')
         Din1 = Input('Din1')
 
-        pC = Parameter('PC', sw=1, values=[[-1.0]])
+        pC = Parameter('PC', tw=1, values=[[-1.0]])
         pD = Parameter('PD', sw=1, values=[[2.0]])
 
-        Cout = Cin1.last() * pC
-        Dout = Din1.last() * pD
+        Cout = (Cin1.tw(1) * pC).delay(1, name='CoutD') # TODO Change convetion
+        Dout = (Din1.last() * pD).z(1, name='DoutD')
 
         modelC = Output('Cout',Cout)
         modelD = Output('Dout',Dout)
 
-        m = Modely(workspace=result_path, visualizer=None)
+        m = Modely(workspace=result_path, visualizer=TextVisualizer())
 
         m.addModel('model1', [modelA, modelB])
         m.addModel('model2', [modelC, modelD])
@@ -932,17 +932,18 @@ class ModelyExportTest(unittest.TestCase):
         m.addClosedLoop(Dout,Ain1)
         m.addClosedLoop(Bout,Cin1)
 
-        init_states = {'Ain1': [1], 'Bin1':[2], 'Cin1':[3], 'Din1': [4]}
-        init_states_diff = {'Ain1': [1], 'Bin1':[12], 'Cin1':[3], 'Din1': [12]}
+        init_states = {'Ain1': [1,1], 'Bin1':[2,2], 'Cin1':[3,3], 'Din1': [4,4]}
+        init_states_diff = {'Ain1': [1,1], 'Bin1':[12,20], 'Cin1':[3,3], 'Din1': [12,20]}
 
         # Target with states = 0.0
-        results_target = {'Dout': [3.0 * 2.0],
-                          'Cout': [3.0 * -1.0],
-                          'Bout': [-3.0 * -5.0],
-                          'Aout': [1.0 * 3.0]}
+        results_target = {'Dout': [0.0, 3.0 * 2.0],
+                          'Cout': [0.0, 3.0 * -1.0],
+                          'Bout': [0.0, -3.0*-5.0],
+                          'Aout': [1.0 * 3.0, 1.0 * 3.0]}
 
         m.neuralizeModel()
         self.assertEqual(results_target, m(init_states))
+        m.resetStates()
         self.assertEqual(results_target, m(init_states_diff))
 
         ## Test loading of all models
@@ -958,6 +959,7 @@ class ModelyExportTest(unittest.TestCase):
         l.parameters['PA'] = [[22.0]]
         l.loadTorchModel()
         self.assertEqual(results_target, l(init_states))
+        l.resetStates()
         self.assertEqual(results_target, l(init_states_diff))
 
         m.saveModel()
@@ -965,12 +967,14 @@ class ModelyExportTest(unittest.TestCase):
         l.loadModel()
         l.neuralizeModel()
         self.assertEqual(results_target, l(init_states))
+        l.resetStates()
         self.assertEqual(results_target, l(init_states_diff))
 
         m.exportPythonModel()
         l = Modely(workspace=result_path, visualizer=None)
         l.importPythonModel()
         self.assertEqual(results_target, l(init_states))
+        l.resetStates()
         self.assertEqual(results_target, l(init_states_diff))
 
         with self.assertRaises(TypeError):

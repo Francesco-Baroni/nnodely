@@ -80,6 +80,7 @@ def get_window(obj):
     return 'tw' if 'tw' in obj.dim else ('sw' if 'sw' in obj.dim else None)
 
 def subjson_from_relation(json, relation):
+    json = copy.deepcopy(json)
     # Get all the inputs needed to compute a specific relation from the json graph
     inputs = set()
     relations = set()
@@ -132,6 +133,7 @@ def subjson_from_relation(json, relation):
 
 
 def subjson_from_output(json, outputs:str|list):
+    json = copy.deepcopy(json)
     from nnodely.basic.relation import MAIN_JSON
     sub_json = copy.deepcopy(MAIN_JSON)
     if type(outputs) is str:
@@ -143,6 +145,7 @@ def subjson_from_output(json, outputs:str|list):
 
 def subjson_from_model(json, models:str|list):
     from nnodely.basic.relation import MAIN_JSON
+    json = copy.deepcopy(json)
     sub_json = copy.deepcopy(MAIN_JSON)
     models_names = set([json['Models']]) if type(json['Models']) is str else set(json['Models'].keys())
     if type(models) is str or len(models) == 1:
@@ -161,7 +164,17 @@ def subjson_from_model(json, models:str|list):
             check(model in models_names, AttributeError, f"Model [{model}] not found!")
             outputs |= set(json['Models'][model]['Outputs'])
             sub_json['Models'][model] = {key: value for key, value in json['Models'][model].items()}
-    return merge(sub_json, subjson_from_output(json, outputs))
+
+    # Remove the extern connections not keys in the graph
+    final_json = merge(sub_json, subjson_from_output(json, outputs))
+    for key, value in final_json['Inputs'].items():
+        if 'connect' in value and (value['local'] == 0 and value['connect'] not in final_json['Relations'].keys()):
+            del final_json['Inputs'][key]['connect']
+            del final_json['Inputs'][key]['local']
+        if 'closed_loop' in value and (value['local'] == 0 and value['closed_loop'] not in final_json['Relations'].keys()):
+            del final_json['Inputs'][key]['closed_loop']
+            del final_json['Inputs'][key]['local']
+    return final_json
 
 def enforce_types(func):
     @wraps(func)
