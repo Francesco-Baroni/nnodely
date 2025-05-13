@@ -191,9 +191,7 @@ class Model(nn.Module):
         minimize_dict = {}
         for key in self.minimizers_keys:
             minimize_dict[key] = result_dict[self.outputs[key]] if key in self.outputs.keys() else result_dict[key]
-
         return output_dict, minimize_dict, closed_loop_update_dict, connect_update_dict
-
 
     def update(self, closed_loop={}, connect={}):
         self.closed_loop_update = {}

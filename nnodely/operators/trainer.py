@@ -527,13 +527,16 @@ class Trainer(Network):
             self.__setup_recurrent_train(tp, prediction_samples, step, closed_loop, connect)
 
         ## Get the dataset
+        #TODO check
         shuffle_data, XY_train, XY_val, XY_test, n_samples_train, n_samples_val, n_samples_test = \
             self.__setup_dataset(tp, shuffle_data, train_dataset, validation_dataset, test_dataset, splits)
 
+        #TODO: check
         ## Get batchsize
         train_batch_size, val_batch_size, test_batch_size = \
             self.__get_batch_sizes(tp, train_batch_size, val_batch_size, test_batch_size)
 
+        #TODO: check
         ## Define batch indexes
         list_of_batch_indexes_train, train_step, list_of_batch_indexes_val, val_step = \
             self.__setup_batch_indexes(tp)
@@ -677,4 +680,4 @@ class Trainer(Network):
         self._model_def.updateParameters(self._model)
 
         return tp
-#840
+#from 840

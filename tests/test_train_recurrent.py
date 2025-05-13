@@ -86,7 +86,7 @@ class ModelyTrainingTest(unittest.TestCase):
         ## The folder contains 3 files with 10, 20 and 30 samples respectively
         data_struct = ['x', 'y']
         data_folder = os.path.join(os.path.dirname(__file__), 'multifile/')
-        test.loadData(name='dataset', source=data_folder, format=data_struct, skiplines=1, delimiter=' ')
+        test.loadData(name='dataset', source=data_folder, format=data_struct, skiplines=1)
         self.assertEqual(len(test._data['dataset']['x']), 42)
         self.assertEqual(len(test._data['dataset']['y']), 42)
 
