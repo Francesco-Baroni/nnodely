@@ -10,7 +10,7 @@ from nnodely.layers.output import Output
 from nnodely.layers.activation import Relu, ELU, Softmax, Sigmoid, Identity
 from nnodely.layers.fir import Fir
 from nnodely.layers.linear import Linear
-from nnodely.layers.arithmetic import Add, Sum, Sub, Mul, Div, Pow, Neg
+from nnodely.layers.arithmetic import Add, Sum, Sub, Mul, Div, Pow, Neg, Sign
 from nnodely.layers.trigonometric import Sin, Cos, Tan, Cosh, Tanh, Sech
 from nnodely.layers.parametricfunction import ParamFun
 from nnodely.layers.fuzzify import Fuzzify
@@ -55,7 +55,7 @@ __all__ = [
     'Relu', 'ELU', 'Softmax', 'Sigmoid', 'Identity',
     'Fir',
     'Linear',
-    'Add', 'Sum', 'Sub', 'Mul', 'Div', 'Pow', 'Neg',
+    'Add', 'Sum', 'Sub', 'Mul', 'Div', 'Pow', 'Neg', 'Sign',
     'Sin', 'Cos', 'Tan', 'Cosh', 'Tanh', 'Sech',
     'ParamFun',
     'Fuzzify',
