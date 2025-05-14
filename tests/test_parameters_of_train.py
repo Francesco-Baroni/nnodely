@@ -54,7 +54,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         self.assertEqual(1, test.run_training_params['update_per_epochs'])
         self.assertEqual(0, test.run_training_params['unused_samples'])
         self.assertEqual(1,test.run_training_params['val_batch_size'])
-        self.assertEqual(1,test.run_training_params['test_batch_size'])
+        #self.assertEqual(1,test.run_training_params['test_batch_size'])
         self.assertEqual(100,test.run_training_params['num_of_epochs'])
         self.assertEqual(0.001,test.run_training_params['optimizer_defaults']['lr'])
 
@@ -80,7 +80,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         training_params = {}
         training_params['train_batch_size'] = 4
         training_params['val_batch_size'] = 4
-        training_params['test_batch_size'] = 1
+        #training_params['test_batch_size'] = 1
         training_params['lr'] = 0.1
         training_params['num_of_epochs'] = 5
         test.trainModel(splits=[70,20,10], closed_loop={'in1':'y'}, prediction_samples=5, training_params = training_params)
@@ -91,7 +91,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         self.assertEqual(495, test._num_of_samples['dataset'])
         self.assertEqual(4,test.run_training_params['train_batch_size'])
         self.assertEqual(4,test.run_training_params['val_batch_size'])
-        self.assertEqual(1,test.run_training_params['test_batch_size'])
+        #self.assertEqual(1,test.run_training_params['test_batch_size'])
         self.assertEqual(5,test.run_training_params['num_of_epochs'])
         self.assertEqual(5, test.run_training_params['prediction_samples'])
         self.assertEqual(0, test.run_training_params['step'])
@@ -129,7 +129,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         training_params = {}
         training_params['train_batch_size'] = 4
         training_params['val_batch_size'] = 4
-        training_params['test_batch_size'] = 1
+        #training_params['test_batch_size'] = 1
         training_params['lr'] = 0.1
         training_params['num_of_epochs'] = 50
 
@@ -141,7 +141,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         self.assertEqual((len(data_x)-1) * 100 / 100, test._num_of_samples['dataset'])
         self.assertEqual(4,test.run_training_params['train_batch_size'])
         self.assertEqual(0,test.run_training_params['val_batch_size'])
-        self.assertEqual(0,test.run_training_params['test_batch_size'])
+        #self.assertEqual(0,test.run_training_params['test_batch_size'])
         self.assertEqual(50,test.run_training_params['num_of_epochs'])
         self.assertEqual(3, test.run_training_params['prediction_samples'])
         self.assertEqual(1, test.run_training_params['step'])
@@ -175,7 +175,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         training_params = {}
         training_params['train_batch_size'] = 4
         training_params['val_batch_size'] = 4
-        training_params['test_batch_size'] = 1
+        #training_params['test_batch_size'] = 1
         training_params['lr'] = 0.01
         training_params['num_of_epochs'] = 50
         test.trainModel(splits=[80, 20, 0], closed_loop={'x': 'out'}, prediction_samples=3, step=2,
@@ -187,7 +187,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         self.assertEqual((len(data_x) - 0) * 100 / 100, test._num_of_samples['dataset'])
         self.assertEqual(4, test.run_training_params['train_batch_size'])
         self.assertEqual(4, test.run_training_params['val_batch_size'])
-        self.assertEqual(0, test.run_training_params['test_batch_size'])
+        #self.assertEqual(0, test.run_training_params['test_batch_size'])
         self.assertEqual(50, test.run_training_params['num_of_epochs'])
         self.assertEqual(3, test.run_training_params['prediction_samples'])
         self.assertEqual(2, test.run_training_params['step'])
@@ -223,7 +223,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         training_params = {}
         training_params['train_batch_size'] = 4
         training_params['val_batch_size'] = 4
-        training_params['test_batch_size'] = 1
+        #training_params['test_batch_size'] = 1
         training_params['lr'] = 0.01
         training_params['num_of_epochs'] = 32
 
@@ -236,7 +236,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         self.assertEqual((len(data_x) - 1) * 100 / 100, test._num_of_samples['dataset'])
         self.assertEqual(4, test.run_training_params['train_batch_size'])
         self.assertEqual(4, test.run_training_params['val_batch_size'])
-        self.assertEqual(0, test.run_training_params['test_batch_size'])
+        #self.assertEqual(0, test.run_training_params['test_batch_size'])
         self.assertEqual(32, test.run_training_params['num_of_epochs'])
         self.assertEqual(3, test.run_training_params['prediction_samples'])
         self.assertEqual(0, test.run_training_params['step'])
@@ -271,7 +271,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         training_params = {}
         training_params['train_batch_size'] = 1
         training_params['val_batch_size'] = 1
-        training_params['test_batch_size'] = 1
+        #training_params['test_batch_size'] = 1
         training_params['lr'] = 0.1
         training_params['num_of_epochs'] = 5
         with self.assertRaises(RuntimeError):
@@ -292,7 +292,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         self.assertEqual(10, test._num_of_samples['dataset'])
         self.assertEqual(1,test.run_training_params['train_batch_size'])
         self.assertEqual(1,test.run_training_params['val_batch_size'])
-        self.assertEqual(1,test.run_training_params['test_batch_size'])
+        #self.assertEqual(1,test.run_training_params['test_batch_size'])
         self.assertEqual(5,test.run_training_params['num_of_epochs'])
         self.assertEqual(0.1,test.run_training_params['optimizer_defaults']['lr'])
 
@@ -323,7 +323,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         training_params = {}
         training_params['train_batch_size'] = 25
         training_params['val_batch_size'] = 25
-        training_params['test_batch_size'] = 25
+        #training_params['test_batch_size'] = 25
         training_params['lr'] = 0.1
         training_params['num_of_epochs'] = 5
         test.trainModel(splits=[50,0,50],training_params = training_params)
@@ -340,7 +340,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         self.assertEqual(round((15 - 5) * 50 / 100), test.run_training_params['n_samples_test'])
         self.assertEqual(round((15 - 5) * 50 / 100), test.run_training_params['train_batch_size'])
         self.assertEqual(0, test.run_training_params['val_batch_size'])
-        self.assertEqual(round((15 - 5) * 50 / 100), test.run_training_params['test_batch_size'])
+        #self.assertEqual(round((15 - 5) * 50 / 100), test.run_training_params['test_batch_size'])
         self.assertEqual(5, test.run_training_params['num_of_epochs'])
         self.assertEqual(0.1, test.run_training_params['optimizer_defaults']['lr'])
 
@@ -369,7 +369,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         training_params = {}
         training_params['train_batch_size'] = 2
         training_params['val_batch_size'] = 2
-        training_params['test_batch_size'] = 2
+        #training_params['test_batch_size'] = 2
         training_params['lr'] = 0.1
         training_params['num_of_epochs'] = 5
         test.trainModel(splits=[40, 30, 30], training_params=training_params)
@@ -388,7 +388,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         self.assertEqual(round((15 - 5) * 30 / 100), test.run_training_params['n_samples_test'])
         self.assertEqual(2, test.run_training_params['train_batch_size'])
         self.assertEqual(2, test.run_training_params['val_batch_size'])
-        self.assertEqual(2, test.run_training_params['test_batch_size'])
+        #self.assertEqual(2, test.run_training_params['test_batch_size'])
         self.assertEqual(5, test.run_training_params['num_of_epochs'])
         self.assertEqual(0.1, test.run_training_params['optimizer_defaults']['lr'])
 
@@ -417,7 +417,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         training_params = {}
         training_params['train_batch_size'] = 2
         training_params['val_batch_size'] = 2
-        training_params['test_batch_size'] = 2
+        #training_params['test_batch_size'] = 2
         training_params['lr'] = 0.1
         training_params['num_of_epochs'] = 5
         test.trainModel(splits=[80, 10, 10], training_params=training_params)
@@ -436,7 +436,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         self.assertEqual(round((15 - 5) * 10 / 100), test.run_training_params['n_samples_test'])
         self.assertEqual(2, test.run_training_params['train_batch_size'])
         self.assertEqual(1, test.run_training_params['val_batch_size'])
-        self.assertEqual(1, test.run_training_params['test_batch_size'])
+        #self.assertEqual(1, test.run_training_params['test_batch_size'])
         self.assertEqual(5, test.run_training_params['num_of_epochs'])
         self.assertEqual(0.1, test.run_training_params['optimizer_defaults']['lr'])
 
@@ -470,7 +470,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         training_params = {}
         training_params['train_batch_size'] = 2
         training_params['val_batch_size'] = 2
-        training_params['test_batch_size'] = 2
+        #training_params['test_batch_size'] = 2
         training_params['lr'] = 0.1
         training_params['num_of_epochs'] = 5
         test.trainModel(splits=[80, 20, 0], training_params=training_params)
@@ -489,7 +489,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         self.assertEqual(round((20 - 5) * 0 / 100), test.run_training_params['n_samples_test'])
         self.assertEqual(2, test.run_training_params['train_batch_size'])
         self.assertEqual(2, test.run_training_params['val_batch_size'])
-        self.assertEqual(0, test.run_training_params['test_batch_size'])
+        #self.assertEqual(0, test.run_training_params['test_batch_size'])
         self.assertEqual(5, test.run_training_params['num_of_epochs'])
         self.assertEqual(0.1, test.run_training_params['optimizer_defaults']['lr'])
 
@@ -532,21 +532,21 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         training_params = {}
         training_params['train_batch_size'] = 3
         training_params['val_batch_size'] = 2
-        training_params['test_batch_size'] = 1
+        #training_params['test_batch_size'] = 1
         training_params['lr'] = 0.1
         training_params['num_of_epochs'] = 5
-        test.trainModel(train_dataset='train_dataset', validation_dataset='validation_dataset',
-                        test_dataset='test_dataset', training_params=training_params)
+        #test.trainModel(train_dataset='train_dataset', validation_dataset='validation_dataset', test_dataset='test_dataset', training_params=training_params)
+        test.trainModel(train_dataset='train_dataset', validation_dataset='validation_dataset', training_params=training_params)
 
         self.assertEqual(9, test._num_of_samples['train_dataset'])
         self.assertEqual(5, test._num_of_samples['validation_dataset'])
         self.assertEqual(7, test._num_of_samples['test_dataset'])
         self.assertEqual(9, test.run_training_params['n_samples_train'])
         self.assertEqual(5, test.run_training_params['n_samples_val'])
-        self.assertEqual(7, test.run_training_params['n_samples_test'])
+        #self.assertEqual(7, test.run_training_params['n_samples_test'])
         self.assertEqual(3, test.run_training_params['train_batch_size'])
         self.assertEqual(2, test.run_training_params['val_batch_size'])
-        self.assertEqual(1, test.run_training_params['test_batch_size'])
+        #self.assertEqual(1, test.run_training_params['test_batch_size'])
         self.assertEqual(5, test.run_training_params['num_of_epochs'])
         self.assertEqual(0.1, test.run_training_params['optimizer_defaults']['lr'])
 
@@ -578,7 +578,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         training_params = {}
         training_params['train_batch_size'] = 1
         training_params['val_batch_size'] = 1
-        training_params['test_batch_size'] = 1
+        #training_params['test_batch_size'] = 1
         training_params['lr'] = 0.01
         training_params['num_of_epochs'] = 7
         test.trainModel(splits=[80, 10, 10], training_params=training_params)
@@ -589,7 +589,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         self.assertEqual(2, test.run_training_params['n_samples_test'])
         self.assertEqual(1, test.run_training_params['train_batch_size'])
         self.assertEqual(1, test.run_training_params['val_batch_size'])
-        self.assertEqual(1, test.run_training_params['test_batch_size'])
+        #self.assertEqual(1, test.run_training_params['test_batch_size'])
         self.assertEqual(7, test.run_training_params['num_of_epochs'])
         self.assertEqual(0.01, test.run_training_params['optimizer_defaults']['lr'])
 
@@ -602,7 +602,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         training_params = {}
         training_params['train_batch_size'] = 6
         training_params['val_batch_size'] = 2
-        training_params['test_batch_size'] = 2
+        #training_params['test_batch_size'] = 2
         test.trainModel(splits=[80, 10, 10], training_params=training_params)
 
         self.assertEqual(22, test._num_of_samples['dataset'])
@@ -611,7 +611,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         self.assertEqual(2, test.run_training_params['n_samples_test'])
         self.assertEqual(6, test.run_training_params['train_batch_size'])
         self.assertEqual(2, test.run_training_params['val_batch_size'])
-        self.assertEqual(2, test.run_training_params['test_batch_size'])
+        #self.assertEqual(2, test.run_training_params['test_batch_size'])
         self.assertEqual(100, test.run_training_params['num_of_epochs'])
         self.assertEqual(0.001, test.run_training_params['optimizer_defaults']['lr'])
 

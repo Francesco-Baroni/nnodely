@@ -232,9 +232,9 @@ class TextVisualizer(EmptyVisualizer):
             if par['n_samples_val']:
                 self.__param("val dataset:", f"{par['validation_dataset']}")
                 self.__param("val {batch size, samples}:", f"{{{par['val_batch_size']}, {par['n_samples_val']}}}")
-            if par['n_samples_test']:
-                self.__param("test dataset:", f"{par['test_dataset']}")
-                self.__param("test {batch size, samples}:", f"{{{par['test_batch_size']}, {par['n_samples_test']}}}")
+            # if par['n_samples_test']:
+            #     self.__param("test dataset:", f"{par['test_dataset']}")
+            #     self.__param("test {batch size, samples}:", f"{{{par['test_batch_size']}, {par['n_samples_test']}}}")
 
             self.__paramjson('minimizers:', par['minimizers'])
 

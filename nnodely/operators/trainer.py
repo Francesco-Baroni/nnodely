@@ -22,14 +22,15 @@ class Trainer(Network):
         # Training Parameters
         self.__standard_train_parameters = {
             'models' : None,
-            'train_dataset' : None, 'validation_dataset' : None, 'test_dataset' : None, 'splits' : [70, 20, 10],
+            'train_dataset' : None, 'validation_dataset' : None, 
+            'dataset' : None, 'splits' : [70, 20, 10],
             'closed_loop' : {}, 'connect' : {}, 'step' : 0, 'prediction_samples' : 0,
             'shuffle_data' : True,
             'early_stopping' : None, 'early_stopping_params' : {},
             'select_model' : 'last', 'select_model_params' : {},
             'minimize_gain' : {},
             'num_of_epochs': 100,
-            'train_batch_size' : 128, 'val_batch_size' : 128, 'test_batch_size' : 128,
+            'train_batch_size' : 128, 'val_batch_size' : 128,
             'optimizer' : 'Adam',
             'lr' : 0.001, 'lr_param' : {},
             'optimizer_params' : [], 'add_optimizer_params' : [],
@@ -112,23 +113,21 @@ class Trainer(Network):
         tp['prediction_samples'] = self._setup_recurrent_variables(prediction_samples, closed_loop, connect)
         return tp['prediction_samples'], step, closed_loop, connect
 
-    def __setup_dataset(self, tp, shuffle_data, train_dataset, validation_dataset, test_dataset, splits):
+    def __setup_dataset(self, tp, shuffle_data, train_dataset, validation_dataset, splits):
         ## Get dataset for training
         shuffle_data = self.__get_parameter(tp, shuffle_data=shuffle_data)
 
         # TODO manage multiple datasets
-        XY_train, XY_val, XY_test = {}, {}, {}
+        XY_train, XY_val = {}, {}
         if train_dataset is None:  ## If we use all datasets with the splits
             splits = self.__get_parameter(tp, splits=splits)
-            check(len(splits) == 3, ValueError,
-                  '3 elements must be inserted for the dataset split in training, validation and test')
+            check(len(splits) == 3, ValueError, '3 elements must be inserted for the dataset split in training, validation and test')
             check(sum(splits) == 100, ValueError, 'Training, Validation and Test splits must sum up to 100.')
             check(splits[0] > 0, ValueError, 'The training split cannot be zero.')
 
             ## Get the dataset name
             dataset = list(self._data.keys())[0]  ## take the dataset name
-            tp['train_dataset']  = tp['validation_dataset'] = tp['test_dataset'] = \
-                self.__get_parameter(tp, train_dataset=dataset)
+            tp['train_dataset']  = tp['validation_dataset'] = self.__get_parameter(tp, train_dataset=dataset)
 
             ## Collect the split sizes
             train_size = splits[0] / 100.0
@@ -149,25 +148,23 @@ class Trainer(Network):
                     XY_train[key] = torch.from_numpy(samples).to(TORCH_DTYPE)
                 elif val_size == 0.0 and test_size != 0.0:  ## we have only training and test set
                     XY_train[key] = torch.from_numpy(samples[:n_samples_train]).to(TORCH_DTYPE)
-                    XY_test[key] = torch.from_numpy(samples[n_samples_train:]).to(TORCH_DTYPE)
                 elif val_size != 0.0 and test_size == 0.0:  ## we have only training and validation set
                     XY_train[key] = torch.from_numpy(samples[:n_samples_train]).to(TORCH_DTYPE)
                     XY_val[key] = torch.from_numpy(samples[n_samples_train:]).to(TORCH_DTYPE)
                 else:  ## we have training, validation and test set
                     XY_train[key] = torch.from_numpy(samples[:n_samples_train]).to(TORCH_DTYPE)
                     XY_val[key] = torch.from_numpy(samples[n_samples_train:-n_samples_test]).to(TORCH_DTYPE)
-                    XY_test[key] = torch.from_numpy(samples[n_samples_train + n_samples_val:]).to(TORCH_DTYPE)
 
             ## Set name for resultsAnalysis
             tp['train_dataset_name'] = f"train_{dataset}_{train_size:0.2f}"
             tp['validation_dataset_name'] = f"validation_{dataset}_{val_size:0.2f}"
-            tp['test_dataset_name'] = f"test_{dataset}_{test_size:0.2f}"
+            #tp['test_dataset_name'] = f"test_{dataset}_{test_size:0.2f}"
+
         else:  ## Multi-Dataset
             ## Get the names of the datasets
             datasets = list(self._data.keys())
             train_dataset = tp['train_dataset_name'] = self.__get_parameter(tp, train_dataset=train_dataset)
             validation_dataset = tp['validation_dataset_name'] = self.__get_parameter(tp, validation_dataset=validation_dataset)
-            test_dataset = tp['test_dataset_name'] = self.__get_parameter(tp, test_dataset=test_dataset)
 
             ## Collect the number of samples for each dataset
             n_samples_train, n_samples_val, n_samples_test = 0, 0, 0
@@ -176,55 +173,46 @@ class Trainer(Network):
             if validation_dataset is not None and validation_dataset not in datasets:
                 log.warning(
                     f'Validation Dataset [{validation_dataset}] Not Loaded. The training will continue without validation')
-            if test_dataset is not None and test_dataset not in datasets:
-                log.warning(f'Test Dataset [{test_dataset}] Not Loaded. The training will continue without test')
 
             ## Split into train, validation and test
             n_samples_train = self._num_of_samples[train_dataset]
             XY_train = {key: torch.from_numpy(val).to(TORCH_DTYPE) for key, val in self._data[train_dataset].items()}
             if validation_dataset in datasets:
                 n_samples_val = self._num_of_samples[validation_dataset]
-                XY_val = {key: torch.from_numpy(val).to(TORCH_DTYPE) for key, val in
-                          self._data[validation_dataset].items()}
-            if test_dataset in datasets:
-                n_samples_test = self._num_of_samples[test_dataset]
-                XY_test = {key: torch.from_numpy(val).to(TORCH_DTYPE) for key, val in self._data[test_dataset].items()}
+                XY_val = {key: torch.from_numpy(val).to(TORCH_DTYPE) for key, val in self._data[validation_dataset].items()}
+            # if test_dataset in datasets:
+            #     n_samples_test = self._num_of_samples[test_dataset]
+            #     XY_test = {key: torch.from_numpy(val).to(TORCH_DTYPE) for key, val in self._data[test_dataset].items()}
 
         for key in XY_train.keys():
-            assert n_samples_train == XY_train[key].shape[
-                0], f'The number of train samples {n_samples_train}!={XY_train[key].shape[0]} not compliant.'
+            assert n_samples_train == XY_train[key].shape[0], f'The number of train samples {n_samples_train}!={XY_train[key].shape[0]} not compliant.'
             if key in XY_val:
-                assert n_samples_val == XY_val[key].shape[
-                    0], f'The number of val samples {n_samples_val}!={XY_val[key].shape[0]} not compliant.'
-            if key in XY_test:
-                assert n_samples_test == XY_test[key].shape[
-                    0], f'The number of test samples {n_samples_test}!={XY_test[key].shape[0]} not compliant.'
+                assert n_samples_val == XY_val[key].shape[0], f'The number of val samples {n_samples_val}!={XY_val[key].shape[0]} not compliant.'
+            # if key in XY_test:
+            #     assert n_samples_test == XY_test[key].shape[
+            #         0], f'The number of test samples {n_samples_test}!={XY_test[key].shape[0]} not compliant.'
 
         assert n_samples_train > 0, f'There are {n_samples_train} samples for training.'
         tp['n_samples_train'], tp['n_samples_val'], tp['n_samples_test'] = n_samples_train, n_samples_val, n_samples_test
-        tp['XY_train'], tp['XY_val'], tp['XY_test'] = XY_train, XY_val, XY_test
-        return shuffle_data, XY_train, XY_val, XY_test, n_samples_train, n_samples_val, n_samples_test
+        tp['XY_train'], tp['XY_val'] = XY_train, XY_val
 
-    def __get_batch_sizes(self, tp, train_batch_size, val_batch_size, test_batch_size):
+        return shuffle_data, XY_train, XY_val, n_samples_train, n_samples_val
+
+    def __get_batch_sizes(self, tp, train_batch_size, val_batch_size):
         ## Check if the batch_size can be used for the current dataset, otherwise set the batch_size to the maximum value
         self.__get_parameter(tp, train_batch_size=train_batch_size)
         self.__get_parameter(tp, val_batch_size=val_batch_size)
-        self.__get_parameter(tp, test_batch_size=test_batch_size)
         tp['train_batch_size'] = get_batch_size(tp['n_samples_train'], tp['train_batch_size'], tp['prediction_samples'])
         tp['val_batch_size'] = get_batch_size(tp['n_samples_val'], tp['val_batch_size'], tp['prediction_samples'])
-        tp['test_batch_size'] = get_batch_size(tp['n_samples_test'], tp['test_batch_size'], tp['prediction_samples'])
 
-        check((tp['n_samples_train'] - tp['train_batch_size'] + 1) > 0, ValueError,
-              f"The number of available sample are (n_samples_train - train_batch_size + 1)"
-              f" = {tp['n_samples_train'] - tp['train_batch_size'] + 1}.")
+        check((tp['n_samples_train'] - tp['train_batch_size'] + 1) > 0, ValueError, f"The number of available sample are {tp['n_samples_train'] - tp['train_batch_size'] + 1}")
         check(tp['train_batch_size'] > 0, ValueError,
               f'The auto train_batch_size ({tp["train_batch_size"]}) = n_samples_train ({tp["n_samples_train"]}) '
               f'- prediction_samples ({tp["prediction_samples"]}), must be greater than 0.')
 
-        return tp['train_batch_size'], tp['val_batch_size'], tp['test_batch_size']
+        return tp['train_batch_size'], tp['val_batch_size']
 
-    def __inizilize_optimizer(self, tp, optimizer, optimizer_params, optimizer_defaults, add_optimizer_params,
-                              add_optimizer_defaults, models, lr, lr_param):
+    def __inizilize_optimizer(self, tp, optimizer, optimizer_params, optimizer_defaults, add_optimizer_params, add_optimizer_defaults, models, lr, lr_param):
         # Get optimizer and initialization parameters
         optimizer = copy.deepcopy(self.__get_parameter(tp, optimizer=optimizer))
         optimizer_params = copy.deepcopy(self.__get_parameter(tp, optimizer_params=optimizer_params))
@@ -236,8 +224,7 @@ class Trainer(Network):
         models = self.__get_parameter(tp, models=models)
         json_models = []
         if 'Models' in self._model_def:
-            json_models = list(self._model_def['Models'].keys()) if type(self._model_def['Models']) is dict else [
-                self._model_def['Models']]
+            json_models = list(self._model_def['Models'].keys()) if type(self._model_def['Models']) is dict else [self._model_def['Models']]
         if models is None:
             models = json_models
         tp['models'] = models
@@ -259,11 +246,9 @@ class Trainer(Network):
             elif optimizer == 'Adam':
                 optimizer = Adam({}, [])
         else:
-            check(issubclass(type(optimizer), Optimizer), TypeError,
-                  "The optimizer must be an Optimizer or str")
+            check(issubclass(type(optimizer), Optimizer), TypeError, "The optimizer must be an Optimizer or str")
 
         optimizer.set_params_to_train(self._model.all_parameters, params_to_train)
-
         optimizer.add_defaults('lr', tp['lr'])
         optimizer.add_option_to_params('lr', tp['lr_param'])
 
@@ -285,12 +270,13 @@ class Trainer(Network):
         # Modify the parameter
         optimizer.add_defaults('lr', lr)
         optimizer.add_option_to_params('lr', lr_param)
-
         tp['optimizer'] = optimizer.name
         tp['optimizer_params'] = optimizer.optimizer_params
         tp['optimizer_defaults'] = optimizer.optimizer_defaults
+
         return optimizer.get_torch_optimizer()
 
+    ## TODO: Modify the function
     def __get_batch_indexes(self, tp, dataset_name, n_samples, prediction_samples, batch_size, step, type='train'):
         available_samples = n_samples - prediction_samples
         batch_indexes = list(range(available_samples))
@@ -320,9 +306,9 @@ class Trainer(Network):
         ## Loss vector
         check((batch_size + clipped_step) > 0, ValueError,
               f"The sum of batch_size={batch_size} and the step={clipped_step} must be greater than 0.")
-
         return batch_indexes, clipped_step
 
+    ## TODO: Modify the function
     def __setup_batch_indexes(self, tp):
         # Evaluate the number of update for epochs and the unsued samples
         train_dataset, n_samples_train, train_batch_size = tp['train_dataset'], tp['n_samples_train'], tp['train_batch_size']
@@ -384,20 +370,20 @@ class Trainer(Network):
         keys -= set(self._model_def.recurrentInputs().keys())
         keys -= (set(tp['connect'].keys()|tp['closed_loop'].keys()))
         # Check if the keys are in the dataset
-        check(set(keys).issubset(set(tp['XY_train'].keys())), KeyError,
-              f"Not all the mandatory keys {keys} are present in the training dataset {set(tp['XY_train'].keys())}.")
+        check(set(keys).issubset(set(tp['XY_train'].keys())), KeyError, f"Not all the mandatory keys {keys} are present in the training dataset {set(tp['XY_train'].keys())}.")
 
     @enforce_types
     def trainModel(self,
                    models: str | list | None = None,
-                   train_dataset: str | None = None, validation_dataset: str | None = None, test_dataset: str | None = None, splits: list | None = None,
+                   train_dataset: str | list | None = None, validation_dataset: str | list | None = None, 
+                   dataset: str|list|None = None, splits: list | None = None,
                    closed_loop: dict | None = None, connect: dict | None = None, step: int | None = None, prediction_samples: int | None = None,
                    shuffle_data: bool | None = None,
                    early_stopping: Callable | None = None, early_stopping_params: dict | None = None,
                    select_model: Callable | None = None, select_model_params: dict | None = None,
                    minimize_gain: dict | None = None,
                    num_of_epochs: int = None,
-                   train_batch_size: int = None, val_batch_size: int = None, test_batch_size: int = None,
+                   train_batch_size: int = None, val_batch_size: int = None,
                    optimizer: str | Optimizer | None = None,
                    lr: int | float | None = None, lr_param: dict | None = None,
                    optimizer_params: list | None = None, optimizer_defaults: dict | None = None,
@@ -523,35 +509,28 @@ class Trainer(Network):
         self.__get_train_parameters(tp, training_params)
 
         # Setup recurrent train info
-        prediction_samples, step, closed_loop, connect = \
-            self.__setup_recurrent_train(tp, prediction_samples, step, closed_loop, connect)
+        prediction_samples, step, closed_loop, connect = self.__setup_recurrent_train(tp, prediction_samples, step, closed_loop, connect)
 
         ## Get the dataset
         #TODO check
-        shuffle_data, XY_train, XY_val, XY_test, n_samples_train, n_samples_val, n_samples_test = \
-            self.__setup_dataset(tp, shuffle_data, train_dataset, validation_dataset, test_dataset, splits)
+        shuffle_data, XY_train, XY_val, n_samples_train, n_samples_val = self.__setup_dataset(tp, shuffle_data, train_dataset, validation_dataset, splits)
 
         #TODO: check
         ## Get batchsize
-        train_batch_size, val_batch_size, test_batch_size = \
-            self.__get_batch_sizes(tp, train_batch_size, val_batch_size, test_batch_size)
+        train_batch_size, val_batch_size = self.__get_batch_sizes(tp, train_batch_size, val_batch_size)
 
         #TODO: check
         ## Define batch indexes
-        list_of_batch_indexes_train, train_step, list_of_batch_indexes_val, val_step = \
-            self.__setup_batch_indexes(tp)
+        list_of_batch_indexes_train, train_step, list_of_batch_indexes_val, val_step = self.__setup_batch_indexes(tp)
 
         ## Define the optimizer
-        self.__optimizer = \
-            self.__inizilize_optimizer(tp, optimizer, optimizer_params, optimizer_defaults, add_optimizer_params,
-                                               add_optimizer_defaults, models, lr, lr_param)
+        self.__optimizer = self.__inizilize_optimizer(tp, optimizer, optimizer_params, optimizer_defaults, add_optimizer_params, add_optimizer_defaults, models, lr, lr_param)
 
         ## Define mandatory inputs
         mandatory_inputs, non_mandatory_inputs = self._get_mandatory_inputs(connect, closed_loop)
 
         ## Get the training parameters
-        minimize_gain, num_of_epochs = \
-            self.__training_info(tp, select_model, select_model_params, early_stopping, early_stopping_params, num_of_epochs, minimize_gain)
+        minimize_gain, num_of_epochs = self.__training_info(tp, select_model, select_model_params, early_stopping, early_stopping_params, num_of_epochs, minimize_gain)
 
         ## Check the needed keys are in the datasets
         self.__check_needed_keys(tp)
@@ -587,8 +566,6 @@ class Trainer(Network):
                     XY_train[key].requires_grad_(True)
                 if key in XY_val:
                     XY_val[key].requires_grad_(True)
-                if key in XY_test:
-                    XY_test[key].requires_grad_(True)
 
         selected_model_def = ModelDef(self._model_def.getJson())
 
@@ -678,6 +655,5 @@ class Trainer(Network):
 
         ## Get trained model from torch and set the model_def
         self._model_def.updateParameters(self._model)
-
         return tp
 #from 840

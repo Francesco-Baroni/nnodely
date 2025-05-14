@@ -147,10 +147,12 @@ class Modely(Composer, Trainer, Loader, Validator, Exporter):
             self.resultAnalysis(tp['validation_dataset_name'], tp['XY_val'], tp['minimize_gain'],
                                 tp['closed_loop'], tp['connect'], tp['prediction_samples'], tp['step'],
                                 tp['val_batch_size'])
-        if self.run_training_params['n_samples_test'] > 0:
-            self.resultAnalysis(tp['test_dataset_name'], tp['XY_test'], tp['minimize_gain'],
-                                tp['closed_loop'], tp['connect'], tp['prediction_samples'], tp['step'],
-                                tp['test_batch_size'])
+        
+        ## TODO: in future version the test set will be passed to the function
+        # if self.run_training_params['n_samples_test'] > 0:
+        #     self.resultAnalysis(tp['test_dataset_name'], tp['XY_test'], tp['minimize_gain'],
+        #                         tp['closed_loop'], tp['connect'], tp['prediction_samples'], tp['step'],
+        #                         tp['test_batch_size'])
         self.visualizer.showResults()
 
 nnodely = Modely
