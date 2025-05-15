@@ -26,7 +26,10 @@ class ModelDef:
         return key in self.__json
 
     def __getitem__(self, key):
-        return self.__json[key]
+        if key in self.__json:
+            return self.__json[key]
+        else:
+            return None
 
     def __setitem__(self, key, value):
         self.__json[key] = value
