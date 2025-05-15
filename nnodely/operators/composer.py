@@ -64,7 +64,7 @@ class Composer(Network):
         self._model_def.removeModel(name_list)
 
     @enforce_types
-    def addConnect(self, stream_out:str|Output|Stream, input_in:str|Input, local:bool=False) -> None:
+    def addConnect(self, stream_out:str|Output|Stream, input_in:str|Input, *, local:bool=False) -> None:
         """
         Adds a connection from a relation stream to an input state.
 
@@ -96,7 +96,7 @@ class Composer(Network):
         self._model_def.addConnect(stream_name, input_name, local)
 
     @enforce_types
-    def addClosedLoop(self, stream_out:str|Output|Stream, input_in:str|Input, local:bool=False) -> None:
+    def addClosedLoop(self, stream_out:str|Output|Stream, input_in:str|Input, *, local:bool=False) -> None:
         """
         Adds a closed loop connection from a relation stream to an input state.
 
@@ -156,7 +156,7 @@ class Composer(Network):
         self._model_def.removeConnection(input_name)
 
     @enforce_types
-    def neuralizeModel(self, sample_time:float|int|None = None, clear_model:bool = False, model_def:dict|None = None) -> None:
+    def neuralizeModel(self, sample_time:float|int|None = None, *, clear_model:bool = False, model_def:dict|None = None) -> None:
         """
         Neuralizes the model, preparing it for inference and training. This method creates a neural network model starting from the model definition.
         It will also create all the time windows for the inputs and states.
@@ -220,7 +220,7 @@ class Composer(Network):
         self.visualizer.showBuiltModel()
 
     @enforce_types
-    def __call__(self, inputs:dict={}, sampled:bool=False, closed_loop:dict={}, connect:dict={}, prediction_samples:str|int='auto', num_of_samples:int|None=None) -> dict:
+    def __call__(self, inputs:dict={}, *, sampled:bool=False, closed_loop:dict={}, connect:dict={}, prediction_samples:str|int='auto', num_of_samples:int|None=None) -> dict:
         """
         Performs inference on the model.
 

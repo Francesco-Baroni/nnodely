@@ -28,7 +28,7 @@ class Validator(Network):
     
     @enforce_types
     def resultAnalysis(self,
-                       dataset: str,
+                       dataset: str, #TODO add the * here
                        data: dict | None = None,
                        minimize_gain: dict = {},
                        closed_loop: dict = {},

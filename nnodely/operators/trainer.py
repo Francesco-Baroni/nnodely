@@ -388,7 +388,7 @@ class Trainer(Network):
               f"Not all the mandatory keys {keys} are present in the training dataset {set(tp['XY_train'].keys())}.")
 
     @enforce_types
-    def trainModel(self,
+    def trainModel(self, *,
                    models: str | list | None = None,
                    train_dataset: str | None = None, validation_dataset: str | None = None, test_dataset: str | None = None, splits: list | None = None,
                    closed_loop: dict | None = None, connect: dict | None = None, step: int | None = None, prediction_samples: int | None = None,

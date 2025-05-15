@@ -71,7 +71,7 @@ class ParamFun(NeuObj):
     """
     @enforce_types
     def __init__(self, param_fun:Callable,
-                 parameters_and_constants:list|dict|None = None,
+                 parameters_and_constants:list|dict|None = None, *,
                  map_over_batch:bool = False) -> Stream:
 
         self.relation_name = paramfun_relation_name

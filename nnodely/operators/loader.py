@@ -19,7 +19,7 @@ class Loader(Network):
         self.__datasets_loaded = set()
 
     @enforce_types
-    def getSamples(self, dataset:str, index:int|None = None, window:int=1) -> dict:
+    def getSamples(self, dataset:str, *, index:int|None = None, window:int=1) -> dict:
         """
         Retrieves a window of samples from a given dataset.
 
@@ -130,7 +130,7 @@ class Loader(Network):
             self.visualizer.showDataset(name=dataset_name)
 
     @enforce_types
-    def resamplingData(self, df:pd.DataFrame, scale:float = 1e9) -> None:
+    def resamplingData(self, df:pd.DataFrame, *, scale:float = 1e9) -> None:
         sample_time_ns = int(self._model_def.getSampleTime() * scale)
         method = 'linear'
         if type(df.index) is pd.DatetimeIndex:
@@ -193,7 +193,7 @@ class Loader(Network):
         return num_of_samples
 
     def loadData(self, name:str,
-                 source: str | dict | pd.DataFrame,
+                 source: str | dict | pd.DataFrame, *,
                  format: list | None = None,
                  skiplines: int = 0,
                  delimiter: str = ',',

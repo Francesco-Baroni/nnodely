@@ -69,7 +69,7 @@ class Constant(NeuObj, Relation):
     """
     @enforce_types
     def __init__(self, name:str,
-                 values:list|float|int|np.ndarray,
+                 values:list|float|int|np.ndarray, *,
                  tw:float|int|None = None,
                  sw:int|None = None):
 
@@ -157,7 +157,7 @@ class Parameter(NeuObj, Relation):
     """
     @enforce_types
     def __init__(self, name:str,
-                 dimensions:int|list|tuple|None = None,
+                 dimensions:int|list|tuple|None = None, *,
                  tw:float|int|None = None,
                  sw:int|None = None,
                  values:list|float|int|np.ndarray|None = None,

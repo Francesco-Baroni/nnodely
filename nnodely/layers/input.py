@@ -33,7 +33,7 @@ class Input(NeuObj):
     json : dict
         A dictionary containing the configuration of the Input or the State.
     """
-    def __init__(self, name:str, dimensions:int = 1):
+    def __init__(self, name:str, *, dimensions:int = 1):
         """
         Initializes the InputState object.
 

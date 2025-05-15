@@ -67,7 +67,7 @@ class LocalModel(NeuObj):
     """
     @enforce_types
     def __init__(self, input_function:Callable|None = None,
-                 output_function:Callable|None = None,
+                 output_function:Callable|None = None, *,
                  pass_indexes:bool = False):
 
         self.relation_name = localmodel_relation_name

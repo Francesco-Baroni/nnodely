@@ -240,7 +240,7 @@ class Network:
         return prediction_samples
 
     @enforce_types
-    def resetStates(self, states:set={}, batch:int=1) -> None:
+    def resetStates(self, states:set={}, *, batch:int=1) -> None:
         if states: ## reset only specific states
             for key in states:
                 window_size = self._input_n_samples[key]

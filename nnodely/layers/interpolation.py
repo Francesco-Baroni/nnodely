@@ -44,8 +44,8 @@ class Interpolation(NeuObj):
     """
 
     @enforce_types
-    def __init__(self, x_points:list|None = None,
-                 y_points:list|None = None,
+    def __init__(self, x_points:list,
+                 y_points:list, *,
                  mode:str|None = 'linear'):
 
         self.relation_name = interpolation_relation_name

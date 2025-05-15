@@ -70,7 +70,7 @@ class Fuzzify(NeuObj):
     """
     @enforce_types
     def __init__(self, output_dimension: int | None = None,
-                 range: list | None = None,
+                 range: list | None = None, *,
                  centers: list | None = None,
                  functions: str | list | Callable = 'Triangular'):
 

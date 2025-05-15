@@ -94,7 +94,7 @@ class Fir(NeuObj, AutoToStream):
 
     """
     @enforce_types
-    def __init__(self, output_dimension:int|None = None,
+    def __init__(self, output_dimension:int|None = None, *,
                  W_init:Callable|str|None = None,
                  W_init_params:dict|None = None,
                  b_init:Callable|str|None = None,
