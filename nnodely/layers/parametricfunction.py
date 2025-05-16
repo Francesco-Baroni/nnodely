@@ -9,7 +9,8 @@ from collections.abc import Callable
 from nnodely.basic.relation import NeuObj, Stream, toStream
 from nnodely.basic.model import Model
 from nnodely.layers.parameter import Parameter, Constant
-from nnodely.support.utils import check, merge, enforce_types
+from nnodely.support.utils import check, enforce_types
+from nnodely.support.jsonutils import merge
 
 from nnodely.support.logger import logging, nnLogger
 log = nnLogger(__name__, logging.WARNING)

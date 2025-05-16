@@ -5,7 +5,8 @@ import torch
 
 from nnodely.basic.relation import ToStream, Stream, toStream
 from nnodely.basic.model import Model
-from nnodely.support.utils import check, enforce_types, merge
+from nnodely.support.utils import check, enforce_types
+from nnodely.support.jsonutils import merge
 
 part_relation_name = 'Part'
 select_relation_name = 'Select'

@@ -1,12 +1,11 @@
-import copy, inspect, textwrap, torch
+import torch
 
 import torch.nn as nn
 
-from collections.abc import Callable
-
-from nnodely.basic.relation import NeuObj, Stream, AutoToStream
+from nnodely.basic.relation import NeuObj, Stream
 from nnodely.basic.model import Model
-from nnodely.support.utils import check, merge, enforce_types
+from nnodely.support.utils import check, enforce_types
+from nnodely.support.jsonutils import merge
 
 from nnodely.support.logger import logging, nnLogger
 log = nnLogger(__name__, logging.CRITICAL)

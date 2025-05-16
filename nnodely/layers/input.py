@@ -1,7 +1,8 @@
 import copy
 
 from nnodely.basic.relation import NeuObj, Stream, ToStream
-from nnodely.support.utils import check, merge, enforce_types
+from nnodely.support.utils import check, enforce_types
+from nnodely.support.jsonutils import merge
 from nnodely.layers.part import SamplePart, TimePart
 from nnodely.layers.timeoperation import Derivate, Integrate
 
