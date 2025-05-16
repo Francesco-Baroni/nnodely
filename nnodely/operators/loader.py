@@ -5,6 +5,7 @@ import numpy as np
 import pandas.api.types as ptypes
 from collections.abc import Sequence, Callable
 
+from nnodely.basic.relation import check_names
 from nnodely.operators.network import Network
 from nnodely.support.utils import check, log, enforce_types, NP_DTYPE
 
@@ -256,8 +257,7 @@ class Loader(Network):
 
         json_inputs = self._model_def['Inputs']
         ## Initialize the dictionary containing the data
-        if name in list(self._data.keys()):
-            log.warning(f'Dataset named {name} already loaded! overriding the existing one..')
+        check_names(name, self._data.keys(), f"Dataset")
         self._data[name] = {}
 
         if type(source) is str:  ## we have a directory path containing the files

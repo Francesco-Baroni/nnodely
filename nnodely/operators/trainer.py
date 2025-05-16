@@ -601,8 +601,10 @@ class Trainer(Network):
         self.visualizer.showStartTraining()
 
         ## Update with virtual states
-        #TODO Added the case of prediction_samples = -1 removed the connect
-        self._model.update(closed_loop=closed_loop, connect=connect)
+        if prediction_samples >= 0:
+            self._model.update(closed_loop=closed_loop, connect=connect)
+        else:
+            self._model.update(disconnect=True)
 
         self.resetStates()  ## Reset the states
 

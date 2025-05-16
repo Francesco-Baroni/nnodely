@@ -54,6 +54,7 @@ class Exporter(Network):
             >>> model.neuralizeModel()
             >>> model.saveTorchModel(name='example_model', model_folder='path/to/save')
         """
+        check(self._model_def.isDefined(), RuntimeError, "The network has not been defined.")
         check(self._neuralized == True, RuntimeError, 'The model is not neuralized yet!')
         if models is not None:
             if type(models) is str:
@@ -129,6 +130,7 @@ class Exporter(Network):
             >>> model.neuralizeModel()
             >>> model.saveModel(name='example_model', model_path='path/to/save')
         """
+        check(self._model_def.isDefined(), RuntimeError, "The network has not been defined.")
         if models is not None:
             if type(models) is str:
                 models = [models]
@@ -139,7 +141,6 @@ class Exporter(Network):
             model_def.updateParameters(self._model)
         else:
             model_def = self._model_def
-        check(model_def.isDefined(), RuntimeError, "The network has not been defined.")
         self.__exporter.saveModel(model_def.getJson(), name, model_path)
 
     @enforce_types
@@ -208,6 +209,9 @@ class Exporter(Network):
             >>> model.neuralizeModel()
             >>> model.exportPythonModel(name='example_model', model_path='path/to/export')
         """
+        check(self._model_def.isDefined(), RuntimeError, "The network has not been defined.")
+        check(self._traced == False, RuntimeError,
+              'The model is traced and cannot be exported to Python.\n Run neuralizeModel() to recreate a standard model.')
         if models is not None:
             if type(models) is str:
                 models = [models]
@@ -217,15 +221,11 @@ class Exporter(Network):
             model_def.setBuildWindow(self._model_def['Info']['SampleTime'])
             model_def.updateParameters(self._model)
             model = Model(model_def.getJson())
-            model.update()
         else:
+            check(self._neuralized == True, RuntimeError, 'The model is not neuralized yet.')
             model_def = self._model_def
             model = self._model
-        # check(model_def['States'] == {}, TypeError, "The network has state variables. The export to python is not possible.")
-        check(model_def.isDefined(), RuntimeError, "The network has not been defined.")
-        check(self._traced == False, RuntimeError,
-              'The model is traced and cannot be exported to Python.\n Run neuralizeModel() to recreate a standard model.')
-        check(self.neuralized == True, RuntimeError, 'The model is not neuralized yet.')
+            model.update()
         self.__exporter.saveModel(model_def.getJson(), name, model_path)
         self.__exporter.exportPythonModel(model_def, model, name, model_path)
 
@@ -308,9 +308,9 @@ class Exporter(Network):
             >>> model.exportONNX(inputs_order=['input1', 'input2'], outputs_order=['output1'], name='example_model', model_folder='path/to/export')
         """
         check(self._model_def.isDefined(), RuntimeError, "The network has not been defined.")
-        check(self.traced == False, RuntimeError,
+        check(self._traced == False, RuntimeError,
               'The model is traced and cannot be exported to ONNX.\n Run neuralizeModel() to recreate a standard model.')
-        check(self.neuralized == True, RuntimeError, 'The model is not neuralized yet.')
+        check(self._neuralized == True, RuntimeError, 'The model is not neuralized yet.')
         # From here --------------
         if models is not None:
             if type(models) is str:
@@ -326,9 +326,9 @@ class Exporter(Network):
         else:
             model_def = self._model_def
             model = self._model
+            model.update()
         check(len(model_def.recurrentInputs().keys()) < len(model_def['Inputs'].keys()), TypeError,
               "The network is autonomous only state variable are present.")
-        model.update()
         self.__exporter.exportONNX(model_def, model, inputs_order, outputs_order, name, model_folder)
 
     @enforce_types

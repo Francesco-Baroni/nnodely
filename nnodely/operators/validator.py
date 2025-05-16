@@ -1,6 +1,7 @@
 import torch, warnings
 
 import numpy as np
+from matplotlib.pyplot import disconnect
 
 from nnodely.support.utils import ReadOnlyDict, get_batch_size
 
@@ -99,6 +100,7 @@ class Validator(Network):
                 for key, value in self._model_def['Minimizers'].items():
                     total_losses[key], A[key], B[key] = [], [], []
 
+                self._model.update(disconnect=True)
                 self._inference(data, n_samples, batch_size, minimize_gain, losses,
                                 total_losses = total_losses, A = A, B = B)
 
