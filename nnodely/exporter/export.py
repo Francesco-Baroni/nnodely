@@ -167,7 +167,7 @@ def export_python_model(model_def, model, model_path):
 
         file.write("        self.all_parameters = torch.nn.ParameterDict(self.all_parameters)\n")
         file.write("        self.all_constants = torch.nn.ParameterDict(self.all_constants)\n\n")
-        file.write("    def update(self, closed_loop={}, connect={}):\n")
+        file.write("    def update(self, closed_loop={}, connect={}, disconnect=False):\n")
         file.write("        pass\n")
         # file.write("        self.closed_loop_update = {}\n")
         # file.write("        self.connect_update = {}\n")

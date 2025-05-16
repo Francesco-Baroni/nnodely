@@ -7,7 +7,7 @@ from nnodely.exporter.export import save_model, load_model, export_python_model,
 from nnodely.support.utils import check, enforce_types
 
 from nnodely.support.logger import logging, nnLogger
-log = nnLogger(__name__, logging.CRITICAL)
+log = nnLogger(__name__, logging.INFO)
 
 class StandardExporter(EmptyExporter):
     @enforce_types
@@ -72,14 +72,14 @@ class StandardExporter(EmptyExporter):
         return model
 
     def exportONNX(self, model_def, model, inputs_order=None, outputs_order=None, name = 'net', model_folder = None):
-        # check(set(inputs_order) == set(model_def['Inputs'].keys() | model_def['States'].keys()), ValueError,
-        #       f'The inputs are not the same as the model inputs ({model_def["Inputs"].keys() | model_def["States"].keys()}).')
-        # check(set(outputs_order) == set(model_def['Outputs'].keys()), ValueError,
-        #       f'The outputs are not the same as the model outputs ({model_def["Outputs"].keys()}).')
         if inputs_order is None:
-            log.warning(f"The inputs order for the export is not specified, the order will be inferred from the model definition.")
+            log.info(f"The inputs order for the export is not specified, the order will set equal to {set(model_def['Inputs'].keys())}.")
+        elif set(inputs_order) != set(model_def['Inputs'].keys()):
+            raise ValueError(f'The inputs are not the same as the model inputs {set(model_def["Inputs"].keys())}.')
         if outputs_order is None:
-            log.warning(f"The outputs order for the export is not specified, the order will be inferred from the model definition.")
+            log.info(f"The outputs order for the export is not specified, the order will set equal to {set(model_def['Outputs'].keys())}")
+        elif set(outputs_order) != set(model_def['Outputs'].keys()):
+            log.info(f'The outputs are not the same as the model outputs {set(model_def["Outputs"].keys())}.')
         file_name = name + ".py"
         model_folder = self.workspace_folder if model_folder is None else model_folder
         model_folder = os.path.join(model_folder, 'onnx')
