@@ -2,10 +2,11 @@ import copy
 
 import numpy as np
 
-from nnodely.support.utils import check, merge, enforce_types, ForbiddenTags, subjson_from_relation
+from nnodely.support.utils import check, enforce_types, ForbiddenTags, is_notebook
+from nnodely.support.jsonutils import merge
 
 from nnodely.support.logger import logging, nnLogger
-log = nnLogger(__name__, logging.CRITICAL)
+log = nnLogger(__name__, logging.WARNING)
 
 MAIN_JSON = {
                 'Info' : {},
@@ -17,7 +18,7 @@ MAIN_JSON = {
                 'Outputs': {}
             }
 
-CHECK_NAMES = True
+CHECK_NAMES = False if is_notebook() else True
 
 def toStream(obj):
     from nnodely.layers.parameter import Parameter, Constant
@@ -28,6 +29,12 @@ def toStream(obj):
         obj = Stream(obj.name, obj.json, obj.dim)
     return obj
 
+def check_names(name:str, name_list, list_type):
+    check(name not in ForbiddenTags, NameError, f"The name '{name}' is a forbidden tag.")
+    if CHECK_NAMES == True:
+        check(name not in name_list, NameError, f"The name '{name}' is already used as {list_type}.")
+    elif name in name_list:
+        log.warning(f"The name '{name}' is already in defined as {list_type} but it is overwritten.")
 
 class NeuObj():
     count = 0
@@ -51,10 +58,8 @@ class NeuObj():
         NeuObj.count += 1
         if name == '':
             name = 'Auto'+str(NeuObj.count)
-        if CHECK_NAMES == True:
-            check(name not in NeuObj.names, NameError, f"The name '{name}' is already used change the name of NeuObj.")
-            check(name not in ForbiddenTags, NameError, f"The name '{name}' is a forbidden tag.")
-            NeuObj.names.append(name)
+        check_names(name, NeuObj.names, "NeuObj")
+        NeuObj.names.append(name)
         self.name = name
         self.dim = dim
         if json:
