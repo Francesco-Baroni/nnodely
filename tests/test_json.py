@@ -5,7 +5,7 @@ import numpy as np
 from nnodely import *
 from nnodely.basic.relation import NeuObj, Stream
 from nnodely.support.logger import logging, nnLogger
-from nnodely.support.utils import subjson_from_model
+from nnodely.support.jsonutils import subjson_from_model
 
 log = nnLogger(__name__, logging.CRITICAL)
 log.setAllLevel(logging.CRITICAL)

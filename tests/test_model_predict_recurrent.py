@@ -572,7 +572,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         self.assertEqual(result['out'], [sum(x) for x in zip(result['out_x'],result['out_y'],result['out_z'])])
 
     def test_predict_values_and_connect_variables_2models_more_window_connect(self):
-        NeuObj.clearNames()
+        clearNames()
         ## Model1
         input1 = Input('in1')
         a = Parameter('a', dimensions=1, tw=0.05, values=[[1],[1],[1],[1],[1]])
