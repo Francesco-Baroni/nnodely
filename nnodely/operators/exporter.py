@@ -101,7 +101,7 @@ class Exporter(Network):
         self.__exporter.loadTorchModel(self._model, name, model_folder)
 
     @enforce_types
-    def saveModel(self, name:str='net', model_path:str|None=None, *, models:str|list|None=None) -> None:
+    def saveModel(self, name:str='net', model_folder:str|None=None, *, models:str|list|None=None) -> None:
         """
         Saves the neural network model definition in a json file.
 
@@ -109,7 +109,7 @@ class Exporter(Network):
         ----------
         name : str, optional
             The name of the saved model file. Default is 'net'.
-        model_path : str or None, optional
+        model_folder : str or None, optional
             The path to save the model file. Default is None.
         models : list or None, optional
             A list of model names to save. If None, the entire model is saved. Default is None.
@@ -128,7 +128,7 @@ class Exporter(Network):
         Example usage:
             >>> model = Modely()
             >>> model.neuralizeModel()
-            >>> model.saveModel(name='example_model', model_path='path/to/save')
+            >>> model.saveModel(name='example_model', model_folder='folder/')
         """
         check(self._model_def.isDefined(), RuntimeError, "The network has not been defined.")
         if models is not None:
@@ -141,7 +141,7 @@ class Exporter(Network):
             model_def.updateParameters(self._model)
         else:
             model_def = self._model_def
-        self.__exporter.saveModel(model_def.getJson(), name, model_path)
+        self.__exporter.saveModel(model_def.getJson(), name, model_folder)
 
     @enforce_types
     def loadModel(self, name:str='net', model_folder:str|None=None) -> None:
@@ -178,7 +178,7 @@ class Exporter(Network):
         self._traced = False
 
     @enforce_types
-    def exportPythonModel(self, name:str='net', model_path:str|None=None, *, models:str|None=None) -> None:
+    def exportPythonModel(self, name:str='net', model_folder:str|None=None, *, models:str|None=None) -> None:
         """
         Exports the neural network model as a standalone PyTorch Module class.
 
@@ -186,7 +186,7 @@ class Exporter(Network):
         ----------
         name : str, optional
             The name of the exported model file. Default is 'net'.
-        model_path : str or None, optional
+        model_folder : str or None, optional
             The path to save the exported model file. Default is None.
         models : list or None, optional
             A list of model names to export. If None, the entire model is exported. Default is None.
@@ -207,7 +207,7 @@ class Exporter(Network):
         Example usage:
             >>> model = Modely(name='example_model')
             >>> model.neuralizeModel()
-            >>> model.exportPythonModel(name='example_model', model_path='path/to/export')
+            >>> model.exportPythonModel(name='example_model', model_folder='folder/')
         """
         check(self._model_def.isDefined(), RuntimeError, "The network has not been defined.")
         check(self._traced == False, RuntimeError,
@@ -226,8 +226,8 @@ class Exporter(Network):
             model_def = self._model_def
             model = self._model
             model.update()
-        self.__exporter.saveModel(model_def.getJson(), name, model_path)
-        self.__exporter.exportPythonModel(model_def, model, name, model_path)
+        self.__exporter.saveModel(model_def.getJson(), name, model_folder)
+        self.__exporter.exportPythonModel(model_def, model, name, model_folder)
 
     @enforce_types
     def importPythonModel(self, name:str='net', model_folder:str|None=None) -> None:
@@ -365,17 +365,17 @@ class Exporter(Network):
         Example - Feed-Forward:
             >>> x = Input('x')
 
-            >>> onnx_model_path = path/to/net.onnx
+            >>> model_folder = folder/
             >>> dummy_input = {'x':np.ones(shape=(3, 1, 1)).astype(np.float32)}
-            >>> predictions = Modely().onnxInference(dummy_input, onnx_model_path)
+            >>> predictions = Modely().onnxInference(dummy_input, model_folder)
         Example - Recurrent:
             >>> x = Input('x')
             >>> y = State('y')
 
-            >>> onnx_model_path = path/to/net.onnx
+            >>> model_folder = folder/
             >>> dummy_input = {'x':np.ones(shape=(3, 1, 1, 1)).astype(np.float32)
                                 'y':np.ones(shape=(1, 1, 1)).astype(np.float32)}
-            >>> predictions = Modely().onnxInference(dummy_input, onnx_model_path)
+            >>> predictions = Modely().onnxInference(dummy_input, model_folder)
         """
         return self.__exporter.onnxInference(inputs, name, model_folder)
 
