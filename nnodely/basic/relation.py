@@ -3,7 +3,7 @@ import copy
 import numpy as np
 
 from nnodely.support.utils import check, enforce_types, ForbiddenTags, is_notebook
-from nnodely.support.jsonutils import merge
+from nnodely.support.jsonutils import merge, stream_to_str
 
 from nnodely.support.logger import logging, nnLogger
 log = nnLogger(__name__, logging.WARNING)
@@ -129,15 +129,7 @@ class Stream(Relation):
         self.dim = dim
 
     def __str__(self):
-        from nnodely.visualizer.emptyvisualizer import color, GREEN
-        from pprint import pformat
-        stream = f" Stream "
-        stream_name = f" {self.name} {self.dim} "
-
-        title = color((stream).center(80, '='), GREEN, True)
-        json = color(pformat(self.json), GREEN)
-        stream = color((stream_name).center(80, '-'), GREEN, True)
-        return title + '\n' + json + '\n' + stream
+        return stream_to_str(self)
 
     def __repr__(self):
         return self.__str__()

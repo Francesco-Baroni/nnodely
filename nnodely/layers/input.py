@@ -2,7 +2,7 @@ import copy
 
 from nnodely.basic.relation import NeuObj, Stream, ToStream
 from nnodely.support.utils import check, enforce_types
-from nnodely.support.jsonutils import merge
+from nnodely.support.jsonutils import merge, stream_to_str
 from nnodely.layers.part import SamplePart, TimePart
 from nnodely.layers.timeoperation import Derivate, Integrate
 
@@ -294,6 +294,12 @@ class Input(NeuObj):
         self.json['Inputs'][self.name]['closedLoop'] = self.name
         self.json['Inputs'][self.name]['local'] = 1
         return self
+
+    def __str__(self):
+        return stream_to_str(self, 'Input')
+
+    def __repr__(self):
+        return self.__str__()
 
 # connect operation
 connect_name = 'connect'

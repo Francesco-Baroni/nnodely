@@ -211,3 +211,14 @@ def subjson_from_model(json, models:str|list):
             del final_json['Inputs'][key]['local']
             log.warning(f'The input {key} is "closedLoop" outside the model connection removed for subjson')
     return final_json
+
+def stream_to_str(obj, type = 'Stream'):
+    from nnodely.visualizer.emptyvisualizer import color, GREEN
+    from pprint import pformat
+    stream = f" {type} "
+    stream_name = f" {obj.name} {obj.dim} "
+
+    title = color((stream).center(80, '='), GREEN, True)
+    json = color(pformat(obj.json), GREEN)
+    stream = color((stream_name).center(80, '-'), GREEN, True)
+    return title + '\n' + json + '\n' + stream

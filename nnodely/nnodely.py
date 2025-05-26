@@ -47,7 +47,7 @@ class Modely(Composer, Trainer, Loader, Validator, Exporter):
         >>> model = Modely()
     """
     @enforce_types
-    def __init__(self,
+    def __init__(self, *,
                  visualizer:str|EmptyVisualizer|None = 'Standard',
                  exporter:str|EmptyExporter|None = 'Standard',
                  seed:int|None = None,

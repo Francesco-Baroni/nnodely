@@ -380,7 +380,7 @@ class Exporter(Network):
         return self.__exporter.onnxInference(inputs, name, model_folder)
 
     @enforce_types
-    def exportReport(self, name:str='net', model_folder:None=None) -> None:
+    def exportReport(self, name:str='net', model_folder:str|None=None) -> None:
         """
         Generates a PDF report with plots containing the results of the training and validation of the neural network.
 

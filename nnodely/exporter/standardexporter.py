@@ -15,17 +15,18 @@ class StandardExporter(EmptyExporter):
         super().__init__(workspace, visualizer, save_history)
 
     def getWorkspace(self):
-        return self.workspace_folder
+        return self.workspace_folder if hasattr(self,'workspace_folder') else '.'
 
     def saveTorchModel(self, model, name = 'net', model_folder = None):
         file_name = name + ".pt"
-        model_path = os.path.join(self.workspace_folder, file_name) if model_folder is None else os.path.join(model_folder,file_name)
+        model_path = os.path.join(self.getWorkspace(), file_name) if model_folder is None else os.path.join(model_folder,file_name)
+        #TODO check if the folder exist
         torch.save(model.state_dict(), model_path)
         self.visualizer.saveModel('Torch Model', model_path)
 
     def loadTorchModel(self, model, name = 'net', model_folder = None):
         file_name = name + ".pt"
-        model_path = os.path.join(self.workspace_folder, file_name) if model_folder is None else os.path.join(model_folder,file_name)
+        model_path = os.path.join(self.getWorkspace(), file_name) if model_folder is None else os.path.join(model_folder,file_name)
         check(os.path.exists(model_path), FileNotFoundError, f"The model {name} it is not found in the folder {model_folder}")
         model.load_state_dict(torch.load(model_path, weights_only=True))
         self.visualizer.loadModel('Torch Model',model_path)
@@ -33,7 +34,7 @@ class StandardExporter(EmptyExporter):
 
     def saveModel(self, model_def, name = 'net', model_folder = None):
         # Combine the folder path and file name to form the complete file path
-        model_folder = self.workspace_folder if model_folder is None else model_folder
+        model_folder = self.getWorkspace() if model_folder is None else model_folder
         # Specify the JSON file name
         file_name = name + ".json"
         # Combine the folder path and file name to form the complete file path
@@ -43,7 +44,7 @@ class StandardExporter(EmptyExporter):
 
     def loadModel(self, name = 'net', model_folder = None):
         # Combine the folder path and file name to form the complete file path
-        model_folder = self.workspace_folder if model_folder is None else model_folder
+        model_folder = self.getWorkspace() if model_folder is None else model_folder
         model_def = None
         try:
             file_name = name + ".json"
@@ -56,14 +57,14 @@ class StandardExporter(EmptyExporter):
 
     def exportPythonModel(self, model_def, model, name = 'net', model_folder = None):
         file_name = name + ".py"
-        model_path = os.path.join(self.workspace_folder, file_name) if model_folder is None else os.path.join(model_folder, file_name)
+        model_path = os.path.join(self.getWorkspace(), file_name) if model_folder is None else os.path.join(model_folder, file_name)
         ## Export to python file
         export_python_model(model_def.getJson(), model, model_path)
         self.visualizer.exportModel('Python Torch Model', model_path)
 
     def importPythonModel(self, name = 'net', model_folder = None):
         try:
-            model_folder = self.workspace_folder if model_folder is None else model_folder
+            model_folder = self.getWorkspace() if model_folder is None else model_folder
             model = import_python_model(name, model_folder)
             self.visualizer.importModel('Python Torch Model', os.path.join(model_folder,name+'.py'))
         except Exception as e:
@@ -81,8 +82,7 @@ class StandardExporter(EmptyExporter):
         elif set(outputs_order) != set(model_def['Outputs'].keys()):
             log.info(f'The outputs are not the same as the model outputs {set(model_def["Outputs"].keys())}.')
         file_name = name + ".py"
-        model_folder = self.workspace_folder if model_folder is None else model_folder
-        model_folder = os.path.join(model_folder, 'onnx')
+        model_folder = os.path.join(self.getWorkspace(), 'onnx') if model_folder is None else model_folder
         os.makedirs(model_folder, exist_ok=True)
         model_path = os.path.join(model_folder, file_name)
         onnx_python_model_path = model_path.replace('.py', '_onnx.py')
@@ -98,17 +98,15 @@ class StandardExporter(EmptyExporter):
         self.visualizer.exportModel('Onnx Model', onnx_model_path)
     
     def onnxInference(self, inputs, name:str='net', model_folder:str|None=None):
-        model_folder = self.workspace_folder if model_folder is None else model_folder
-        model_folder = os.path.join(model_folder, 'onnx')
+        model_folder = os.path.join(self.getWorkspace(), 'onnx') if model_folder is None else model_folder
         file_name = name + ".onnx"
         onnx_model_path = os.path.join(model_folder, file_name)
-        check(os.path.exists(onnx_model_path), FileNotFoundError, f"The model {name} it is not found in the folder {model_folder}")
+        check(os.path.exists(onnx_model_path), FileNotFoundError, f"The model {file_name} it is not found in the folder {model_folder}")
         return onnx_inference(inputs, onnx_model_path)
-            
 
     def exportReport(self, n4m, name = 'net', model_folder = None):
         # Combine the folder path and file name to form the complete file path
-        model_folder = self.workspace_folder if model_folder is None else model_folder
+        model_folder = self.getWorkspace() if model_folder is None else model_folder
         # Specify the JSON file name
         file_name = name + ".pdf"
         # Combine the folder path and file name to form the complete file path
