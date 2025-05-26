@@ -230,7 +230,7 @@ class ModelyExportTest(unittest.TestCase):
         vehicle.exportONNX(['vel','brk','gear','trq','alt'],['accelleration'], network_name, models='acc')
 
         # Onnx Import
-        outputs = Modely(visualizer=None).onnxInference(model_sample, name=network_name, model_folder=result_path)
+        outputs = Modely(visualizer=None).onnxInference(model_sample, name=network_name, model_folder=os.path.join(result_path,'onnx'))
         self.assertEqual(outputs[0][0], model_inference['accelleration'])
 
         if os.path.exists(vehicle.getWorkspace()):
@@ -363,7 +363,7 @@ class ModelyExportTest(unittest.TestCase):
                             'input4': np.random.rand(1,1,4,3).astype(np.float32)}
         recurrent_sample['state1'] = np.random.rand(1,1,1).astype(np.float32)
         recurrent_sample['state2'] = np.random.rand(1,1,3).astype(np.float32)
-        inference = Modely(visualizer=None).onnxInference(recurrent_sample, model_folder=test.getWorkspace())
+        inference = Modely(visualizer=None).onnxInference(recurrent_sample, model_folder=os.path.join(test.getWorkspace(),'onnx'))
         self.assertListEqual(list(inference[0].shape), [1,1,1,1])
         self.assertListEqual(list(inference[1].shape), [1,1,1,3])
         self.assertListEqual(list(inference[2].shape), [1,1,1,1])
@@ -397,7 +397,7 @@ class ModelyExportTest(unittest.TestCase):
                             'input4': np.random.rand(5,2,4,3).astype(np.float32)}
         recurrent_sample['state1'] = np.random.rand(2,1,1).astype(np.float32)
         recurrent_sample['state2'] = np.random.rand(2,1,3).astype(np.float32)
-        inference = Modely(visualizer=None).onnxInference(recurrent_sample, model_folder=result_path, name='net')
+        inference = Modely(visualizer=None).onnxInference(recurrent_sample, model_folder=os.path.join(test.getWorkspace(),'onnx'), name='net')
         self.assertListEqual(list(inference[0].shape), [5,2,1,1])
         self.assertListEqual(list(inference[1].shape), [5,2,1,3])
         self.assertListEqual(list(inference[2].shape), [5,2,1,1])
@@ -531,7 +531,7 @@ class ModelyExportTest(unittest.TestCase):
 
         ## ONNX IMPORT
         onnx_sample = {key: (np.expand_dims(value, axis=1).astype(np.float32) if key != 'vel' else value)  for key, value in model_sample.items()}
-        outputs = Modely(visualizer=None).onnxInference(onnx_sample, name=network_name, model_folder=result_path)
+        outputs = Modely(visualizer=None).onnxInference(onnx_sample, name=network_name, model_folder=os.path.join(result_path,'onnx'))
         self.assertEqual(outputs[0][0], model_inference['accelleration'])
 
         model_sample = vehicle.getSamples('dataset', window=3)
