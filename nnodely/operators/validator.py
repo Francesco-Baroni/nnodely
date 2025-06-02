@@ -28,7 +28,7 @@ class Validator(Network):
     
     @enforce_types
     def resultAnalysis(self,
-                       dataset: str,
+                       dataset: str | None = None,
                        data: dict | None = None,
                        minimize_gain: dict = {},
                        closed_loop: dict = {},
@@ -69,21 +69,25 @@ class Validator(Network):
                         A[key].append([])
                         B[key].append([])
 
-                #TODO FIXME
-                list_of_batch_indexes = list(range(n_samples - prediction_samples))
-                ## Remove forbidden indexes in case of a multi-file dataset
-                if dataset in self._multifile.keys(): ## Multi-file Dataset
-                    if n_samples == self.run_training_params['n_samples_train']: ## Training
-                        list_of_batch_indexes, step = self.__get_batch_indexes(dataset, n_samples, prediction_samples, batch_size, step, type='train')
-                    elif n_samples == self.run_training_params['n_samples_val']: ## Validation
-                        list_of_batch_indexes, step = self.__get_batch_indexes(dataset, n_samples, prediction_samples, batch_size, step, type='val')
-                    else:
-                        list_of_batch_indexes, step = self.__get_batch_indexes(dataset, n_samples, prediction_samples, batch_size, step, type='test')
-                #FIXME
+                # #TODO FIXME
+                # list_of_batch_indexes = list(range(n_samples - prediction_samples))
+                # ## Remove forbidden indexes in case of a multi-file dataset
+                # if dataset in self._multifile.keys(): ## Multi-file Dataset
+                #     if n_samples == self.run_training_params['n_samples_train']: ## Training
+                #         list_of_batch_indexes, step = self.__get_batch_indexes(dataset, n_samples, prediction_samples, batch_size, step, type='train')
+                #     elif n_samples == self.run_training_params['n_samples_val']: ## Validation
+                #         list_of_batch_indexes, step = self.__get_batch_indexes(dataset, n_samples, prediction_samples, batch_size, step, type='val')
+                #     else:
+                #         list_of_batch_indexes, step = self.__get_batch_indexes(dataset, n_samples, prediction_samples, batch_size, step, type='test')
+                # #FIXME
+                if dataset and dataset in self._multifile.keys(): ## Multi-file Dataset
+                    batch_indexes = self._get_batch_indexes(dataset, prediction_samples)
+                else:
+                    batch_indexes = list(range(n_samples - prediction_samples))
 
                 ## Update with virtual states
                 self._model.update(closed_loop=closed_loop, connect=connect)
-                self._recurrent_inference(data, list_of_batch_indexes, batch_size, minimize_gain, prediction_samples,
+                self._recurrent_inference(data, batch_indexes, batch_size, minimize_gain, prediction_samples,
                                           step, non_mandatory_inputs, mandatory_inputs, losses,
                                           total_losses = total_losses, A = A, B = B)
 
@@ -99,8 +103,7 @@ class Validator(Network):
                 for key, value in self._model_def['Minimizers'].items():
                     total_losses[key], A[key], B[key] = [], [], []
 
-                self._inference(data, n_samples, batch_size, minimize_gain, losses,
-                                total_losses = total_losses, A = A, B = B)
+                self._inference(data, n_samples, batch_size, minimize_gain, losses, total_losses = total_losses, A = A, B = B)
 
                 for key, value in self._model_def['Minimizers'].items():
                     A[key] = np.concatenate(A[key])

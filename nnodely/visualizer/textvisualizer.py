@@ -193,7 +193,8 @@ class TextVisualizer(EmptyVisualizer):
     def showTrainParams(self):
         if self.verbose >= 1:
             self.__title(" nnodely Model Train Parameters ")
-            par = self.modely.run_training_params
+            par = self.modely.get_training_info()
+            #par = self.modely.run_training_params
             batch_size = par['train_batch_size']
             n_samples = par['n_samples_train']
             n_update = par['update_per_epochs']
@@ -211,8 +212,9 @@ class TextVisualizer(EmptyVisualizer):
                 self.__param('shuffle _data:', str(par['shuffle_data']))
 
             if 'early_stopping' in par:
-                self.__param('early stopping:', par['early_stopping'])
-                self.__paramjson('early stopping params:', par['early_stopping_params'])
+                if par['early_stopping']:
+                    self.__param('early stopping:', par['early_stopping'])
+                    self.__paramjson('early stopping params:', par['early_stopping_params'])
 
             if par['prediction_samples'] >= 0:
                 self.__param("prediction samples:", f"{par['prediction_samples']}")

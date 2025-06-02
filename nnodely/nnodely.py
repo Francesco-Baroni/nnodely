@@ -13,7 +13,7 @@ from nnodely.operators.exporter import Exporter
 from nnodely.visualizer import EmptyVisualizer, TextVisualizer
 from nnodely.exporter import EmptyExporter
 from nnodely.basic.relation import NeuObj
-from nnodely.support.utils import ReadOnlyDict, ParamDict, enforce_types
+from nnodely.support.utils import ReadOnlyDict, ParamDict, enforce_types, check
 
 from nnodely.support.logger import logging, nnLogger
 log = nnLogger(__name__, logging.INFO)
@@ -135,24 +135,53 @@ class Modely(Composer, Trainer, Loader, Validator, Exporter):
         random.seed(seed)  ## set the random module seed
         np.random.seed(seed)  ## set the numpy seed
 
-    def trainAndAnalyze(self, *args, **kwargs):
+    def trainAndAnalyze(self, test_dataset=None, test_batch_size=1, **kwargs):
         """
         """
-        tp = self.trainModel(*args, **kwargs)
-        #TODO add a test that use recurrent in train because I remove the virtual states probably the analysis will not work
-        self.resultAnalysis(tp['train_dataset_name'], tp['XY_train'], tp['minimize_gain'],
-                            tp['closed_loop'], tp['connect'], tp['prediction_samples'], tp['step'],
-                            tp['train_batch_size'])
-        if self.run_training_params['n_samples_val'] > 0:
-            self.resultAnalysis(tp['validation_dataset_name'], tp['XY_val'], tp['minimize_gain'],
-                                tp['closed_loop'], tp['connect'], tp['prediction_samples'], tp['step'],
-                                tp['val_batch_size'])
+        ## Train the model
+        _ = self.trainModel(**kwargs)
+
+        ## Get training parameters
+        train_dataset, validation_dataset = self.run_training_params['train_dataset'], self.run_training_params['validation_dataset']
+        train_dataset_name = self.run_training_params['train_dataset_name']
+        validation_dataset_name = self.run_training_params['validation_dataset_name']
+        test_dataset_name = self.run_training_params['test_dataset_name']
+        dataset = self.run_training_params['dataset']
+        minimize_gain = self.run_training_params['minimize_gain']
+        closed_loop = self.run_training_params['closed_loop']
+        connect = self.run_training_params['connect']
+        prediction_samples = self.run_training_params['prediction_samples']
+        step = self.run_training_params['step']
+        train_batch_size = self.run_training_params['train_batch_size']
+        val_batch_size = self.run_training_params['val_batch_size']
+        splits = self.run_training_params['splits']
+
+        ## Get the Datasets for the results
+        XY_train, XY_val, XY_test, n_samples_train, n_samples_val, n_samples_test, _, _, _ = self._setup_dataset(train_dataset, validation_dataset, test_dataset, dataset, splits, prediction_samples)
+        # print(f"Train dataset: {train_dataset}, Validation dataset: {validation_dataset}, Test dataset: {test_dataset}")
+        # print(f"Train batch size: {train_batch_size}, Validation batch size: {val_batch_size}, Test batch size: {test_batch_size}")
+        # print(f"Train samples: {n_samples_train}, Validation samples: {n_samples_val}, Test samples: {n_samples_test}")
+        # print(f"Minimize gain: {minimize_gain}, Closed loop: {closed_loop}, Connect: {connect}")
+        # print(f"Prediction samples: {prediction_samples}, Step: {step}")
+        # print(f"Train dataset name: {train_dataset_name}, Validation dataset name: {validation_dataset_name}, Test dataset name: {test_dataset_name}")
+        # print(f"XY_train: {XY_train}, XY_val: {XY_val}, XY_test: {XY_test}")
         
-        ## TODO: in future version the test set will be passed to the function
-        # if self.run_training_params['n_samples_test'] > 0:
-        #     self.resultAnalysis(tp['test_dataset_name'], tp['XY_test'], tp['minimize_gain'],
-        #                         tp['closed_loop'], tp['connect'], tp['prediction_samples'], tp['step'],
-        #                         tp['test_batch_size'])
+        ## Training set Results
+        self.resultAnalysis(train_dataset_name, XY_train, minimize_gain, closed_loop, connect, prediction_samples, step, train_batch_size)
+        
+        ## Validation set Results
+        if n_samples_val > 0:
+            self.resultAnalysis(validation_dataset_name, XY_val, minimize_gain, closed_loop, connect, prediction_samples, step, val_batch_size)
+        else:
+            log.warning(f"Validation dataset {validation_dataset_name} is empty. Skipping validation results analysis.")
+
+        ## Test set Results
+        if n_samples_test > 0:
+            self.resultAnalysis(test_dataset_name, XY_test, minimize_gain, closed_loop, connect, prediction_samples, step, test_batch_size)
+        else:
+            log.warning(f"Test dataset {test_dataset_name} is empty. Skipping test results analysis.")
+
+        ## Show the results
         self.visualizer.showResults()
 
 nnodely = Modely

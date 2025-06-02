@@ -307,7 +307,7 @@ class ModelyTrainingTest(unittest.TestCase):
         test.addMinimize('sob_err', approx_dy_dx, dy_dx_target.last())
         test.neuralizeModel()
         test.loadData('data', dataset)
-        test.trainModel(num_of_epochs=1000, lr=0.3)
+        test.trainModel(num_of_epochs=1000, splits=[70,20,10], lr=0.3)
         self.assertAlmostEqual(test.parameters['a'][0], data_a, places=4)
         self.assertAlmostEqual(test.parameters['b'][0], data_b, places=4)
         self.assertAlmostEqual(test.parameters['c'][0], data_c, places=4)

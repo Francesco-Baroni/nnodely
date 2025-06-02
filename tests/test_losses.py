@@ -43,7 +43,7 @@ class ModelyTrainingTest(unittest.TestCase):
 
         dataset = {'in1': [1,1,1,1,1,1,1,1,1,1], 'out1': [2,2,2,2,2,2,2,2,2,2], 'out2': [5,5,5,5,5,5,5,5,5,5]}
         test.loadData(name='dataset', source=dataset)
-        test.trainAndAnalyze(optimizer='SGD', num_of_epochs=5, lr=0.5)
+        test.trainAndAnalyze(optimizer='SGD', num_of_epochs=5, lr=0.5, splits=[70,20,10])
         self.TestAlmostEqual( [[[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]]], test.prediction['train_dataset_0.70']['error1']['A'])
         self.TestAlmostEqual([[[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]]] ,test.prediction['train_dataset_0.70']['error1']['B'])
         self.TestAlmostEqual( [[[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]]], test.prediction['train_dataset_0.70']['error2']['A'])
@@ -55,10 +55,9 @@ class ModelyTrainingTest(unittest.TestCase):
         self.TestAlmostEqual(test.performance['validation_dataset_0.20']['error2']['mse'], test._training['error2']['val'][-1])
         self.TestAlmostEqual(test.performance['validation_dataset_0.20']['total']['mean_error'],
                              (test._training['error1']['val'][-1] + test._training['error2']['val'][-1]) / 2.0)
-        ## TODO: in a future version they will be up
-        #self.TestAlmostEqual(test.performance['test_dataset_0.10']['error1']['mse'], test._training['error1']['val'][-1])
-        #self.TestAlmostEqual(test.performance['test_dataset_0.10']['error2']['mse'], test._training['error2']['val'][-1])
-        #self.TestAlmostEqual(test.performance['test_dataset_0.10']['total']['mean_error'], (test._training['error1']['val'][-1]+test._training['error2']['val'][-1])/2.0)
+        self.TestAlmostEqual(test.performance['test_dataset_0.10']['error1']['mse'], test._training['error1']['val'][-1])
+        self.TestAlmostEqual(test.performance['test_dataset_0.10']['error2']['mse'], test._training['error2']['val'][-1])
+        self.TestAlmostEqual(test.performance['test_dataset_0.10']['total']['mean_error'], (test._training['error1']['val'][-1]+test._training['error2']['val'][-1])/2.0)
 
         test.neuralizeModel(clear_model=True)
         test.trainAndAnalyze(optimizer='SGD', splits=[60,20,20], num_of_epochs=5, lr=0.5, train_batch_size=2)
@@ -71,9 +70,8 @@ class ModelyTrainingTest(unittest.TestCase):
         self.TestAlmostEqual([1.0, 16.0, 1.0, 16.0, 1.0], test._training['error2']['val'])
         self.TestAlmostEqual(test.performance['validation_dataset_0.20']['error1']['mse'], test._training['error1']['val'][-1])
         self.TestAlmostEqual(test.performance['validation_dataset_0.20']['error2']['mse'], test._training['error2']['val'][-1])
-        ## TODO: in a future version they will be up
-        #self.TestAlmostEqual(test.performance['test_dataset_0.10']['error1']['mse'], test._training['error1']['val'][-1])
-        #self.TestAlmostEqual(test.performance['test_dataset_0.10']['error2']['mse'], test._training['error2']['val'][-1])
+        self.TestAlmostEqual(test.performance['test_dataset_0.10']['error1']['mse'], test._training['error1']['val'][-1])
+        self.TestAlmostEqual(test.performance['test_dataset_0.10']['error2']['mse'], test._training['error2']['val'][-1])
 
     def test_losses_compare_closed_loop_state(self):
         NeuObj.clearNames()
@@ -93,7 +91,7 @@ class ModelyTrainingTest(unittest.TestCase):
 
         dataset = {'in1': [1,1,1,1,1,1,1,1,1,1], 'out1': [2,2,2,2,2,2,2,2,2,2], 'out2': [5,5,5,5,5,5,5,5,5,5]}
         test.loadData(name='dataset', source=dataset)
-        test.trainAndAnalyze(optimizer='SGD', num_of_epochs=5, lr=0.5, shuffle_data=False)
+        test.trainAndAnalyze(optimizer='SGD', num_of_epochs=5, lr=0.5, shuffle_data=False, splits=[70,20,10])
         self.TestAlmostEqual([[[[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]], [[2.0]]]], test.prediction['train_dataset_0.70']['error1']['A'])
         self.TestAlmostEqual([[[[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]], [[6.0]]]] ,test.prediction['train_dataset_0.70']['error1']['B'])
         self.TestAlmostEqual([[[[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]], [[5.0]]]], test.prediction['train_dataset_0.70']['error2']['A'])
@@ -105,10 +103,9 @@ class ModelyTrainingTest(unittest.TestCase):
         self.TestAlmostEqual(test.performance['validation_dataset_0.20']['error2']['mse'], test._training['error2']['val'][-1])
         self.TestAlmostEqual(test.performance['validation_dataset_0.20']['total']['mean_error'],
                              (test._training['error1']['val'][-1] + test._training['error2']['val'][-1]) / 2.0)
-        ## TODO: in a future version they will be up
-        #self.TestAlmostEqual(test.performance['test_dataset_0.10']['error1']['mse'], test._training['error1']['val'][-1])
-        #self.TestAlmostEqual(test.performance['test_dataset_0.10']['error2']['mse'], test._training['error2']['val'][-1])
-        #self.TestAlmostEqual(test.performance['test_dataset_0.10']['total']['mean_error'], (test._training['error1']['val'][-1]+test._training['error2']['val'][-1])/2.0)
+        self.TestAlmostEqual(test.performance['test_dataset_0.10']['error1']['mse'], test._training['error1']['val'][-1])
+        self.TestAlmostEqual(test.performance['test_dataset_0.10']['error2']['mse'], test._training['error2']['val'][-1])
+        self.TestAlmostEqual(test.performance['test_dataset_0.10']['total']['mean_error'], (test._training['error1']['val'][-1]+test._training['error2']['val'][-1])/2.0)
 
         test.neuralizeModel(clear_model=True)
         test.trainAndAnalyze(optimizer='SGD', splits=[60,20,20], num_of_epochs=5, lr=0.5, train_batch_size=2)
@@ -121,9 +118,8 @@ class ModelyTrainingTest(unittest.TestCase):
         self.TestAlmostEqual([1.0, 16.0, 1.0, 16.0, 1.0], test._training['error2']['val'])
         self.TestAlmostEqual(test.performance['validation_dataset_0.20']['error1']['mse'], test._training['error1']['val'][-1])
         self.TestAlmostEqual(test.performance['validation_dataset_0.20']['error2']['mse'], test._training['error2']['val'][-1])
-        ## TODO: in a future version they will be up
-        #self.TestAlmostEqual(test.performance['test_dataset_0.10']['error1']['mse'], test._training['error1']['val'][-1])
-        #self.TestAlmostEqual(test.performance['test_dataset_0.10']['error2']['mse'], test._training['error2']['val'][-1])
+        self.TestAlmostEqual(test.performance['test_dataset_0.10']['error1']['mse'], test._training['error1']['val'][-1])
+        self.TestAlmostEqual(test.performance['test_dataset_0.10']['error2']['mse'], test._training['error2']['val'][-1])
 
         test.neuralizeModel(clear_model=True)
         with self.assertRaises(ValueError):

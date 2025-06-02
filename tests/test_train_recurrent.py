@@ -1651,10 +1651,9 @@ class ModelyTrainingTest(unittest.TestCase):
             r = fun_data2(xi, yi, K1, K2)
             target.append(r)
 
-
         dataset = {'x': x.tolist(), 'y': y.tolist(), 'target': target}
         m.loadData('dataset', dataset)
-        m.trainModel(lr=0.3, num_of_epochs=200, connect={'y2': 'out1'}, prediction_samples=9)
+        m.trainModel(lr=0.3, num_of_epochs=200, splits=[70,20,10], connect={'y2': 'out1'}, prediction_samples=9)
 
         result = m({'x': x.tolist(), 'y': y.tolist()}, connect={'y2':'out1'}, num_of_samples=10, prediction_samples=10)
         self.assertAlmostEqual([a.tolist() for a in target[0:10]],result['out2'])
