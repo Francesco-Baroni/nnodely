@@ -139,22 +139,22 @@ class Modely(Composer, Trainer, Loader, Validator, Exporter):
         """
         """
         ## Train the model
-        _ = self.trainModel(**kwargs)
+        params = self.trainModel(**kwargs)
 
         ## Get training parameters
-        train_dataset, validation_dataset = self.run_training_params['train_dataset'], self.run_training_params['validation_dataset']
-        train_dataset_name = self.run_training_params['train_dataset_name']
-        validation_dataset_name = self.run_training_params['validation_dataset_name']
-        test_dataset_name = self.run_training_params['test_dataset_name']
-        dataset = self.run_training_params['dataset']
-        minimize_gain = self.run_training_params['minimize_gain']
-        closed_loop = self.run_training_params['closed_loop']
-        connect = self.run_training_params['connect']
-        prediction_samples = self.run_training_params['prediction_samples']
-        step = self.run_training_params['step']
-        train_batch_size = self.run_training_params['train_batch_size']
-        val_batch_size = self.run_training_params['val_batch_size']
-        splits = self.run_training_params['splits']
+        train_dataset, validation_dataset = params['train_dataset'], params['validation_dataset']
+        #train_dataset_name = params['train_dataset_name']
+        #validation_dataset_name = params['validation_dataset_name']
+        #test_dataset_name = params['test_dataset_name']
+        dataset = params['dataset']
+        minimize_gain = params['minimize_gain']
+        closed_loop = params['closed_loop']
+        connect = params['connect']
+        prediction_samples = params['prediction_samples']
+        step = params['step']
+        train_batch_size = params['train_batch_size']
+        val_batch_size = params['val_batch_size']
+        splits = params['splits']
 
         ## Get the Datasets for the results
         XY_train, XY_val, XY_test, n_samples_train, n_samples_val, n_samples_test, _, _, _ = self._setup_dataset(train_dataset, validation_dataset, test_dataset, dataset, splits, prediction_samples)
@@ -167,19 +167,19 @@ class Modely(Composer, Trainer, Loader, Validator, Exporter):
         # print(f"XY_train: {XY_train}, XY_val: {XY_val}, XY_test: {XY_test}")
         
         ## Training set Results
-        self.resultAnalysis(train_dataset_name, XY_train, minimize_gain, closed_loop, connect, prediction_samples, step, train_batch_size)
+        self.resultAnalysis(train_dataset, XY_train, minimize_gain, closed_loop, connect, prediction_samples, step, train_batch_size)
         
         ## Validation set Results
         if n_samples_val > 0:
-            self.resultAnalysis(validation_dataset_name, XY_val, minimize_gain, closed_loop, connect, prediction_samples, step, val_batch_size)
+            self.resultAnalysis(validation_dataset, XY_val, minimize_gain, closed_loop, connect, prediction_samples, step, val_batch_size)
         else:
-            log.warning(f"Validation dataset {validation_dataset_name} is empty. Skipping validation results analysis.")
+            log.warning(f"Validation dataset {validation_dataset} is empty. Skipping validation results analysis.")
 
         ## Test set Results
         if n_samples_test > 0:
-            self.resultAnalysis(test_dataset_name, XY_test, minimize_gain, closed_loop, connect, prediction_samples, step, test_batch_size)
+            self.resultAnalysis(test_dataset, XY_test, minimize_gain, closed_loop, connect, prediction_samples, step, test_batch_size)
         else:
-            log.warning(f"Test dataset {test_dataset_name} is empty. Skipping test results analysis.")
+            log.warning(f"Test dataset {test_dataset} is empty. Skipping test results analysis.")
 
         ## Show the results
         self.visualizer.showResults()

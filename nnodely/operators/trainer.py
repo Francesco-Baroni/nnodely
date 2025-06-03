@@ -1,13 +1,14 @@
-import copy, torch, time
+import copy, torch, time, inspect
 
 from collections.abc import Callable
+from functools import wraps
 
 from nnodely.basic.modeldef import ModelDef
 from nnodely.basic.model import Model
 from nnodely.basic.optimizer import Optimizer, SGD, Adam
 from nnodely.basic.loss import CustomLoss
 from nnodely.operators.network import Network
-from nnodely.support.utils import tensor_to_list, check, TORCH_DTYPE, enforce_types, ReadOnlyDict, get_batch_size
+from nnodely.support.utils import check, enforce_types
 from nnodely.basic.relation import Stream
 from nnodely.layers.output import Output
 
@@ -92,21 +93,27 @@ class Trainer(Network):
         check('Models' in self._model_def.getJson(), RuntimeError, 'There are no models to train. Load a model using the addModel function.')
         check(list(self._model.parameters()), RuntimeError, 'There are no modules with learnable parameters! The Training will stop.')
 
-    def __get_train_parameters(self, training_params, locals):
-        for key in training_params.keys():
-            check(key in self.__standard_train_parameters, KeyError, f"The param {key} does not exist as standard parameters")
-        self.run_training_params = copy.deepcopy(self.__standard_train_parameters)
-        for key in self.__standard_train_parameters.keys():
-            if locals[key] is not None:
-                self.run_training_params[key] = locals[key]
-            elif key in training_params.keys():
-                self.run_training_params[key] = training_params[key]
-
-    # def __get_parameter(self, tp, **parameter):
-    #     assert len(parameter) == 1
-    #     name = list(parameter.keys())[0]
-    #     tp[name] = parameter[name] if parameter[name] is not None else tp[name]
-    #     return tp[name]
+    def fill_parameters(func):
+        @wraps(func)
+        def wrapper(self, *args, **kwargs):
+            sig = inspect.signature(func)
+            bound = sig.bind(self, *args, **kwargs)
+            bound.apply_defaults()
+            # Get standard parameters
+            standard = self.__standard_train_parameters
+            # Get user_parameters
+            users = bound.arguments.get('training_params', None)
+            # Fill missing (None) arguments
+            for param in sig.parameters.values():
+                if param.name == 'self':
+                    continue
+                if bound.arguments.get(param.name, None) is None:
+                    if param.name in users.keys():
+                        bound.arguments[param.name] = users[param.name]
+                    else:
+                        bound.arguments[param.name] = standard.get(param.name, None)
+            return func(**bound.arguments)
+        return wrapper
     
     def __clip_batch_size(self, n_samples, batch_size=None, prediction_samples=None):
         prediction = 0 if prediction_samples == -1 else prediction_samples #This value is used to disconnect the connect
@@ -126,16 +133,13 @@ class Trainer(Network):
         check((batch_size + clipped_step) > 0, ValueError, f"The sum of batch_size={batch_size} and the step={clipped_step} must be greater than 0.")
         return clipped_step
 
-    def __initialize_optimizer(self):
+    def __initialize_optimizer(self, models, optimizer, optimizer_params, optimizer_defaults, add_optimizer_defaults, add_optimizer_params, lr, lr_param):
         ## Get models
-        models = self.run_training_params['models']
         json_models = []
         if 'Models' in self._model_def:
             json_models = list(self._model_def['Models'].keys()) if type(self._model_def['Models']) is dict else [self._model_def['Models']]
         if models is None:
             models = json_models
-        self.run_training_params['models'] = models
-
         params_to_train = set()
         if isinstance(models, str):
             models = [models]
@@ -146,7 +150,6 @@ class Trainer(Network):
             else:
                 params_to_train |= set(self._model_def['Parameters'].keys())
         # Get the optimizer
-        optimizer = self.run_training_params['optimizer']
         if type(optimizer) is str:
             if optimizer == 'SGD':
                 optimizer = SGD({}, [])
@@ -156,27 +159,20 @@ class Trainer(Network):
             check(issubclass(type(optimizer), Optimizer), TypeError, "The optimizer must be an Optimizer or str")
 
         optimizer.set_params_to_train(self._model.all_parameters, params_to_train)
-        optimizer.add_defaults('lr', self.run_training_params['lr'])
-        optimizer.add_option_to_params('lr', self.run_training_params['lr_param'])
-        optimizer_params = self.run_training_params['optimizer_params']
-        optimizer_defaults = self.run_training_params['optimizer_defaults']
+        optimizer.add_defaults('lr', lr)
+        optimizer.add_option_to_params('lr', lr_param)
         if optimizer_defaults != {}:
             optimizer.set_defaults(optimizer_defaults)
         if optimizer_params != []:
             optimizer.set_params(optimizer_params)
-        add_optimizer_defaults = self.run_training_params['add_optimizer_defaults']
         for key, value in add_optimizer_defaults.items():
             optimizer.add_defaults(key, value)
-        add_optimizer_params = self.run_training_params['add_optimizer_params']
         add_optimizer_params = optimizer.unfold(add_optimizer_params)
         for param in add_optimizer_params:
             par = param['params']
-            #del param['params']
             for key, value in param.items():
                 optimizer.add_option_to_params(key, {par: value})
         # Modify the parameter
-        lr = self.run_training_params['lr']
-        lr_param = self.run_training_params['lr_param']
         optimizer.add_defaults('lr', lr)
         if 'lr' in optimizer_defaults:
             optimizer.add_defaults('lr', optimizer_defaults['lr']) 
@@ -184,20 +180,17 @@ class Trainer(Network):
             optimizer.add_option_to_params('lr', lr_param)
         self.__optimizer = optimizer.get_torch_optimizer()
     
-    def __initialize_loss_functions(self):
+    def __initialize_loss(self):
         for name, values in self._model_def['Minimizers'].items():
             self.__loss_functions[name] = CustomLoss(values['loss'])
 
-    def get_training_info(self):
-        tp = copy.deepcopy(self.run_training_params)
-        ## Datasets
-        tp['train_dataset_name'] = tp['train_dataset'] if tp['train_dataset'] else tp['dataset']
+    def get_training_info(self, tp={}, **kwargs):
         ## training
-        tp['update_per_epochs'] = len(tp['train_indexes']) // (tp['train_batch_size'] + tp['step']) 
-        total_samples = len(tp['train_indexes']) + tp['prediction_samples']  ## number of samples taking into account the prediction horizon
+        tp['update_per_epochs'] = len(kwargs['train_indexes']) // (tp['train_batch_size'] + tp['step']) 
+        total_samples = len(kwargs['train_indexes']) + tp['prediction_samples']  ## number of samples taking into account the prediction horizon
         tp['unused_samples'] = (total_samples - tp['update_per_epochs'] * tp['train_batch_size']) - tp['prediction_samples']  ## number of samples not used for training
         ## early stopping
-        early_stopping = self.run_training_params['early_stopping']
+        early_stopping = tp['early_stopping']
         if early_stopping:
             tp['early_stopping'] = early_stopping.__name__
         ## Loss functions
@@ -207,13 +200,11 @@ class Trainer(Network):
             tp['minimizers'][name]['A'] = values['A']
             tp['minimizers'][name]['B'] = values['B']
             tp['minimizers'][name]['loss'] = values['loss']
-            if name in self.run_training_params['minimize_gain']:
-                tp['minimizers'][name]['gain'] = self.run_training_params['minimize_gain'][name]
+            if name in tp['minimize_gain']:
+                tp['minimizers'][name]['gain'] = tp['minimize_gain'][name]
         return tp
         
-    def __check_needed_keys(self, train_data):
-        connect = self.run_training_params['connect']
-        closed_loop = self.run_training_params['closed_loop']
+    def __check_needed_keys(self, train_data, connect, closed_loop):
         # Needed keys
         keys = set(self._model_def['Inputs'].keys())
         keys |= ({value['A'] for value in self._model_def['Minimizers'].values()} | {value['B'] for value in  self._model_def['Minimizers'].values()})
@@ -225,6 +216,7 @@ class Trainer(Network):
         check(set(keys).issubset(set(train_data.keys())), KeyError, f"Not all the mandatory keys {keys} are present in the training dataset {set(train_data.keys())}.")
 
     @enforce_types
+    @fill_parameters
     def trainModel(self, *,
                    models: str | list | None = None,
                    train_dataset: str | list | None = None, validation_dataset: str | list | None = None, 
@@ -353,51 +345,40 @@ class Trainer(Network):
             >>> params = {'num_of_epochs': 100,'train_batch_size': 128,'lr':0.001}
             >>> mass_spring_damper.trainModel(splits=[70,20,10], prediction_samples=10, training_params = params)
         """
+        ## Save the training parameters
+        tp = copy.deepcopy({key:value for key,value in locals().items() if key not in ['self', 'kwargs', 'training_params']})
+
         ## Preliminary Checks
         self.__preliminary_checks()
 
-        ## Get training parameters
-        self.__get_train_parameters(training_params, locals())
-
         ## Recurret variables
-        prediction_samples = self.run_training_params['prediction_samples']
-        connect = self.run_training_params['connect']
-        closed_loop = self.run_training_params['closed_loop']
         self._setup_recurrent_variables(prediction_samples, closed_loop, connect)
 
         ## Get the dataset
-        train_dataset = self.run_training_params['train_dataset']
-        validation_dataset = self.run_training_params['validation_dataset']
-        dataset = self.run_training_params['dataset']
-        splits = self.run_training_params['splits']
         XY_train, XY_val, _, n_samples_train, n_samples_val, n_samples_test, train_indexes, val_indexes, _ = self._setup_dataset(train_dataset, validation_dataset, None, dataset, splits, prediction_samples)
-        self.__check_needed_keys(train_data=XY_train)
-        self.run_training_params['XY_train'], self.run_training_params['XY_val'] = XY_train, XY_val
-        self.run_training_params['n_samples_train'], self.run_training_params['n_samples_val'], self.run_training_params['n_samples_test'] = n_samples_train, n_samples_val, n_samples_test
-        self.run_training_params['train_indexes'], self.run_training_params['val_indexes'] = train_indexes, val_indexes
+        self.__check_needed_keys(train_data=XY_train, connect=connect, closed_loop=closed_loop)
+        tp['n_samples_train'], tp['n_samples_val'], tp['n_samples_test'] = n_samples_train, n_samples_val, n_samples_test
 
         ## Get batch size
-        train_batch_size = self.run_training_params['train_batch_size']
         train_batch_size = self.__clip_batch_size(n_samples_train, train_batch_size, prediction_samples)
-        self.run_training_params['train_batch_size'] = train_batch_size
+        tp['train_batch_size'] = train_batch_size
         if n_samples_val > 0:
-            val_batch_size = self.run_training_params['val_batch_size']
             val_batch_size = self.__clip_batch_size(n_samples_val, val_batch_size, prediction_samples)
-            self.run_training_params['val_batch_size'] = val_batch_size
+            tp['val_batch_size'] = val_batch_size
 
         ## Clip the step
-        step = self.run_training_params['step']
         train_step = self.__clip_step(step, train_indexes, train_batch_size)
-        self.run_training_params['train_step'] = train_step
+        tp['train_step'] = train_step
         if n_samples_val > 0:
             val_step = self.__clip_step(step, val_indexes, val_batch_size)
-            self.run_training_params['val_step'] = val_step
+            tp['val_step'] = val_step
 
         ## Define the optimizer
-        self.__initialize_optimizer()
+        self.__initialize_optimizer(models, optimizer, optimizer_params, optimizer_defaults, 
+                                    add_optimizer_defaults, add_optimizer_params, lr, lr_param)
 
         ## Define the loss functions
-        self.__initialize_loss_functions()
+        self.__initialize_loss()
 
         ## Define mandatory inputs
         mandatory_inputs, non_mandatory_inputs = self._get_mandatory_inputs(connect, closed_loop)
@@ -427,15 +408,9 @@ class Trainer(Network):
         self.visualizer.showStartTraining()
 
         ## Update with virtual states
-        #TODO Added the case of prediction_samples = -1 removed the connect
         self._model.update(closed_loop=closed_loop, connect=connect)
         self.resetStates()  ## Reset the states
 
-        num_of_epochs = self.run_training_params['num_of_epochs']
-        minimize_gain = self.run_training_params['minimize_gain']
-        shuffle_data = self.run_training_params['shuffle_data']
-        select_model = self.run_training_params['select_model']
-        select_model_params = self.run_training_params['select_model_params']
         ## start the train timer
         start = time.time()
         for epoch in range(num_of_epochs):
@@ -504,6 +479,6 @@ class Trainer(Network):
 
         ## Get trained model from torch and set the model_def
         self._model_def.updateParameters(self._model)
-        return self.get_training_info()
+        return self.get_training_info(tp=tp, train_indexes=train_indexes)
 #from 685
 #from 840

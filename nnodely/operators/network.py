@@ -137,9 +137,9 @@ class Network:
             val_indexes = val_indexes[:-prediction_samples]
             test_indexes = test_indexes[:-prediction_samples]
         ## Set name for resultsAnalysis
-        self.run_training_params['train_dataset_name'] = f"train_{dataset}_{train_size:0.2f}"
-        self.run_training_params['validation_dataset_name'] = f"validation_{dataset}_{val_size:0.2f}"
-        self.run_training_params['test_dataset_name'] = f"test_{dataset}_{test_size:0.2f}"
+        #self.run_training_params['train_dataset_name'] = f"train_{dataset}_{train_size:0.2f}"
+        #self.run_training_params['validation_dataset_name'] = f"validation_{dataset}_{val_size:0.2f}"
+        #self.run_training_params['test_dataset_name'] = f"test_{dataset}_{test_size:0.2f}"
 
         return XY_train, XY_val, XY_test, n_samples_train, n_samples_val, n_samples_test, train_indexes, val_indexes, test_indexes
 
@@ -173,13 +173,8 @@ class Network:
             train_indexes = train_indexes[:-prediction_samples]
             if validation_dataset in datasets:
                 val_indexes = val_indexes[:-prediction_samples]
-                self.run_training_params['validation_dataset_name'] = validation_dataset
             if test_dataset in datasets:
                 test_indexes = test_indexes[:-prediction_samples]
-        ## Set name for resultsAnalysis
-        self.run_training_params['train_dataset_name'] = train_dataset
-        self.run_training_params['validation_dataset_name'] = validation_dataset
-        self.run_training_params['test_dataset_name'] = test_dataset
 
         return XY_train, XY_val, XY_test, n_samples_train, n_samples_val, n_samples_test, train_indexes, val_indexes, test_indexes
 
@@ -187,7 +182,6 @@ class Network:
         if train_dataset is None and dataset is None:
             ## TODO: change to all the datasets loaded
             dataset = list(self._data.keys())[0]
-            self.run_training_params['dataset'] = dataset
         if train_dataset:  ## Use each dataset
             return self.__get_data(train_dataset, validation_dataset, test_dataset, prediction_samples)
         else:  ## use the splits

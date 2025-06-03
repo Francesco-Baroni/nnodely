@@ -81,7 +81,6 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         training_params = {}
         training_params['train_batch_size'] = 4
         training_params['val_batch_size'] = 4
-        #training_params['test_batch_size'] = 1
         training_params['lr'] = 0.1
         training_params['num_of_epochs'] = 5
         tp = test.trainModel(splits=[70,20,10], closed_loop={'in1':'y'}, prediction_samples=5, training_params = training_params)
@@ -724,7 +723,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         self.assertEqual(round(56 * 5 / 100), tp['n_samples_test'])
         self.assertEqual(0.7, tp['lr'])
         ## TODO: optimizer_defaults should be 0.1 , check the gerarchy of the parameters
-        # self.assertEqual(0.1, tp['optimizer_defaults']['lr'])
+        self.assertEqual(0.1, tp['optimizer_defaults']['lr'])
         self.assertEqual((0.5, 0.99), tp['optimizer_defaults']['betas'])
         self.assertEqual(1, tp['update_per_epochs'])
         self.assertEqual(0, tp['unused_samples'])
