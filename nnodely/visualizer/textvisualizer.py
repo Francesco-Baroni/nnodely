@@ -79,7 +79,7 @@ class TextVisualizer(EmptyVisualizer):
 
     def showWeightsInTrain(self, batch = None, epoch = None, weights = None):
         if self.verbose >= 2:
-            par = self.modely.run_training_params
+            par = self.modely.running_parameters
             dim = len(self.modely._model_def['Minimizers'])
             COLOR = BLUE
             if epoch is not None:
@@ -111,7 +111,7 @@ class TextVisualizer(EmptyVisualizer):
 
     def showStartTraining(self):
         if self.verbose >= 1:
-            par = self.modely.run_training_params
+            par = self.modely.running_parameters
             dim = len(self.modely._model_def['Minimizers'])
             self.__title(" nnodely Training ", 12+(len(self.modely._model_def['Minimizers'])+1)*20)
             print(color('|'+(f'Epoch').center(10,' ')+'|'),end='')
@@ -142,7 +142,7 @@ class TextVisualizer(EmptyVisualizer):
     def showTraining(self, epoch, train_losses, val_losses):
         if self.verbose >= 1:
             eng = lambda val: np.format_float_scientific(val, precision=3)
-            par = self.modely.run_training_params
+            par = self.modely.running_parameters
             show_epoch = 1 if par['num_of_epochs'] <= 20 else 10
             dim = len(self.modely._model_def['Minimizers'])
             if epoch < par['num_of_epochs']:
@@ -241,9 +241,9 @@ class TextVisualizer(EmptyVisualizer):
             self.__paramjson('minimizers:', par['minimizers'])
 
             self.__param("optimizer:", par['optimizer'])
-            self.__paramjson("optimizer defaults:",self.modely.run_training_params['optimizer_defaults'])
-            if self.modely.run_training_params['optimizer_params'] is not None:
-                self.__paramjson("optimizer params:", self.modely.run_training_params['optimizer_params'])
+            self.__paramjson("optimizer defaults:", par['optimizer_defaults'])
+            if par['optimizer_params'] is not None:
+                self.__paramjson("optimizer params:", par['optimizer_params'])
 
             self.__line()
 

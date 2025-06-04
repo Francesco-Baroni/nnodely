@@ -143,40 +143,30 @@ class Modely(Composer, Trainer, Loader, Validator, Exporter):
 
         ## Get training parameters
         train_dataset, validation_dataset = params['train_dataset'], params['validation_dataset']
-        #train_dataset_name = params['train_dataset_name']
-        #validation_dataset_name = params['validation_dataset_name']
-        #test_dataset_name = params['test_dataset_name']
         dataset = params['dataset']
         minimize_gain = params['minimize_gain']
-        closed_loop = params['closed_loop']
-        connect = params['connect']
-        prediction_samples = params['prediction_samples']
-        step = params['step']
-        train_batch_size = params['train_batch_size']
-        val_batch_size = params['val_batch_size']
+        closed_loop, connect = params['closed_loop'], params['connect']
+        prediction_samples, step = params['prediction_samples'], params['step']
+        train_batch_size, val_batch_size = params['train_batch_size'], params['val_batch_size']
         splits = params['splits']
 
         ## Get the Datasets for the results
-        XY_train, XY_val, XY_test, n_samples_train, n_samples_val, n_samples_test, _, _, _ = self._setup_dataset(train_dataset, validation_dataset, test_dataset, dataset, splits, prediction_samples)
-        # print(f"Train dataset: {train_dataset}, Validation dataset: {validation_dataset}, Test dataset: {test_dataset}")
-        # print(f"Train batch size: {train_batch_size}, Validation batch size: {val_batch_size}, Test batch size: {test_batch_size}")
-        # print(f"Train samples: {n_samples_train}, Validation samples: {n_samples_val}, Test samples: {n_samples_test}")
-        # print(f"Minimize gain: {minimize_gain}, Closed loop: {closed_loop}, Connect: {connect}")
-        # print(f"Prediction samples: {prediction_samples}, Step: {step}")
-        # print(f"Train dataset name: {train_dataset_name}, Validation dataset name: {validation_dataset_name}, Test dataset name: {test_dataset_name}")
-        # print(f"XY_train: {XY_train}, XY_val: {XY_val}, XY_test: {XY_test}")
+        XY_train, XY_val, XY_test, _, n_samples_val, n_samples_test, _, _, _ = self._setup_dataset(train_dataset, validation_dataset, test_dataset, dataset, splits, prediction_samples)
         
         ## Training set Results
+        train_dataset = train_dataset if train_dataset is not None else f"{dataset}_train"
         self.resultAnalysis(train_dataset, XY_train, minimize_gain, closed_loop, connect, prediction_samples, step, train_batch_size)
         
         ## Validation set Results
         if n_samples_val > 0:
+            validation_dataset = validation_dataset if validation_dataset is not None else f"{dataset}_val"
             self.resultAnalysis(validation_dataset, XY_val, minimize_gain, closed_loop, connect, prediction_samples, step, val_batch_size)
         else:
             log.warning(f"Validation dataset {validation_dataset} is empty. Skipping validation results analysis.")
 
         ## Test set Results
         if n_samples_test > 0:
+            test_dataset = test_dataset if test_dataset is not None else f"{dataset}_test"
             self.resultAnalysis(test_dataset, XY_test, minimize_gain, closed_loop, connect, prediction_samples, step, test_batch_size)
         else:
             log.warning(f"Test dataset {test_dataset} is empty. Skipping test results analysis.")

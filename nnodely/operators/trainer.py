@@ -37,9 +37,8 @@ class Trainer(Network):
             'optimizer_params' : [], 'add_optimizer_params' : [],
             'optimizer_defaults' : {}, 'add_optimizer_defaults' : {}
         }
-
-        ## User Training Parameters 
-        self.run_training_params = {}
+        ## User Parameters
+        self.running_parameters = {}
 
         # Training Losses
         self.__loss_functions = {}
@@ -184,10 +183,14 @@ class Trainer(Network):
         for name, values in self._model_def['Minimizers'].items():
             self.__loss_functions[name] = CustomLoss(values['loss'])
 
-    def get_training_info(self, tp={}, **kwargs):
+    def get_training_info(self):
+        tp = copy.deepcopy(self.running_parameters)
+        ## Dataset
+        if tp['train_dataset'] is None and tp['dataset'] is None:
+            tp['dataset'] = list(self._data.keys())[0]
         ## training
-        tp['update_per_epochs'] = len(kwargs['train_indexes']) // (tp['train_batch_size'] + tp['step']) 
-        total_samples = len(kwargs['train_indexes']) + tp['prediction_samples']  ## number of samples taking into account the prediction horizon
+        tp['update_per_epochs'] = len(tp['train_indexes']) // (tp['train_batch_size'] + tp['step']) 
+        total_samples = len(tp['train_indexes']) + tp['prediction_samples']  ## number of samples taking into account the prediction horizon
         tp['unused_samples'] = (total_samples - tp['update_per_epochs'] * tp['train_batch_size']) - tp['prediction_samples']  ## number of samples not used for training
         ## early stopping
         early_stopping = tp['early_stopping']
@@ -202,6 +205,11 @@ class Trainer(Network):
             tp['minimizers'][name]['loss'] = values['loss']
             if name in tp['minimize_gain']:
                 tp['minimizers'][name]['gain'] = tp['minimize_gain'][name]
+        ## Remove useless information
+        del tp['train_indexes']
+        del tp['val_indexes']
+        del tp['XY_train']
+        del tp['XY_val']
         return tp
         
     def __check_needed_keys(self, train_data, connect, closed_loop):
@@ -345,9 +353,6 @@ class Trainer(Network):
             >>> params = {'num_of_epochs': 100,'train_batch_size': 128,'lr':0.001}
             >>> mass_spring_damper.trainModel(splits=[70,20,10], prediction_samples=10, training_params = params)
         """
-        ## Save the training parameters
-        tp = copy.deepcopy({key:value for key,value in locals().items() if key not in ['self', 'kwargs', 'training_params']})
-
         ## Preliminary Checks
         self.__preliminary_checks()
 
@@ -357,25 +362,21 @@ class Trainer(Network):
         ## Get the dataset
         XY_train, XY_val, _, n_samples_train, n_samples_val, n_samples_test, train_indexes, val_indexes, _ = self._setup_dataset(train_dataset, validation_dataset, None, dataset, splits, prediction_samples)
         self.__check_needed_keys(train_data=XY_train, connect=connect, closed_loop=closed_loop)
-        tp['n_samples_train'], tp['n_samples_val'], tp['n_samples_test'] = n_samples_train, n_samples_val, n_samples_test
 
         ## Get batch size
         train_batch_size = self.__clip_batch_size(n_samples_train, train_batch_size, prediction_samples)
-        tp['train_batch_size'] = train_batch_size
         if n_samples_val > 0:
             val_batch_size = self.__clip_batch_size(n_samples_val, val_batch_size, prediction_samples)
-            tp['val_batch_size'] = val_batch_size
 
         ## Clip the step
         train_step = self.__clip_step(step, train_indexes, train_batch_size)
-        tp['train_step'] = train_step
         if n_samples_val > 0:
             val_step = self.__clip_step(step, val_indexes, val_batch_size)
-            tp['val_step'] = val_step
+        ## Save the training parameters
+        self.running_parameters = copy.deepcopy({key:value for key,value in locals().items() if key not in ['self', 'kwargs', 'training_params']})
 
         ## Define the optimizer
-        self.__initialize_optimizer(models, optimizer, optimizer_params, optimizer_defaults, 
-                                    add_optimizer_defaults, add_optimizer_params, lr, lr_param)
+        self.__initialize_optimizer(models, optimizer, optimizer_params, optimizer_defaults, add_optimizer_defaults, add_optimizer_params, lr, lr_param)
 
         ## Define the loss functions
         self.__initialize_loss()
@@ -421,7 +422,6 @@ class Trainer(Network):
                                                     non_mandatory_inputs, mandatory_inputs, self.__loss_functions, shuffle=shuffle_data, optimizer=self.__optimizer)
             else:
                 losses = self._inference(XY_train, n_samples_train, train_batch_size, minimize_gain, self.__loss_functions, shuffle=shuffle_data, optimizer=self.__optimizer)
-
             ## save the losses
             for ind, key in enumerate(self._model_def['Minimizers'].keys()):
                 train_losses[key].append(torch.mean(losses[ind]).tolist())
@@ -479,6 +479,6 @@ class Trainer(Network):
 
         ## Get trained model from torch and set the model_def
         self._model_def.updateParameters(self._model)
-        return self.get_training_info(tp=tp, train_indexes=train_indexes)
+        return self.get_training_info()
 #from 685
 #from 840

@@ -136,11 +136,6 @@ class Network:
             train_indexes = train_indexes[:-prediction_samples]
             val_indexes = val_indexes[:-prediction_samples]
             test_indexes = test_indexes[:-prediction_samples]
-        ## Set name for resultsAnalysis
-        #self.run_training_params['train_dataset_name'] = f"train_{dataset}_{train_size:0.2f}"
-        #self.run_training_params['validation_dataset_name'] = f"validation_{dataset}_{val_size:0.2f}"
-        #self.run_training_params['test_dataset_name'] = f"test_{dataset}_{test_size:0.2f}"
-
         return XY_train, XY_val, XY_test, n_samples_train, n_samples_val, n_samples_test, train_indexes, val_indexes, test_indexes
 
     def __get_data(self, train_dataset, validation_dataset=None, test_dataset=None, prediction_samples=0):

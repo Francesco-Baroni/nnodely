@@ -68,18 +68,6 @@ class Validator(Network):
                     for horizon_idx in range(prediction_samples + 1):
                         A[key].append([])
                         B[key].append([])
-
-                # #TODO FIXME
-                # list_of_batch_indexes = list(range(n_samples - prediction_samples))
-                # ## Remove forbidden indexes in case of a multi-file dataset
-                # if dataset in self._multifile.keys(): ## Multi-file Dataset
-                #     if n_samples == self.run_training_params['n_samples_train']: ## Training
-                #         list_of_batch_indexes, step = self.__get_batch_indexes(dataset, n_samples, prediction_samples, batch_size, step, type='train')
-                #     elif n_samples == self.run_training_params['n_samples_val']: ## Validation
-                #         list_of_batch_indexes, step = self.__get_batch_indexes(dataset, n_samples, prediction_samples, batch_size, step, type='val')
-                #     else:
-                #         list_of_batch_indexes, step = self.__get_batch_indexes(dataset, n_samples, prediction_samples, batch_size, step, type='test')
-                # #FIXME
                 if dataset and dataset in self._multifile.keys(): ## Multi-file Dataset
                     batch_indexes = self._get_batch_indexes(dataset, prediction_samples)
                 else:
