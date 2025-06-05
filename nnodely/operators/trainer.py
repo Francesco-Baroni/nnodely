@@ -33,7 +33,8 @@ class Trainer(Network):
             'optimizer' : 'Adam',
             'lr' : 0.001, 'lr_param' : {},
             'optimizer_params' : [], 'add_optimizer_params' : [],
-            'optimizer_defaults' : {}, 'add_optimizer_defaults' : {}
+            'optimizer_defaults' : {}, 'add_optimizer_defaults' : {},
+            'weights_function' : None
         }
 
         # Training Losses

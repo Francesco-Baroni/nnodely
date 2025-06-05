@@ -192,11 +192,14 @@ class Network:
 
             ## Calculate the total loss
             total_loss = 0
-            for ind, key in enumerate(self._model_def['Minimizers'].keys()):
-                loss = sum(horizon_losses[ind]) / (prediction_samples + 1)
+            for ind in range(len(self._model_def['Minimizers'])):
+                if self.run_training_params['weights_function'] is not None:
+                    # TODO: check if the weights function is correct (types, return type, dimensions, etc.)
+                    weights = self.run_training_params['weights_function'](len(horizon_losses[ind]))
+                    loss = torch.sum(torch.stack(horizon_losses[ind]) * weights)/torch.sum(weights)
+                else:
+                    loss = sum(horizon_losses[ind]) / (prediction_samples + 1)
                 aux_losses[ind][batch_val] = loss.item()
-                if total_losses is not None:
-                    total_losses[key].append(loss.detach().numpy())
                 total_loss += loss
 
             ## Gradient Step
