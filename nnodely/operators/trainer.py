@@ -185,17 +185,24 @@ class Trainer(Network):
 
     def get_training_info(self):
         tp = copy.deepcopy(self.running_parameters)
+
         ## Dataset
         if tp['train_dataset'] is None and tp['dataset'] is None:
             tp['dataset'] = list(self._data.keys())[0]
+
         ## training
         tp['update_per_epochs'] = len(tp['train_indexes']) // (tp['train_batch_size'] + tp['step']) 
         total_samples = len(tp['train_indexes']) + tp['prediction_samples']  ## number of samples taking into account the prediction horizon
         tp['unused_samples'] = (total_samples - tp['update_per_epochs'] * tp['train_batch_size']) - tp['prediction_samples']  ## number of samples not used for training
+
+        ## optimizer
+        tp['optimizer_defaults'] = self.__optimizer.defaults
+
         ## early stopping
         early_stopping = tp['early_stopping']
         if early_stopping:
             tp['early_stopping'] = early_stopping.__name__
+
         ## Loss functions
         tp['minimizers'] = {}
         for name, values in self._model_def['Minimizers'].items():
@@ -205,6 +212,7 @@ class Trainer(Network):
             tp['minimizers'][name]['loss'] = values['loss']
             if name in tp['minimize_gain']:
                 tp['minimizers'][name]['gain'] = tp['minimize_gain'][name]
+
         ## Remove useless information
         del tp['train_indexes']
         del tp['val_indexes']
