@@ -391,7 +391,6 @@ class ModelyTrainingTest(unittest.TestCase):
         self.assertListEqual([[-9.0]], test.parameters['a'])
         with self.assertRaises(ValueError):
             test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, prediction_samples=10)
-        # test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, prediction_samples=1) # TODO add this test
         test.neuralizeModel(clear_model=True)
         self.assertListEqual([[1.0]], test.parameters['W'])
         self.assertEqual([1.0], test.parameters['b'])
@@ -400,6 +399,12 @@ class ModelyTrainingTest(unittest.TestCase):
         self.assertListEqual([[-9.0]], test.parameters['W'])
         self.assertEqual([0.5], test.parameters['b'])
         self.assertListEqual([[-9.0]], test.parameters['a'])
+        test.neuralizeModel(clear_model=True)
+        #TODO add this test for check prediction_Sample -1 for connect
+        # test.trainModel(train_dataset='dataset2', optimizer='SGD', lr=1, num_of_epochs=1, train_batch_size=1, prediction_samples=-1)
+        # self.assertListEqual([[-9.0]], test.parameters['W']) ?
+        # self.assertEqual([0.5], test.parameters['b']) ?
+        # self.assertListEqual([[-9.0]], test.parameters['a']) ?
 
         dataset = {'in1': [0, 2, 7, 1, 5, 0, 2], 'out1': [1, 4, 8, 2, 6, 1, 1]}
         test.loadData(name='dataset3', source=dataset)
@@ -471,6 +476,16 @@ class ModelyTrainingTest(unittest.TestCase):
         self.assertListEqual([[-9.0]], test.parameters['a'])
         test.neuralizeModel(clear_model=True)
         test.trainModel(train_dataset='dataset3', optimizer='SGD', shuffle_data=False, lr=1, num_of_epochs=1, train_batch_size=1, prediction_samples=3)
+        self.assertListEqual([[-273.0]], test.parameters['W'])
+        self.assertListEqual([-137.0], test.parameters['b'])
+        self.assertListEqual([[1.0]], test.parameters['a'])
+        test.neuralizeModel(clear_model=True)
+        test.trainModel(train_dataset='dataset3', optimizer='SGD', shuffle_data=False, lr=1, num_of_epochs=1, train_batch_size=1, prediction_samples=-1)
+        self.assertListEqual([[-273.0]], test.parameters['W'])
+        self.assertListEqual([-137.0], test.parameters['b'])
+        self.assertListEqual([[1.0]], test.parameters['a'])
+        test.neuralizeModel(clear_model=True)
+        test.trainModel(train_dataset='dataset3', optimizer='SGD', shuffle_data=False, lr=1, num_of_epochs=1, train_batch_size=1)
         self.assertListEqual([[-273.0]], test.parameters['W'])
         self.assertListEqual([-137.0], test.parameters['b'])
         self.assertListEqual([[1.0]], test.parameters['a'])
@@ -1651,10 +1666,9 @@ class ModelyTrainingTest(unittest.TestCase):
             r = fun_data2(xi, yi, K1, K2)
             target.append(r)
 
-
         dataset = {'x': x.tolist(), 'y': y.tolist(), 'target': target}
         m.loadData('dataset', dataset)
-        m.trainModel(lr=0.3, num_of_epochs=200, connect={'y2': 'out1'}, prediction_samples=9)
+        m.trainModel(lr=0.3, num_of_epochs=200, splits=[70,20,10], connect={'y2': 'out1'}, prediction_samples=9)
 
         result = m({'x': x.tolist(), 'y': y.tolist()}, connect={'y2':'out1'}, num_of_samples=10, prediction_samples=10)
         self.assertAlmostEqual([a.tolist() for a in target[0:10]],result['out2'])

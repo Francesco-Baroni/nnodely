@@ -584,8 +584,7 @@ class ModelyCreateDatasetTest(unittest.TestCase):
         self.assertListEqual(test._multifile['dataset2'], [5, 20, 45])
 
         ## train using splits
-        tp = test.trainModel(splits=[80, 10, 10])
-        tp['XY_train']
+        test.trainModel(splits=[80, 10, 10])
 
         ## train using multi dataset
         test.trainModel(train_dataset='dataset1', validation_dataset='dataset2')
@@ -598,8 +597,6 @@ class ModelyCreateDatasetTest(unittest.TestCase):
 
         ## train using multi dataset
         #test.trainModel(train_dataset=['dataset1', 'dataset2'], validation_dataset=['dataset1', 'dataset2'])
-
-
 
     def test_multifiles_2(self):
         NeuObj.clearNames()

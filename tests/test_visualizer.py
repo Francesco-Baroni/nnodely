@@ -184,7 +184,7 @@ class ModelyTestVisualizer(unittest.TestCase):
         dataset = {'x': data_x, 'y': data_y, 'z': a * data_x + b * data_y}
         params = {'num_of_epochs': 1, 'lr': 0.01}
         test.loadData(name='dataset', source=dataset)  # Create the dataset
-        test.trainModel(optimizer='SGD', training_params=params)  # Train the traced model
+        test.trainModel(optimizer='SGD', splits=[70,20,10], training_params=params)  # Train the traced model
         list_of_functions = list(test.json['Functions'].keys())
         try:
             for f in list_of_functions:
