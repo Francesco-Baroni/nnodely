@@ -104,7 +104,7 @@ class Trainer(Network):
             users = bound.arguments.get('training_params', None)
             # Fill missing (None) arguments
             for param in sig.parameters.values():
-                if param.name == 'self':
+                if param.name == 'self' or param.name == 'lr' or param.name == 'lr_param':
                     continue
                 if bound.arguments.get(param.name, None) is None:
                     if param.name in users.keys():
@@ -132,7 +132,7 @@ class Trainer(Network):
         check((batch_size + clipped_step) > 0, ValueError, f"The sum of batch_size={batch_size} and the step={clipped_step} must be greater than 0.")
         return clipped_step
 
-    def __initialize_optimizer(self, models, optimizer, optimizer_params, optimizer_defaults, add_optimizer_defaults, add_optimizer_params, lr, lr_param):
+    def __initialize_optimizer(self, models, optimizer, training_params, optimizer_params, optimizer_defaults, add_optimizer_defaults, add_optimizer_params, lr, lr_param):
         ## Get models
         json_models = []
         if 'Models' in self._model_def:
@@ -155,15 +155,23 @@ class Trainer(Network):
             elif optimizer == 'Adam':
                 optimizer = Adam({}, [])
         else:
+            optimizer = copy.deepcopy(optimizer)
             check(issubclass(type(optimizer), Optimizer), TypeError, "The optimizer must be an Optimizer or str")
 
         optimizer.set_params_to_train(self._model.all_parameters, params_to_train)
-        optimizer.add_defaults('lr', lr)
-        optimizer.add_option_to_params('lr', lr_param)
+
+        optimizer.add_defaults('lr', self.__standard_train_parameters['lr'])
+
+        if training_params and 'lr' in training_params:
+            optimizer.add_defaults('lr', training_params['lr'])
+        if training_params and 'lr_param' in training_params:
+            optimizer.add_option_to_params('lr', training_params['lr_param'])
+
         if optimizer_defaults != {}:
             optimizer.set_defaults(optimizer_defaults)
         if optimizer_params != []:
             optimizer.set_params(optimizer_params)
+
         for key, value in add_optimizer_defaults.items():
             optimizer.add_defaults(key, value)
         add_optimizer_params = optimizer.unfold(add_optimizer_params)
@@ -171,16 +179,14 @@ class Trainer(Network):
             par = param['params']
             for key, value in param.items():
                 optimizer.add_option_to_params(key, {par: value})
+
         # Modify the parameter
         optimizer.add_defaults('lr', lr)
-        if 'lr' in optimizer_defaults:
-            optimizer.add_defaults('lr', optimizer_defaults['lr']) 
-        if 'lr' in lr_param:
+        if lr_param:
             optimizer.add_option_to_params('lr', lr_param)
 
         self.running_parameters['models'] = models
-        self.__optimizer = optimizer.get_torch_optimizer()
-
+        self.__optimizer = optimizer
     
     def __initialize_loss(self):
         for name, values in self._model_def['Minimizers'].items():
@@ -199,7 +205,9 @@ class Trainer(Network):
         tp['unused_samples'] = (total_samples - tp['update_per_epochs'] * tp['train_batch_size']) - tp['prediction_samples']  ## number of samples not used for training
 
         ## optimizer
-        tp['optimizer_defaults'] = self.__optimizer.defaults
+        tp['optimizer'] = self.__optimizer.name
+        tp['optimizer_defaults'] = self.__optimizer.optimizer_defaults
+        tp['optimizer_params'] = self.__optimizer.optimizer_params
 
         ## early stopping
         early_stopping = tp['early_stopping']
@@ -384,10 +392,11 @@ class Trainer(Network):
         if n_samples_val > 0:
             val_step = self.__clip_step(step, val_indexes, val_batch_size)
         ## Save the training parameters
-        self.running_parameters = copy.deepcopy({key:value for key,value in locals().items() if key not in ['self', 'kwargs', 'training_params']})
+        self.running_parameters = copy.deepcopy({key:value for key,value in locals().items() if key not in ['self', 'kwargs', 'training_params', 'lr', 'lr_param']})
 
         ## Define the optimizer
-        self.__initialize_optimizer(models, optimizer, optimizer_params, optimizer_defaults, add_optimizer_defaults, add_optimizer_params, lr, lr_param)
+        self.__initialize_optimizer(models, optimizer, training_params, optimizer_params, optimizer_defaults, add_optimizer_defaults, add_optimizer_params, lr, lr_param)
+        torch_optimizer = self.__optimizer.get_torch_optimizer()
 
         ## Define the loss functions
         self.__initialize_loss()
@@ -430,9 +439,9 @@ class Trainer(Network):
             self._model.train()
             if prediction_samples >= 0:
                 losses = self._recurrent_inference(XY_train, train_indexes, train_batch_size, minimize_gain, prediction_samples, train_step,
-                                                    non_mandatory_inputs, mandatory_inputs, self.__loss_functions, shuffle=shuffle_data, optimizer=self.__optimizer)
+                                                    non_mandatory_inputs, mandatory_inputs, self.__loss_functions, shuffle=shuffle_data, optimizer=torch_optimizer)
             else:
-                losses = self._inference(XY_train, n_samples_train, train_batch_size, minimize_gain, self.__loss_functions, shuffle=shuffle_data, optimizer=self.__optimizer)
+                losses = self._inference(XY_train, n_samples_train, train_batch_size, minimize_gain, self.__loss_functions, shuffle=shuffle_data, optimizer=torch_optimizer)
             ## save the losses
             for ind, key in enumerate(self._model_def['Minimizers'].keys()):
                 train_losses[key].append(torch.mean(losses[ind]).tolist())
