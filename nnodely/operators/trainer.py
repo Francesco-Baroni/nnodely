@@ -365,7 +365,7 @@ class Trainer(Network):
         self.__preliminary_checks()
 
         ## Recurret variables
-        self._setup_recurrent_variables(prediction_samples, closed_loop, connect)
+        prediction_samples = self._setup_recurrent_variables(prediction_samples, closed_loop, connect)
 
         ## Get the dataset
         XY_train, XY_val, _, n_samples_train, n_samples_val, n_samples_test, train_indexes, val_indexes, _ = self._setup_dataset(train_dataset, validation_dataset, None, dataset, splits, prediction_samples)

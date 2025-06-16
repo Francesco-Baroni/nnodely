@@ -474,6 +474,16 @@ class ModelyTrainingTest(unittest.TestCase):
         self.assertListEqual([[-273.0]], test.parameters['W'])
         self.assertListEqual([-137.0], test.parameters['b'])
         self.assertListEqual([[1.0]], test.parameters['a'])
+        test.neuralizeModel(clear_model=True)
+        test.trainModel(train_dataset='dataset3', optimizer='SGD', shuffle_data=False, lr=1, num_of_epochs=1, train_batch_size=1, prediction_samples=-1)
+        self.assertListEqual([[-273.0]], test.parameters['W'])
+        self.assertListEqual([-137.0], test.parameters['b'])
+        self.assertListEqual([[1.0]], test.parameters['a'])
+        test.neuralizeModel(clear_model=True)
+        test.trainModel(train_dataset='dataset3', optimizer='SGD', shuffle_data=False, lr=1, num_of_epochs=1, train_batch_size=1)
+        self.assertListEqual([[-273.0]], test.parameters['W'])
+        self.assertListEqual([-137.0], test.parameters['b'])
+        self.assertListEqual([[1.0]], test.parameters['a'])
 
         dataset = {'in1': [0, 2, 7, 1, 5, 0, 2], 'target1': [1, 4, 8, 2, 6, 1, 1]}
         test.loadData(name='dataset4', source=dataset)
