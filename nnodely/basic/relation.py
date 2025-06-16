@@ -271,7 +271,7 @@ class Stream(Relation):
                 o = Integrate(self, der_name = der_name, int_name = int_name, method = method)
         return o
 
-    def connect(self, obj:"Input") -> "Stream":
+    def connect(self, obj) -> "Stream":
         """
         Update the Stream adding a connects with a given input object.
 
@@ -302,7 +302,7 @@ class Stream(Relation):
         self.json['Inputs'][obj.name]['local'] = 1
         return self
 
-    def closedLoop(self, obj:"Input") -> "Stream":
+    def closedLoop(self, obj) -> "Stream":
         """
         Update the Stream adding a closed loop connection with a given state object.
 
