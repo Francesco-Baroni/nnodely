@@ -613,7 +613,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         # TODO num_of_epochs automatically defined
         # now is 0.001 for learning rate and 100 for the epochs and optimizer Adam
         tp = test.trainModel(models='model1', splits=[100, 0, 0])
-        self.assertEqual('model1', tp['models'])
+        self.assertEqual(['model1'], tp['models'])
         self.assertEqual(100, tp['num_of_epochs'])
         self.assertEqual(56, tp['n_samples_train'])
         self.assertEqual(0, tp['n_samples_val'])
@@ -623,7 +623,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
 
         # Set number of epoch and learning rate via parameters it works only for standard parameters
         tp = test.trainModel(models='model1', splits=[100, 0, 0], lr=0.5, num_of_epochs=5)
-        self.assertEqual('model1', tp['models'])
+        self.assertEqual(['model1'], tp['models'])
         self.assertEqual(5, tp['num_of_epochs'])
         self.assertEqual(56, tp['n_samples_train'])
         self.assertEqual(0, tp['n_samples_val'])
@@ -635,7 +635,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
 
         # Set number of epoch and learning rate via parameters it works only for standard parameters and use two different dataset one for train and one for validation
         tp = test.trainModel(models='model1', train_dataset='dataset1', validation_dataset='dataset2', lr=0.6, num_of_epochs=10)
-        self.assertEqual('model1', tp['models'])
+        self.assertEqual(['model1'], tp['models'])
         self.assertEqual(10, tp['num_of_epochs'])
         self.assertEqual(56, tp['n_samples_train'])
         self.assertEqual(96, tp['n_samples_val'])
@@ -665,7 +665,7 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         # If I add a function parameter it has the priority
         # In this case apply train parameter but on a different model
         tp = test.trainModel(models='model1', training_params=training_params)
-        self.assertEqual('model1', tp['models'])
+        self.assertEqual(['model1'], tp['models'])
         self.assertEqual(20, tp['num_of_epochs'])
         self.assertEqual(round(56 * 55 / 100), tp['n_samples_train'])
         self.assertEqual(round(56 * 40 / 100), tp['n_samples_val'])

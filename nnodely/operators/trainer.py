@@ -177,7 +177,10 @@ class Trainer(Network):
             optimizer.add_defaults('lr', optimizer_defaults['lr']) 
         if 'lr' in lr_param:
             optimizer.add_option_to_params('lr', lr_param)
+
+        self.running_parameters['models'] = models
         self.__optimizer = optimizer.get_torch_optimizer()
+
     
     def __initialize_loss(self):
         for name, values in self._model_def['Minimizers'].items():
