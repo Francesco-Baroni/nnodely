@@ -11,7 +11,7 @@ from nnodely.layers.activation import Relu, ELU, Softmax, Sigmoid, Identity
 from nnodely.layers.fir import Fir
 from nnodely.layers.linear import Linear
 from nnodely.layers.arithmetic import Add, Sum, Sub, Mul, Div, Pow, Neg, Sign, Abs
-from nnodely.layers.trigonometric import Sin, Cos, Tan, Cosh, Tanh, Sech
+from nnodely.layers.trigonometric import Sin, Cos, Tan, Cosh, Tanh, Sech, Atan2
 from nnodely.layers.parametricfunction import ParamFun
 from nnodely.layers.fuzzify import Fuzzify
 from nnodely.layers.part import Part, Select, Concatenate, SamplePart, SampleSelect, TimePart, TimeConcatenate

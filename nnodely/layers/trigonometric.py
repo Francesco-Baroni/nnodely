@@ -3,8 +3,9 @@ import torch.nn as nn
 
 from nnodely.basic.relation import ToStream, Stream, toStream
 from nnodely.basic.model import Model
-from nnodely.support.utils import check, enforce_types
+from nnodely.support.utils import check, enforce_types, merge
 from nnodely.layers.parameter import Parameter, Constant
+from nnodely.support.utils import binary_cheks
 
 sin_relation_name = 'Sin'
 cos_relation_name = 'Cos'
@@ -12,6 +13,7 @@ tan_relation_name = 'Tan'
 tanh_relation_name = 'Tanh'
 cosh_relation_name = 'Cosh'
 sech_relation_name = 'Sech'
+atan2_relation_name = 'Atan2'
 
 class Sin(Stream, ToStream):
     """
@@ -139,6 +141,28 @@ class Tanh(Stream, ToStream):
         super().__init__(tanh_relation_name + str(Stream.count),obj.json,obj.dim)
         self.json['Relations'][self.name] = [tanh_relation_name,[obj.name]]
 
+class Atan2(Stream, ToStream):
+    """
+        Implement the arctangent of y/x. 
+
+        See also:
+            Official PyTorch pow documentation:
+            `torch.atan2 <https://docs.pytorch.org/docs/stable/generated/torch.atan2.html>`_
+
+        :param y: the base of the power function
+        :type obj: Tensor
+        :param x: the exponent of the power function
+        :type obj: float or Tensor
+
+        Example:
+            >>> atan2 = Atan2(y, x)
+    """
+    @enforce_types
+    def __init__(self, obj1:Stream|Parameter|Constant|int|float, obj2:Stream|Parameter|Constant|int|float) -> Stream:
+        obj1, obj2, dim = binary_cheks(self, obj1, obj2, 'atan2 operators')
+        super().__init__(atan2_relation_name + str(Stream.count),merge(obj1.json,obj2.json),dim)
+        self.json['Relations'][self.name] = [atan2_relation_name,[obj1.name,obj2.name]]
+
 class Sin_Layer(nn.Module):
     def __init__(self,):
         super(Sin_Layer, self).__init__()
@@ -199,9 +223,22 @@ class Sech_Layer(nn.Module):
 def createSech(self, *inputs):
     return Sech_Layer()
 
+class Atan2_Layer(nn.Module):
+    #: :noindex:
+    def __init__(self):
+        super(Atan2_Layer, self).__init__()
+
+    def forward(self, *inputs):
+        return torch.atan2(inputs[0], inputs[1])
+
+def createAtan2(name, *inputs):
+    #: :noindex:
+    return Atan2_Layer()
+
 setattr(Model, sin_relation_name, createSin)
 setattr(Model, cos_relation_name, createCos)
 setattr(Model, tan_relation_name, createTan)
 setattr(Model, cosh_relation_name, createCosh)
 setattr(Model, tanh_relation_name, createTanh)
 setattr(Model, sech_relation_name, createSech)
+setattr(Model, atan2_relation_name, createAtan2)

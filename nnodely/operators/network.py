@@ -196,7 +196,8 @@ class Network:
                 if self.run_training_params['weights_function'] is not None:
                     # TODO: check if the weights function is correct (types, return type, dimensions, etc.)
                     weights = self.run_training_params['weights_function'](len(horizon_losses[ind]))
-                    loss = torch.sum(torch.stack(horizon_losses[ind]) * weights)/torch.sum(weights)
+                    loss = torch.sum(torch.stack(horizon_losses[ind]) * weights)/torch.sum(weights) # weighted average
+                    #loss = torch.sum(torch.stack(horizon_losses[ind]) * weights)
                 else:
                     loss = sum(horizon_losses[ind]) / (prediction_samples + 1)
                 aux_losses[ind][batch_val] = loss.item()
@@ -205,6 +206,7 @@ class Network:
             ## Gradient Step
             if optimizer:
                 total_loss.backward()  ## Backpropagate the error
+                torch.nn.utils.clip_grad_norm_(self._model.parameters(), max_norm=1.0)
                 optimizer.step()
                 self.visualizer.showWeightsInTrain(batch=batch_val)
             batch_val += 1
