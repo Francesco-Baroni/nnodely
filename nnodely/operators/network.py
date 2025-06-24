@@ -1,4 +1,6 @@
 import copy
+from collections import defaultdict
+from unittest import result
 
 import numpy as np
 import  torch, random
@@ -80,35 +82,45 @@ class Network:
         mandatory_inputs = list(set(model_inputs) - set(non_mandatory_inputs))
         return mandatory_inputs, non_mandatory_inputs
     
-    def _get_batch_indexes(self, dataset_name, prediction_samples):
-        n_samples = self._num_of_samples[dataset_name]
-        #available_samples = n_samples - prediction_samples
-        batch_indexes = list(range(n_samples))
-        if dataset_name in self._multifile.keys(): ## i have some forbidden indexes
-            forbidden_idxs = []
-            for i in self._multifile[dataset_name]:
-                forbidden_idxs.extend(range(i - prediction_samples, i, 1))
-            batch_indexes = [idx for idx in batch_indexes if idx not in forbidden_idxs]
+    def _get_batch_indexes(self, datasets, prediction_samples):
+        n_samples_tot = sum([self._num_of_samples[data] for data in datasets])
+        batch_indexes = list(range(n_samples_tot))
+        n_samples_count = 0
+        for dataset in datasets:
+            if dataset in self._multifile.keys(): ## i have some forbidden indexes
+                forbidden_idxs = []
+                for i in self._multifile[dataset]:
+                    forbidden_idxs.extend(range((i+n_samples_count) - prediction_samples, (i+n_samples_count), 1))
+                batch_indexes = [idx for idx in batch_indexes if idx not in forbidden_idxs]
+            n_samples_count += self._num_of_samples[dataset]
         return batch_indexes
     
-    def __split_dataset(self, dataset:str, splits:list, prediction_samples:int):
+    def __split_dataset(self, dataset:str|list, splits:list, prediction_samples:int):
         check(len(splits) == 3, ValueError, '3 elements must be inserted for the dataset split in training, validation and test')
         check(sum(splits) == 100, ValueError, 'Training, Validation and Test splits must sum up to 100.')
         check(splits[0] > 0, ValueError, 'The training split cannot be zero.')
-        check(dataset in self._data.keys(), KeyError, f'{dataset} Not Loaded!') 
+        #check(dataset in self._data.keys(), KeyError, f'{dataset} Not Loaded!') 
         train_size, val_size, test_size = splits[0] / 100, splits[1] / 100, splits[2] / 100
-        #dataset = list(dataset) if type(dataset) is str else dataset
-        #check(len([data for data in dataset if data in self._data.keys()]) > 0, KeyError, f'the datasets: {dataset} are not loaded!')
-        # for data in dataset:
-        #     if data not in self._data.keys():
-        #         log.warning(f'{data} is not loaded. The training will continue without this dataset.') 
-        #         continue
-        num_of_samples = self._num_of_samples[dataset]
+        dataset = [dataset] if type(dataset) is str else dataset
+        check(len([data for data in dataset if data in self._data.keys()]) > 0, KeyError, f'the datasets: {dataset} are not loaded!')
+        for data in dataset:
+            if data not in self._data.keys():
+                log.warning(f'{data} is not loaded. The training will continue without this dataset.') 
+                dataset.remove(data)
+                continue
+        #num_of_samples = self._num_of_samples[dataset]
+        num_of_samples = sum([self._num_of_samples[data] for data in dataset])
         n_samples_train, n_samples_val, n_samples_test = round(num_of_samples * train_size), round(num_of_samples * val_size), round(num_of_samples * test_size)
         batch_indexes = self._get_batch_indexes(dataset, prediction_samples)
         XY_train, XY_val, XY_test = {}, {}, {}
         train_indexes, val_indexes, test_indexes = [], [], []
-        for key, samples in self._data[dataset].items():
+        ## Stack data together
+        total_data = defaultdict(list)
+        for data in dataset:
+            for k, v in self._data[data].items():
+                total_data[k].append(v)
+        total_data = {key: np.concatenate(arrays) for key, arrays in total_data.items()}
+        for key, samples in total_data.items():
             if val_size == 0.0 and test_size == 0.0:  ## we have only training set
                 XY_train[key] = torch.from_numpy(samples).to(TORCH_DTYPE)
                 train_indexes = batch_indexes
@@ -137,46 +149,60 @@ class Network:
             val_indexes = val_indexes[:-prediction_samples]
             test_indexes = test_indexes[:-prediction_samples]
         return XY_train, XY_val, XY_test, n_samples_train, n_samples_val, n_samples_test, train_indexes, val_indexes, test_indexes
+    
+    def __data_split(self, datasets:list, prediction_samples:int):
+        n_samples = sum([self._num_of_samples[data] for data in datasets])
+        total_data = defaultdict(list)
+        for data in datasets:
+            for k, v in self._data[data].items():
+                total_data[k].append(v)
+        total_data = {key: np.concatenate(arrays) for key, arrays in total_data.items()}
+        total_data = {key: torch.from_numpy(val).to(TORCH_DTYPE) for key, val in total_data.items()}
+        indexes = self._get_batch_indexes(datasets, prediction_samples)
+        if prediction_samples > 0:
+            indexes = indexes[:-prediction_samples]
+        return total_data, n_samples, indexes
 
-    def __get_data(self, train_dataset, validation_dataset=None, test_dataset=None, prediction_samples=0):
-        ## Get the names of the datasets
-        datasets = list(self._data.keys())
-        n_samples_train, n_samples_val, n_samples_test = 0, 0, 0
-        check(train_dataset in datasets, KeyError, f'{train_dataset} Not Loaded!')
-        if validation_dataset and validation_dataset not in datasets:
-            log.warning(f'Validation Dataset [{validation_dataset}] Not Loaded.')
-        if test_dataset and test_dataset not in datasets:
-            log.warning(f'Test Dataset [{test_dataset}] Not Loaded.')
+    def __get_data(self, train_dataset:str|list, validation_dataset:str|list|None=None, test_dataset:str|list|None=None, prediction_samples:int=0):
+        train_dataset = [train_dataset] if type(train_dataset) is str else train_dataset
+        loaded_datasets = list(self._data.keys())
+        check(len([data for data in train_dataset if data in loaded_datasets]) > 0, KeyError, f'the train datasets: {train_dataset} are not loaded!')
+        for data in train_dataset:
+            if data not in loaded_datasets:
+                log.warning(f'{data} is not loaded. The training will continue without this dataset.') 
+                train_dataset.remove(data)
+
+        if validation_dataset:
+            validation_dataset = [validation_dataset] if type(validation_dataset) is str else validation_dataset
+            check(len([data for data in validation_dataset if data in loaded_datasets]) > 0, KeyError, f'the validation datasets: {validation_dataset} are not loaded!')
+            for data in validation_dataset:
+                if data not in loaded_datasets:
+                    log.warning(f'Validation Dataset [{data}] Not Loaded.')
+                    validation_dataset.remove(data)
+
+        if test_dataset:
+            test_dataset = [test_dataset] if type(test_dataset) is str else test_dataset
+            check(len([data for data in test_dataset if data in loaded_datasets]) > 0, KeyError, f'the test datasets: {test_dataset} are not loaded!')
+            for data in test_dataset:
+                if data not in loaded_datasets:
+                    log.warning(f'Test Dataset [{data}] Not Loaded.')
+                    test_dataset.remove(data)
 
         n_samples_train, n_samples_val, n_samples_test = 0, 0, 0
         XY_train, XY_val, XY_test = {}, {}, {}
         train_indexes, val_indexes, test_indexes = [], [], []
         ## Split into train, validation and test
-        n_samples_train = self._num_of_samples[train_dataset]
-        XY_train = {key: torch.from_numpy(val).to(TORCH_DTYPE) for key, val in self._data[train_dataset].items()}
-        train_indexes = self._get_batch_indexes(train_dataset, prediction_samples)
-        if validation_dataset in datasets:
-            n_samples_val = self._num_of_samples[validation_dataset]
-            XY_val = {key: torch.from_numpy(val).to(TORCH_DTYPE) for key, val in self._data[validation_dataset].items()}
-            val_indexes = self._get_batch_indexes(validation_dataset, prediction_samples)
-        if test_dataset in datasets:
-            n_samples_test = self._num_of_samples[test_dataset]
-            XY_test = {key: torch.from_numpy(val).to(TORCH_DTYPE) for key, val in self._data[test_dataset].items()}
-            test_indexes = self._get_batch_indexes(test_dataset, prediction_samples)
+        XY_train, n_samples_train, train_indexes = self.__data_split(train_dataset, prediction_samples)
         check(n_samples_train > 0, ValueError, f'The number of train samples {n_samples_train} must be greater than 0.')
-        if prediction_samples > 0:
-            train_indexes = train_indexes[:-prediction_samples]
-            if validation_dataset in datasets:
-                val_indexes = val_indexes[:-prediction_samples]
-            if test_dataset in datasets:
-                test_indexes = test_indexes[:-prediction_samples]
-
+        if validation_dataset:
+            XY_val, n_samples_val, val_indexes = self.__data_split(validation_dataset, prediction_samples)
+        if test_dataset:
+            XY_test, n_samples_test, test_indexes = self.__data_split(test_dataset, prediction_samples)
         return XY_train, XY_val, XY_test, n_samples_train, n_samples_val, n_samples_test, train_indexes, val_indexes, test_indexes
 
     def _setup_dataset(self, train_dataset, validation_dataset, test_dataset, dataset, splits, prediction_samples):
         if train_dataset is None and dataset is None:
-            ## TODO: change to all the datasets loaded
-            dataset = list(self._data.keys())[0]
+            dataset = list(self._data.keys())
         if train_dataset:  ## Use each dataset
             return self.__get_data(train_dataset, validation_dataset, test_dataset, prediction_samples)
         else:  ## use the splits

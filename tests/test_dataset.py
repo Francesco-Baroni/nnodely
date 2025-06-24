@@ -584,19 +584,22 @@ class ModelyCreateDatasetTest(unittest.TestCase):
         self.assertListEqual(test._multifile['dataset2'], [5, 20, 45])
 
         ## train using splits
-        test.trainModel(splits=[80, 10, 10])
+        test.trainModel(dataset='dataset1', splits=[80, 10, 10], prediction_samples=3)
 
-        ## train using multi dataset
-        test.trainModel(train_dataset='dataset1', validation_dataset='dataset2')
+        ## train using one dataset
+        test.trainModel(train_dataset='dataset1', validation_dataset='dataset2', prediction_samples=3)
 
         ## test the results analysis
         test.resultAnalysis(dataset='dataset1')
 
-        ## TODO: splits multifile
-        #test.trainModel(dataset=['dataset1', 'dataset2'], splits=[80, 10, 10])
+        ## Use all datasets
+        test.trainModel(splits=[80, 10, 10])
+
+        ## splits multifile
+        test.trainModel(dataset=['dataset1', 'dataset2'], splits=[80, 10, 10], prediction_samples=3)
 
         ## train using multi dataset
-        #test.trainModel(train_dataset=['dataset1', 'dataset2'], validation_dataset=['dataset1', 'dataset2'])
+        test.trainModel(train_dataset=['dataset1', 'dataset2'], validation_dataset=['dataset1', 'dataset2'])
 
     def test_multifiles_2(self):
         NeuObj.clearNames()
