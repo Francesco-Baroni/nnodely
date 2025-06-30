@@ -110,7 +110,8 @@ class Network:
                 continue
         #num_of_samples = self._num_of_samples[dataset]
         num_of_samples = sum([self._num_of_samples[data] for data in dataset])
-        n_samples_train, n_samples_val, n_samples_test = round(num_of_samples * train_size), round(num_of_samples * val_size), round(num_of_samples * test_size)
+        n_samples_train, n_samples_val = round(num_of_samples * train_size), round(num_of_samples * val_size)
+        n_samples_test = num_of_samples - n_samples_train - n_samples_val
         batch_indexes = self._get_batch_indexes(dataset, prediction_samples)
         XY_train, XY_val, XY_test = {}, {}, {}
         train_indexes, val_indexes, test_indexes = [], [], []
