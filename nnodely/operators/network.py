@@ -5,7 +5,7 @@ from unittest import result
 import numpy as np
 import  torch, random
 
-from nnodely.support.utils import TORCH_DTYPE, check, enforce_types, tensor_to_list
+from nnodely.support.utils import TORCH_DTYPE, NP_DTYPE, check, enforce_types, tensor_to_list
 from nnodely.basic.modeldef import ModelDef
 
 from nnodely.support.logger import logging, nnLogger
@@ -120,7 +120,7 @@ class Network:
         for data in dataset:
             for k, v in self._data[data].items():
                 total_data[k].append(v)
-        total_data = {key: np.concatenate(arrays) for key, arrays in total_data.items()}
+        total_data = {key: np.concatenate(arrays, dtype=NP_DTYPE) for key, arrays in total_data.items()}
         for key, samples in total_data.items():
             if val_size == 0.0 and test_size == 0.0:  ## we have only training set
                 XY_train[key] = torch.from_numpy(samples).to(TORCH_DTYPE)
