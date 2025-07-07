@@ -5,8 +5,8 @@ from nnodely import *
 from nnodely.basic.relation import NeuObj
 from nnodely.support.logger import logging, nnLogger
 
-log = nnLogger(__name__, logging.CRITICAL)
-log.setAllLevel(logging.CRITICAL)
+log = nnLogger(__name__, logging.ERROR)
+log.setAllLevel(logging.ERROR)
 
 sys.path.append(os.getcwd())
 
@@ -191,3 +191,25 @@ class ModelyTestVisualizer(unittest.TestCase):
                 m.showFunctions(f)
         except ValueError:
             pass
+
+    def test_structure_plot(self):
+        clearNames()
+        X = Input('X')
+        Y = Input('Y')
+        Z = Input('Z')
+        t_state = Input('t_state')
+        k_state = Input('k_state')
+
+        func1 = Fir(X.last()) + Fir(Y.last())
+        func1.closedLoop(t_state)
+        func2 = Fir(Z.last()) + t_state.last()
+        func2.connect(k_state)
+        func3 = Fir(k_state.last()) * Constant('g', sw=1, values=[[9.8]])
+
+        out = Output('out', func1 + func2 + func3)
+
+        example = Modely(visualizer=TextVisualizer())
+        example.addModel('model', out)
+        example.neuralizeModel()
+        example.visualizer.plotStructure(example.json, filename='test_structure_plot', library='matplotlib')
+        example.visualizer.plotStructure(example.json, filename='test_structure_plot_graphviz', library='graphviz')

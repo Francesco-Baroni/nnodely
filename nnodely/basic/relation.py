@@ -114,7 +114,7 @@ class Relation():
 
 class Stream(Relation):
     """
-    Represents a stream of data inside the neural network. A Stream is automatically create when you operate over a Input, State, Parameter, or Constant object.
+    Represents a stream of data inside the neural network. A Stream is automatically create when you operate over a Input, Parameter, or Constant object.
     """
     count = 0
     @classmethod
@@ -304,7 +304,7 @@ class Stream(Relation):
 
     def closedLoop(self, obj) -> "Stream":
         """
-        Update the Stream adding a closed loop connection with a given state object.
+        Update the Stream adding a closed loop connection with a given input object.
 
         Parameters
         ----------

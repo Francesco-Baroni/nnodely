@@ -137,6 +137,117 @@ class Modely(Composer, Trainer, Loader, Validator, Exporter):
 
     def trainAndAnalyze(self, test_dataset=None, test_batch_size=1, **kwargs):
         """
+        Trains the model using the provided datasets and parameters. After training, it analyzes the results on the training, validation, and test datasets.
+
+        Parameters
+        ----------
+        test_dataset : str or None, optional
+            The name of the datasets used for test. Default is None.
+        test_batch_size : int, optional
+            The batch size for testing. Default is 1.
+        models : list or None, optional
+            A list of models to train. Default is None.
+        train_dataset : str or None, optional
+            The name of datasets to use for training. Default is None.
+        validation_dataset : str or None, optional
+            The name of datasets to use for validation. Default is None.
+        dataset : str or None, optional
+            The name of the datasets to use for training, validation and test.
+        splits : list or None, optional
+            A list of 3 elements specifying the percentage of splits for training, validation, and testing. The three elements must sum up to 100!
+            The parameter splits is only used when dataset is not None
+        closed_loop : dict or None, optional
+            A dictionary specifying closed loop connections. The keys are input names and the values are output names. Default is None.
+        connect : dict or None, optional
+            A dictionary specifying connections. The keys are input names and the values are output names. Default is None.
+        step : int or None, optional
+            The step size for training. A big value will result in less data used for each epochs and a faster train. Default is None.
+        prediction_samples : int or None, optional
+            The size of the prediction horizon. Number of samples at each recurrent window Default is None.
+        shuffle_data : bool or None, optional
+            Whether to shuffle the data during training. Default is None.
+        early_stopping : Callable or None, optional
+            A callable for early stopping. Default is None.
+        early_stopping_params : dict or None, optional
+            A dictionary of parameters for early stopping. Default is None.
+        select_model : Callable or None, optional
+            A callable for selecting the best model. Default is None.
+        select_model_params : dict or None, optional
+            A dictionary of parameters for selecting the best model. Default is None.
+        minimize_gain : dict or None, optional
+            A dictionary specifying the gain for each minimization loss function. Default is None.
+        num_of_epochs : int or None, optional
+            The number of epochs to train the model. Default is None.
+        train_batch_size : int or None, optional
+            The batch size for training. Default is None.
+        val_batch_size : int or None, optional
+            The batch size for validation. Default is None.
+        optimizer : Optimizer or None, optional
+            The optimizer to use for training. Default is None.
+        lr : float or None, optional
+            The learning rate. Default is None.
+        lr_param : dict or None, optional
+            A dictionary of learning rate parameters. Default is None.
+        optimizer_params : list or dict or None, optional
+            A dictionary of optimizer parameters. Default is None.
+        optimizer_defaults : dict or None, optional
+            A dictionary of default optimizer settings. Default is None.
+        training_params : dict or None, optional
+            A dictionary of training parameters. Default is None.
+        add_optimizer_params : list or None, optional
+            Additional optimizer parameters. Default is None.
+        add_optimizer_defaults : dict or None, optional
+            Additional default optimizer settings. Default is None.
+
+        Raises
+        ------
+        RuntimeError
+            If no data is loaded or if there are no modules with learnable parameters.
+        KeyError
+            If the sample horizon is not positive.
+        ValueError
+            If an input or output variable is not in the model definition.
+
+        Examples
+        --------
+        .. image:: https://colab.research.google.com/assets/colab-badge.svg
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/training.ipynb
+            :alt: Open in Colab
+
+        Example - basic feed-forward training:
+            >>> x = Input('x')
+            >>> F = Input('F')
+
+            >>> xk1 = Output('x[k+1]', Fir()(x.tw(0.2))+Fir()(F.last()))
+
+            >>> mass_spring_damper = Modely(seed=0)
+            >>> mass_spring_damper.addModel('xk1',xk1)
+            >>> mass_spring_damper.neuralizeModel(sample_time = 0.05)
+
+            >>> data_struct = ['time','x','dx','F']
+            >>> data_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)),'dataset','data')
+            >>> mass_spring_damper.loadData(name='mass_spring_dataset', source=data_folder, format=data_struct, delimiter=';')
+
+            >>> params = {'num_of_epochs': 100,'train_batch_size': 128,'lr':0.001}
+            >>> mass_spring_damper.trainModel(splits=[70,20,10], training_params = params)
+
+        Example - recurrent training:
+            >>> x = Input('x')
+            >>> F = Input('F')
+
+            >>> xk1 = Output('x[k+1]', Fir()(x.tw(0.2))+Fir()(F.last()))
+
+            >>> mass_spring_damper = Modely(seed=0)
+            >>> mass_spring_damper.addModel('xk1',xk1)
+            >>> mass_spring_damper.addClosedLoop(xk1, x)
+            >>> mass_spring_damper.neuralizeModel(sample_time = 0.05)
+
+            >>> data_struct = ['time','x','dx','F']
+            >>> data_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)),'dataset','data')
+            >>> mass_spring_damper.loadData(name='mass_spring_dataset', source=data_folder, format=data_struct, delimiter=';')
+
+            >>> params = {'num_of_epochs': 100,'train_batch_size': 128,'lr':0.001}
+            >>> mass_spring_damper.trainModel(splits=[70,20,10], prediction_samples=10, training_params = params)
         """
         ## Train the model
         params = self.trainModel(**kwargs)

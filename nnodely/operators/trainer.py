@@ -272,14 +272,14 @@ class Trainer(Network):
         models : list or None, optional
             A list of models to train. Default is None.
         train_dataset : str or None, optional
-            The name of the training dataset. Default is None.
+            The name of datasets to use for training. Default is None.
         validation_dataset : str or None, optional
-            The name of the validation dataset. Default is None.
-        test_dataset : str or None, optional
-            The name of the test dataset. Default is None.
+            The name of datasets to use for validation. Default is None.
+        dataset : str or None, optional
+            The name of the datasets to use for training, validation and test.
         splits : list or None, optional
             A list of 3 elements specifying the percentage of splits for training, validation, and testing. The three elements must sum up to 100!
-            The parameter splits is only used when there is only 1 dataset loaded. Default is None.
+            The parameter splits is only used when dataset is not None
         closed_loop : dict or None, optional
             A dictionary specifying closed loop connections. The keys are input names and the values are output names. Default is None.
         connect : dict or None, optional
@@ -306,8 +306,6 @@ class Trainer(Network):
             The batch size for training. Default is None.
         val_batch_size : int or None, optional
             The batch size for validation. Default is None.
-        test_batch_size : int or None, optional
-            The batch size for testing. Default is None.
         optimizer : Optimizer or None, optional
             The optimizer to use for training. Default is None.
         lr : float or None, optional
