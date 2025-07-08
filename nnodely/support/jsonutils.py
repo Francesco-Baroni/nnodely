@@ -341,7 +341,15 @@ def plot_structure(json, filename='nnodely_graph'):
     plt.show()
 
 def plot_graphviz_structure(json, filename='nnodely_graph'):
+    import shutil
     from graphviz import Digraph
+
+    # Check if Graphviz is installed
+    if shutil.which('dot') is None:
+        raise RuntimeError(
+            "Graphviz does not appear to be installed on your system. "
+            "Please install it from https://graphviz.org/download/"
+        )
     
     dot = Digraph(comment='Structured Neural Network')
 
