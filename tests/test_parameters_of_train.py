@@ -1003,3 +1003,113 @@ class ModelyTrainingTestParameter(unittest.TestCase):
 
         self.assertEqual(1, tp['update_per_epochs'])
         self.assertEqual(24, tp['unused_samples'])
+
+    def test_train_sampled_datasets(self):
+        NeuObj.clearNames()
+        x = Input('x')  # Position
+        F = Input('F')  # Force
+
+        # List the output of the model
+        x_z = Output('x_z', Fir(x.tw(0.3)) + Fir(F.last()))
+
+        # Add the neural model to the nnodely structure and neuralization of the model
+        test = Modely(visualizer=None)
+        test.addModel('x_z',x_z)
+        test.addMinimize('next-pos', x.z(-1), x_z, 'mse')
+
+        # Create the neural network
+        test.neuralizeModel(sample_time=0.05)  # The sampling time depends to the dataset
+
+        # Data load
+        data_struct = ['x','F','x2','y2','','A1x','A1y','B1x','B1y','','A2x','A2y','B2x','out','','x3','in1','in2','time']
+        test.loadData(name='dataset', source=data_folder, format=data_struct, skiplines=4, delimiter='\t', header=None)
+        tp = test.trainModel(train_dataset='dataset', num_of_epochs=3)
+
+        self.assertEqual((15-6), test._num_of_samples['dataset'])
+        self.assertEqual(round(15-6),tp['n_samples_train'])
+        self.assertEqual(round(0),tp['n_samples_val'])
+        self.assertEqual(round(0),tp['n_samples_test'])
+        self.assertEqual(round(15-6),tp['train_batch_size'])
+        self.assertEqual(1, tp['update_per_epochs'])
+        self.assertEqual(0, tp['unused_samples'])
+        self.assertEqual(128,tp['val_batch_size'])
+        self.assertEqual(3,tp['num_of_epochs'])
+        self.assertEqual(0.001,tp['optimizer_defaults']['lr'])
+
+        ## Passing a sampled dataset
+        import torch
+
+        train_data = {'x': torch.tensor([[[0.8030],[0.8030],[0.8040],[0.8040],[0.8050],[0.8060],[0.8070]],
+                                         [[0.8030],[0.8040],[0.8040],[0.8050],[0.8060],[0.8070],[0.8080]],
+                                         [[0.8080],[0.8090],[0.8100],[0.8120],[0.8130],[0.8140],[0.8150]],
+                                         [[0.8090],[0.8100],[0.8120],[0.8130],[0.8140],[0.8150],[0.8160]]]),
+                     'F': torch.tensor([[[0.8240]],[[0.8230]],[[0.8220]],[[0.8200]],[[0.8190]],[[0.8180]],[[0.8160]],[[0.8140]],[[0.8130]]])}
+        ## Not the same number of samples 
+        with self.assertRaises(ValueError):
+            test.trainModel(train_dataset=train_data)
+
+        train_data = {'x': torch.tensor([[[0.8030],[0.8030],[0.8040],[0.8040],[0.8050],[0.8060]],
+                                         [[0.8030],[0.8040],[0.8040],[0.8050],[0.8060],[0.8070]],
+                                         [[0.8080],[0.8090],[0.8100],[0.8120],[0.8130],[0.8140]],
+                                         [[0.8090],[0.8100],[0.8120],[0.8130],[0.8140],[0.8150]]]),
+                     'F': torch.tensor([[[0.8240]],[[0.8230]],[[0.8220]],[[0.8200]]])}
+        ## Not the correct number of dimensions
+        with self.assertRaises(ValueError):
+            test.trainModel(train_dataset=train_data)
+        with self.assertRaises(ValueError):
+            test.trainModel(validation_dataset=train_data)
+        
+        train_data = {'x': torch.tensor([[[0.8030],[0.8030],[0.8040],[0.8040],[0.8050],[0.8060],[0.8070]],
+                                         [[0.8030],[0.8040],[0.8040],[0.8050],[0.8060],[0.8070],[0.8080]],
+                                         [[0.8080],[0.8090],[0.8100],[0.8120],[0.8130],[0.8140],[0.8150]],
+                                         [[0.8090],[0.8100],[0.8120],[0.8130],[0.8140],[0.8150],[0.8160]]]),
+                     'F': torch.tensor([[[0.8240]],[[0.8230]],[[0.8220]],[[0.8200]]]),
+                     't': torch.tensor([[[0.0]],[[0.05]],[[0.1]],[[0.15]]])}
+        ## The extra sample is ignored
+        test.trainModel(train_dataset=train_data, validation_dataset=train_data, num_of_epochs=3)
+
+        train_data = {'F': torch.tensor([[[0.8240]],[[0.8230]],[[0.8220]],[[0.8200]]])}
+        ## If there is a missing input the training fails
+        with self.assertRaises(ValueError):
+            test.trainModel(train_dataset=train_data, validation_dataset=train_data, num_of_epochs=3)
+
+        train_data = {'x': torch.tensor([[[0.8030],[0.8030],[0.8040],[0.8040],[0.8050],[0.8060],[0.8070]],
+                                         [[0.8030],[0.8040],[0.8040],[0.8050],[0.8060],[0.8070],[0.8080]],
+                                         [[0.8040],[0.8040],[0.8050],[0.8060],[0.8070],[0.8080],[0.8090]],
+                                         [[0.8040],[0.8050],[0.8060],[0.8070],[0.8080],[0.8090],[0.8100]],
+                                         [[0.8050],[0.8060],[0.8070],[0.8080],[0.8090],[0.8100],[0.8120]],
+                                         [[0.8060],[0.8070],[0.8080],[0.8090],[0.8100],[0.8120],[0.8130]],
+                                         [[0.8070],[0.8080],[0.8090],[0.8100],[0.8120],[0.8130],[0.8140]],
+                                         [[0.8080],[0.8090],[0.8100],[0.8120],[0.8130],[0.8140],[0.8150]],
+                                         [[0.8090],[0.8100],[0.8120],[0.8130],[0.8140],[0.8150],[0.8160]]]),
+                     'F': torch.tensor([[[0.8240]],[[0.8230]],[[0.8220]],[[0.8200]],[[0.8190]],[[0.8180]],[[0.8160]],[[0.8140]],[[0.8130]]])}
+        val_data = {'x': torch.tensor([[[0.8030],[0.8030],[0.8040],[0.8040],[0.8050],[0.8060],[0.8070]],
+                                         [[0.8030],[0.8040],[0.8040],[0.8050],[0.8060],[0.8070],[0.8080]],
+                                         [[0.8040],[0.8040],[0.8050],[0.8060],[0.8070],[0.8080],[0.8090]],
+                                         [[0.8040],[0.8050],[0.8060],[0.8070],[0.8080],[0.8090],[0.8100]],
+                                         [[0.8090],[0.8100],[0.8120],[0.8130],[0.8140],[0.8150],[0.8160]]]),
+                     'F': torch.tensor([[[0.8240]],[[0.8230]],[[0.8220]],[[0.8200]],[[0.8130]]])}
+        
+        tp = test.trainModel(train_dataset=train_data, num_of_epochs=3)
+        self.assertEqual(9, test._num_of_samples['dataset'])
+        self.assertEqual(9,tp['n_samples_train'])
+        self.assertEqual(0,tp['n_samples_val'])
+        self.assertEqual(0,tp['n_samples_test'])
+        self.assertEqual(9,tp['train_batch_size'])
+        self.assertEqual(1, tp['update_per_epochs'])
+        self.assertEqual(0, tp['unused_samples'])
+        self.assertEqual(128,tp['val_batch_size'])
+        self.assertEqual(3,tp['num_of_epochs'])
+        self.assertEqual(0.001,tp['optimizer_defaults']['lr'])
+
+        tp = test.trainModel(train_dataset=train_data, validation_dataset=val_data, num_of_epochs=3)
+        self.assertEqual(9, test._num_of_samples['dataset'])
+        self.assertEqual(9,tp['n_samples_train'])
+        self.assertEqual(5,tp['n_samples_val'])
+        self.assertEqual(0,tp['n_samples_test'])
+        self.assertEqual(9,tp['train_batch_size'])
+        self.assertEqual(1, tp['update_per_epochs'])
+        self.assertEqual(0, tp['unused_samples'])
+        self.assertEqual(5,tp['val_batch_size'])
+        self.assertEqual(3,tp['num_of_epochs'])
+        self.assertEqual(0.001,tp['optimizer_defaults']['lr'])
