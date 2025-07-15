@@ -1350,7 +1350,7 @@ class ModelyPredictTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             fun_map_2(4.0, 1, pp, ll)
         test.addModel('out-new', [out3,out4])
-        with self.assertRaises(ValueError):
+        with self.assertRaises(NameError):
             test.addModel('out',[out1,out2])
         test.neuralizeModel(0.01)
 

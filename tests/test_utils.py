@@ -1,7 +1,7 @@
 import unittest, os, sys, torch
 
 from nnodely import *
-from nnodely.support.utils import linear_interp
+from nnodely.support.mathutils import linear_interp
 from nnodely.support.logger import logging, nnLogger
 
 log = nnLogger(__name__, logging.CRITICAL)

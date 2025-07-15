@@ -60,9 +60,9 @@ class MPLVisualizer(TextVisualizer):
             for key in self.modely._model_def['Minimizers'].keys():
                 self.__process_training[key] = subprocess.Popen(['python', self.__training_visualizer_script], stdin=subprocess.PIPE, text=True)
 
-        num_of_epochs = self.modely.run_training_params['num_of_epochs']
-        train_dataset = self.modely.run_training_params['train_dataset']
-        validation_dataset = self.modely.run_training_params['validation_dataset']
+        num_of_epochs = self.modely.running_parameters['num_of_epochs']
+        train_dataset = self.modely.running_parameters['train_dataset']
+        validation_dataset = self.modely.running_parameters['validation_dataset']
         if epoch+1 <= num_of_epochs:
             for key in self.modely._model_def['Minimizers'].keys():
                 if val_losses:

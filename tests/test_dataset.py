@@ -573,11 +573,53 @@ class ModelyCreateDatasetTest(unittest.TestCase):
 
         ## The folder contains 3 files with 10, 20 and 30 samples respectively
         data_struct = ['x']
+        ## each folder contains 3 files with 10, 20 and 30 samples respectively
         data_folder = os.path.join(os.path.dirname(__file__), 'multifile/')
-        test.loadData(name='dataset', source=data_folder, format=data_struct, skiplines=1)
+        data_folder2 = os.path.join(os.path.dirname(__file__), 'multifile2/')
+        ## this folder contains only one file with 50 samples
+        data_folder3 = os.path.join(os.path.dirname(__file__), 'multifile3/')
+        test.loadData(name='dataset1', source=data_folder, format=data_struct, skiplines=1)
+        test.loadData(name='dataset2', source=data_folder2, format=data_struct, skiplines=1)
+        test.loadData(name='dataset3', source=data_folder3, format=data_struct, skiplines=1) 
 
-        self.assertListEqual(list(test._data['dataset']['x'].shape), [45, 6, 1])
-        self.assertListEqual(test._multifile['dataset'], [5, 20, 45])
+        self.assertListEqual(list(test._data['dataset1']['x'].shape), [45, 6, 1])
+        self.assertListEqual(test._multifile['dataset1'], [5, 20, 45])
+        self.assertListEqual(list(test._data['dataset2']['x'].shape), [45, 6, 1])
+        self.assertListEqual(test._multifile['dataset2'], [5, 20, 45])
+        self.assertListEqual(list(test._data['dataset3']['x'].shape), [45, 6, 1])
+        self.assertEqual(test._num_of_samples['dataset1'], 45) ## 5 + 15 + 25
+        self.assertEqual(test._num_of_samples['dataset2'], 45) ## 5 + 15 + 25
+        self.assertEqual(test._num_of_samples['dataset3'], 45) ## 50 - 5
+
+        ## train one dataset using splits
+        tp = test.trainModel(dataset='dataset1', splits=[80, 10, 10], prediction_samples=3, num_of_epochs=1)
+        self.assertEqual(tp['n_samples_train'], 36) ## 45 * 0.8
+        self.assertEqual(tp['n_samples_val'], 4) ## 45 * 0.1
+        self.assertEqual(tp['n_samples_test'], 5) ## 45 * 0.1
+
+        ## train using one dataset for train and one for validation
+        tp = test.trainModel(train_dataset='dataset1', validation_dataset='dataset2', prediction_samples=3, num_of_epochs=1)
+        self.assertEqual(tp['n_samples_train'], 45)
+        self.assertEqual(tp['n_samples_val'], 45)
+        self.assertEqual(tp['n_samples_test'], 0)
+
+        ## train using two dataset for train and one for validation
+        tp = test.trainModel(train_dataset=['dataset1', 'dataset2'], validation_dataset='dataset3', prediction_samples=3, num_of_epochs=1)
+        self.assertEqual(tp['n_samples_train'], 90) ## 45 + 45
+        self.assertEqual(tp['n_samples_val'], 45)
+        self.assertEqual(tp['n_samples_test'], 0)
+
+        ## Use all datasets by default
+        tp = test.trainModel(splits=[80, 10, 10])
+        self.assertEqual(tp['n_samples_train'], 108) ## (45+45+45) * 0.8
+        self.assertEqual(tp['n_samples_val'], 14) ## 90 * 0.1
+        self.assertEqual(tp['n_samples_test'], 13) ## 90 * 0.1
+
+        ## splits multifile
+        test.trainModel(dataset=['dataset1', 'dataset2', 'dataset3'], splits=[80, 10, 10], prediction_samples=3)
+        self.assertEqual(tp['n_samples_train'], 108) ## (45+45+45) * 0.8
+        self.assertEqual(tp['n_samples_val'], 14) ## 90 * 0.1
+        self.assertEqual(tp['n_samples_test'], 13) ## 90 * 0.1
 
     def test_multifiles_2(self):
         NeuObj.clearNames()
@@ -595,7 +637,7 @@ class ModelyCreateDatasetTest(unittest.TestCase):
         ## The folder contains 3 files with 10, 20 and 30 samples respectively
         data_struct = ['x', 'y']
         data_folder = os.path.join(os.path.dirname(__file__), 'multifile/')
-        test.loadData(name='dataset', source=data_folder, format=data_struct, skiplines=1, delimiter=' ')
+        test.loadData(name='dataset', source=data_folder, format=data_struct, skiplines=1)
         self.assertListEqual(list(test._data['dataset']['x'].shape), [42, 6, 1])
         self.assertListEqual(list(test._data['dataset']['y'].shape), [42, 4, 1])
         self.assertListEqual(test._multifile['dataset'], [4, 18, 42])
@@ -700,3 +742,36 @@ class ModelyCreateDatasetTest(unittest.TestCase):
             'w': np.linspace(1,10,10, dtype=np.float32)})
         with self.assertRaises(TypeError):
             test.loadData(name='dataset3', source=df2, resampling=True)
+
+    def test_load_data_modalities(self):
+        import pandas as pd
+        NeuObj.clearNames()
+        x = Input('x')
+        relation = Fir()(x.tw(0.05))
+        relation.closedLoop(x)
+        output = Output('out', relation)
+
+        test = Modely(visualizer=None, log_internal=True)
+        test.addModel('model', output)
+        test.addMinimize('error', output, x.next())
+        test.neuralizeModel(0.01)
+
+        ## Case 1: directory with files
+        data_struct = ['x']
+        data_folder = os.path.join(os.path.dirname(__file__), 'multifile/')
+        test.loadData(name='dataset_directory', source=data_folder, format=data_struct, skiplines=1)
+        self.assertListEqual(list(test._data['dataset_directory']['x'].shape), [45, 6, 1])
+        self.assertListEqual(test._multifile['dataset_directory'], [5, 20, 45])
+
+        ## Case 2: dictionary
+        train_data_x = np.array(10*[10] + 20*[20] + 30*[30], dtype=np.float32)
+        train_dataset = {'x': train_data_x, 'time': np.array(range(60), dtype=np.float32)}
+        test.loadData(name='dataset_dictionary', source=train_dataset, )
+        self.assertListEqual(list(test._data['dataset_dictionary']['x'].shape), [55, 6, 1])
+
+        ## Case 3: pandas DataFrame
+        df = pd.DataFrame({
+            'time': np.array(range(60), dtype=np.float32),
+            'x': np.array(10*[10] + 20*[20] + 30*[30], dtype=np.float32)})
+        test.loadData(name='dataset_pandas', source=df, resampling=True)
+        self.assertListEqual(list(test._data['dataset_pandas']['x'].shape), [5896, 6, 1])

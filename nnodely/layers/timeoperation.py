@@ -2,7 +2,8 @@ import torch.nn as nn
 import torch
 
 from nnodely.basic.relation import Stream, NeuObj, ToStream
-from nnodely.support.utils import merge, enforce_types, check, subjson_from_relation
+from nnodely.support.utils import enforce_types, check
+from nnodely.support.jsonutils import merge, subjson_from_relation
 from nnodely.basic.model import Model
 from nnodely.support.fixstepsolver import Euler, Trapezoidal
 

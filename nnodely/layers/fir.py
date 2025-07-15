@@ -8,7 +8,8 @@ from nnodely.basic.relation import NeuObj, Stream, AutoToStream
 from nnodely.basic.model import Model
 from nnodely.layers.parameter import Parameter
 from nnodely.layers.input import Input
-from nnodely.support.utils import check, merge, enforce_types, TORCH_DTYPE
+from nnodely.support.utils import check, enforce_types, TORCH_DTYPE
+from nnodely.support.jsonutils import merge
 
 from nnodely.support.logger import logging, nnLogger
 log = nnLogger(__name__, logging.WARNING)
@@ -94,7 +95,7 @@ class Fir(NeuObj, AutoToStream):
 
     """
     @enforce_types
-    def __init__(self, output_dimension:int|None = None,
+    def __init__(self, output_dimension:int|None = None, *,
                  W_init:Callable|str|None = None,
                  W_init_params:dict|None = None,
                  b_init:Callable|str|None = None,

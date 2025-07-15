@@ -123,7 +123,7 @@ class ModelyTrainingTest(unittest.TestCase):
         NeuObj.clearNames()
         x = Input('x')
         param = Parameter(name='a', sw=1)
-        rel1 = Fir(W=param)(Interpolation(x_points=[1.0, 2.0, 3.0, 4.0],y_points=[2.0, 4.0, 6.0, 8.0], mode='linear')(x.last()))
+        rel1 = Fir(W=param)(Interpolation([1.0, 2.0, 3.0, 4.0], [2.0, 4.0, 6.0, 8.0], mode='linear')(x.last()))
         out = Output('out',rel1)
 
         test = Modely(visualizer=None, seed=1)
@@ -307,7 +307,7 @@ class ModelyTrainingTest(unittest.TestCase):
         test.addMinimize('sob_err', approx_dy_dx, dy_dx_target.last())
         test.neuralizeModel()
         test.loadData('data', dataset)
-        test.trainModel(num_of_epochs=1000, lr=0.3)
+        test.trainModel(num_of_epochs=1000, splits=[70,20,10], lr=0.3)
         self.assertAlmostEqual(test.parameters['a'][0], data_a, places=4)
         self.assertAlmostEqual(test.parameters['b'][0], data_b, places=4)
         self.assertAlmostEqual(test.parameters['c'][0], data_c, places=4)

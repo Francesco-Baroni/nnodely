@@ -305,7 +305,7 @@ class ModelyExportTest(unittest.TestCase):
 
         self.test.neuralizeModel(0.5, clear_model=True)
         # Export all network with minimize
-        self.test.exportONNX(inputs_order=['x', 'y', 'z'], outputs_order=['out', 'out2', 'out3', 'out4', 'out5', 'out6'])  # Export the onnx model
+        self.test.exportONNX(inputs_order=['x', 'y', 'z'], outputs_order=['out', 'out2', 'out3', 'out4', 'out5', 'out6', 'out7'])  # Export the onnx model
         # Export the all models in onnx format
         self.test.exportONNX(models=['modelA','modelB','modelC','modelD'], inputs_order=['x', 'y'], outputs_order=['out', 'out2', 'out3', 'out4', 'out5', 'out6'])  # Export the onnx model
         # Export only the modelB in onnx format

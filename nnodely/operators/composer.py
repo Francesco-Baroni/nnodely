@@ -6,11 +6,12 @@ from nnodely.operators.network import Network
 
 from nnodely.basic.modeldef import ModelDef
 from nnodely.basic.model import Model
-from nnodely.support.utils import check, log, subjson_from_relation, TORCH_DTYPE, NP_DTYPE, argmax_dict, argmin_dict, \
-    enforce_types, subjson_from_output, merge
-from nnodely.basic.relation import Stream, MAIN_JSON
+from nnodely.support.utils import check, log,  TORCH_DTYPE, NP_DTYPE, enforce_types
+from nnodely.support.mathutils import argmax_dict, argmin_dict
+from nnodely.basic.relation import Stream
 from nnodely.layers.input import Input
 from nnodely.layers.output import Output
+
 
 class Composer(Network):
     @enforce_types
@@ -64,7 +65,7 @@ class Composer(Network):
         self._model_def.removeModel(name_list)
 
     @enforce_types
-    def addConnect(self, stream_out:str|Output|Stream, input_in:str|Input, local:bool=False) -> None:
+    def addConnect(self, stream_out:str|Output|Stream, input_in:str|Input, *, local:bool=False) -> None:
         """
         Adds a connection from a relation stream to an input state.
 
@@ -96,7 +97,7 @@ class Composer(Network):
         self._model_def.addConnect(stream_name, input_name, local)
 
     @enforce_types
-    def addClosedLoop(self, stream_out:str|Output|Stream, input_in:str|Input, local:bool=False) -> None:
+    def addClosedLoop(self, stream_out:str|Output|Stream, input_in:str|Input, *, local:bool=False) -> None:
         """
         Adds a closed loop connection from a relation stream to an input state.
 
@@ -156,7 +157,7 @@ class Composer(Network):
         self._model_def.removeConnection(input_name)
 
     @enforce_types
-    def neuralizeModel(self, sample_time:float|int|None = None, clear_model:bool = False, model_def:dict|None = None) -> None:
+    def neuralizeModel(self, sample_time:float|int|None = None, *, clear_model:bool = False, model_def:dict|None = None) -> None:
         """
         Neuralizes the model, preparing it for inference and training. This method creates a neural network model starting from the model definition.
         It will also create all the time windows for the inputs and states.
@@ -187,14 +188,7 @@ class Composer(Network):
             check(clear_model == False, ValueError, 'The clear_model must be False if a model_def is provided')
             self._model_def = ModelDef(model_def)
         else:
-            # if clear_model:
             self._model_def.updateParameters(model = None, clear_model = clear_model)
-                #self._model_def.update()
-            # else:
-            #     self._model_def.updateParameters(self._model)
-
-        # for key, state in self._model_def.recurrentInputs().items():
-        #     check("connect" in state.keys() or  'closedLoop' in state.keys(), KeyError, f'The connect or closed loop missing for state "{key}"')
 
         self._model_def.setBuildWindow(sample_time)
         self._model = Model(self._model_def.getJson())
@@ -220,7 +214,7 @@ class Composer(Network):
         self.visualizer.showBuiltModel()
 
     @enforce_types
-    def __call__(self, inputs:dict={}, sampled:bool=False, closed_loop:dict={}, connect:dict={}, prediction_samples:str|int='auto', num_of_samples:int|None=None) -> dict:
+    def __call__(self, inputs:dict={}, *, sampled:bool=False, closed_loop:dict={}, connect:dict={}, prediction_samples:str|int='auto', num_of_samples:int|None=None) -> dict:
         """
         Performs inference on the model.
 
@@ -374,6 +368,7 @@ class Composer(Network):
             if prediction_samples == 'auto' or prediction_samples >= 0:
                 self._model.update(closed_loop=all_closed_loop, connect=all_connect)
             else:
+                self._model.update(disconnect=True)
                 prediction_samples = 0
             X = {}
             count = 0
@@ -396,7 +391,6 @@ class Composer(Network):
                                 (prediction_samples == 'auto' and idx < num_of_windows[key]) or \
                                 (prediction_samples != 'auto')
                         ):
-                            assert idx < inputs[key].shape[1], f'The input {key} has not enough samples'
                             X[key] = inputs[key][idx:idx + 1] if sampled else inputs[key][:,idx:idx + self._input_n_samples[key]]
                         ## if it is a state AND
                         ## if prediction_samples = 'auto' and there are not enough samples OR
@@ -411,14 +405,6 @@ class Composer(Network):
                             window_size = self._input_n_samples[key]
                             dim = json_inputs[key]['dim']
                             X[key] = torch.zeros(size=(1, window_size, dim), dtype=TORCH_DTYPE, requires_grad=False)
-                            # self._states[key] = X[key]
-
-                        # if 'init' in json_inputs[key].keys() and (
-                        #     count == prediction_samples or \
-                        #     (first and (prediction_samples == 'auto' or prediction_samples == None))
-                        # ):
-                        #     self._model.connect_update[key] = json_inputs[key]['init']
-                        #     init_states.append(key)
 
                         if 'type' in json_inputs[key].keys():
                             X[key] = X[key].requires_grad_(True)

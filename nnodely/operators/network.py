@@ -1,9 +1,11 @@
 import copy
+from collections import defaultdict
+from unittest import result
 
 import numpy as np
 import  torch, random
 
-from nnodely.support.utils import TORCH_DTYPE, check, enforce_types, tensor_to_list
+from nnodely.support.utils import TORCH_DTYPE, NP_DTYPE, check, enforce_types, tensor_to_list
 from nnodely.basic.modeldef import ModelDef
 
 from nnodely.support.logger import logging, nnLogger
@@ -76,10 +78,136 @@ class Network:
 
     def _get_mandatory_inputs(self, connect, closed_loop):
         model_inputs = list(self._model_def['Inputs'].keys())
-        non_mandatory_inputs = \
-            list(closed_loop.keys()) + list(connect.keys()) + list(self._model_def.recurrentInputs().keys())
+        non_mandatory_inputs = list(closed_loop.keys()) + list(connect.keys()) + list(self._model_def.recurrentInputs().keys())
         mandatory_inputs = list(set(model_inputs) - set(non_mandatory_inputs))
         return mandatory_inputs, non_mandatory_inputs
+    
+    def _get_batch_indexes(self, datasets, prediction_samples):
+        n_samples_tot = sum([self._num_of_samples[data] for data in datasets])
+        batch_indexes = list(range(n_samples_tot))
+        n_samples_count = 0
+        for dataset in datasets:
+            if dataset in self._multifile.keys(): ## i have some forbidden indexes
+                forbidden_idxs = []
+                for i in self._multifile[dataset]:
+                    forbidden_idxs.extend(range((i+n_samples_count) - prediction_samples, (i+n_samples_count), 1))
+                batch_indexes = [idx for idx in batch_indexes if idx not in forbidden_idxs]
+            n_samples_count += self._num_of_samples[dataset]
+        return batch_indexes
+    
+    def __split_dataset(self, dataset:str|list, splits:list, prediction_samples:int):
+        check(len(splits) == 3, ValueError, '3 elements must be inserted for the dataset split in training, validation and test')
+        check(sum(splits) == 100, ValueError, 'Training, Validation and Test splits must sum up to 100.')
+        check(splits[0] > 0, ValueError, 'The training split cannot be zero.')
+        #check(dataset in self._data.keys(), KeyError, f'{dataset} Not Loaded!') 
+        train_size, val_size, test_size = splits[0] / 100, splits[1] / 100, splits[2] / 100
+        dataset = [dataset] if type(dataset) is str else dataset
+        check(len([data for data in dataset if data in self._data.keys()]) > 0, KeyError, f'the datasets: {dataset} are not loaded!')
+        for data in dataset:
+            if data not in self._data.keys():
+                log.warning(f'{data} is not loaded. The training will continue without this dataset.') 
+                dataset.remove(data)
+                continue
+        #num_of_samples = self._num_of_samples[dataset]
+        num_of_samples = sum([self._num_of_samples[data] for data in dataset])
+        n_samples_train, n_samples_val = round(num_of_samples * train_size), round(num_of_samples * val_size)
+        n_samples_test = num_of_samples - n_samples_train - n_samples_val
+        batch_indexes = self._get_batch_indexes(dataset, prediction_samples)
+        XY_train, XY_val, XY_test = {}, {}, {}
+        train_indexes, val_indexes, test_indexes = [], [], []
+        ## Stack data together
+        total_data = defaultdict(list)
+        for data in dataset:
+            for k, v in self._data[data].items():
+                total_data[k].append(v)
+        total_data = {key: np.concatenate(arrays, dtype=NP_DTYPE) for key, arrays in total_data.items()}
+        for key, samples in total_data.items():
+            if val_size == 0.0 and test_size == 0.0:  ## we have only training set
+                XY_train[key] = torch.from_numpy(samples).to(TORCH_DTYPE)
+                train_indexes = batch_indexes
+            elif val_size == 0.0 and test_size != 0.0:  ## we have only training and test set
+                XY_train[key] = torch.from_numpy(samples[:n_samples_train]).to(TORCH_DTYPE)
+                XY_test[key] = torch.from_numpy(samples[n_samples_train:]).to(TORCH_DTYPE)
+                train_indexes = [i for i in batch_indexes if i < n_samples_train]
+                test_indexes = [i for i in batch_indexes if i >= n_samples_train]
+            elif val_size != 0.0 and test_size == 0.0:  ## we have only training and validation set
+                XY_train[key] = torch.from_numpy(samples[:n_samples_train]).to(TORCH_DTYPE)
+                XY_val[key] = torch.from_numpy(samples[n_samples_train:]).to(TORCH_DTYPE)
+                train_indexes = [i for i in batch_indexes if i < n_samples_train]
+                val_indexes = [i for i in batch_indexes if i >= n_samples_train]
+            else:  ## we have training, validation and test set
+                XY_train[key] = torch.from_numpy(samples[:n_samples_train]).to(TORCH_DTYPE)
+                XY_val[key] = torch.from_numpy(samples[n_samples_train:-n_samples_test]).to(TORCH_DTYPE)
+                XY_test[key] = torch.from_numpy(samples[n_samples_train + n_samples_val:]).to(TORCH_DTYPE)
+                train_indexes = [i for i in batch_indexes if i < n_samples_train]
+                val_indexes = [i for i in batch_indexes if n_samples_train <= i < n_samples_train + n_samples_val]
+                test_indexes = [i for i in batch_indexes if i >= n_samples_train + n_samples_val]
+        check(n_samples_train > 0, ValueError, f'The number of train samples {n_samples_train} must be greater than 0.')
+        val_indexes = [i-n_samples_train for i in val_indexes]
+        test_indexes = [i-n_samples_train-n_samples_val for i in test_indexes]
+        if prediction_samples > 0:
+            train_indexes = train_indexes[:-prediction_samples]
+            val_indexes = val_indexes[:-prediction_samples]
+            test_indexes = test_indexes[:-prediction_samples]
+        return XY_train, XY_val, XY_test, n_samples_train, n_samples_val, n_samples_test, train_indexes, val_indexes, test_indexes
+    
+    def __data_split(self, datasets:list, prediction_samples:int):
+        n_samples = sum([self._num_of_samples[data] for data in datasets])
+        total_data = defaultdict(list)
+        for data in datasets:
+            for k, v in self._data[data].items():
+                total_data[k].append(v)
+        total_data = {key: np.concatenate(arrays) for key, arrays in total_data.items()}
+        total_data = {key: torch.from_numpy(val).to(TORCH_DTYPE) for key, val in total_data.items()}
+        indexes = self._get_batch_indexes(datasets, prediction_samples)
+        if prediction_samples > 0:
+            indexes = indexes[:-prediction_samples]
+        return total_data, n_samples, indexes
+
+    def __get_data(self, train_dataset:str|list, validation_dataset:str|list|None=None, test_dataset:str|list|None=None, prediction_samples:int=0):
+        train_dataset = [train_dataset] if type(train_dataset) is str else train_dataset
+        loaded_datasets = list(self._data.keys())
+        check(len([data for data in train_dataset if data in loaded_datasets]) > 0, KeyError, f'the train datasets: {train_dataset} are not loaded!')
+        for data in train_dataset:
+            if data not in loaded_datasets:
+                log.warning(f'{data} is not loaded. The training will continue without this dataset.') 
+                train_dataset.remove(data)
+
+        if validation_dataset:
+            validation_dataset = [validation_dataset] if type(validation_dataset) is str else validation_dataset
+            check(len([data for data in validation_dataset if data in loaded_datasets]) > 0, KeyError, f'the validation datasets: {validation_dataset} are not loaded!')
+            for data in validation_dataset:
+                if data not in loaded_datasets:
+                    log.warning(f'Validation Dataset [{data}] Not Loaded.')
+                    validation_dataset.remove(data)
+
+        if test_dataset:
+            test_dataset = [test_dataset] if type(test_dataset) is str else test_dataset
+            check(len([data for data in test_dataset if data in loaded_datasets]) > 0, KeyError, f'the test datasets: {test_dataset} are not loaded!')
+            for data in test_dataset:
+                if data not in loaded_datasets:
+                    log.warning(f'Test Dataset [{data}] Not Loaded.')
+                    test_dataset.remove(data)
+
+        n_samples_train, n_samples_val, n_samples_test = 0, 0, 0
+        XY_train, XY_val, XY_test = {}, {}, {}
+        train_indexes, val_indexes, test_indexes = [], [], []
+        ## Split into train, validation and test
+        XY_train, n_samples_train, train_indexes = self.__data_split(train_dataset, prediction_samples)
+        check(n_samples_train > 0, ValueError, f'The number of train samples {n_samples_train} must be greater than 0.')
+        if validation_dataset:
+            XY_val, n_samples_val, val_indexes = self.__data_split(validation_dataset, prediction_samples)
+        if test_dataset:
+            XY_test, n_samples_test, test_indexes = self.__data_split(test_dataset, prediction_samples)
+        return XY_train, XY_val, XY_test, n_samples_train, n_samples_val, n_samples_test, train_indexes, val_indexes, test_indexes
+
+    def _setup_dataset(self, train_dataset, validation_dataset, test_dataset, dataset, splits, prediction_samples):
+        if train_dataset is None and dataset is None:
+            dataset = list(self._data.keys())
+        if train_dataset:  ## Use each dataset
+            return self.__get_data(train_dataset, validation_dataset, test_dataset, prediction_samples)
+        else:  ## use the splits
+            return self.__split_dataset(dataset, splits, prediction_samples)
 
     def _get_not_mandatory_inputs(self, data, X, non_mandatory_inputs, remaning_indexes, batch_size, step, shuffle = False):
         related_indexes = random.sample(remaning_indexes, batch_size) if shuffle else remaning_indexes[:batch_size]
@@ -217,35 +345,25 @@ class Network:
     def _setup_recurrent_variables(self, prediction_samples, closed_loop, connect):
         ## Prediction samples
         check(prediction_samples >= -1, KeyError, 'The sample horizon must be positive or -1 for disconnect connection!')
-
         ## Close loop information
         for input, output in closed_loop.items():
             check(input in self._model_def['Inputs'], ValueError, f'the tag {input} is not an input variable.')
-            check(output in self._model_def['Outputs'], ValueError,
-                  f'the tag {output} is not an output of the network')
-            log.warning(
-                f'Recurrent train: closing the loop between the the input ports {input} and the output ports {output} for {prediction_samples} samples')
-
+            check(output in self._model_def['Outputs'], ValueError, f'the tag {output} is not an output of the network')
+            log.warning(f'Recurrent train: closing the loop between the the input ports {input} and the output ports {output} for {prediction_samples} samples')
         ## Connect information
         for connect_in, connect_out in connect.items():
-            check(connect_in in self._model_def['Inputs'], ValueError,
-                  f'the tag {connect_in} is not an input variable.')
-            check(connect_out in self._model_def['Outputs'], ValueError,
-                  f'the tag {connect_out} is not an output of the network')
-            log.warning(
-                f'Recurrent train: connecting the input ports {connect_in} with output ports {connect_out} for {prediction_samples} samples')
-
+            check(connect_in in self._model_def['Inputs'], ValueError, f'the tag {connect_in} is not an input variable.')
+            check(connect_out in self._model_def['Outputs'], ValueError, f'the tag {connect_out} is not an output of the network')
+            log.warning(f'Recurrent train: connecting the input ports {connect_in} with output ports {connect_out} for {prediction_samples} samples')
         ## Disable recurrent training if there are no recurrent variables
         if len(connect|closed_loop|self._model_def.recurrentInputs()) == 0:
             if prediction_samples >= 0:
-                log.warning(
-                    f"The value of the prediction_samples={prediction_samples} but the network has no recurrent variables.")
+                log.warning(f"The value of the prediction_samples={prediction_samples} but the network has no recurrent variables.")
             prediction_samples = -1
-
         return prediction_samples
 
     @enforce_types
-    def resetStates(self, states:set={}, batch:int=1) -> None:
+    def resetStates(self, states:set={}, *, batch:int=1) -> None:
         if states: ## reset only specific states
             for key in states:
                 window_size = self._input_n_samples[key]

@@ -167,7 +167,7 @@ def export_python_model(model_def, model, model_path):
 
         file.write("        self.all_parameters = torch.nn.ParameterDict(self.all_parameters)\n")
         file.write("        self.all_constants = torch.nn.ParameterDict(self.all_constants)\n\n")
-        file.write("    def update(self, closed_loop={}, connect={}):\n")
+        file.write("    def update(self, closed_loop={}, connect={}, disconnect=False):\n")
         file.write("        pass\n")
         # file.write("        self.closed_loop_update = {}\n")
         # file.write("        self.connect_update = {}\n")
@@ -251,6 +251,9 @@ def export_pythononnx_model(model_def, model_path, model_onnx_path, input_order=
     
     model_inputs = input_order if input_order else list(model_def['Inputs'].keys())
     model_outputs = outputs_order if outputs_order else list(model_def['Outputs'].keys())
+    model_losses = []
+    if model_def['Minimizers']:
+        model_losses = [loss_dict['A'] for loss_dict in model_def['Minimizers'].values() if 'A' in loss_dict.keys()] + [loss_dict['B'] for loss_dict in model_def['Minimizers'].values() if 'A' in loss_dict.keys()]
     recurrent_inputs = [key for key, value in model_def['Inputs'].items() if ('closedLoop' in value.keys() or 'connect' in value.keys())]
     inputs = [key for key in model_inputs if key not in recurrent_inputs]
 
@@ -267,6 +270,9 @@ def export_pythononnx_model(model_def, model_path, model_onnx_path, input_order=
     for i, key in enumerate(model_outputs):
         outputs += f'outputs[0][\'{key}\']' + (',' if i < len(model_outputs) - 1 else ',)')
     outputs += ', ('
+    for i, key in enumerate(model_losses):
+        outputs += f'outputs[1][\'{key}\'], '# + (',' if i < len(model_outputs) - 1 else ',)')
+    outputs += '), ('
     for key in closed_loop_states:
         outputs += f'outputs[2][\'{key}\'], '
     outputs += '), ('
@@ -323,7 +329,7 @@ def export_pythononnx_model(model_def, model_path, model_onnx_path, input_order=
             for key in model_outputs:
                 file.write(f"        results_{key} = []\n")
             file.write("        for idx in range(n_samples):\n")
-            call_str = "            out, closed_loop, connect = self.Cell("
+            call_str = "            out, losses, closed_loop, connect = self.Cell("
             for key in model_inputs:
                 call_str += f"{key}[idx], " if key in inputs else f"{key}, "
             call_str += ")\n"
@@ -334,7 +340,7 @@ def export_pythononnx_model(model_def, model_path, model_onnx_path, input_order=
             #else:
             #    file.write(f"            results_{outputs_order[0]}.append(out)\n")
             for idx, key in enumerate(closed_loop_states):
-                file.write(f"            shift = closed_loop[{idx}].size(1)\n")
+                #file.write(f"            shift = closed_loop[{idx}].size(1)\n")
                 file.write(f"            {key} = nnodely_basic_model_connect({key}, closed_loop[{idx}])\n")
             for idx, key in enumerate(connect_states):
                 file.write(f"            {key} = connect[{idx}]\n")

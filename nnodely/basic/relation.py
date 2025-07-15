@@ -2,10 +2,11 @@ import copy
 
 import numpy as np
 
-from nnodely.support.utils import check, merge, enforce_types, ForbiddenTags, subjson_from_relation
+from nnodely.support.utils import check, enforce_types, ForbiddenTags, is_notebook
+from nnodely.support.jsonutils import merge, stream_to_str
 
 from nnodely.support.logger import logging, nnLogger
-log = nnLogger(__name__, logging.CRITICAL)
+log = nnLogger(__name__, logging.WARNING)
 
 MAIN_JSON = {
                 'Info' : {},
@@ -17,7 +18,7 @@ MAIN_JSON = {
                 'Outputs': {}
             }
 
-CHECK_NAMES = True
+CHECK_NAMES = False if is_notebook() else True
 
 def toStream(obj):
     from nnodely.layers.parameter import Parameter, Constant
@@ -28,6 +29,12 @@ def toStream(obj):
         obj = Stream(obj.name, obj.json, obj.dim)
     return obj
 
+def check_names(name:str, name_list, list_type):
+    check(name not in ForbiddenTags, NameError, f"The name '{name}' is a forbidden tag.")
+    if CHECK_NAMES == True:
+        check(name not in name_list, NameError, f"The name '{name}' is already used as {list_type}.")
+    elif name in name_list:
+        log.warning(f"The name '{name}' is already in defined as {list_type} but it is overwritten.")
 
 class NeuObj():
     count = 0
@@ -51,10 +58,8 @@ class NeuObj():
         NeuObj.count += 1
         if name == '':
             name = 'Auto'+str(NeuObj.count)
-        if CHECK_NAMES == True:
-            check(name not in NeuObj.names, NameError, f"The name '{name}' is already used change the name of NeuObj.")
-            check(name not in ForbiddenTags, NameError, f"The name '{name}' is a forbidden tag.")
-            NeuObj.names.append(name)
+        check_names(name, NeuObj.names, "NeuObj")
+        NeuObj.names.append(name)
         self.name = name
         self.dim = dim
         if json:
@@ -109,7 +114,7 @@ class Relation():
 
 class Stream(Relation):
     """
-    Represents a stream of data inside the neural network. A Stream is automatically create when you operate over a Input, State, Parameter, or Constant object.
+    Represents a stream of data inside the neural network. A Stream is automatically create when you operate over a Input, Parameter, or Constant object.
     """
     count = 0
     @classmethod
@@ -124,15 +129,7 @@ class Stream(Relation):
         self.dim = dim
 
     def __str__(self):
-        from nnodely.visualizer.emptyvisualizer import color, GREEN
-        from pprint import pformat
-        stream = f" Stream "
-        stream_name = f" {self.name} {self.dim} "
-
-        title = color((stream).center(80, '='), GREEN, True)
-        json = color(pformat(self.json), GREEN)
-        stream = color((stream_name).center(80, '-'), GREEN, True)
-        return title + '\n' + json + '\n' + stream
+        return stream_to_str(self)
 
     def __repr__(self):
         return self.__str__()
@@ -274,7 +271,7 @@ class Stream(Relation):
                 o = Integrate(self, der_name = der_name, int_name = int_name, method = method)
         return o
 
-    def connect(self, obj:"Input") -> "Stream":
+    def connect(self, obj) -> "Stream":
         """
         Update the Stream adding a connects with a given input object.
 
@@ -305,9 +302,9 @@ class Stream(Relation):
         self.json['Inputs'][obj.name]['local'] = 1
         return self
 
-    def closedLoop(self, obj:"Input") -> "Stream":
+    def closedLoop(self, obj) -> "Stream":
         """
-        Update the Stream adding a closed loop connection with a given state object.
+        Update the Stream adding a closed loop connection with a given input object.
 
         Parameters
         ----------
@@ -335,12 +332,6 @@ class Stream(Relation):
               f"The input variable {obj.name} is already connected.")
         self.json['Inputs'][obj.name]['closedLoop'] = self.name
         self.json['Inputs'][obj.name]['local'] = 1
-        # if init:
-        #     subjson = subjson_from_relation(self.json, init.name)
-        #     needed_inputs = subjson['Inputs'].keys()
-        #     check(obj.name not in needed_inputs, KeyError, f"Cannot initialize the recurrent input variable {obj.name} with the relation {init.name}.")
-        #     self.json['Inputs'][obj.name]['init'] = init.name
-        # return Stream(self.name, self.json, self.dim,0 )
         return self
 
 class ToStream():

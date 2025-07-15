@@ -1,7 +1,8 @@
 import copy
 
 from nnodely.basic.relation import NeuObj, Stream, ToStream
-from nnodely.support.utils import check, merge, enforce_types
+from nnodely.support.utils import check, enforce_types
+from nnodely.support.jsonutils import merge, stream_to_str
 from nnodely.layers.part import SamplePart, TimePart
 from nnodely.layers.timeoperation import Derivate, Integrate
 
@@ -33,7 +34,7 @@ class Input(NeuObj):
     json : dict
         A dictionary containing the configuration of the Input or the State.
     """
-    def __init__(self, name:str, dimensions:int = 1):
+    def __init__(self, name:str, *, dimensions:int = 1):
         """
         Initializes the InputState object.
 
@@ -294,6 +295,12 @@ class Input(NeuObj):
         self.json['Inputs'][self.name]['local'] = 1
         return self
 
+    def __str__(self):
+        return stream_to_str(self, 'Input')
+
+    def __repr__(self):
+        return self.__str__()
+
 # connect operation
 connect_name = 'connect'
 closedloop_name = 'closedLoop'
@@ -310,16 +317,8 @@ class Connect(Stream, ToStream):
 class ClosedLoop(Stream, ToStream):
     @enforce_types
     def __init__(self, obj1:Stream, obj2:Input, *, local:bool=False) -> Stream:
-        # if init is None:
         super().__init__(obj1.name, merge(obj1.json, obj2.json), obj1.dim)
-        # else:
-        #     super().__init__(obj1.name, merge(obj1.json, merge(obj2.json,init.json)), obj1.dim)
         check(closedloop_name not in self.json['Inputs'][obj2.name] or connect_name not in self.json['Inputs'][obj2.name],
               KeyError, f"The state variable {obj2.name} is already connected.")
         self.json['Inputs'][obj2.name][closedloop_name] = obj1.name
         self.json['Inputs'][obj2.name]['local'] = int(local)
-        # if init is not None:
-        #     subjson = subjson_from_relation(self.json, init.name)
-        #     needed_inputs = subjson['Inputs'].keys()
-        #     check(obj2.name not in needed_inputs, KeyError, f"Inconsistency Error: Cannot initialize the state variable {obj2.name} with the relation {init.name}.")
-        #     self.json['Inputs'][obj2.name]['init'] = init.name

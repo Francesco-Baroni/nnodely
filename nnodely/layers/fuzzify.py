@@ -7,7 +7,8 @@ from collections.abc import Callable
 
 from nnodely.basic.relation import NeuObj, Stream
 from nnodely.basic.model import Model
-from nnodely.support.utils import check, merge, enforce_types
+from nnodely.support.utils import check, enforce_types
+from nnodely.support.jsonutils import merge
 
 from nnodely.support.logger import logging, nnLogger
 log = nnLogger(__name__, logging.CRITICAL)
@@ -70,7 +71,7 @@ class Fuzzify(NeuObj):
     """
     @enforce_types
     def __init__(self, output_dimension: int | None = None,
-                 range: list | None = None,
+                 range: list | None = None, *,
                  centers: list | None = None,
                  functions: str | list | Callable = 'Triangular'):
 

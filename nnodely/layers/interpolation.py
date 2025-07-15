@@ -1,12 +1,11 @@
-import copy, inspect, textwrap, torch
+import torch
 
 import torch.nn as nn
 
-from collections.abc import Callable
-
-from nnodely.basic.relation import NeuObj, Stream, AutoToStream
+from nnodely.basic.relation import NeuObj, Stream
 from nnodely.basic.model import Model
-from nnodely.support.utils import check, merge, enforce_types
+from nnodely.support.utils import check, enforce_types
+from nnodely.support.jsonutils import merge
 
 from nnodely.support.logger import logging, nnLogger
 log = nnLogger(__name__, logging.CRITICAL)
@@ -44,8 +43,8 @@ class Interpolation(NeuObj):
     """
 
     @enforce_types
-    def __init__(self, x_points:list|None = None,
-                 y_points:list|None = None,
+    def __init__(self, x_points:list,
+                 y_points:list, *,
                  mode:str|None = 'linear'):
 
         self.relation_name = interpolation_relation_name

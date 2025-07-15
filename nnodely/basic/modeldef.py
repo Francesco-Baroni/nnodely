@@ -2,8 +2,9 @@ import copy
 
 import numpy as np
 
-from nnodely.support.utils import check, merge, subjson_from_model, subjson_from_relation, check_model, check_and_get_list, get_models_json
-from nnodely.basic.relation import MAIN_JSON, Stream
+from nnodely.support.utils import check, check_and_get_list
+from nnodely.support.jsonutils import merge, subjson_from_model,subjson_from_relation, check_model, get_models_json
+from nnodely.basic.relation import MAIN_JSON, Stream, check_names
 from nnodely.layers.output import Output
 
 from nnodely.support.logger import logging, nnLogger
@@ -26,7 +27,10 @@ class ModelDef:
         return key in self.__json
 
     def __getitem__(self, key):
-        return self.__json[key]
+        if key in self.__json:
+            return self.__json[key]
+        else:
+            return None
 
     def __setitem__(self, key, value):
         self.__json[key] = value
@@ -103,9 +107,8 @@ class ModelDef:
             self.__json = merge(self.__json, json)
             self.__json['Models'] = name
         else:
-            models_names = set(self.__json['Models']) if type(self.__json['Models']) is str else set(self.__json['Models'].keys())
-            check(name not in models_names, ValueError,
-                  f"The name '{name}' of the model is already used")
+            models_names = set((self.__json['Models'],)) if type(self.__json['Models']) is str else set(self.__json['Models'].keys())
+            check_names(name, models_names, 'Models')
             if type(self.__json['Models']) is str:
                 self.__json['Models'] = {self.__json['Models']: get_models_json(self.__json)}
             self.__json = merge(self.__json, json)
@@ -124,10 +127,10 @@ class ModelDef:
         check(isinstance(streamA, (Output, Stream)), TypeError, 'streamA must be an instance of Output or Stream')
         check(isinstance(streamB, (Output, Stream)), TypeError, 'streamA must be an instance of Output or Stream')
         # check(streamA.dim == streamB.dim, ValueError, f'Dimension of streamA={streamA.dim} and streamB={streamB.dim} are not equal.')
-
         if 'Minimizers' not in self.__json:
             self.__json['Minimizers'] = {}
 
+        check_names(name, set(self.__json['Minimizers'].keys()), 'Minimizers')
         streams = merge(streamA.json, streamB.json)
         streamA_name = streamA.json['Outputs'][streamA.name] if isinstance(streamA, Output) else streamA.name
         streamB_name = streamB.json['Outputs'][streamB.name] if isinstance(streamB, Output) else streamB.name

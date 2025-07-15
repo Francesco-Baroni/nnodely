@@ -3,9 +3,10 @@ import torch
 
 from nnodely.basic.relation import ToStream, Stream, toStream
 from nnodely.basic.model import Model
-from nnodely.support.utils import check, merge, enforce_types, get_window
+from nnodely.support.utils import check, enforce_types
 from nnodely.layers.parameter import Parameter, Constant
-from nnodely.support.utils import binary_cheks
+from nnodely.support.jsonutils import merge, binary_cheks
+
 
 # Binary operators
 add_relation_name = 'Add'
