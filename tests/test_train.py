@@ -4,6 +4,7 @@ import numpy as np
 from nnodely import *
 from nnodely.basic.relation import NeuObj
 from nnodely.support.logger import logging, nnLogger
+from nnodely.support.earlystopping import select_best_model
 
 log = nnLogger(__name__, logging.CRITICAL)
 log.setAllLevel(logging.CRITICAL)
@@ -271,7 +272,7 @@ class ModelyTrainingTest(unittest.TestCase):
 
         ## Print the initial weights
         optimizer_defaults = {'weight_decay': 0.3,}
-        example.trainModel(train_dataset='dataset', lr=0.01, num_of_epochs=2, optimizer_defaults=optimizer_defaults)
+        example.trainModel(train_dataset='dataset', lr=0.01, num_of_epochs=2, optimizer_defaults=optimizer_defaults, early_stopping=select_best_model)
 
     def test_train_derivate_wrt_input(self):
         NeuObj.clearNames()

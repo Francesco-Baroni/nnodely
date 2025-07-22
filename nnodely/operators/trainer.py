@@ -198,10 +198,6 @@ class Trainer(Network):
     def get_training_info(self, **kwargs):
         tp = copy.deepcopy(self.running_parameters)
 
-        ## Dataset
-        if tp['train_dataset'] is None and tp['dataset'] is None:
-            tp['dataset'] = list(self._data.keys())[0]
-
         ## training
         tp['update_per_epochs'] = len(tp['train_indexes']) // (tp['train_batch_size'] + tp['step'])
         total_samples = len(tp['train_indexes']) + tp['prediction_samples']  ## number of samples taking into account the prediction horizon
@@ -409,7 +405,6 @@ class Trainer(Network):
                 val_indexes = [i for i in indexes if i >= n_samples_train]
                 offset = val_indexes[0]
                 val_indexes = [i - offset for i in val_indexes]
-
 
         ## clip batch size and step
         train_batch_size = self.__clip_batch_size(n_samples_train, train_batch_size, prediction_samples)

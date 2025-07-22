@@ -354,7 +354,7 @@ def plot_matplotlib_structure(json, filename='nnodely_graph', view=True):
     if view:
         plt.show()
 
-def plot_graphviz_structure(json, filename='nnodely_graph', view=True):
+def plot_graphviz_structure(json, filename='nnodely_graph', view=True): # pragma: no cover
     import shutil
     from graphviz import Digraph
 

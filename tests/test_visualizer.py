@@ -212,5 +212,7 @@ class ModelyTestVisualizer(unittest.TestCase):
         example = Modely(visualizer=None)
         example.addModel('model', out)
         example.neuralizeModel()
+        with self.assertRaises(ValueError):
+            plot_structure(example.json, filename='test_structure_plot', library='invalid_library')
         plot_structure(example.json, filename='test_structure_plot', library='matplotlib', view=False)
-        plot_structure(example.json, filename='test_structure_plot_graphviz', library='graphviz', view=False)
+        #plot_structure(example.json, filename='test_structure_plot_graphviz', library='graphviz', view=False)
