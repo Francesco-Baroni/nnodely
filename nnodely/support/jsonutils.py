@@ -2,6 +2,8 @@ import copy
 
 from pprint import pformat
 
+from graphviz import view
+
 from nnodely.support.utils import check
 
 from nnodely.support.logger import logging, nnLogger
@@ -223,7 +225,18 @@ def stream_to_str(obj, type = 'Stream'):
     stream = color((stream_name).center(80, '-'), GREEN, True)
     return title + '\n' + json + '\n' + stream
 
-def plot_structure(json, filename='nnodely_graph'):
+def plot_structure(json, filename='nnodely_graph', library='matplotlib', view=True):
+        #json = self.modely.json if json is None else json
+        # if json is None:
+        #     raise ValueError("No JSON model definition provided. Please provide a valid JSON model definition.")
+        if library not in ['matplotlib', 'graphviz']:
+            raise ValueError("Invalid library specified. Use 'matplotlib' or 'graphviz'.")
+        if library == 'matplotlib':
+            plot_matplotlib_structure(json, filename, view=view)
+        elif library == 'graphviz':
+            plot_graphviz_structure(json, filename, view=view)
+
+def plot_matplotlib_structure(json, filename='nnodely_graph', view=True):
     import matplotlib.pyplot as plt
     from matplotlib import patches
     from matplotlib.lines import Line2D
@@ -338,9 +351,10 @@ def plot_structure(json, filename='nnodely_graph'):
     plt.title(f"Neural Network Diagram - Sampling [{json['Info']['SampleTime']}]", fontsize=12, fontweight='bold')
     ## Save the figure
     plt.savefig(filename, format="png", bbox_inches='tight')
-    plt.show()
+    if view:
+        plt.show()
 
-def plot_graphviz_structure(json, filename='nnodely_graph'):
+def plot_graphviz_structure(json, filename='nnodely_graph', view=True):
     import shutil
     from graphviz import Digraph
 
@@ -427,4 +441,4 @@ def plot_graphviz_structure(json, filename='nnodely_graph'):
     #     legend.edge('LegendRel', 'LegendOutput')
 
     # Render the graph
-    dot.render(filename=filename, view=True, format='svg')  # opens in default viewer and saves as SVG
+    dot.render(filename=filename, view=view, format='svg')  # opens in default viewer and saves as SVG

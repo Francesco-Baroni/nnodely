@@ -4,6 +4,7 @@ import numpy as np
 from nnodely import *
 from nnodely.basic.relation import NeuObj
 from nnodely.support.logger import logging, nnLogger
+from nnodely.support.jsonutils import plot_structure
 
 log = nnLogger(__name__, logging.ERROR)
 log.setAllLevel(logging.ERROR)
@@ -208,8 +209,8 @@ class ModelyTestVisualizer(unittest.TestCase):
 
         out = Output('out', func1 + func2 + func3)
 
-        example = Modely(visualizer=TextVisualizer())
+        example = Modely(visualizer=None)
         example.addModel('model', out)
         example.neuralizeModel()
-        example.visualizer.plotStructure(example.json, filename='test_structure_plot', library='matplotlib')
-        example.visualizer.plotStructure(example.json, filename='test_structure_plot_graphviz', library='graphviz')
+        plot_structure(example.json, filename='test_structure_plot', library='matplotlib', view=False)
+        plot_structure(example.json, filename='test_structure_plot_graphviz', library='graphviz', view=False)

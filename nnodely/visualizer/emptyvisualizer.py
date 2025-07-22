@@ -1,5 +1,4 @@
 from nnodely.support.logger import logging, nnLogger
-from nnodely.support.jsonutils import plot_structure, plot_graphviz_structure
 
 log = nnLogger(__name__, logging.INFO)
 
@@ -83,14 +82,3 @@ class EmptyVisualizer:
 
     def exportReport(self, name, path):
         pass
-
-    def plotStructure(self, json=None, filename='nnodely_graph', library='matplotlib'):
-        json = self.modely.json if json is None else json
-        if json is None:
-            raise ValueError("No JSON model definition provided. Please provide a valid JSON model definition.")
-        if library not in ['matplotlib', 'graphviz']:
-            raise ValueError("Invalid library specified. Use 'matplotlib' or 'graphviz'.")
-        if library == 'matplotlib':
-            plot_structure(json, filename)
-        elif library == 'graphviz':
-            plot_graphviz_structure(json, filename)

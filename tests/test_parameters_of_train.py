@@ -1047,6 +1047,8 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         ## Not the same number of samples 
         with self.assertRaises(ValueError):
             test.trainModel(train_dataset=train_data)
+        with self.assertRaises(ValueError):
+            test.trainAndAnalyze(test_dataset=train_data)
 
         train_data = {'x': torch.tensor([[[0.8030],[0.8030],[0.8040],[0.8040],[0.8050],[0.8060]],
                                          [[0.8030],[0.8040],[0.8040],[0.8050],[0.8060],[0.8070]],
@@ -1058,6 +1060,10 @@ class ModelyTrainingTestParameter(unittest.TestCase):
             test.trainModel(train_dataset=train_data)
         with self.assertRaises(ValueError):
             test.trainModel(validation_dataset=train_data)
+        with self.assertRaises(ValueError):
+            test.trainAndAnalyze(test_dataset=train_data)
+        with self.assertRaises(ValueError):
+            test.trainAndAnalyze(train_dataset=train_data, test_dataset=train_data)
         
         train_data = {'x': torch.tensor([[[0.8030],[0.8030],[0.8040],[0.8040],[0.8050],[0.8060],[0.8070]],
                                          [[0.8030],[0.8040],[0.8040],[0.8050],[0.8060],[0.8070],[0.8080]],
@@ -1107,6 +1113,36 @@ class ModelyTrainingTestParameter(unittest.TestCase):
         self.assertEqual(9,tp['n_samples_train'])
         self.assertEqual(5,tp['n_samples_val'])
         self.assertEqual(0,tp['n_samples_test'])
+        self.assertEqual(9,tp['train_batch_size'])
+        self.assertEqual(1, tp['update_per_epochs'])
+        self.assertEqual(0, tp['unused_samples'])
+        self.assertEqual(5,tp['val_batch_size'])
+        self.assertEqual(3,tp['num_of_epochs'])
+        self.assertEqual(0.001,tp['optimizer_defaults']['lr'])
+
+        test_data = {'x': torch.tensor([[[0.8030],[0.8030],[0.8040],[0.8040],[0.8050],[0.8060],[0.8070]],
+                                         [[0.8030],[0.8040],[0.8040],[0.8050],[0.8060],[0.8070],[0.8080]],
+                                         [[0.8040],[0.8040],[0.8050],[0.8060],[0.8070],[0.8080],[0.8090]],
+                                         [[0.8040],[0.8050],[0.8060],[0.8070],[0.8080],[0.8090],[0.8100]]]),
+                     'F': torch.tensor([[[0.8240]],[[0.8230]],[[0.8220]],[[0.8200]]])}
+        
+        tp = test.trainAndAnalyze(test_dataset=test_data, test_batch_size=2, train_dataset=train_data, validation_dataset=val_data, num_of_epochs=3)
+        self.assertEqual(9, test._num_of_samples['dataset'])
+        self.assertEqual(9,tp['n_samples_train'])
+        self.assertEqual(5,tp['n_samples_val'])
+        self.assertEqual(4,tp['n_samples_test'])
+        self.assertEqual(9,tp['train_batch_size'])
+        self.assertEqual(1, tp['update_per_epochs'])
+        self.assertEqual(0, tp['unused_samples'])
+        self.assertEqual(5,tp['val_batch_size'])
+        self.assertEqual(3,tp['num_of_epochs'])
+        self.assertEqual(0.001,tp['optimizer_defaults']['lr'])
+
+        tp = test.trainAndAnalyze(test_dataset=test_data, test_batch_size=2, train_dataset=train_data, validation_dataset=val_data, num_of_epochs=3, prediction_samples=2)
+        self.assertEqual(9, test._num_of_samples['dataset'])
+        self.assertEqual(9,tp['n_samples_train'])
+        self.assertEqual(5,tp['n_samples_val'])
+        self.assertEqual(4,tp['n_samples_test'])
         self.assertEqual(9,tp['train_batch_size'])
         self.assertEqual(1, tp['update_per_epochs'])
         self.assertEqual(0, tp['unused_samples'])

@@ -195,7 +195,7 @@ class Trainer(Network):
         for name, values in self._model_def['Minimizers'].items():
             self.__loss_functions[name] = CustomLoss(values['loss'])
 
-    def get_training_info(self):
+    def get_training_info(self, **kwargs):
         tp = copy.deepcopy(self.running_parameters)
 
         ## Dataset
@@ -227,12 +227,19 @@ class Trainer(Network):
             if name in tp['minimize_gain']:
                 tp['minimizers'][name]['gain'] = tp['minimize_gain'][name]
 
+        ## Add extra information
+        for key, value in kwargs.items():
+            tp[key] = value
+
         ## Remove useless information
-        del tp['train_indexes']
-        del tp['XY_train']
-        if tp['validation_dataset'] or tp['dataset']:
-            del tp['val_indexes']
-            del tp['XY_val']
+        if log.level != logging.DEBUG:
+            del tp['train_indexes']
+            del tp['XY_train']
+            if tp['validation_dataset'] or tp['dataset']:
+                del tp['val_indexes']
+                del tp['XY_val']
+            if 'test_dataset' in tp or 'dataset' in tp:
+                del tp['XY_test']
         return tp
 
     def __check_needed_keys(self, train_data, connect, closed_loop):
@@ -245,22 +252,6 @@ class Trainer(Network):
         keys -= (set(connect.keys()|closed_loop.keys()))
         # Check if the keys are in the dataset
         check(set(keys).issubset(set(train_data.keys())), KeyError, f"Not all the mandatory keys {keys} are present in the training dataset {set(train_data.keys())}.")
-
-    def __check_data_integrity(self, dataset:dict, prediction_samples:int=0):
-        check(len(set([t.size(0) for t in dataset.values()])) == 1, ValueError, "All the tensors in the train_dataset must have the same number of samples.")
-        check(len([t for t in self._model_def['Inputs'].keys() if t in dataset.keys()]) == len(list(self._model_def['Inputs'].keys())), ValueError, "Some inputs are missing.")
-        n_samples = next(iter(dataset.values())).size(0)
-        for key, value in dataset.items():
-            if key not in self._model_def['Inputs']:
-                log.warning(f"The key '{key}' is not an input of the network. It will be ignored.")
-            else:
-                check(isinstance(value, torch.Tensor), TypeError, f"The value of the input '{key}' must be a torch.Tensor.")
-                check(value.size(1) == self._model_def['Inputs'][key]['ntot'], ValueError, f"The time size of the input '{key}' is not correct. Expected {self._model_def['Inputs'][key]['ntot']}, got {value.size(1)}.")
-                check(value.size(2) == self._model_def['Inputs'][key]['dim'], ValueError, f"The dimension of the input '{key}' is not correct. Expected {self._model_def['Inputs'][key]['dim']}, got {value.size(2)}.")
-                indexes = list(range(n_samples))
-                if prediction_samples > 0:
-                    indexes = indexes[:-prediction_samples]
-        return dataset, n_samples, indexes
 
     @enforce_types
     @fill_parameters
@@ -392,30 +383,41 @@ class Trainer(Network):
         """
         ## Preliminary Checks
         self.__preliminary_checks()
+        if train_dataset is None:
+            check(validation_dataset is None, ValueError, 'If train_dataset is None, validation_dataset must also be None.')
 
         ## Recurret variables
         prediction_samples = self._setup_recurrent_variables(prediction_samples, closed_loop, connect)
 
         ## Get the dataset
-        n_samples_train, n_samples_val, n_samples_test = 0, 0, 0
-        if isinstance(train_dataset, dict):
-            XY_train, n_samples_train, train_indexes = self.__check_data_integrity(train_dataset, prediction_samples)
-            if isinstance(validation_dataset, dict):
-                XY_val, n_samples_val, val_indexes = self.__check_data_integrity(validation_dataset, prediction_samples)
+        XY_train, XY_val, XY_test = self._setup_dataset(train_dataset, validation_dataset, None, dataset, splits)
+        self.__check_needed_keys(train_data=XY_train, connect=connect, closed_loop=closed_loop)
+
+        n_samples_train = next(iter(XY_train.values())).size(0)
+        n_samples_val = next(iter(XY_val.values())).size(0) if XY_val else 0
+        n_samples_test = next(iter(XY_test.values())).size(0) if XY_test else 0
+
+        train_indexes, val_indexes = [], []
+        if train_dataset is not None:
+            train_indexes, val_indexes = self._get_batch_indexes(train_dataset, n_samples_train, prediction_samples), self._get_batch_indexes(validation_dataset, n_samples_val, prediction_samples)
         else:
-            check(not isinstance(validation_dataset, dict), ValueError, "The train dataset must be provided.")
-            XY_train, XY_val, _, n_samples_train, n_samples_val, n_samples_test, train_indexes, val_indexes, _ = self._setup_dataset(train_dataset, validation_dataset, None, dataset, splits, prediction_samples)
-            self.__check_needed_keys(train_data=XY_train, connect=connect, closed_loop=closed_loop)
+            dataset = list(self._data.keys()) if dataset is None else dataset
+            indexes = self._get_batch_indexes(dataset, n_samples_train+n_samples_val, prediction_samples)
+            train_indexes = [i for i in indexes if i < n_samples_train]
+            if n_samples_val > 0:
+                train_indexes = train_indexes[:-prediction_samples] if prediction_samples > 0 else train_indexes
+                val_indexes = [i for i in indexes if i >= n_samples_train]
+                offset = val_indexes[0]
+                val_indexes = [i - offset for i in val_indexes]
 
-        ## Get batch size
+
+        ## clip batch size and step
         train_batch_size = self.__clip_batch_size(n_samples_train, train_batch_size, prediction_samples)
-        if n_samples_val > 0:
-            val_batch_size = self.__clip_batch_size(n_samples_val, val_batch_size, prediction_samples)
-
-        ## Clip the step
         train_step = self.__clip_step(step, train_indexes, train_batch_size)
         if n_samples_val > 0:
+            val_batch_size = self.__clip_batch_size(n_samples_val, val_batch_size, prediction_samples)
             val_step = self.__clip_step(step, val_indexes, val_batch_size)
+
         ## Save the training parameters
         self.running_parameters = copy.deepcopy({key:value for key,value in locals().items() if key not in ['self', 'kwargs', 'training_params', 'lr', 'lr_param']})
 
