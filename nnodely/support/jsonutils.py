@@ -360,10 +360,15 @@ def plot_graphviz_structure(json, filename='nnodely_graph', view=True):
 
     # Check if Graphviz is installed
     if shutil.which('dot') is None:
-        raise RuntimeError(
+        # raise RuntimeError(
+        #     "Graphviz does not appear to be installed on your system. "
+        #     "Please install it from https://graphviz.org/download/"
+        # )
+        log.warning(
             "Graphviz does not appear to be installed on your system. "
             "Please install it from https://graphviz.org/download/"
         )
+        return
     
     dot = Digraph(comment='Structured Neural Network')
 
