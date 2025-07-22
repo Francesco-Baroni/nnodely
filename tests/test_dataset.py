@@ -560,7 +560,6 @@ class ModelyCreateDatasetTest(unittest.TestCase):
         #                 training_params={'num_of_epochs': 100, 'train_batch_size': 4, 'test_batch_size': 4})
     
     def test_multifiles(self):
-        log.setAllLevel(logging.DEBUG)
         NeuObj.clearNames()
         x = Input('x')
         relation = Fir()(x.tw(0.05))
@@ -704,8 +703,6 @@ class ModelyCreateDatasetTest(unittest.TestCase):
         self.assertEqual(tp['n_samples_test'], 13) ## 90 * 0.1
         self.assertEqual(tp['train_indexes'], list(range(108)))
         self.assertEqual(tp['val_indexes'], list(range(14)))
-
-        log.setAllLevel(logging.CRITICAL)
 
     def test_multifiles_2(self):
         NeuObj.clearNames()

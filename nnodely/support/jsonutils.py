@@ -1,8 +1,6 @@
 import copy
-
 from pprint import pformat
 
-from graphviz import view
 
 from nnodely.support.utils import check
 
@@ -356,6 +354,7 @@ def plot_matplotlib_structure(json, filename='nnodely_graph', view=True):
 
 def plot_graphviz_structure(json, filename='nnodely_graph', view=True): # pragma: no cover
     import shutil
+    from graphviz import view
     from graphviz import Digraph
 
     # Check if Graphviz is installed

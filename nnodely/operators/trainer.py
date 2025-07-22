@@ -228,7 +228,7 @@ class Trainer(Network):
             tp[key] = value
 
         ## Remove useless information
-        if log.level != logging.DEBUG:
+        if not self._log_internal:
             del tp['train_indexes']
             del tp['XY_train']
             if tp['validation_dataset'] or tp['dataset']:
