@@ -167,7 +167,7 @@ class Trainer(Network):
         dict
             A dictionary containing the training parameters and information.
         """
-        to_remove =  ['XY_train','XY_val','XY_test','train_indexes','val_indexes']
+        to_remove =  ['XY_train','XY_val','XY_test','train_indexes','val_indexes','test_indexes']
         tp = copy.deepcopy({key:value for key, value in self.running_parameters.items() if key not in to_remove})
 
         ## training

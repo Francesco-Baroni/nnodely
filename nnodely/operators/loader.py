@@ -36,7 +36,7 @@ class Loader(Network):
         Returns
         -------
         dict
-            A dictionary containing the retrieved samples. The keys are input and state names, and the values are lists of samples.
+            A dictionary containing the retrieved samples. The keys are input names, and the values are lists of samples.
 
         Raises
         ------

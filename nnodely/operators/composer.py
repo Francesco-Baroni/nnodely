@@ -67,13 +67,13 @@ class Composer(Network):
     @enforce_types
     def addConnect(self, stream_out:str|Output|Stream, input_in:str|Input, *, local:bool=False) -> None:
         """
-        Adds a connection from a relation stream to an input state.
+        Adds a connection from a relation stream to an input.
 
         Parameters
         ----------
         stream_out : Stream
             The relation stream to connect from.
-        state_list_in : Input or list of inputs
+        input_in : Input or list of inputs
             The input or list of input to connect to.
 
         Examples
@@ -99,14 +99,14 @@ class Composer(Network):
     @enforce_types
     def addClosedLoop(self, stream_out:str|Output|Stream, input_in:str|Input, *, local:bool=False) -> None:
         """
-        Adds a closed loop connection from a relation stream to an input state.
+        Adds a closed loop connection from a relation stream to an input.
 
         Parameters
         ----------
         stream_out : Stream
             The relation stream to connect from.
-        state_list_in : Input or list of inputs
-            The Input or the list of input to connect to.
+        input_in : Input or list of inputs
+            The Input or the list of inputs to connect to.
 
         Examples
         --------
@@ -131,7 +131,7 @@ class Composer(Network):
     @enforce_types
     def removeConnection(self, input_in:str|Input) -> None:
         """
-        Remove a closed loop or connect connection from an input state.
+        Remove a closed loop or connect connection from an input.
 
         Parameters
         ----------
@@ -314,8 +314,6 @@ class Composer(Network):
                     if key in non_mandatory_inputs:
                         if key in model_inputs:
                             n_samples = len(inputs[key]) if sampled else len(inputs[key]) - self._model_def['Inputs'][key]['ntot'] + 1
-                        else:
-                            n_samples = len(inputs[key]) if sampled else len(inputs[key]) - self._model_def['States'][key]['ntot'] + 1
                         windows.append(n_samples)
             window_dim = min(windows) if windows else 0
         else:  ## No inputs
