@@ -132,6 +132,37 @@ class Loader(Network):
 
     @enforce_types
     def resamplingData(self, df:pd.DataFrame, *, scale:float = 1e9) -> None:
+        """
+        Resamples the DataFrame to a specified sample time.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            The DataFrame to resample.
+        scale : float, optional
+            The scale factor to convert the sample time to nanoseconds. Default is 1e9
+
+        Returns
+        -------
+        pd.DataFrame
+            The resampled DataFrame.
+
+        Raises
+        ------
+        TypeError
+            If the DataFrame does not contain a time column or if the time column is not in datetime format.
+
+        Examples
+        --------
+        .. image:: https://colab.research.google.com/assets/colab-badge.svg
+            :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/dataset.ipynb
+            :alt: Open in Colab
+
+        Example usage:
+            >>> model = Modely()
+            >>> df = pd.DataFrame({'time': np.array(range(60), dtype=np.float32),'x': np.array(10*[10] + 20*[20] + 30*[30], dtype=np.float32)})
+            >>> resampled_df = model.resamplingData(df, scale=1e9)
+        """
         sample_time_ns = int(self._model_def.getSampleTime() * scale)
         method = 'linear'
         if type(df.index) is pd.DatetimeIndex:
@@ -209,7 +240,7 @@ class Loader(Network):
         name : str
             The name of the dataset.
         source : str or list or pd.DataFrame
-            The source of the data. Can be a directory path containing the csv files or a list of custom data.
+            The source of the data. Can be a directory path containing the csv files or a custom dataset provided as a dictionary or a pandas DataFrame.
         format : list or None, optional
             The format of the data. When loading multiple csv files the format parameter will define how to read each column of the file. Default is None.
         skiplines : int, optional

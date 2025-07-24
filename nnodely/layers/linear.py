@@ -1,6 +1,7 @@
-import copy, inspect, textwrap, torch
+import copy
 
 import torch.nn as nn
+import torch
 
 from collections.abc import Callable
 
@@ -149,7 +150,6 @@ class Linear(NeuObj, AutoToStream):
             self.json_stream[json_stream_name] = copy.deepcopy(self.json)
 
             self.json_stream[json_stream_name]['Parameters'][self.Wname]['dim'] = [obj.dim['dim'],self.output_dimension,]
-            #self.json_stream[json_stream_name]['Parameters'][self.Wname]['sw'] = 1
 
         if type(self.W) is Parameter:
             check(self.json['Parameters'][self.Wname]['dim'][0] == obj.dim['dim'], ValueError,
@@ -172,7 +172,7 @@ class Linear_Layer(nn.Module):
         # Using torch.einsum for batch matrix multiplication
         y = torch.einsum('bwi,io->bwo', x, self.weights)  # y will have shape [batch, window, output_features]
         if self.bias is not None:
-            y += self.bias  # Add bias
+            y += self.bias  
         # Add dropout if necessary
         if self.dropout is not None:
             y = self.dropout(y)

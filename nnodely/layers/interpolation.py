@@ -101,33 +101,11 @@ class Interpolation_Layer(nn.Module):
 
         # Saturate x to the range of x_data
         x = torch.min(torch.max(x,self.x_points[0]),self.x_points[-1])
-
         # Find the index of the closest value in x_data
         idx = torch.argmin(torch.abs(self.x_points[:-1] - x),dim=1)
-        
         # Linear interpolation
         y = self.y_points[idx] + (self.y_points[idx+1] - self.y_points[idx])/(self.x_points[idx+1] - self.x_points[idx])*(x - self.x_points[idx])
         return y
-
-
-
-        # x_interpolated = torch.zeros_like(x)
-        # for i, val in enumerate(x):
-        #     # Find the interval [x1, x2] such that x1 <= val <= x2
-        #     idx = torch.searchsorted(self.x_points, val).item()
-        #     if idx == 0:
-        #         # val is less than the smallest x_point, extrapolate
-        #         x_interpolated[i] = self.y_points[0]
-        #     elif idx >= len(self.x_points):
-        #         # val is greater than the largest x_point, extrapolate
-        #         x_interpolated[i] = self.y_points[-1]
-        #     else:
-        #         # Perform linear interpolation between x_points[idx-1] and x_points[idx]
-        #         x1, x2 = self.x_points[idx - 1], self.x_points[idx]
-        #         y1, y2 = self.y_points[idx - 1], self.y_points[idx]
-        #         # Linear interpolation formula
-        #         x_interpolated[i] = y1 + (val - x1) * (y2 - y1) / (x2 - x1)
-        # return x_interpolated
 
 def createInterpolation(self, *inputs):
     return Interpolation_Layer(x_points=inputs[0], y_points=inputs[1], mode=inputs[2])

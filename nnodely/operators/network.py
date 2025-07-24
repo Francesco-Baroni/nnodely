@@ -332,6 +332,15 @@ class Network:
 
     @enforce_types
     def resetStates(self, states:set={}, *, batch:int=1) -> None:
+        """
+        Resets the state of all the recurrent inputs of the network to zero.
+        Parameters
+        ----------
+        states : set, optional
+            A set of recurrent inputs names to reset. If provided, only those inputs will be resetted.
+        batch : int, optional
+            The batch size for the reset states. Default is 1.
+        """
         if states: ## reset only specific states
             for key in states:
                 window_size = self._input_n_samples[key]

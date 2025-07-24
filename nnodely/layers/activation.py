@@ -10,11 +10,8 @@ from nnodely.support.utils import check, enforce_types
 relu_relation_name = 'Relu'
 elu_relation_name = 'ELU'
 sigmoid_relation_name = 'Sigmoid'
-
 identity_relation_name = 'Identity'
-
 softmax_relation_name = 'Softmax'
-
 
 class Relu(Stream, ToStream):
     """
@@ -106,7 +103,7 @@ class Softmax(Stream, ToStream):
         self.json['Relations'][self.name] = [softmax_relation_name, [obj.name]]
 
 class Sigmoid(Stream, ToStream):
-    r"""
+    """
     Implement the Sigmoid relation function.
     The Sigmoid function is defined as:
 
@@ -192,11 +189,8 @@ def createSoftmax(self, *input):
     """
     return nn.Softmax(dim=-1)
 
-
 setattr(Model, relu_relation_name, createRelu)
 setattr(Model, elu_relation_name, createELU)
 setattr(Model, sigmoid_relation_name, createSigmoid)
-
 setattr(Model, identity_relation_name, createIdentity)
-
 setattr(Model, softmax_relation_name, createSoftmax)
