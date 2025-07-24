@@ -191,15 +191,17 @@ class Add_Layer(nn.Module):
         for input in inputs[1:]:
             results = results + input
         return results
-        #return torch.add(inputs[0],inputs[1]))
-        #return torch.sum(torch.stack(list(inputs)),dim=0)
 
 def createAdd(name, *inputs):
-    #: :noindex:
+    """
+     :noindex:
+    """
     return Add_Layer()
 
 class Sub_Layer(nn.Module):
-    #: :noindex:
+    """
+     :noindex:
+    """
     def __init__(self):
         super(Sub_Layer, self).__init__()
 
@@ -209,16 +211,18 @@ class Sub_Layer(nn.Module):
         for input in inputs[1:]:
             results = results - input
         return results
-        #return torch.add(inputs[0], -inputs[1])
-        #return torch.add(inputs[0],-torch.sum(torch.stack(list(inputs[1:])),dim=0))
 
 def createSub(self, *inputs):
-    #: :noindex:
+    """
+     :noindex:
+    """
     return Sub_Layer()
 
 
 class Mul_Layer(nn.Module):
-    #: :noindex:
+    """
+     :noindex:
+    """
     def __init__(self):
         super(Mul_Layer, self).__init__()
 
@@ -227,16 +231,17 @@ class Mul_Layer(nn.Module):
         for input in inputs[1:]:
             results = results * input
         return results
-        #return inputs[0] * inputs[1]
-        #return torch.prod(torch.stack(list(inputs)),dim=0)
-
 
 def createMul(name, *inputs):
-    #: :noindex:
+    """
+     :noindex:
+    """
     return Mul_Layer()
 
 class Div_Layer(nn.Module):
-    #: :noindex:
+    """
+     :noindex:
+    """
     def __init__(self):
         super(Div_Layer, self).__init__()
 
@@ -245,15 +250,17 @@ class Div_Layer(nn.Module):
         for input in inputs[1:]:
             results = results / input
         return results
-        #return inputs[0] / inputs[1]
-        #return inputs[0] / torch.prod(torch.stack(list(inputs[1:])),dim=0)
 
 def createDiv(name, *inputs):
-    #: :noindex:
+    """
+     :noindex:
+    """
     return Div_Layer()
 
 class Pow_Layer(nn.Module):
-    #: :noindex:
+    """
+     :noindex:
+    """
     def __init__(self):
         super(Pow_Layer, self).__init__()
 
@@ -261,11 +268,15 @@ class Pow_Layer(nn.Module):
         return torch.pow(inputs[0], inputs[1])
 
 def createPow(name, *inputs):
-    #: :noindex:
+    """
+     :noindex:
+    """
     return Pow_Layer()
 
 class Neg_Layer(nn.Module):
-    #: :noindex:
+    """
+     :noindex:
+    """
     def __init__(self):
         super(Neg_Layer, self).__init__()
 
@@ -273,11 +284,15 @@ class Neg_Layer(nn.Module):
         return -x
 
 def createNeg(self, *inputs):
-    #: :noindex:
+    """
+     :noindex:
+    """
     return Neg_Layer()
 
 class Sign_Layer(nn.Module):
-    #: :noindex:
+    """
+     :noindex:
+    """
     def __init__(self):
         super(Sign_Layer, self).__init__()
 
@@ -285,11 +300,15 @@ class Sign_Layer(nn.Module):
         return torch.sign(x)
 
 def createSign(self, *inputs):
-    #: :noindex:
+    """
+     :noindex:
+    """
     return Sign_Layer()
 
 class Sum_Layer(nn.Module):
-    #: :noindex:
+    """
+     :noindex:
+    """
     def __init__(self):
         super(Sum_Layer, self).__init__()
 
@@ -297,9 +316,10 @@ class Sum_Layer(nn.Module):
         return torch.sum(inputs, dim = 2)
 
 def createSum(name, *inputs):
-    #: :noindex:
+    """
+     :noindex:
+    """
     return Sum_Layer()
-
 
 setattr(Model, add_relation_name, createAdd)
 setattr(Model, sub_relation_name, createSub)

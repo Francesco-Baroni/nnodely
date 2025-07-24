@@ -1,4 +1,4 @@
-import copy, inspect, textwrap, torch
+import copy, torch
 
 import torch.nn as nn
 
@@ -7,7 +7,6 @@ from collections.abc import Callable
 from nnodely.basic.relation import NeuObj, Stream, AutoToStream
 from nnodely.basic.model import Model
 from nnodely.layers.parameter import Parameter
-from nnodely.layers.input import Input
 from nnodely.support.utils import check, enforce_types, TORCH_DTYPE
 from nnodely.support.jsonutils import merge
 

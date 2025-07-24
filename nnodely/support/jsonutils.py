@@ -246,9 +246,6 @@ def plot_matplotlib_structure(json, filename='nnodely_graph', view=True):
     for input_name, input_type in json['Inputs'].items():
         layer_positions[input_name] = (x, y)
         y -= dy
-    # for state_name in json['States'].keys():
-    #     layer_positions[state_name] = (x, y)
-    #     y -= dy
     for constant_name in json['Constants'].keys():
         layer_positions[constant_name] = (x, y)
         y -= dy
@@ -293,9 +290,6 @@ def plot_matplotlib_structure(json, filename='nnodely_graph', view=True):
         if layer in json['Inputs'].keys():
             color = 'lightgreen'
             tag = f'{layer}\ndim: {json["Inputs"][layer]["dim"]}\nWindow: {json["Inputs"][layer]["ntot"]}'
-        # elif layer in json['States'].keys():
-        #     color = 'green'
-        #     tag = f'{layer}\ndim: {json["States"][layer]["dim"]}\nWindow: {json["States"][layer]["ntot"]}'
         elif layer in json['Outputs'].keys():
             color = 'orange'
             tag = layer

@@ -156,7 +156,18 @@ class Trainer(Network):
             self.__loss_functions[name] = CustomLoss(values['loss'])
 
     def get_training_info(self):
-        to_remove =  ['XY_train','XY_val','XY_test','train_indexes','val_indexes']
+        """
+        Returns a dictionary with the training parameters and information.
+        Parameters
+        ----------
+        **kwargs : dict
+            Additional parameters to include in the training information.
+        Returns
+        -------
+        dict
+            A dictionary containing the training parameters and information.
+        """
+        to_remove =  ['XY_train','XY_val','XY_test','train_indexes','val_indexes','test_indexes']
         tp = copy.deepcopy({key:value for key, value in self.running_parameters.items() if key not in to_remove})
 
         ## training
@@ -225,6 +236,11 @@ class Trainer(Network):
         """
         Trains the model using the provided datasets and parameters.
 
+        Notes
+        -----
+        .. note::
+            If no datasets are provided, the model will use all the datasets loaded inside nnodely.
+
         Parameters
         ----------
         name : str or None, optional
@@ -232,24 +248,24 @@ class Trainer(Network):
         models : str or list or None, optional
             A list or name of models to train. Default is all the models loaded.
         train_dataset : str or None, optional
-            The name of datasets to use for training. Default is None.
+            The name of datasets to use for training.
         validation_dataset : str or None, optional
-            The name of datasets to use for validation. Default is None.
+            The name of datasets to use for validation.
         dataset : str or None, optional
             The name of the datasets to use for training, validation and test.
         splits : list or None, optional
-            A list of 3 elements specifying the percentage of splits for training, validation, and testing. The three elements must sum up to 100!
-            The parameter splits is only used when dataset is not None
+            A list of 3 elements specifying the percentage of splits for training, validation, and testing. The three elements must sum up to 100! default is [100, 0, 0]
+            The parameter splits is only used when 'dataset' is not None.
         closed_loop : dict or None, optional
             A dictionary specifying closed loop connections. The keys are input names and the values are output names. Default is None.
         connect : dict or None, optional
             A dictionary specifying connections. The keys are input names and the values are output names. Default is None.
         step : int or None, optional
-            The step size for training. A big value will result in less data used for each epochs and a faster train. Default is None.
+            The step size for training. A big value will result in less data used for each epochs and a faster train. Default is zero.
         prediction_samples : int or None, optional
-            The size of the prediction horizon. Number of samples at each recurrent window Default is None.
+            The size of the prediction horizon. Number of samples at each recurrent window Default is zero.
         shuffle_data : bool or None, optional
-            Whether to shuffle the data during training. Default is None.
+            Whether to shuffle the data during training. Default is True.
         early_stopping : Callable or None, optional
             A callable for early stopping. Default is None.
         early_stopping_params : dict or None, optional
@@ -261,15 +277,15 @@ class Trainer(Network):
         minimize_gain : dict or None, optional
             A dictionary specifying the gain for each minimization loss function. Default is None.
         num_of_epochs : int or None, optional
-            The number of epochs to train the model. Default is None.
+            The number of epochs to train the model. Default is 100.
         train_batch_size : int or None, optional
-            The batch size for training. Default is None.
+            The batch size for training. Default is 128.
         val_batch_size : int or None, optional
-            The batch size for validation. Default is None.
+            The batch size for validation. Default is 128.
         optimizer : Optimizer or None, optional
-            The optimizer to use for training. Default is None.
+            The optimizer to use for training. Default is 'Adam'.
         lr : float or None, optional
-            The learning rate. Default is None.
+            The learning rate. Default is 0.001
         lr_param : dict or None, optional
             A dictionary of learning rate parameters. Default is None.
         optimizer_params : list or dict or None, optional
@@ -282,15 +298,6 @@ class Trainer(Network):
             Additional optimizer parameters. Default is None.
         add_optimizer_defaults : dict or None, optional
             Additional default optimizer settings. Default is None.
-
-        Raises
-        ------
-        RuntimeError
-            If no data is loaded or if there are no modules with learnable parameters.
-        KeyError
-            If the sample horizon is not positive.
-        ValueError
-            If an input or output variable is not in the model definition.
 
         Examples
         --------
@@ -442,8 +449,7 @@ class Trainer(Network):
             ## TRAIN
             self._model.train()
             if prediction_samples >= 0:
-                losses = self._recurrent_inference(XY_train, train_indexes, train_batch_size, minimize_gain, prediction_samples, train_step,
-                                                    non_mandatory_inputs, mandatory_inputs, self.__loss_functions, shuffle=shuffle_data, optimizer=torch_optimizer)
+                losses = self._recurrent_inference(XY_train, train_indexes, train_batch_size, minimize_gain, prediction_samples, train_step, non_mandatory_inputs, mandatory_inputs, self.__loss_functions, shuffle=shuffle_data, optimizer=torch_optimizer)
             else:
                 losses = self._inference(XY_train, n_samples_train, train_batch_size, minimize_gain, self.__loss_functions, shuffle=shuffle_data, optimizer=torch_optimizer)
             ## save the losses
