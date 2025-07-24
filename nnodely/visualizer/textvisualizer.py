@@ -222,7 +222,7 @@ class TextVisualizer(EmptyVisualizer):
                 self.__paramjson("closed loop:", par['closed_loop'])
                 self.__paramjson("connect:", par['connect'])
 
-            self.__param("train dataset:", f"{par['train_dataset']}")
+            self.__param("train dataset:", f"{par['train_tag']}")
             self.__param("\t- num of samples:", f"{n_samples}")
             self.__param("\t- batch size:", f"{batch_size}")
             self.__param("\t- unused samples:", f"{unused_samples}")

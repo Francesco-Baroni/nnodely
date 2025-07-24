@@ -39,6 +39,22 @@ class Network:
         self._multifile = {}
 
         # Training information
+        self._standard_train_parameters = {
+            'models': None,
+            'train_dataset': None, 'validation_dataset': None,
+            'dataset': None, 'splits': [100, 0, 0],
+            'closed_loop': {}, 'connect': {}, 'step': 0, 'prediction_samples': 0,
+            'shuffle_data': True,
+            'early_stopping': None, 'early_stopping_params': {},
+            'select_model': 'last', 'select_model_params': {},
+            'minimize_gain': {},
+            'num_of_epochs': 100,
+            'train_batch_size': 128, 'val_batch_size': 128,
+            'optimizer': 'Adam',
+            'lr': 0.001, 'lr_param': {},
+            'optimizer_params': [], 'add_optimizer_params': [],
+            'optimizer_defaults': {}, 'add_optimizer_defaults': {}
+        }
         self._training = {}
 
         # Save internal
@@ -101,7 +117,7 @@ class Network:
             batch_indexes = batch_indexes[:-prediction_samples]
         return batch_indexes
     
-    def __get_data(self, dataset:str|list|dict|None):
+    def _get_data(self, dataset:str|list|dict|None):
         if dataset is None:
             return {}
         if isinstance(dataset, dict):
@@ -121,6 +137,23 @@ class Network:
         total_data = {key: np.concatenate(arrays) for key, arrays in total_data.items()}
         total_data = {key: torch.from_numpy(val).to(TORCH_DTYPE) for key, val in total_data.items()}
         return total_data
+
+    def _clip_step(self, step, batch_indexes, batch_size):
+        clipped_step = copy.deepcopy(step)
+        if clipped_step < 0:  ## clip the step to zero
+            log.warning(f"The step is negative ({clipped_step}). The step is set to zero.", stacklevel=5)
+            clipped_step = 0
+        if clipped_step > (len(batch_indexes) - batch_size):  ## Clip the step to the maximum number of samples
+            log.warning(f"The step ({clipped_step}) is greater than the number of available samples ({len(batch_indexes) - batch_size}). The step is set to the maximum number.", stacklevel=5)
+            clipped_step = len(batch_indexes) - batch_size
+        check((batch_size + clipped_step) > 0, ValueError, f"The sum of batch_size={batch_size} and the step={clipped_step} must be greater than 0.")
+        return clipped_step
+
+    def _clip_batch_size(self, n_samples, batch_size=None):
+        batch_size = batch_size if batch_size <= n_samples else max(0, n_samples)
+        check((n_samples - batch_size + 1) > 0, ValueError, f"The number of available sample are {n_samples - batch_size + 1}")
+        check(batch_size > 0, ValueError, f'The batch_size must be greater than 0.')
+        return batch_size
     
     def __split_dataset(self, dataset:str|list|dict, splits:list):
         check(len(splits) == 3, ValueError, '3 elements must be inserted for the dataset split in training, validation and test')
@@ -166,12 +199,24 @@ class Network:
                     XY_test[key] = torch.from_numpy(samples[n_samples_train + n_samples_val:]).to(TORCH_DTYPE)
         return XY_train, XY_val, XY_test
 
-    def _setup_dataset(self, train_dataset:str|list|dict=None, validation_dataset:str|list|dict=None, test_dataset:str|list|dict=None, dataset:str|list|dict=None, splits:list=[80, 10, 10]):
+    def _get_tag(self, dataset: str | list | dict | None) -> str:
+        """
+        Helper function to get the tag for a dataset.
+        """
+        if isinstance(dataset, str):
+            return dataset
+        elif isinstance(dataset, list):
+            return f"{dataset[0]}_{len(dataset)}" if len(dataset) > 1 else f"{dataset[0]}"
+        elif isinstance(dataset, dict):
+            return "custom_dataset"
+        return dataset
+
+    def _setup_dataset(self, train_dataset:str|list|dict, validation_dataset:str|list|dict, test_dataset:str|list|dict, dataset:str|list|dict, splits:list):
         if train_dataset is None: ## use the splits
             train_dataset = list(self._data.keys()) if dataset is None else dataset
             return self.__split_dataset(train_dataset, splits)
         else: ## use each dataset
-            return self.__get_data(train_dataset), self.__get_data(validation_dataset), self.__get_data(test_dataset)
+            return self._get_data(train_dataset), self._get_data(validation_dataset), self._get_data(test_dataset)
 
     def __check_data_integrity(self, dataset:dict):
         if bool(dataset):
