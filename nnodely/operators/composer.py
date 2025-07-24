@@ -154,6 +154,8 @@ class Composer(Network):
         """
         if isinstance(input_in, Input):
             input_name = input_in.name
+        else:
+            input_name = input_in
         self._model_def.removeConnection(input_name)
 
     @enforce_types
