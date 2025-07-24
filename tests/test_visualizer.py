@@ -57,6 +57,7 @@ class ModelyTestVisualizer(unittest.TestCase):
         fuzzyTriang = Fuzzify(centers=[1, 2, 3, 7])(x.tw(1))
         fuzzyRect = Fuzzify(centers=[1, 2, 3, 7], functions='Rectangular')(x.tw(1))
         fuzzyList = Fuzzify(centers=[1, 3, 2, 7], functions=[fuzzyfun,fuzzyfunth])(x.tw(1))
+        self.stream = fuzzyList
 
         self.out = Output('out', Fir(parfun_x(x.tw(1)) + parfun_y(y.tw(1), c_v)))
         self.out2 = Output('out2', Add(w, x.tw(1)) + Add(t, y.tw(1)) + Add(w, c))
@@ -79,6 +80,11 @@ class ModelyTestVisualizer(unittest.TestCase):
         # Ripristina stdout e stderr
         sys.stdout = self._original_stdout
         sys.stderr = self._original_stderr
+
+    def test_rper_of_objects(self):
+        print(repr(self.x))
+        print(repr(self.stream))
+        print(repr(self.out9))
 
     def test_export_textvisualizer(self):
         t = TextVisualizer(5)
