@@ -55,7 +55,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
     def test_predict_and_states_values_fir_simple_closed_loop(self):
         NeuObj.clearNames()
         x = Input('x')
-        x_state = State('x_state')
+        x_state = Input('x_state')
         p = Parameter('p', dimensions=1, sw=1, values=[[1.0]])
         rel_x = Fir(W=p)(x_state.last())
         rel_x = ClosedLoop(rel_x, x_state)
@@ -76,6 +76,16 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         result = test(inputs={'x': [2]})
         self.assertEqual(test.states['x_state'], torch.tensor([[[0.0]]]).tolist())
         self.assertEqual({'out': [0.0]}, result)
+
+        test.removeConnection('x_state')
+        test.neuralizeModel(0.01)
+        result = test(inputs={'x': [2], 'x_state':[1]})
+        self.assertEqual({'out': [1]}, result)
+        result = test(inputs={'x': [2]})
+        self.assertEqual({'out': [0.0]}, result)
+        result = test(inputs={'x_state': [2.0]})
+        self.assertEqual({'out': [2.0]}, result)
+
 
     def test_predict_values_fir_simple_closed_loop_predict(self):
         NeuObj.clearNames()
@@ -100,12 +110,12 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         NeuObj.clearNames()
         ## the memory is not shared between different calls
         x = Input('x')
-        F = State('F')
+        F = Input('F')
         p = Parameter('p', tw=0.5, dimensions=1, values=[[1.0],[1.0],[1.0],[1.0],[1.0]])
         x_out = Fir(W=p)(x.tw(0.5))+F.last()
+        x_out.closedLoop(F)
         out = Output('out',x_out)
         test = Modely(visualizer=None, seed=42)
-        test.addClosedLoop(x_out,F)
         test.addModel('out',out)
         test.neuralizeModel(0.1)
 
@@ -168,18 +178,18 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
     def test_predict_values_2fir_closed_loop(self):
         NeuObj.clearNames()
         ## the memory is not shared between different calls
-        x = State('x')
-        y = State('y')
+        x = Input('x')
+        y = Input('y')
         p = Parameter('p', tw=0.5, dimensions=1, values=[[1.0],[1.0],[1.0],[1.0],[1.0]])
         n = Parameter('n', tw=0.5, dimensions=1, values=[[-1.0],[-1.0],[-1.0],[-1.0],[-1.0]])
         fir_pos = Fir(W=p)(x.tw(0.5))
         fir_neg = Fir(W=n)(y.tw(0.5))
+        fir_pos.closedLoop(x)
+        fir_neg.closedLoop(y)
         out_pos = Output('out_pos', fir_pos)
         out_neg = Output('out_neg', fir_neg)
         out = Output('out',fir_neg+fir_pos)
         test = Modely(visualizer=None, seed=42)
-        test.addClosedLoop(fir_pos, x)
-        test.addClosedLoop(fir_neg, y)
         test.addModel('out', out)
         test.addModel('out_pos',out_pos)
         test.addModel('out_neg',out_neg)
@@ -258,9 +268,9 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         NeuObj.clearNames()
         ## the state is saved inside the model so the memory is shared between different calls
         x = Input('x') 
-        F_state = State('F')
-        y_state = State('y')
-        z_state = State('z')
+        F_state = Input('F')
+        y_state = Input('y')
+        z_state = Input('z')
         p = Parameter('p', tw=0.5, dimensions=1, values=[[1.0],[1.0],[1.0],[1.0],[1.0]])
         x_out = Fir(W=p)(x.tw(0.5))+F_state.last()+y_state.last()+z_state.last()
         x_out = ClosedLoop(x_out, F_state)
@@ -348,8 +358,8 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         NeuObj.clearNames()
         ## the state is saved inside the model so the memory is shared between different calls
         x = Input('x') 
-        y_state = State('y')
-        z_state = State('z')
+        y_state = Input('y')
+        z_state = Input('z')
         x_p = Parameter('x_p', tw=0.5, dimensions=1, values=[[1.0],[1.0],[1.0],[1.0],[1.0]])
         y_p = Parameter('y_p', tw=0.5, dimensions=1, values=[[2.0],[2.0],[2.0],[2.0],[2.0]])
         z_p = Parameter('z_p', tw=0.5, dimensions=1, values=[[3.0],[3.0],[3.0],[3.0],[3.0]])
@@ -446,8 +456,8 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         NeuObj.clearNames()
         ## the state is saved inside the model so the memory is shared between different calls
         x = Input('x') 
-        y_state = State('y')
-        z_state = State('z')
+        y_state = Input('y')
+        z_state = Input('z')
         x_p = Parameter('x_p', tw=0.5, dimensions=1, values=[[1.0],[1.0],[1.0],[1.0],[1.0]])
         y_p = Parameter('y_p', tw=0.5, dimensions=1, values=[[2.0],[2.0],[2.0],[2.0],[2.0]])
         z_p = Parameter('z_p', tw=0.5, dimensions=1, values=[[3.0],[3.0],[3.0],[3.0],[3.0]])
@@ -572,7 +582,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         self.assertEqual(result['out'], [sum(x) for x in zip(result['out_x'],result['out_y'],result['out_z'])])
 
     def test_predict_values_and_connect_variables_2models_more_window_connect(self):
-        NeuObj.clearNames()
+        clearNames()
         ## Model1
         input1 = Input('in1')
         a = Parameter('a', dimensions=1, tw=0.05, values=[[1],[1],[1],[1],[1]])
@@ -585,7 +595,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
 
         ## Model2
         input2 = Input('in2')
-        input3 = State('in3')
+        input3 = Input('in3')
         b = Parameter('b', dimensions=1, tw=0.05, values=[[1],[1],[1],[1],[1]])
         c = Parameter('c', dimensions=1, tw=0.03, values=[[1],[1],[1]])
         output2 = Output('out2', Fir(W=b)(input2.tw(0.05))+Fir(W=c)(input3.tw(0.03)))
@@ -596,7 +606,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         test.neuralizeModel(0.01)
 
         ## Without connect
-        results = test(inputs={'in1':[[1],[2],[3],[4],[5],[6],[7],[8],[9]], 'in2':[[1],[2],[3],[4],[5],[6],[7],[8],[9]], 'in3':[[1],[2],[3],[4],[5],[6]]}, prediction_samples=None)
+        results = test(inputs={'in1':[[1],[2],[3],[4],[5],[6],[7],[8],[9]], 'in2':[[1],[2],[3],[4],[5],[6],[7],[8],[9]], 'in3':[[1],[2],[3],[4],[5],[6]]}, prediction_samples=-1)
         self.assertEqual(results['out1'], [15.0, 20.0, 25.0, 30.0])
         self.assertEqual(results['out2'], [21.0, 29.0, 37.0, 45.0])
 
@@ -716,7 +726,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
 
     def test_predict_values_and_states_only_state_variables_more_window_closed_loop(self):
         NeuObj.clearNames()
-        x_state = State('x_state')
+        x_state = Input('x_state')
         p = Parameter('p', dimensions=1, tw=0.03, values=[[1.0], [1.0], [1.0]])
         rel_x = Fir(W=p)(x_state.tw(0.03))
         rel_x = ClosedLoop(rel_x, x_state)
@@ -737,16 +747,18 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         W = Parameter('W', values=[[-1],[-5]])
         b = Parameter('b', values=1)
         lin_out = Linear(W=W, b=b)(input1.sw(2))
-        output1 = Output('out1', lin_out)
 
-        inout = State('inout')
+        inout = Input('inout')
         a = Parameter('a', sw = 2, values=[[4],[5]])
+
+        lin_out.connect(inout)
+
+        output1 = Output('out1', lin_out)
         output2 = Output('out2', Fir(W=a)(inout.sw(2)))
         output3 = Output('out3', Fir(W=a)(lin_out))
 
         test = Modely(visualizer=None, seed=42)
         test.addModel('model', [output1,output2,output3])
-        test.addConnect(output1,inout)
         test.neuralizeModel()
         # [[1,2],[2,3]]*[-1,-5] = [[1*-1+2*-5=-11],[2*-1+3*-5=-17]]+[1] = [-10,-16] -> [-10,-16]*[4,5] -> [-16*5+-10*4=-120] <------
         self.assertEqual({'out1': [[-10.0, -16.0]], 'out2': [-120.0], 'out3':[-120.0]}, test({'in1': [[1.0, 2.0], [2.0, 3.0]],'inout':[-10,-16]}))
@@ -780,18 +792,20 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         W = Parameter('W', values=[[-1],[-5]])
         b = Parameter('b', values=1)
         lin_out = Linear(W=W, b=b)(input1.sw(2))
-        output1 = Output('out1', lin_out)
 
-        inout = State('inout')
+        inout = Input('inout')
         a = Parameter('a', sw = 2, values=[[4], [5]])
         a_big = Parameter('ab', sw = 5, values=[[1], [2], [3], [4], [5]])
+
+        lin_out.connect(inout)
+
+        output1 = Output('out1', lin_out)
         output2 = Output('out2', Fir(W=a)(inout.sw(2)))
         output3 = Output('out3', Fir(W=a_big)(inout.sw(5)))
         output4 = Output('out4', Fir(W=a)(lin_out))
 
         test = Modely(visualizer=None, seed=42)
         test.addModel('model', [output1,output2,output3,output4])
-        test.addConnect(output1, inout)
         test.neuralizeModel()
         # [[1,2],[2,3]]*[-1,-5] = [[1*-1+2*-5=-11],[2*-1+3*-5=-17]]+[1] = [-10,-16] -> [-10,-16]*[4,5] -> [-16*5+-10*4=-120] <------
         self.assertEqual({'out1': [[-10.0, -16.0]], 'out2': [-120.0], 'out3': [-120.0], 'out4': [-120.0]}, test({'in1': [[1.0, 2.0], [2.0, 3.0]]}))
@@ -808,6 +822,16 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         # out3 # = [[-10,-16],[-16,-10]] -> 1) [0,0,0,-10,-16]*[1,2,3,4,5] -> [-16*5+-10*4=-120] 2) [0,0,-10,-16,-10]*[1,2,3,4,5] -> [-10*3+-16*4+-10*5 = -144] -> [-120,-144]
         self.assertEqual({'out1': [[-10.0, -16.0],[-16.0, -10.0]], 'out2': [-120.0,-114.0], 'out3': [-120.0,-144], 'out4': [-120.0,-114.0]},
                          test({'in1': [[1.0, 2.0], [2.0, 3.0], [1.0,2.0]]}))
+
+        with self.assertRaises(ValueError):
+            test.removeConnection(input1)
+        test.removeConnection(inout)
+        test.neuralizeModel()
+        self.assertEqual({'out1': [[-10.0, -16.0]], 'out2': [0.0], 'out3': [0.0], 'out4': [-120.0]}, test({'in1': [[1.0, 2.0], [2.0, 3.0]]}))
+        self.assertEqual({'out1': [[-10.0, -16.0]], 'out2': [-120.0], 'out3': [-120.0], 'out4': [-120.0]},
+                         test({'in1': [[1.0, 2.0], [2.0, 3.0]], 'inout': [0, 0, 0, -10, -16]}))
+        self.assertEqual({'out1': [[-10.0, -16.0], [-16.0, -10.0]], 'out2': [0.0, 0.0], 'out3': [0.0, 0.0], 'out4': [-120.0, -114.0]},
+                         test({'in1': [[1.0, 2.0], [2.0, 3.0], [1.0, 2.0]]}))
 
     def test_predict_values_linear_and_fir_2models_more_window_connect_predict(self):
         NeuObj.clearNames()
@@ -857,21 +881,25 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
 
     def test_predict_values_linear_and_fir_2models_more_window_closed_loop(self):
         NeuObj.clearNames()
-        input1 = State('in1',dimensions=2)
+        input1 = Input('in1',dimensions=2)
         W = Parameter('W', values=[[-1],[-5]])
         b = Parameter('b', values=1)
-        output1 = Output('out1', Linear(W=W, b=b)(input1.sw(2)))
+        relation1 = Linear(W=W, b=b)(input1.sw(2))
 
-        # input2 = State('inout') #TODO loop forever
+        # input2 = Input('inout') #TODO loop forever
         # test.addConnect(output1, input1) # With this
-        input2 = State('in2')
+        input2 = Input('in2')
         a = Parameter('a', sw=5, values=[[1,3],[2,4],[3,5],[4,6],[5,7]])
-        output2 = Output('out2', Fir(output_dimension=2,W=a)(input2.sw(5)))
+        relation2 = Fir(output_dimension=2,W=a)(input2.sw(5))
+
+        relation1.closedLoop(input2)
+        relation2.closedLoop(input1)
+
+        output1 = Output('out1', relation1)
+        output2 = Output('out2', relation2)
 
         test = Modely(visualizer=None, seed=42)
         test.addModel('model', [output1,output2])
-        test.addClosedLoop(output1, input2)
-        test.addClosedLoop(output2, input1)
         test.neuralizeModel()
         self.assertEqual({'out1': [[-10.0, -16.0]], 'out2': [[[-34.0, -86.0]]]},
                          test({'in1': [[1.0, 2.0], [2.0, 3.0]], 'in2': [-10, -16, -5, 2, 3]}))
@@ -892,7 +920,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         b = Parameter('b', values=[1])
         output1 = Output('out1', Linear(W=W, b=b)(input1.sw(2)))
 
-        # input2 = State('inout') #TODO loop forever
+        # input2 = Input('inout') #TODO loop forever
         # test.addConnect(output1, input1) # With this
         input2 = Input('in2')
         a = Parameter('a', sw=5, values=[[1,3],[2,4],[3,5],[4,6],[5,7]])
@@ -929,7 +957,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
                          test({'in1': [[1.0, 2.0], [2.0, 3.0]], 'in2': [-10, -16, -5, 2, 3]},  num_of_samples=5))
         self.assertEqual({'out1': [[-10.0, -16.0], [-16.0,1.0], [1.0,1.0], [1.0,1.0], [1.0,1.0]],
                           'out2': [[[-34.0, -86.0]],[[-8.0,-40.0]],[[8.0,8.0]],[[8.0,18.0]],[[3.0,9.0]]]},
-                         test({'in1': [[1.0, 2.0], [2.0, 3.0]], 'in2': [-10, -16, -5, 2, 3]},  prediction_samples=None, num_of_samples=5))
+                         test({'in1': [[1.0, 2.0], [2.0, 3.0]], 'in2': [-10, -16, -5, 2, 3]},  prediction_samples=-1, num_of_samples=5))
 
         #-34*-1+ -86*-5+1 = 465.0
         #-140*-1+ -230*-5+1 = 465.0
@@ -947,8 +975,8 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
     def test_predict_parameters(self):
         NeuObj.clearNames()
         input1 = Input('in1')
-        cl1 = State('cl1')
-        co1 = State('co1')
+        cl1 = Input('cl1')
+        co1 = Input('co1')
         W = Parameter('W', values=[[1], [2], [3]])
         parfun = ParamFun(myfunsum, parameters_and_constants=[W])
         matmulfun = ParamFun(matmul)
@@ -1119,7 +1147,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         self.assertEqual((5,), np.array(result['out']).shape)
         self.assertEqual([14.0, 3*4+2*3+2*1, 5*3+4*2+3*1, 26*3+5*2+4*1, 92*3+26*2+1*5], result['out'])
 
-        result = test({'in1': [1, 2, 3, 4, 5]},closed_loop={'in1':'out'}, prediction_samples=None)
+        result = test({'in1': [1, 2, 3, 4, 5]},closed_loop={'in1':'out'}, prediction_samples=-1)
         self.assertEqual((3,), np.array(result['out']).shape)
         self.assertEqual([14.0,3*4+2*3+2*1,5*3+4*2+3*1], result['out'])
 
@@ -1139,7 +1167,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         self.assertEqual((3,), np.array(result['out']).shape)
         self.assertEqual([14.0,3*14+2*3+2*1,50*3+14*2+3*1], result['out'])
 
-        result = test({'in1': [1, 2, 3, 4, 5]},closed_loop={'in1':'out'}, prediction_samples=None, num_of_samples = 5)
+        result = test({'in1': [1, 2, 3, 4, 5]},closed_loop={'in1':'out'}, prediction_samples=-1, num_of_samples = 5)
         self.assertEqual((5,), np.array(result['out']).shape)
         self.assertEqual([14.0,3*4+2*3+2*1,5*3+4*2+3*1,0*3+5*2+4*1,0*3+0*2+5*1], result['out'])
 
@@ -1161,13 +1189,14 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
 
     def test_parameters_predict_closed_loop(self):
         NeuObj.clearNames()
-        input1 = State('in1')
+        input1 = Input('in1')
         W = Parameter('W', sw=3, values=[[1], [2], [3]])
-        out = Output('out',Fir(W=W)(input1.sw(3)))
+        relation = Fir(W=W)(input1.sw(3))
+        relation.closedLoop(input1)
+        out = Output('out',relation)
 
         test = Modely(visualizer=None, seed=42)
         test.addModel('model', [out])
-        test.addClosedLoop(out, input1)
         test.neuralizeModel()
 
         result = test({'in1':[1,2,3]})
@@ -1190,7 +1219,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         self.assertEqual([14.0, 3*4+2*3+2*1, 5*3+4*2+3*1, 26*3+5*2+4*1, 92*3+26*2+1*5], result['out'])
 
         test.resetStates()
-        result = test({'in1': [1, 2, 3, 4, 5]}, prediction_samples=None)
+        result = test({'in1': [1, 2, 3, 4, 5]}, prediction_samples=-1)
         self.assertEqual((3,), np.array(result['out']).shape)
         self.assertEqual([14.0,3*4+2*3+2*1,5*3+4*2+3*1], result['out'])
 
@@ -1215,7 +1244,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         self.assertEqual([14.0,3*14+2*3+2*1,50*3+14*2+3*1], result['out'])
 
         test.resetStates()
-        result = test({'in1': [1, 2, 3, 4, 5]}, prediction_samples=None, num_of_samples = 5)
+        result = test({'in1': [1, 2, 3, 4, 5]}, prediction_samples=-1, num_of_samples = 5)
         self.assertEqual((5,), np.array(result['out']).shape)
         self.assertEqual([14.0,3*4+2*3+2*1,5*3+4*2+3*1,0*3+5*2+4*1,0*3+0*2+5*1], result['out'])
 
@@ -1241,7 +1270,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
 
     def test_derivate_wrt_input_closed_loop(self):
         NeuObj.clearNames()
-        x = State('x')
+        x = Input('x')
         y = Input('y')
         x_last = x.last()
         y_last = y.last()
@@ -1286,7 +1315,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         fun = Sin(x_last) + Fir(W=p1)(x_last) + Cos(y_last)
         out_der = Derivate(fun, x_last) + Derivate(fun, y_last)
 
-        x2 = State('x2')
+        x2 = Input('x2')
         y2 = Input('y2')
         x2_last = x2.last()
         y2_last = y2.last()
@@ -1324,3 +1353,89 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
 
         result = m({'x': [-0.2], 'y': [0.5]}, connect={'y2': 'out1'}, num_of_samples=10, prediction_samples='auto')
         self.TestAlmostEqual([a.tolist() for a in x_data[0:10]], result['out2'])
+
+    # def test_state_initialization_inference(self):
+    #     NeuObj.clearNames()
+    #     x = Input('x')
+    #     y = Input('y')
+    #
+    #     p_1 = Parameter('p1', sw=1, values=[[1]])
+    #     p_2 = Parameter('p2', sw=1, values=[[2]])
+    #     fir1 = Fir(W=p_1, b=False)(x.last())
+    #     fir2 = Fir(W=p_2, b=False)(y.last())
+    #     relation = fir1 + fir2
+    #     relation.closedLoop(y)
+    #     out = Output('out', relation)
+    #
+    #     model = Modely(visualizer=None, seed=42)
+    #     model.addModel('model', out)
+    #     model.neuralizeModel(1)
+    #
+    #     result = model(inputs={'x': [1,2,3,4,5,6,7,8,9,10]}, prediction_samples=1)
+    #     self.assertEqual([1.0, 4.0, 3.0, 10.0, 5.0, 16.0, 7.0, 22.0, 9.0, 28.0], result['out'])
+    #     result = model(inputs={'x': [1,2,3,4,5,6,7,8,9,10]}, prediction_samples=3)
+    #     self.assertEqual([1.0, 4.0, 11.0, 26.0, 5.0, 16.0, 39.0, 86.0, 9.0, 28.0], result['out'])
+    #     result = model(inputs={'x': [1,2,3,4,5,6,7,8,9,10]}, prediction_samples=5)
+    #     self.assertEqual([1.0, 4.0, 11.0, 26.0, 57.0, 120.0, 7.0, 22.0, 53.0, 116.0], result['out'])
+    #
+    #     NeuObj.clearNames()
+    #     x = Input('x')
+    #     y = Input('y')
+    #
+    #     p_1 = Parameter('p1', sw=1, values=[[1]])
+    #     p_2 = Parameter('p2', sw=1, values=[[2]])
+    #     fir1 = Fir(W=p_1, b=False)(x.last())
+    #     fir2 = Fir(W=p_2, b=False)(y.last())
+    #     relation = fir1 + fir2
+    #     with self.assertRaises(KeyError):
+    #         relation.closedLoop(y, init=fir2)
+    #     relation.closedLoop(y, init=fir1)
+    #     out = Output('out', relation)
+    #
+    #     model = Modely(visualizer=None, seed=42)
+    #     model.addModel('model', out)
+    #     model.neuralizeModel(1)
+    #
+    #     #1*1+2*1 = 3
+    #     #2*1+2*3 = 8
+    #     #3*1+2*3 = 9
+    #
+    #     result = model(inputs={'x': [1,2,3,4,5,6,7,8,9,10]}, prediction_samples=1)
+    #     self.assertEqual([3.0, 8.0, 9.0, 22.0, 15.0, 36.0, 21.0, 50.0, 27.0, 64.0], result['out'])
+    #     result = model(inputs={'x': [1,2,3,4,5,6,7,8,9,10]}, prediction_samples=3)
+    #     self.assertEqual([3.0, 8.0, 19.0, 42.0, 15.0, 36.0, 79.0, 166.0, 27.0, 64.0], result['out'])
+    #     result = model(inputs={'x': [1,2,3,4,5,6,7,8,9,10]}, prediction_samples=5)
+    #     self.assertEqual([3.0, 8.0, 19.0, 42.0, 89.0, 184.0, 21.0, 50.0, 109.0, 228.0], result['out'])
+    #     result = model(inputs={'x': [1,2,3]})
+    #     self.assertEqual([3.0, 8.0, 19.0], result['out'])
+    #     #result = model(inputs={}, prediction_samples=5)
+
+    # def test_state_init(self):
+    #     # Test for integrate init
+    #     # Test init di variabile usata solo per inizializzare
+    #     clearNames()
+    #     x0 = Input('x0')
+    #     y0 = Input('y0')
+    #     dx0 = Input('dx0')
+    #     dy0 = Input('dy0')
+    #     Fx = Input('Fx')
+    #     Fy = Input('Fy')
+    #
+    #     M = 1.0
+    #
+    #     ddx = Fx.last() / M
+    #     ddy = Fy.last() / M
+    #     dx = Integrate(ddx, init=dx0.last())
+    #     dy = Integrate(ddy, init=dy0.last())
+    #     x = Integrate(dx, init=x0.last())
+    #     y = Integrate(dy, init=y0.last())
+    #
+    #     mass_x = Output('x', x)
+    #     mass_y = Output('y', y)
+    #     mass_dx = Output('dx', dx)
+    #     mass_dy = Output('dy', dy)
+    #
+    #     mass_dyn = Modely()
+    #     mass_dyn.addModel('', [mass_x, mass_y, mass_dx, mass_dy])
+    #     mass_dyn.neuralizeModel(0.01)
+    #     example = mass_dyn({'x0': [7], 'y0': [7], 'dx0': [5], 'dy0': [5], 'Fx': [100], 'Fy': [100]}, num_of_samples=200)

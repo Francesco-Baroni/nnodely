@@ -1350,7 +1350,7 @@ class ModelyPredictTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             fun_map_2(4.0, 1, pp, ll)
         test.addModel('out-new', [out3,out4])
-        with self.assertRaises(ValueError):
+        with self.assertRaises(NameError):
             test.addModel('out',[out1,out2])
         test.neuralizeModel(0.01)
 
@@ -1392,7 +1392,7 @@ class ModelyPredictTest(unittest.TestCase):
         input = Input('in1')
         sw_from_input = input.sw(7)
 
-        state = State('state')
+        state = Input('state')
         sw_from_output = Connect(sw_from_input, state)
         out_aux = Output('out_aux', sw_from_output)
         out1 = Output('out1', state.sw(3))
@@ -1484,7 +1484,7 @@ class ModelyPredictTest(unittest.TestCase):
     def test_sw_on_stream_sw_complex(self):
         NeuObj.clearNames()
         input = Input('in1')
-        state = State('state')
+        state = Input('state')
 
         sw_3 = input.sw(3)
         sw_7 = input.sw(7)
@@ -1670,6 +1670,7 @@ class ModelyPredictTest(unittest.TestCase):
                                  [0.0, 14.0, 1.0, 2.0, 3.0, 4.0, 5.0],
                                  [14.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
                                  [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]],  results['out1'])
+        #TODO add test with initialization of state variable
 
     def test_localmodel(self):
         NeuObj.clearNames()
