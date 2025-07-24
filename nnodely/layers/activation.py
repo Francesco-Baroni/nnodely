@@ -103,7 +103,7 @@ class Softmax(Stream, ToStream):
         self.json['Relations'][self.name] = [softmax_relation_name, [obj.name]]
 
 class Sigmoid(Stream, ToStream):
-    """
+    r"""
     Implement the Sigmoid relation function.
     The Sigmoid function is defined as:
 
@@ -112,7 +112,6 @@ class Sigmoid(Stream, ToStream):
         `Sigmoid function <https://pytorch.org/docs/stable/generated/torch.nn.Sigmoid.html#torch.nn.Sigmoid>`_
 
     .. math::
-
         \sigma(x) = \frac{1}{1 + e^{-x}}
 
     :param obj: The relation stream.
