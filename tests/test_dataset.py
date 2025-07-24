@@ -313,7 +313,40 @@ class ModelyCreateDatasetTest(unittest.TestCase):
 
         self.assertEqual((9,1,1), test._data['dataset']['out'].shape)
         self.assertEqual([[[1.225]], [[1.224]], [[1.222]], [[1.22]], [[1.217]], [[1.214]], [[1.211]], [[1.207]], [[1.204]]], test._data['dataset']['out'].tolist())
-    
+
+    def test_filter_data(self):
+        NeuObj.clearNames()
+        input1 = Input('in1')
+        output = Input('out')
+        rel1 = Fir(input1.tw(0.05))
+        rel2 = Fir(input1.tw([-0.01,0.01]))
+        rel3 = Fir(input1.tw([-0.02,0.02]))
+        fun = Output('out-net',rel1+rel2+rel3)
+
+        test = Modely(visualizer=None)
+        test.addModel('fun', fun)
+        test.addMinimize('out', output.z(-1), fun)
+        test.neuralizeModel(0.01)
+
+        data_struct = ['x1','y1','x2','y2','','A1x','A1y','B1x','B1y','','A2x','A2y','B2x','out','','x3','in1','in2','time']
+        test.loadData(name='dataset', source=train_folder, format=data_struct, skiplines=4, delimiter='\t', header=None)
+
+        def filter_fn(sample):
+            return min(sample['in1']) > 0.957
+
+        test.filterData(filter_fn)
+
+        self.assertEqual((2,7,1), test._data['dataset']['in1'].shape)
+        self.assertEqual([[0.984],[0.983],[0.982],[0.98],[0.977],[0.973],[0.969]], test._data['dataset']['in1'][0].tolist())
+
+        self.assertEqual((2,1,1), test._data['dataset']['out'].shape)
+        self.assertEqual([[[1.225]], [[1.224]]], test._data['dataset']['out'].tolist())
+
+        test.loadData(name='dataset2', source=train_folder, format=data_struct, skiplines=4, delimiter='\t', header=None)
+        test.filterData(filter_fn, dataset_name='dataset2')
+        self.assertEqual((2,7,1), test._data['dataset2']['in1'].shape)
+        self.assertEqual((2, 1, 1), test._data['dataset2']['out'].shape)
+
     def test_build_dataset_complex6(self):
         NeuObj.clearNames()
         input1 = Input('in1')
@@ -558,7 +591,7 @@ class ModelyCreateDatasetTest(unittest.TestCase):
         ## Try to train the model
         # test.trainModel(splits=[80, 10, 10],
         #                 training_params={'num_of_epochs': 100, 'train_batch_size': 4, 'test_batch_size': 4})
-    
+
     def test_multifiles(self):
         NeuObj.clearNames()
         x = Input('x')

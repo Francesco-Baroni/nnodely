@@ -172,8 +172,13 @@ class Trainer(Network):
 
         ## training
         tp['update_per_epochs'] = len(self.running_parameters['train_indexes']) // (tp['train_batch_size'] + tp['step'])
-        total_samples = len(self.running_parameters['train_indexes']) + tp['prediction_samples']  ## number of samples taking into account the prediction horizon
-        tp['unused_samples'] = (total_samples - tp['update_per_epochs'] * tp['train_batch_size']) - tp['prediction_samples']  ## number of samples not used for training
+        if tp['prediction_samples'] >= 0: # TODO
+            tp['n_first_samples_train'] = len(self.running_parameters['train_indexes'])
+            if tp['n_samples_val'] > 0:
+                tp['n_first_samples_val'] = len(self.running_parameters['val_indexes'])
+            if tp['n_samples_test'] > 0:
+                tp['n_first_samples_test'] = len(self.running_parameters['test_indexes'])
+
 
         ## optimizer
         tp['optimizer'] = self.__optimizer.name
@@ -378,13 +383,13 @@ class Trainer(Network):
             if n_samples_val > 0:
                 val_indexes = self._get_batch_indexes(dataset, n_samples_train + n_samples_val, prediction_samples)
                 val_indexes = [i - n_samples_train for i in val_indexes if i >= n_samples_train]
-                check(len(val_indexes) > 0, ValueError,
-                      'The number of valid train samples is less than the number of prediction samples.')
+                if len(val_indexes) < 0:
+                    log.warning('The number of valid validation samples is less than the number of prediction samples.')
             if n_samples_test > 0:
                 test_indexes = self._get_batch_indexes(dataset, n_samples_train + n_samples_val + n_samples_test, prediction_samples)
                 test_indexes = [i - (n_samples_train+n_samples_val)for i in test_indexes if i >= (n_samples_train+n_samples_val)]
-                check(len(test_indexes) > 0, ValueError,
-                      'The number of valid train samples is less than the number of prediction samples.')
+                if len(test_indexes) < 0:
+                    log.warning('The number of valid test samples is less than the number of prediction samples.')
 
         ## clip batch size and step
         train_batch_size = self._clip_batch_size(len(train_indexes), train_batch_size)

@@ -194,49 +194,48 @@ class TextVisualizer(EmptyVisualizer):
         if self.verbose >= 1:
             self.__title(" nnodely Model Train Parameters ")
             par = self.modely.get_training_info()
-            #par = self.modely.run_training_params
-            batch_size = par['train_batch_size']
-            n_samples = par['n_samples_train']
-            n_update = par['update_per_epochs']
-            unused_samples = par['unused_samples']
 
             self.__paramjson("models:", par['models'])
-            self.__paramjson("num of epochs:", par['num_of_epochs'])
-            self.__param("update per epochs:", f"{n_update}")
+            self.__param("num of epochs:", str(par['num_of_epochs']))
+            self.__param("update per epochs:", str(par['update_per_epochs']))
             if par['prediction_samples'] >= 0:
-                self.__info("└>(n_samples-batch_size-prediction_samples+1)/(batch_size+step-1)+1")
+                self.__info("└>len(train_indexes)//(batch_size+step)")
             else:
                 self.__info("└>(n_samples-batch_size)/batch_size+1")
 
             if par['shuffle_data']:
-                self.__param('shuffle _data:', str(par['shuffle_data']))
+                self.__param('shuffle data:', str(par['shuffle_data']))
 
-            if 'early_stopping' in par:
-                if par['early_stopping']:
-                    self.__param('early stopping:', par['early_stopping'])
-                    self.__paramjson('early stopping params:', par['early_stopping_params'])
+            if 'early_stopping' in par and  par['early_stopping']:
+                self.__param('early stopping:', par['early_stopping'])
+                self.__paramjson('early stopping params:', par['early_stopping_params'])
 
             if par['prediction_samples'] >= 0:
                 self.__param("prediction samples:", f"{par['prediction_samples']}")
-                self.__param("step:", f"{par['step']}")
+                self.__param("step:", f"{par['train_step']}")
                 self.__paramjson("closed loop:", par['closed_loop'])
                 self.__paramjson("connect:", par['connect'])
 
             self.__param("train dataset:", f"{par['train_tag']}")
-            self.__param("\t- num of samples:", f"{n_samples}")
-            self.__param("\t- batch size:", f"{batch_size}")
-            self.__param("\t- unused samples:", f"{unused_samples}")
+            self.__param("\t- batch size:", f"{par['train_batch_size']}")
+            self.__param("\t- num of samples:", f"{par['n_samples_train']}")
             if par['prediction_samples'] >= 0:
-                self.__info("\t  └>n_samples-prediction_samples-update_per_epochs*(batch_size+step-1)")
-            else:
-                self.__info("\t  └>n_samples-update_per_epochs*batch_size")
+                self.__param("\t- num of first samples:", f"{par['n_first_samples_train']}")
 
-            if par['n_samples_val']:
-                self.__param("val dataset:", f"{par['validation_dataset']}")
-                self.__param("val {batch size, samples}:", f"{{{par['val_batch_size']}, {par['n_samples_val']}}}")
-            # if par['n_samples_test']:
-            #     self.__param("test dataset:", f"{par['test_dataset']}")
-            #     self.__param("test {batch size, samples}:", f"{{{par['test_batch_size']}, {par['n_samples_test']}}}")
+            if par['n_samples_val'] > 0:
+                self.__param("validation dataset:", f"{par['val_tag']}")
+                self.__param("\t- batch size:", f"{par['val_batch_size']}")
+                self.__param("\t- num of samples:", f"{par['n_samples_val']}")
+                if par['prediction_samples'] >= 0:
+                    self.__param("\t- num of first samples:", f"{par['n_first_samples_val']}")
+
+            if par['n_samples_test'] > 0:
+                self.__param("test dataset:", f"{par['test_tag']}")
+                self.__param("\t- num of samples:", f"{par['n_samples_test']}")
+                if 'test_batch_size' in par:
+                    self.__param("\t- batch size:", f"{par['test_batch_size']}")
+                if par['prediction_samples'] >= 0:
+                    self.__param("\t- num of first samples:", f"{par['n_first_samples_test']}")
 
             self.__paramjson('minimizers:', par['minimizers'])
 
