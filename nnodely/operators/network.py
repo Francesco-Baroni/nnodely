@@ -102,7 +102,7 @@ class Network:
         if datasets is None:
             return []
         batch_indexes = list(range(n_samples))
-        if not isinstance(datasets, dict):
+        if prediction_samples > 0 and not isinstance(datasets, dict):
             datasets = [datasets] if type(datasets) is str else datasets
             forbidden_idxs = []
             n_samples_count = 0
@@ -113,7 +113,6 @@ class Network:
                             forbidden_idxs.extend(range((i+n_samples_count) - prediction_samples, (i+n_samples_count), 1))
                 n_samples_count += self._num_of_samples[dataset]
             batch_indexes = [idx for idx in batch_indexes if idx not in forbidden_idxs]
-        if prediction_samples > 0:
             batch_indexes = batch_indexes[:-prediction_samples]
         return batch_indexes
     
