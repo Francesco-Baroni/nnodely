@@ -20,23 +20,6 @@ class Trainer(Network):
         check(type(self) is not Trainer, TypeError, "Trainer class cannot be instantiated directly")
         super().__init__()
 
-        # Default Training Parameters
-        self.__standard_train_parameters = {
-            'models' : None,
-            'train_dataset' : None, 'validation_dataset' : None,
-            'dataset' : None, 'splits' : [100, 0, 0],
-            'closed_loop' : {}, 'connect' : {}, 'step' : 0, 'prediction_samples' : 0,
-            'shuffle_data' : True,
-            'early_stopping' : None, 'early_stopping_params' : {},
-            'select_model' : 'last', 'select_model_params' : {},
-            'minimize_gain' : {},
-            'num_of_epochs': 100,
-            'train_batch_size' : 128, 'val_batch_size' : 128,
-            'optimizer' : 'Adam',
-            'lr' : 0.001, 'lr_param' : {},
-            'optimizer_params' : [], 'add_optimizer_params' : [],
-            'optimizer_defaults' : {}, 'add_optimizer_defaults' : {}
-        }
         ## User Parameters
         self.running_parameters = {}
 
@@ -87,10 +70,14 @@ class Trainer(Network):
         """
         self._model_def.removeMinimize(name_list)
 
-    def __preliminary_checks(self):
+    def __preliminary_checks(self, **kwargs):
         check(self._data_loaded, RuntimeError, 'There is no data loaded! The Training will stop.')
         check('Models' in self._model_def.getJson(), RuntimeError, 'There are no models to train. Load a model using the addModel function.')
         check(list(self._model.parameters()), RuntimeError, 'There are no modules with learnable parameters! The Training will stop.')
+        if kwargs.get('train_dataset', None) is None:
+            check(kwargs.get('validation_dataset', None) is None, ValueError, 'If train_dataset is None, validation_dataset must also be None.')
+        for model in kwargs['models']:
+            check(model in kwargs['all_models'], ValueError, f'The model {model} is not in the model definition')
 
     def fill_parameters(func):
         @wraps(func)
@@ -99,7 +86,7 @@ class Trainer(Network):
             bound = sig.bind(self, *args, **kwargs)
             bound.apply_defaults()
             # Get standard parameters
-            standard = self.__standard_train_parameters
+            standard = self._standard_train_parameters
             # Get user_parameters
             users = bound.arguments.get('training_params', None)
             # Fill missing (None) arguments
@@ -114,36 +101,10 @@ class Trainer(Network):
             return func(**bound.arguments)
         return wrapper
 
-    def __clip_batch_size(self, n_samples, batch_size=None, prediction_samples=None):
-        prediction = 0 if prediction_samples == -1 else prediction_samples #This value is used to disconnect the connect
-        batch_size = batch_size if batch_size <= n_samples - prediction else max(0, n_samples - prediction)
-        check((n_samples - batch_size + 1) > 0, ValueError, f"The number of available sample are {n_samples - batch_size + 1}")
-        check(batch_size > 0, ValueError, f'The batch_size must be greater than 0.')
-        return batch_size
-
-    def __clip_step(self, step, batch_indexes, batch_size):
-        clipped_step = copy.deepcopy(step)
-        if clipped_step < 0:  ## clip the step to zero
-            log.warning(f"The step is negative ({clipped_step}). The step is set to zero.", stacklevel=5)
-            clipped_step = 0
-        if clipped_step > (len(batch_indexes) - batch_size):  ## Clip the step to the maximum number of samples
-            log.warning(f"The step ({clipped_step}) is greater than the number of available samples ({len(batch_indexes) - batch_size}). The step is set to the maximum number.", stacklevel=5)
-            clipped_step = len(batch_indexes) - batch_size
-        check((batch_size + clipped_step) > 0, ValueError, f"The sum of batch_size={batch_size} and the step={clipped_step} must be greater than 0.")
-        return clipped_step
-
     def __initialize_optimizer(self, models, optimizer, training_params, optimizer_params, optimizer_defaults, add_optimizer_defaults, add_optimizer_params, lr, lr_param):
         ## Get models
-        json_models = []
-        if 'Models' in self._model_def:
-            json_models = list(self._model_def['Models'].keys()) if type(self._model_def['Models']) is dict else [self._model_def['Models']]
-        if models is None:
-            models = json_models
         params_to_train = set()
-        if isinstance(models, str):
-            models = [models]
         for model in models:
-            check(model in json_models, ValueError, f'The model {model} is not in the model definition')
             if type(self._model_def['Models']) is dict:
                 params_to_train |= set(self._model_def['Models'][model]['Parameters'])
             else:
@@ -161,7 +122,7 @@ class Trainer(Network):
 
         optimizer.set_params_to_train(self._model.all_parameters, params_to_train)
 
-        optimizer.add_defaults('lr', self.__standard_train_parameters['lr'])
+        optimizer.add_defaults('lr', self._standard_train_parameters['lr'])
 
         if training_params and 'lr' in training_params:
             optimizer.add_defaults('lr', training_params['lr'])
@@ -188,14 +149,13 @@ class Trainer(Network):
         if lr_param:
             optimizer.add_option_to_params('lr', lr_param)
 
-        self.running_parameters['models'] = models
         self.__optimizer = optimizer
 
     def __initialize_loss(self):
         for name, values in self._model_def['Minimizers'].items():
             self.__loss_functions[name] = CustomLoss(values['loss'])
 
-    def get_training_info(self, **kwargs):
+    def get_training_info(self):
         """
         Returns a dictionary with the training parameters and information.
         Parameters
@@ -207,11 +167,12 @@ class Trainer(Network):
         dict
             A dictionary containing the training parameters and information.
         """
-        tp = copy.deepcopy(self.running_parameters)
+        to_remove =  ['XY_train','XY_val','XY_test','train_indexes','val_indexes']
+        tp = copy.deepcopy({key:value for key, value in self.running_parameters.items() if key not in to_remove})
 
         ## training
-        tp['update_per_epochs'] = len(tp['train_indexes']) // (tp['train_batch_size'] + tp['step'])
-        total_samples = len(tp['train_indexes']) + tp['prediction_samples']  ## number of samples taking into account the prediction horizon
+        tp['update_per_epochs'] = len(self.running_parameters['train_indexes']) // (tp['train_batch_size'] + tp['step'])
+        total_samples = len(self.running_parameters['train_indexes']) + tp['prediction_samples']  ## number of samples taking into account the prediction horizon
         tp['unused_samples'] = (total_samples - tp['update_per_epochs'] * tp['train_batch_size']) - tp['prediction_samples']  ## number of samples not used for training
 
         ## optimizer
@@ -234,19 +195,6 @@ class Trainer(Network):
             if name in tp['minimize_gain']:
                 tp['minimizers'][name]['gain'] = tp['minimize_gain'][name]
 
-        ## Add extra information
-        for key, value in kwargs.items():
-            tp[key] = value
-
-        ## Remove useless information
-        if log.level != logging.DEBUG:
-            del tp['train_indexes']
-            del tp['XY_train']
-            if tp['validation_dataset'] or tp['dataset']:
-                del tp['val_indexes']
-                del tp['XY_val']
-            if 'test_dataset' in tp or 'dataset' in tp:
-                del tp['XY_test']
         return tp
 
     def __check_needed_keys(self, train_data, connect, closed_loop):
@@ -263,6 +211,7 @@ class Trainer(Network):
     @enforce_types
     @fill_parameters
     def trainModel(self, *,
+                   name: str | None = None,
                    models: str | list | None = None,
                    train_dataset: str | list | dict | None = None, validation_dataset: str | list | dict | None = None,
                    dataset: str | list | None = None, splits: list | None = None,
@@ -289,8 +238,10 @@ class Trainer(Network):
 
         Parameters
         ----------
-        models : list or None, optional
-            A list of models to train. By default it uses all the models provided.
+        name : str or None, optional
+            A name used to identify the training operation.
+        models : str or list or None, optional
+            A list or name of models to train. Default is all the models loaded.
         train_dataset : str or None, optional
             The name of datasets to use for training.
         validation_dataset : str or None, optional
@@ -384,10 +335,15 @@ class Trainer(Network):
             >>> params = {'num_of_epochs': 100,'train_batch_size': 128,'lr':0.001}
             >>> mass_spring_damper.trainModel(splits=[70,20,10], prediction_samples=10, training_params = params)
         """
+        ## Get model for train
+        all_models = list(self._model_def['Models'].keys()) if type(self._model_def['Models']) is dict else [self._model_def['Models']]
+        if models is None:
+            models = all_models
+        if isinstance(models, str):
+            models = [models]
+
         ## Preliminary Checks
-        self.__preliminary_checks()
-        if train_dataset is None:
-            check(validation_dataset is None, ValueError, 'If train_dataset is None, validation_dataset must also be None.')
+        self.__preliminary_checks(models = models, all_models = all_models, train_dataset = train_dataset, validation_dataset = validation_dataset)
 
         ## Recurret variables
         prediction_samples = self._setup_recurrent_variables(prediction_samples, closed_loop, connect)
@@ -400,28 +356,45 @@ class Trainer(Network):
         n_samples_val = next(iter(XY_val.values())).size(0) if XY_val else 0
         n_samples_test = next(iter(XY_test.values())).size(0) if XY_test else 0
 
+        if train_dataset is not None:
+            train_tag = self._get_tag(train_dataset)
+            val_tag = self._get_tag(validation_dataset)
+        else: ## splits is used
+            if dataset is None:
+                dataset = list(self._data.keys())
+            tag = self._get_tag(dataset)
+            train_tag = f"{tag}_train"
+            val_tag = f"{tag}_val" if n_samples_val > 0 else None
+            test_tag = f"{tag}_test" if n_samples_test > 0 else None
+
         train_indexes, val_indexes = [], []
         if train_dataset is not None:
             train_indexes, val_indexes = self._get_batch_indexes(train_dataset, n_samples_train, prediction_samples), self._get_batch_indexes(validation_dataset, n_samples_val, prediction_samples)
         else:
             dataset = list(self._data.keys()) if dataset is None else dataset
-            indexes = self._get_batch_indexes(dataset, n_samples_train+n_samples_val, prediction_samples)
-            train_indexes = [i for i in indexes if i < n_samples_train]
+            train_indexes = self._get_batch_indexes(dataset, n_samples_train, prediction_samples)
+            check(len(train_indexes) > 0, ValueError,
+                  'The number of valid train samples is less than the number of prediction samples.')
             if n_samples_val > 0:
-                train_indexes = train_indexes[:-prediction_samples] if prediction_samples > 0 else train_indexes
-                val_indexes = [i for i in indexes if i >= n_samples_train]
-                offset = val_indexes[0]
-                val_indexes = [i - offset for i in val_indexes]
+                val_indexes = self._get_batch_indexes(dataset, n_samples_train + n_samples_val, prediction_samples)
+                val_indexes = [i - n_samples_train for i in val_indexes if i >= n_samples_train]
+                check(len(val_indexes) > 0, ValueError,
+                      'The number of valid train samples is less than the number of prediction samples.')
+            if n_samples_test > 0:
+                test_indexes = self._get_batch_indexes(dataset, n_samples_train + n_samples_val + n_samples_test, prediction_samples)
+                test_indexes = [i - (n_samples_train+n_samples_val)for i in test_indexes if i >= (n_samples_train+n_samples_val)]
+                check(len(test_indexes) > 0, ValueError,
+                      'The number of valid train samples is less than the number of prediction samples.')
 
         ## clip batch size and step
-        train_batch_size = self.__clip_batch_size(n_samples_train, train_batch_size, prediction_samples)
-        train_step = self.__clip_step(step, train_indexes, train_batch_size)
+        train_batch_size = self._clip_batch_size(len(train_indexes), train_batch_size)
+        train_step = self._clip_step(step, train_indexes, train_batch_size)
         if n_samples_val > 0:
-            val_batch_size = self.__clip_batch_size(n_samples_val, val_batch_size, prediction_samples)
-            val_step = self.__clip_step(step, val_indexes, val_batch_size)
+            val_batch_size = self._clip_batch_size(len(val_indexes), val_batch_size)
+            val_step = self._clip_step(step, val_indexes, val_batch_size)
 
         ## Save the training parameters
-        self.running_parameters = copy.deepcopy({key:value for key,value in locals().items() if key not in ['self', 'kwargs', 'training_params', 'lr', 'lr_param']})
+        self.running_parameters = {key:value for key,value in locals().items() if key not in ['self', 'kwargs', 'training_params', 'lr', 'lr_param']}
 
         ## Define the optimizer
         self.__initialize_optimizer(models, optimizer, training_params, optimizer_params, optimizer_defaults, add_optimizer_defaults, add_optimizer_params, lr, lr_param)

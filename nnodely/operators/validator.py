@@ -27,8 +27,8 @@ class Validator(Network):
     
     @enforce_types
     def resultAnalysis(self,
-                       dataset: str, #TODO add the * here
-                       data: dict | None = None,
+                       dataset: str | list | dict, *,
+                       name: str | None = None,
                        minimize_gain: dict = {},
                        closed_loop: dict = {},
                        connect: dict = {},
@@ -36,12 +36,41 @@ class Validator(Network):
                        step: int = 0,
                        batch_size: int | None = None
                        ) -> None:
+        """
+        The function is used to analyze the performance of the model on the provided dataset.
+
+        Parameters
+        ----------
+        dataset : str | list | dict
+            Dataset to analyze the performance of the model on.
+        name : str or None
+            Label to be used in the plots
+        minimize_gain : dict
+            A dictionary specifying the gain for each minimization loss function.
+        closed_loop : dict or None, optional
+            A dictionary specifying closed loop connections. The keys are input names and the values are output names. Default is None.
+        connect : dict or None, optional
+            A dictionary specifying connections. The keys are input names and the values are output names. Default is None.
+        step : int or None, optional
+            The step size to analyze the model on the provided dataset. A big value will result in less data used for each epochs and a faster train. Default is None.
+        prediction_samples : int or None, optional
+            The size of the prediction horizon. Number of samples at each recurrent window Default is None.
+        batch_size :
+            The batch size use for analyse the performance of the model on the provided dataset.
+
+
+        """
 
         with torch.enable_grad() if self._get_gradient_on_inference() else torch.inference_mode():
             ## Init model for retults analysis
+            if name is None:
+                dataset_tag = self._get_tag(dataset)
+            else:
+                dataset_tag = name
+
             self._model.eval()
-            self.__performance[dataset] = {}
-            self.__prediction[dataset] = {}
+            self.__performance[dataset_tag] = {}
+            self.__prediction[dataset_tag] = {}
             A = {}
             B = {}
             total_losses = {}
@@ -51,9 +80,7 @@ class Validator(Network):
             for name, values in self._model_def['Minimizers'].items():
                 losses[name] = CustomLoss(values['loss'])
 
-            if data is None:
-                check(dataset in self._data.keys(), ValueError, f'The dataset {dataset} is not loaded!')
-                data = {key: torch.from_numpy(val).to(TORCH_DTYPE) for key, val in self._data[dataset].items()}
+            data = self._get_data(dataset)
             n_samples = len(data[list(data.keys())[0]])
 
             batch_size = get_batch_size(n_samples, batch_size, prediction_samples)
@@ -67,7 +94,7 @@ class Validator(Network):
                     for horizon_idx in range(prediction_samples + 1):
                         A[key].append([])
                         B[key].append([])
-                if dataset and dataset in self._multifile.keys(): ## Multi-file Dataset
+                if type(dataset) is not dict and dataset in self._multifile.keys(): ## Multi-file Dataset
                     batch_indexes = self._get_batch_indexes(dataset, prediction_samples)
                 else:
                     batch_indexes = list(range(n_samples - prediction_samples))
@@ -102,9 +129,9 @@ class Validator(Network):
             for ind, (key, value) in enumerate(self._model_def['Minimizers'].items()):
                 A_np = np.array(A[key])
                 B_np = np.array(B[key])
-                self.__performance[dataset][key] = {}
-                self.__performance[dataset][key][value['loss']] = np.mean(total_losses[key]).item()
-                self.__performance[dataset][key]['fvu'] = {}
+                self.__performance[dataset_tag][key] = {}
+                self.__performance[dataset_tag][key][value['loss']] = np.mean(total_losses[key]).item()
+                self.__performance[dataset_tag][key]['fvu'] = {}
                 # Compute FVU
                 residual = A_np - B_np
                 error_var = np.var(residual)
@@ -112,12 +139,12 @@ class Validator(Network):
                 #error_var_manual = np.sum((residual-error_mean) ** 2) / (len(self.__prediction['B'][ind]) - 0)
                 #print(f"{key} var np:{new_error_var} and var manual:{error_var_manual}")
                 with warnings.catch_warnings(record=True) as w:
-                    self.__performance[dataset][key]['fvu']['A'] = (error_var / np.var(A_np)).item()
-                    self.__performance[dataset][key]['fvu']['B'] = (error_var / np.var(B_np)).item()
+                    self.__performance[dataset_tag][key]['fvu']['A'] = (error_var / np.var(A_np)).item()
+                    self.__performance[dataset_tag][key]['fvu']['B'] = (error_var / np.var(B_np)).item()
                     if w and np.var(A_np) == 0.0 and  np.var(B_np) == 0.0:
-                        self.__performance[dataset][key]['fvu']['A'] = np.nan
-                        self.__performance[dataset][key]['fvu']['B'] = np.nan
-                self.__performance[dataset][key]['fvu']['total'] = np.mean([self.__performance[dataset][key]['fvu']['A'],self.__performance[dataset][key]['fvu']['B']]).item()
+                        self.__performance[dataset_tag][key]['fvu']['A'] = np.nan
+                        self.__performance[dataset_tag][key]['fvu']['B'] = np.nan
+                self.__performance[dataset_tag][key]['fvu']['total'] = np.mean([self.__performance[dataset_tag][key]['fvu']['A'],self.__performance[dataset_tag][key]['fvu']['B']]).item()
                 # Compute AIC
                 #normal_dist = norm(0, error_var ** 0.5)
                 #probability_of_residual = normal_dist.pdf(residual)
@@ -134,16 +161,16 @@ class Validator(Network):
                 #print(f"{key} total_params:{total_params}")
                 aic = - 2 * log_likelihood + 2 * total_params
                 #print(f"{key} aic:{aic}")
-                self.__performance[dataset][key]['aic'] = {'value':aic,'total_params':total_params,'log_likelihood':log_likelihood}
+                self.__performance[dataset_tag][key]['aic'] = {'value':aic,'total_params':total_params,'log_likelihood':log_likelihood}
                 # Prediction and target
-                self.__prediction[dataset][key] = {}
-                self.__prediction[dataset][key]['A'] = A_np.tolist()
-                self.__prediction[dataset][key]['B'] = B_np.tolist()
+                self.__prediction[dataset_tag][key] = {}
+                self.__prediction[dataset_tag][key]['A'] = A_np.tolist()
+                self.__prediction[dataset_tag][key]['B'] = B_np.tolist()
 
-            self.__performance[dataset]['total'] = {}
-            self.__performance[dataset]['total']['mean_error'] = np.mean([value for key,value in total_losses.items()])
-            self.__performance[dataset]['total']['fvu'] = np.mean([self.__performance[dataset][key]['fvu']['total'] for key in self._model_def['Minimizers'].keys()])
-            self.__performance[dataset]['total']['aic'] = np.mean([self.__performance[dataset][key]['aic']['value']for key in self._model_def['Minimizers'].keys()])
+            self.__performance[dataset_tag]['total'] = {}
+            self.__performance[dataset_tag]['total']['mean_error'] = np.mean([value for key,value in total_losses.items()])
+            self.__performance[dataset_tag]['total']['fvu'] = np.mean([self.__performance[dataset_tag][key]['fvu']['total'] for key in self._model_def['Minimizers'].keys()])
+            self.__performance[dataset_tag]['total']['aic'] = np.mean([self.__performance[dataset_tag][key]['aic']['value']for key in self._model_def['Minimizers'].keys()])
 
-        self.visualizer.showResult(dataset)
+        self.visualizer.showResult(dataset_tag)
 #227
