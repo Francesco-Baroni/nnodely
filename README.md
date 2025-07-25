@@ -240,11 +240,29 @@ print(results)
 ### nnodely Folder
 This folder contains all the nnodely library files with relative references.
 
-The nnodely main library files are:
-1. __nnodely.py__ the main file for create the structured network.
-2. __model.py__ containts the pytorch template model for the structured network.
+The `Moldey` main class defined in __nnodely.py__, it contains all the main properties of the nnodely object and it derives from five main operators:
+1. __composer.py__ contains all the functions to build the networks: `addModel`, `neuralizeModel`, `addConnection`, `addClosedLool` etc..
+2. __loader.py__ contains the function for managing the dataset, the main function is `dataLoad`.
+3. __trainer.py__ contains the function for train the network as the `trainModel`.
+4. __exporter.py__ contains all the function for import and export: `saveModel`, `loadModel`, `exportONNX` etc..
+5. __validator.py__ contains all the function for validate the model ad the `resultsAnalysis`.
+All the operators derive from `Network`defined in __network.py__, that contains the shared support functions for all the operators.
 
-The model structured NN Inputs Outputs and Parameters:
+The folder basic contatins the main classes for the low level functionalities: 
+1. __model.py__ containts the pytorch template model for the structured network.
+2. __modeldef.py__ containts the operation for work with the json model definition.
+3. __loss.py__ contatins the loss functions.
+4. __optimizer.py__ contains the optimizer calss.
+6. __relation.py__ contains all the main classes from which all the layers are derived.
+
+The other folders are:
+1. exporter that contains the classes for the export functions.
+2. support for the support functions.
+3. visualizer that contains all the classes related to the visualization.
+4. And finally the layers folder.
+
+The layers folder contains all the layers that can be used in the MSNN.
+In particular, the model structured NN is defined by `Inputs`, `Outputs` and `Parameters`:
 1. __input.py__ contains the Input class used for create an input for the network.
 2. __ouptut.py__ contains the Output class used for create an output for the network.
 3. __parameter.py__ contains the logic for create a generic parameters and constants.
