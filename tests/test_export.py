@@ -37,9 +37,9 @@ class ModelyExportTest(unittest.TestCase):
         def myFun(K1, p1, p2):
             return K1 * p1 * p2
 
-        K_x = Parameter('k_x', dimensions=1, tw=1, init=init_constant, init_params={'value': 1})
+        K_x = Parameter('k_x', dimensions=1, tw=1, init='init_constant', init_params={'value': 1})
         K_y = Parameter('k_y', dimensions=1, tw=1)
-        w = Parameter('w', dimensions=1, tw=1, init=init_constant, init_params={'value': 1})
+        w = Parameter('w', dimensions=1, tw=1, init='init_constant', init_params={'value': 1})
         t = Parameter('t', dimensions=1, tw=1)
         c_v = Constant('c_v', tw=1, values=[[1], [2]])
         c = 5
@@ -165,7 +165,6 @@ class ModelyExportTest(unittest.TestCase):
         # The old_out is the same as the new_out_after_load because the model is loaded with the same parameters
         self.test.neuralizeModel(0.5)
         old_out = self.test({'x': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'y': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})
-        self.test.neuralizeModel()  # Load the parameter from torch model to nnodely model json
         self.test.saveModel()  # Save the model with and without parameter values
         self.test.neuralizeModel(clear_model=True)  # Create a new torch model
         new_out = self.test({'x': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'y': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})
@@ -305,15 +304,18 @@ class ModelyExportTest(unittest.TestCase):
         os.makedirs(self.result_path, exist_ok=True)
 
         self.test.neuralizeModel(0.5, clear_model=True)
+        # Export all network with minimize
+        self.test.exportONNX(inputs_order=['x', 'y', 'z'], outputs_order=['out', 'out2', 'out3', 'out4', 'out5', 'out6', 'out7'])  # Export the onnx model
         # Export the all models in onnx format
-        self.test.exportONNX(inputs_order=['x', 'y'], outputs_order=['out', 'out2', 'out3', 'out4', 'out5', 'out6'])  # Export the onnx model
+        self.test.exportONNX(models=['modelA','modelB','modelC','modelD'], inputs_order=['x', 'y'], outputs_order=['out', 'out2', 'out3', 'out4', 'out5', 'out6'])  # Export the onnx model
         # Export only the modelB in onnx format
         self.test.exportONNX(inputs_order=['x', 'y'], outputs_order=['out3', 'out4', 'out2'], models=['modelB'])  # Export the onnx model
         self.assertTrue(os.path.exists(os.path.join(self.test.getWorkspace(), 'onnx', 'net.onnx')))
+        self.assertTrue(os.path.exists(os.path.join(self.test.getWorkspace(), 'onnx', 'net_modelA_modelB_modelC_modelD.onnx')))
         self.assertTrue(os.path.exists(os.path.join(self.test.getWorkspace(), 'onnx', 'net_modelB.onnx')))
 
         if os.path.exists(self.test.getWorkspace()):
-            shutil.rmtree(self.test.getWorkspace())
+           shutil.rmtree(self.test.getWorkspace())
 
     def test_export_report(self):
         if os.path.exists(self.test.getWorkspace()):
@@ -326,9 +328,16 @@ class ModelyExportTest(unittest.TestCase):
         data_y = np.arange(0.0, 10, 0.1)
         a, b = -1.0, 2.0
         dataset = {'x': data_x, 'y': data_y, 'z': a * data_x + b * data_y}
-        params = {'num_of_epochs': 20, 'lr': 0.01}
+        params = {'num_of_epochs': 20, 'lr': 0.0005}
         self.test.loadData(name='dataset', source=dataset)  # Create the dataset
         self.test.trainModel(optimizer='SGD', training_params=params)  # Train the traced model
+        self.test.exportReport()
+
+        self.test.loadData(name='dataset2', source=dataset)  # Create the dataset
+        self.test.trainAndAnalyze(optimizer='SGD', train_dataset='dataset', validation_dataset='dataset2', training_params=params)  # Train the traced model
+        self.test.exportReport()
+
+        self.test.removeMinimize(['error1','error2','error3','error4'])
         self.test.exportReport()
 
         if os.path.exists(self.test.getWorkspace()):

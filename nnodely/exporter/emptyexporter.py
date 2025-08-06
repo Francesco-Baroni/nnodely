@@ -1,10 +1,9 @@
 import os
 
 from datetime import datetime
+from nnodely.visualizer import EmptyVisualizer
 
-from nnodely.visualizer import  Visualizer
-
-class EmptyExporter():
+class EmptyExporter:
 
     def __init__(self, workspace = None, visualizer = None, save_history = False):
         # Export parameters
@@ -21,7 +20,7 @@ class EmptyExporter():
         if visualizer is not None:
             self.visualizer = visualizer
         else:
-            self.visualizer = Visualizer()
+            self.visualizer = EmptyVisualizer()
 
     def saveTorchModel(self, model, name = 'net', model_folder = None):
         pass
@@ -41,7 +40,7 @@ class EmptyExporter():
     def importPythonModel(self, name = 'net', model_folder = None):
         pass
 
-    def onnxInference(self, inputs:dict, path:str):
+    def onnxInference(self, inputs:dict, name:str='net', model_folder:str|None=None):
         pass
 
     def exportReport(self, name = 'net', model_folder = None):

@@ -32,7 +32,7 @@ def plot_training(ax, title, key, data_train, data_val = None, last = None):
 
 def plot_results(ax, name_data, key, A, B, sample_time):
     # Plot data
-    ax.set_title(f'{name_data} Data of {key}')
+    ax.set_title(f'{key} on the dataset {name_data}')
     A_t = np.transpose(np.array(A))
     B_t = np.transpose(np.array(B))
     for ind_win in range(A_t.shape[0]):

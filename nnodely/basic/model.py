@@ -1,12 +1,15 @@
-from itertools import product
-from nnodely.support.utils import TORCH_DTYPE
-from nnodely.support import initializer
-import numpy as np
+import torch
+import copy
 
 import torch.nn as nn
-import torch
+import numpy as np
 
-import copy
+from itertools import product
+
+from nnodely.support.utils import TORCH_DTYPE
+from nnodely.support import initializer
+
+
 
 @torch.fx.wrap
 def connect(data_in, rel):
@@ -19,6 +22,9 @@ class Model(nn.Module):
     def __init__(self, model_def):
         super(Model, self).__init__()
         model_def = copy.deepcopy(model_def)
+
+        self.states = {key: value for key, value in model_def['Inputs'].items() if ('closedLoop' in value.keys() or 'connect' in value.keys())}
+
         self.inputs = model_def['Inputs']
         self.outputs = model_def['Outputs']
         self.relations = model_def['Relations']
@@ -26,13 +32,12 @@ class Model(nn.Module):
         self.constants = model_def['Constants']
         self.sample_time = model_def['Info']['SampleTime']
         self.functions = model_def['Functions']
-        self.states = model_def['States']
-        #self.state_model_main = model_def['States']
-        self.minimizers = model_def['Minimizers']
-        #self.states = model_def['States']#copy.deepcopy(self.state_model_main)
-        self.input_ns_backward = {key:value['ns'][0] for key, value in (model_def['Inputs']|model_def['States']).items()}
-        self.input_n_samples = {key:value['ntot'] for key, value in (model_def['Inputs']|model_def['States']).items()}
+
+        self.minimizers = model_def['Minimizers'] if 'Minimizers' in model_def else {}
         self.minimizers_keys = [self.minimizers[key]['A'] for key in self.minimizers] + [self.minimizers[key]['B'] for key in self.minimizers]
+
+        self.input_ns_backward = {key:value['ns'][0] for key, value in model_def['Inputs'].items()}
+        self.input_n_samples = {key:value['ntot'] for key, value in model_def['Inputs'].items()}
 
         ## Build the network
         self.all_parameters = {}
@@ -42,17 +47,19 @@ class Model(nn.Module):
         self.closed_loop_update = {}
         self.connect_update = {}
 
+        ## Update the connect_update and closed_loop_update
+        self.update()
+
         ## Define the correct slicing
-        json_inputs = self.inputs | self.states
         for _, items in self.relations.items():
             if items[0] == 'SamplePart':
-                if items[1][0] in json_inputs.keys():
+                if items[1][0] in self.inputs.keys():
                     items[3][0] = self.input_ns_backward[items[1][0]] + items[3][0]
                     items[3][1] = self.input_ns_backward[items[1][0]] + items[3][1]
                     if len(items) > 4: ## Offset
                         items[4] = self.input_ns_backward[items[1][0]] + items[4]
             if items[0] == 'TimePart':
-                if items[1][0] in json_inputs.keys():
+                if items[1][0] in self.inputs.keys():
                     items[3][0] = self.input_ns_backward[items[1][0]] + round(items[3][0]/self.sample_time)
                     items[3][1] = self.input_ns_backward[items[1][0]] + round(items[3][1]/self.sample_time)
                     if len(items) > 4: ## Offset
@@ -100,7 +107,6 @@ class Model(nn.Module):
         for relation, inputs in self.relations.items():
             ## Take the relation name and the inputs needed to solve the relation
             rel_name, input_var = inputs[0], inputs[1]
-            
             ## Create All the Relations
             func = getattr(self,rel_name)
             if func:
@@ -136,17 +142,14 @@ class Model(nn.Module):
         self.relation_forward = nn.ParameterDict(self.relation_forward)
         self.all_constants = nn.ParameterDict(self.all_constants)
         self.all_parameters = nn.ParameterDict(self.all_parameters)
-
         ## list of network outputs
         self.network_output_predictions = set(self.outputs.values())
-
         ## list of network minimization outputs
         self.network_output_minimizers = []
         for _,value in self.minimizers.items():
             self.network_output_minimizers.append(self.outputs[value['A']]) if value['A'] in self.outputs.keys() else self.network_output_minimizers.append(value['A'])
             self.network_output_minimizers.append(self.outputs[value['B']]) if value['B'] in self.outputs.keys() else self.network_output_minimizers.append(value['B'])
         self.network_output_minimizers = set(self.network_output_minimizers)
-
         ## list of all the network Outputs
         self.network_outputs = self.network_output_predictions.union(self.network_output_minimizers)
 
@@ -155,8 +158,7 @@ class Model(nn.Module):
 
         ## Initially i have only the inputs from the dataset, the parameters, and the constants
         available_inputs = [key for key in self.inputs.keys() if key not in self.connect_update.keys()]  ## remove connected inputs
-        available_states = [key for key in self.states.keys() if key not in self.connect_update.keys()] ## remove connected states
-        available_keys = set(available_inputs + list(self.all_parameters.keys()) + list(self.all_constants.keys()) + available_states)
+        available_keys = set(available_inputs + list(self.all_parameters.keys()) + list(self.all_constants.keys()))
 
         ## Forward pass through the relations
         while not self.network_outputs.issubset(available_keys): ## i need to climb the relation tree until i get all the outputs
@@ -168,8 +170,6 @@ class Model(nn.Module):
                     for key in self.relation_inputs[relation]:
                         if key in self.all_constants.keys(): ## relation that takes a constant
                             layer_inputs.append(self.all_constants[key])
-                        elif key in available_states: ## relation that takes a state
-                            layer_inputs.append(kwargs[key])
                         elif key in available_inputs:  ## relation that takes inputs
                             layer_inputs.append(kwargs[key])
                         elif key in self.all_parameters.keys(): ## relation that takes parameters
@@ -188,7 +188,7 @@ class Model(nn.Module):
                             available_keys.add(connect_input)
 
         ## Return a dictionary with all the connected inputs
-        connect_update_dict = {key: result_dict[key] for key, value in self.connect_update.items()}
+        connect_update_dict = {key: result_dict[key] for key in self.connect_update.keys()}
         ## Return a dictionary with all the relations that updates the state variables
         closed_loop_update_dict = {key: result_dict[value] for key, value in self.closed_loop_update.items()}
         ## Return a dictionary with all the outputs final values
@@ -197,13 +197,14 @@ class Model(nn.Module):
         minimize_dict = {}
         for key in self.minimizers_keys:
             minimize_dict[key] = result_dict[self.outputs[key]] if key in self.outputs.keys() else result_dict[key]
-
         return output_dict, minimize_dict, closed_loop_update_dict, connect_update_dict
 
-
-    def update(self, closed_loop={}, connect={}):
+    def update(self, *, closed_loop = {}, connect = {}, disconnect = False):
         self.closed_loop_update = {}
         self.connect_update = {}
+
+        if disconnect:
+            return
 
         for key, state in self.states.items():
             if 'connect' in state.keys():
@@ -211,8 +212,10 @@ class Model(nn.Module):
             elif 'closedLoop' in state.keys():
                 self.closed_loop_update[key] = state['closedLoop']
 
+        # Get relation from outputs
         for connect_in, connect_rel in connect.items():
-            self.connect_update[connect_in] = self.outputs[connect_rel]
-
+            set_relation = self.outputs[connect_rel] if connect_rel in self.outputs.keys() else connect_rel
+            self.connect_update[connect_in] = set_relation
         for close_in, close_rel in closed_loop.items():
-            self.closed_loop_update[close_in] = self.outputs[close_rel]
+            set_relation = self.outputs[close_rel] if close_rel in self.outputs.keys() else close_rel
+            self.closed_loop_update[close_in] = set_relation

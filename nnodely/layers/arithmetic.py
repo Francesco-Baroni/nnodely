@@ -3,8 +3,10 @@ import torch
 
 from nnodely.basic.relation import ToStream, Stream, toStream
 from nnodely.basic.model import Model
-from nnodely.support.utils import check, merge, enforce_types, get_window
+from nnodely.support.utils import check, enforce_types
 from nnodely.layers.parameter import Parameter, Constant
+from nnodely.support.jsonutils import merge, binary_cheks
+
 
 # Binary operators
 add_relation_name = 'Add'
@@ -20,25 +22,6 @@ sign_relation_name = 'Sign'
 
 # Merge operator
 sum_relation_name = 'Sum'
-
-def aritmetic_cheks(self, obj1, obj2, name):
-    obj1,obj2 = toStream(obj1),toStream(obj2)
-    check(type(obj1) is Stream,TypeError,
-          f"The type of {obj1} is {type(obj1)} and is not supported for add operation.")
-    check(type(obj2) is Stream,TypeError,
-          f"The type of {obj2} is {type(obj2)} and is not supported for add operation.")
-    window_obj1 = get_window(obj1)
-    window_obj2 = get_window(obj2)
-    if window_obj1 is not None and window_obj2 is not None:
-        check(window_obj1==window_obj2, TypeError,
-              f"For {name} the time window type must match or None but they were {window_obj1} and {window_obj2}.")
-        check(obj1.dim[window_obj1] == obj2.dim[window_obj2], ValueError,
-              f"For {name} the time window must match or None but they were {window_obj1}={obj1.dim[window_obj1]} and {window_obj2}={obj2.dim[window_obj2]}.")
-    check(obj1.dim['dim'] == obj2.dim['dim'] or obj1.dim == {'dim':1} or obj2.dim == {'dim':1}, ValueError,
-          f"For {name} the dimension of {obj1.name} = {obj1.dim} must be the same of {obj2.name} = {obj2.dim}.")
-    dim = obj1.dim | obj2.dim
-    dim['dim'] = max(obj1.dim['dim'], obj2.dim['dim'])
-    return obj1, obj2, dim
 
 class Add(Stream, ToStream):
     """
@@ -61,7 +44,7 @@ class Add(Stream, ToStream):
     """
     @enforce_types
     def __init__(self, obj1:Stream|Parameter|Constant|int|float, obj2:Stream|Parameter|Constant|int|float) -> Stream:
-        obj1, obj2, dim = aritmetic_cheks(self, obj1, obj2, 'addition operators (+)')
+        obj1, obj2, dim = binary_cheks(self, obj1, obj2, 'addition operators (+)')
         super().__init__(add_relation_name + str(Stream.count),merge(obj1.json,obj2.json),dim)
         self.json['Relations'][self.name] = [add_relation_name,[obj1.name,obj2.name]]
 
@@ -83,7 +66,7 @@ class Sub(Stream, ToStream):
     """
     @enforce_types
     def __init__(self, obj1:Stream|Parameter|Constant|int|float, obj2:Stream|Parameter|Constant|int|float) -> Stream:
-        obj1, obj2, dim = aritmetic_cheks(self, obj1, obj2, 'subtraction operators (-)')
+        obj1, obj2, dim = binary_cheks(self, obj1, obj2, 'subtraction operators (-)')
         super().__init__(sub_relation_name + str(Stream.count),merge(obj1.json,obj2.json),dim)
         self.json['Relations'][self.name] = [sub_relation_name,[obj1.name,obj2.name]]
 
@@ -104,7 +87,7 @@ class Mul(Stream, ToStream):
     """
     @enforce_types
     def __init__(self, obj1:Stream|Parameter|Constant|int|float, obj2:Stream|Parameter|Constant|int|float) -> Stream:
-        obj1, obj2, dim = aritmetic_cheks(self, obj1, obj2, 'multiplication operators (*)')
+        obj1, obj2, dim = binary_cheks(self, obj1, obj2, 'multiplication operators (*)')
         super().__init__(mul_relation_name + str(Stream.count),merge(obj1.json,obj2.json),dim)
         self.json['Relations'][self.name] = [mul_relation_name,[obj1.name,obj2.name]]
 
@@ -125,7 +108,7 @@ class Div(Stream, ToStream):
     """
     @enforce_types
     def __init__(self, obj1:Stream|Parameter|Constant|int|float, obj2:Stream|Parameter|Constant|int|float) -> Stream:
-        obj1, obj2, dim = aritmetic_cheks(self, obj1, obj2, 'division operators (/) ')
+        obj1, obj2, dim = binary_cheks(self, obj1, obj2, 'division operators (/) ')
         super().__init__(div_relation_name + str(Stream.count),merge(obj1.json,obj2.json),dim)
         self.json['Relations'][self.name] = [div_relation_name,[obj1.name,obj2.name]]
 
@@ -150,7 +133,7 @@ class Pow(Stream, ToStream):
     """
     @enforce_types
     def __init__(self, obj1:Stream|Parameter|Constant|int|float, obj2:Stream|Parameter|Constant|int|float) -> Stream:
-        obj1, obj2, dim = aritmetic_cheks(self, obj1, obj2, 'pow operators (**)')
+        obj1, obj2, dim = binary_cheks(self, obj1, obj2, 'pow operators (**)')
         super().__init__(pow_relation_name + str(Stream.count),merge(obj1.json,obj2.json),dim)
         self.json['Relations'][self.name] = [pow_relation_name,[obj1.name,obj2.name]]
 
@@ -231,15 +214,17 @@ class Add_Layer(nn.Module):
         for input in inputs[1:]:
             results = results + input
         return results
-        #return torch.add(inputs[0],inputs[1]))
-        #return torch.sum(torch.stack(list(inputs)),dim=0)
 
 def createAdd(name, *inputs):
-    #: :noindex:
+    """
+     :noindex:
+    """
     return Add_Layer()
 
 class Sub_Layer(nn.Module):
-    #: :noindex:
+    """
+     :noindex:
+    """
     def __init__(self):
         super(Sub_Layer, self).__init__()
 
@@ -249,16 +234,18 @@ class Sub_Layer(nn.Module):
         for input in inputs[1:]:
             results = results - input
         return results
-        #return torch.add(inputs[0], -inputs[1])
-        #return torch.add(inputs[0],-torch.sum(torch.stack(list(inputs[1:])),dim=0))
 
 def createSub(self, *inputs):
-    #: :noindex:
+    """
+     :noindex:
+    """
     return Sub_Layer()
 
 
 class Mul_Layer(nn.Module):
-    #: :noindex:
+    """
+     :noindex:
+    """
     def __init__(self):
         super(Mul_Layer, self).__init__()
 
@@ -267,16 +254,17 @@ class Mul_Layer(nn.Module):
         for input in inputs[1:]:
             results = results * input
         return results
-        #return inputs[0] * inputs[1]
-        #return torch.prod(torch.stack(list(inputs)),dim=0)
-
 
 def createMul(name, *inputs):
-    #: :noindex:
+    """
+     :noindex:
+    """
     return Mul_Layer()
 
 class Div_Layer(nn.Module):
-    #: :noindex:
+    """
+     :noindex:
+    """
     def __init__(self):
         super(Div_Layer, self).__init__()
 
@@ -285,15 +273,17 @@ class Div_Layer(nn.Module):
         for input in inputs[1:]:
             results = results / input
         return results
-        #return inputs[0] / inputs[1]
-        #return inputs[0] / torch.prod(torch.stack(list(inputs[1:])),dim=0)
 
 def createDiv(name, *inputs):
-    #: :noindex:
+    """
+     :noindex:
+    """
     return Div_Layer()
 
 class Pow_Layer(nn.Module):
-    #: :noindex:
+    """
+     :noindex:
+    """
     def __init__(self):
         super(Pow_Layer, self).__init__()
 
@@ -301,23 +291,15 @@ class Pow_Layer(nn.Module):
         return torch.pow(inputs[0], inputs[1])
 
 def createPow(name, *inputs):
-    #: :noindex:
+    """
+     :noindex:
+    """
     return Pow_Layer()
 
-class Atan2_Layer(nn.Module):
-    #: :noindex:
-    def __init__(self):
-        super(Atan2_Layer, self).__init__()
-
-    def forward(self, *inputs):
-        return torch.atan2(inputs[0], inputs[1])
-
-def createAtan2(name, *inputs):
-    #: :noindex:
-    return Atan2_Layer()
-
 class Neg_Layer(nn.Module):
-    #: :noindex:
+    """
+     :noindex:
+    """
     def __init__(self):
         super(Neg_Layer, self).__init__()
 
@@ -325,11 +307,15 @@ class Neg_Layer(nn.Module):
         return -x
 
 def createNeg(self, *inputs):
-    #: :noindex:
+    """
+     :noindex:
+    """
     return Neg_Layer()
 
 class Sign_Layer(nn.Module):
-    #: :noindex:
+    """
+     :noindex:
+    """
     def __init__(self):
         super(Sign_Layer, self).__init__()
 
@@ -337,11 +323,15 @@ class Sign_Layer(nn.Module):
         return torch.sign(x)
 
 def createSign(self, *inputs):
-    #: :noindex:
+    """
+     :noindex:
+    """
     return Sign_Layer()
 
 class Sum_Layer(nn.Module):
-    #: :noindex:
+    """
+     :noindex:
+    """
     def __init__(self):
         super(Sum_Layer, self).__init__()
 
@@ -349,9 +339,10 @@ class Sum_Layer(nn.Module):
         return torch.sum(inputs, dim = 2)
 
 def createSum(name, *inputs):
-    #: :noindex:
+    """
+     :noindex:
+    """
     return Sum_Layer()
-
 
 setattr(Model, add_relation_name, createAdd)
 setattr(Model, sub_relation_name, createSub)

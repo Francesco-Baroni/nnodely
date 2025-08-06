@@ -5,7 +5,8 @@ import torch
 
 from nnodely.basic.relation import ToStream, Stream, toStream
 from nnodely.basic.model import Model
-from nnodely.support.utils import check, enforce_types, merge
+from nnodely.support.utils import check, enforce_types
+from nnodely.support.jsonutils import merge
 
 part_relation_name = 'Part'
 select_relation_name = 'Select'
@@ -222,7 +223,7 @@ class SamplePart(Stream, ToStream):
         #       f"The type of {obj} is {type(obj)} and is not supported for SamplePart operation.")
         check('sw' in obj.dim, KeyError, 'Input must have a sample window')
         check(i < j, ValueError, 'i must be smaller than j')
-        all_inputs = obj.json['Inputs'] | obj.json['States']
+        all_inputs = obj.json['Inputs']
         if obj.name in all_inputs:
             backward_idx = all_inputs[obj.name]['sw'][0]
             forward_idx = all_inputs[obj.name]['sw'][1]
@@ -350,7 +351,7 @@ class TimePart(Stream, ToStream):
               f"The type of {obj} is {type(obj)} and is not supported for TimePart operation.")
         check('tw' in obj.dim, KeyError, 'Input must have a time window')
         check(i < j, ValueError, 'i must be smaller than j')
-        all_inputs = obj.json['Inputs'] | obj.json['States']
+        all_inputs = obj.json['Inputs']
         if obj.name in all_inputs:
             backward_idx = all_inputs[obj.name]['tw'][0]
             forward_idx = all_inputs[obj.name]['tw'][1]
@@ -371,25 +372,6 @@ class TimePart(Stream, ToStream):
             check(i <= offset < j, IndexError,"The offset must be inside the time window")
             rel.append(offset)
         self.json['Relations'][self.name] = rel
-
-# class TimeSelect(Stream, ToStream):
-#     """
-#     Represents a TimeSelect operation on a Stream object.
-#
-#     The select a time TimeSelect class processes a given Stream object
-#
-#     """
-#     @enforce_types
-#     def __init__(self, obj:Stream, i:int|float):
-#         check('tw' in obj.dim, KeyError, 'Input must have a time window')
-#         backward_idx = 0
-#         forward_idx = obj.dim['tw']
-#         check(i >= backward_idx and i < forward_idx, ValueError, 'i must be in the time window of the input')
-#         dim = copy.deepcopy(obj.dim)
-#         del dim['tw']
-#         super().__init__(timeselect_relation_name + str(Stream.count),obj.json,dim)
-#         if (type(obj) is Stream):
-#             self.json['Relations'][self.name] = [timeselect_relation_name,[obj.name],i]
 
 class TimeConcatenate(Stream, ToStream):
     """
@@ -551,8 +533,6 @@ class TimeConcatenate_Layer(nn.Module):
 def createTimeConcatenate(name, *inputs):
     #: :noindex:
     return TimeConcatenate_Layer()
-
-
 
 setattr(Model, part_relation_name, createPart)
 setattr(Model, select_relation_name, createSelect)

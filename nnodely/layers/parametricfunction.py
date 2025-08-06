@@ -9,7 +9,8 @@ from collections.abc import Callable
 from nnodely.basic.relation import NeuObj, Stream, toStream
 from nnodely.basic.model import Model
 from nnodely.layers.parameter import Parameter, Constant
-from nnodely.support.utils import check, merge, enforce_types
+from nnodely.support.utils import check, enforce_types
+from nnodely.support.jsonutils import merge
 
 from nnodely.support.logger import logging, nnLogger
 log = nnLogger(__name__, logging.WARNING)
@@ -71,7 +72,7 @@ class ParamFun(NeuObj):
     """
     @enforce_types
     def __init__(self, param_fun:Callable,
-                 parameters_and_constants:list|dict|None = None,
+                 parameters_and_constants:list|dict|None = None, *,
                  map_over_batch:bool = False) -> Stream:
 
         self.relation_name = paramfun_relation_name

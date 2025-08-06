@@ -1,4 +1,4 @@
-from nnodely.visualizer.visualizer import Visualizer
+from nnodely.visualizer.emptyvisualizer import EmptyVisualizer
 from nnodely.visualizer.textvisualizer import TextVisualizer
 from nnodely.visualizer.mplvisualizer import MPLVisualizer
 from nnodely.visualizer.mplnotebookvisualizer import MPLNotebookVisualizer

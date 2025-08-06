@@ -1,12 +1,13 @@
-import io, os, unittest, torch
+import sys, io, os, unittest, torch
 import numpy as np
 
 from nnodely import *
 from nnodely.basic.relation import NeuObj
 from nnodely.support.logger import logging, nnLogger
+from nnodely.support.jsonutils import plot_structure
 
-log = nnLogger(__name__, logging.CRITICAL)
-log.setAllLevel(logging.CRITICAL)
+log = nnLogger(__name__, logging.ERROR)
+log.setAllLevel(logging.ERROR)
 
 sys.path.append(os.getcwd())
 
@@ -56,6 +57,7 @@ class ModelyTestVisualizer(unittest.TestCase):
         fuzzyTriang = Fuzzify(centers=[1, 2, 3, 7])(x.tw(1))
         fuzzyRect = Fuzzify(centers=[1, 2, 3, 7], functions='Rectangular')(x.tw(1))
         fuzzyList = Fuzzify(centers=[1, 3, 2, 7], functions=[fuzzyfun,fuzzyfunth])(x.tw(1))
+        self.stream = fuzzyList
 
         self.out = Output('out', Fir(parfun_x(x.tw(1)) + parfun_y(y.tw(1), c_v)))
         self.out2 = Output('out2', Add(w, x.tw(1)) + Add(t, y.tw(1)) + Add(w, c))
@@ -72,12 +74,17 @@ class ModelyTestVisualizer(unittest.TestCase):
         self._original_stdout = sys.stdout
         self._original_stderr = sys.stderr
         sys.stdout = io.StringIO()
-        #sys.stderr = io.StringIO()
+        sys.stderr = io.StringIO()
 
     def tearDown(self):
         # Ripristina stdout e stderr
         sys.stdout = self._original_stdout
-        #sys.stderr = self._original_stderr
+        sys.stderr = self._original_stderr
+
+    def test_rper_of_objects(self):
+        print(repr(self.x))
+        print(repr(self.stream))
+        print(repr(self.out9))
 
     def test_export_textvisualizer(self):
         t = TextVisualizer(5)
@@ -136,8 +143,8 @@ class ModelyTestVisualizer(unittest.TestCase):
         dataset = {'x': data_x, 'y': data_y, 'z': a * data_x + b * data_y}
         params = {'num_of_epochs': 10, 'lr': 0.01}
         test.loadData(name='dataset', source=dataset)  # Create the dataset
-        test.trainModel(optimizer='SGD', training_params=params)  # Train the traced model
-        test.trainModel(optimizer='SGD', training_params=params)
+        test.trainAndAnalyze(optimizer='SGD', training_params=params)  # Train the traced model
+        test.trainAndAnalyze(optimizer='SGD', training_params=params)
         m.closeResult()
         m.closeTraining()
         list_of_functions = list(test.json['Functions'].keys())
@@ -184,10 +191,34 @@ class ModelyTestVisualizer(unittest.TestCase):
         dataset = {'x': data_x, 'y': data_y, 'z': a * data_x + b * data_y}
         params = {'num_of_epochs': 1, 'lr': 0.01}
         test.loadData(name='dataset', source=dataset)  # Create the dataset
-        test.trainModel(optimizer='SGD', training_params=params)  # Train the traced model
+        test.trainAndAnalyze(optimizer='SGD', splits=[70,20,10], training_params=params)  # Train the traced model
         list_of_functions = list(test.json['Functions'].keys())
         try:
             for f in list_of_functions:
                 m.showFunctions(f)
         except ValueError:
             pass
+
+    def test_structure_plot(self):
+        clearNames()
+        X = Input('X')
+        Y = Input('Y')
+        Z = Input('Z')
+        t_state = Input('t_state')
+        k_state = Input('k_state')
+
+        func1 = Fir(X.last()) + Fir(Y.last())
+        func1.closedLoop(t_state)
+        func2 = Fir(Z.last()) + t_state.last()
+        func2.connect(k_state)
+        func3 = Fir(k_state.last()) * Constant('g', sw=1, values=[[9.8]])
+
+        out = Output('out', func1 + func2 + func3)
+
+        example = Modely(visualizer=None)
+        example.addModel('model', out)
+        example.neuralizeModel()
+        with self.assertRaises(ValueError):
+            plot_structure(example.json, filename='results/structure_plot', library='invalid_library')
+        plot_structure(example.json, filename='results/structure_plot', library='matplotlib', view=False)
+        #plot_structure(example.json, filename='test_structure_plot_graphviz', library='graphviz', view=False)

@@ -1,4 +1,5 @@
 from nnodely.support.logger import logging, nnLogger
+
 log = nnLogger(__name__, logging.INFO)
 
 RESET_SEQ = "\033[0m"
@@ -12,7 +13,7 @@ def color(msg, color_val = GREEN, bold = False):
         return COLOR_BOLD_SEQ % (30 + color_val) + msg + RESET_SEQ
     return COLOR_SEQ % (30 + color_val) + msg + RESET_SEQ
 
-class Visualizer():
+class EmptyVisualizer:
     def __init__(self):
         pass
 
@@ -42,7 +43,6 @@ class Visualizer():
 
     def showWeightsInTrain(self, batch = None, epoch = None, weights = None):
         pass
-
 
     def showDataset(self, name):
         pass

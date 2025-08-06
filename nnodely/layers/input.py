@@ -1,13 +1,14 @@
 import copy
 
 from nnodely.basic.relation import NeuObj, Stream, ToStream
-from nnodely.support.utils import check, merge, enforce_types
+from nnodely.support.utils import check, enforce_types
+from nnodely.support.jsonutils import merge, stream_to_str
 from nnodely.layers.part import SamplePart, TimePart
 from nnodely.layers.timeoperation import Derivate, Integrate
 
-class InputState(NeuObj):
+class Input(NeuObj):
     """
-    Represents an Input or State in the neural network model.
+    Represents an Input in the neural network model.
 
     .. image:: https://colab.research.google.com/assets/colab-badge.svg
         :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/states.ipynb
@@ -16,46 +17,45 @@ class InputState(NeuObj):
     Parameters
     ----------
     json_name : str
-        The name of the JSON field to store the Input or the State configuration.
+        The name of the JSON field to store the Input configuration.
     name : str
-        The name of the Input or the State.
+        The name of the Input.
     dimensions : int, optional
-        The number of dimensions for the input state. Default is 1.
+        The number of dimensions for the input. Default is 1.
 
     Attributes
     ----------
     json_name : str
-        The name of the JSON field to store the input state configuration.
+        The name of the JSON field to store the input configuration.
     name : str
-        The name of the Input or the State.
+        The name of the Input.
     dim : dict
-        A dictionary containing the dimensions of the Input or the State.
+        A dictionary containing the dimensions of the Input.
     json : dict
-        A dictionary containing the configuration of the Input or the State.
+        A dictionary containing the configuration of the Input.
     """
-    def __init__(self, json_name:str, name:str, dimensions:int = 1):
+    def __init__(self, name:str, *, dimensions:int = 1):
         """
-        Initializes the InputState object.
+        Initializes the Input object.
 
         Parameters
         ----------
         json_name : str
-            The name of the JSON field to store the Input or the State configuration.
+            The name of the JSON field to store the Input configuration.
         name : str
-            The name of the Input or the State.
+            The name of the Input.
         dimensions : int, optional
-            The number of dimensions for the Input or the State. Default is 1.
+            The number of dimensions for the Input. Default is 1.
         """
         NeuObj.__init__(self, name)
         check(type(dimensions) == int, TypeError,"The dimensions must be a integer")
-        self.json_name = json_name
-        self.json[self.json_name][self.name] = {'dim': dimensions, 'tw': [0, 0], 'sw': [0,0] }
+        self.json['Inputs'][self.name] = {'dim': dimensions }
         self.dim = {'dim': dimensions}
 
     @enforce_types
     def tw(self, tw:int|float|list, offset:int|float|None = None) -> Stream:
         """
-        Selects a time window for the Input and State.
+        Selects a time window for the Input.
 
         Parameters
         ----------
@@ -79,23 +79,25 @@ class InputState(NeuObj):
         dim = copy.deepcopy(self.dim)
         json = copy.deepcopy(self.json)
         if type(tw) is list:
-            json[self.json_name][self.name]['tw'] = tw
+            check(len(tw) == 2, TypeError, "The time window must be a list of two elements.")
+            check(tw[1] > tw[0], ValueError, "The dimension of the sample window must be positive")
+            json['Inputs'][self.name]['tw'] = tw
             tw = tw[1] - tw[0]
         else:
-            json[self.json_name][self.name]['tw'][0] = -tw
+            json['Inputs'][self.name]['tw'] = [-tw, 0]
         check(tw > 0, ValueError, "The time window must be positive")
         dim['tw'] = tw
         if offset is not None:
-            check(json[self.json_name][self.name]['tw'][0] <= offset < json[self.json_name][self.name]['tw'][1],
+            check(json['Inputs'][self.name]['tw'][0] <= offset < json['Inputs'][self.name]['tw'][1],
                   IndexError,
                   "The offset must be inside the time window")
-        return TimePart(Stream(self.name, json, dim), json[self.json_name][self.name]['tw'][0], json[self.json_name][self.name]['tw'][1], offset)
+        return TimePart(Stream(self.name, json, dim), json['Inputs'][self.name]['tw'][0], json['Inputs'][self.name]['tw'][1], offset)
 
 
     @enforce_types
     def sw(self, sw:int|list, offset:int|None = None) -> Stream:
         """
-        Selects a sample window for the Input and the State
+        Selects a sample window for the Input.
 
         Parameters
         ----------
@@ -131,25 +133,26 @@ class InputState(NeuObj):
         dim = copy.deepcopy(self.dim)
         json = copy.deepcopy(self.json)
         if type(sw) is list:
+            check(len(sw) == 2, TypeError, "The sample window must be a list of two elements.")
             check(type(sw[0]) == int and type(sw[1]) == int, TypeError, "The sample window must be integer")
-            check(sw[1] > sw[0], TypeError, "The dimension of the sample window must be positive")
-            json[self.json_name][self.name]['sw'] = sw
+            check(sw[1] > sw[0], ValueError, "The dimension of the sample window must be positive")
+            json['Inputs'][self.name]['sw'] = sw
             sw = sw[1] - sw[0]
         else:
             check(type(sw) == int, TypeError, "The sample window must be integer")
-            json[self.json_name][self.name]['sw'][0] = -sw
+            json['Inputs'][self.name]['sw'] = [-sw, 0]
         check(sw > 0, ValueError, "The sample window must be positive")
         dim['sw'] = sw
         if offset is not None:
-            check(json[self.json_name][self.name]['sw'][0] <= offset < json[self.json_name][self.name]['sw'][1],
+            check(json['Inputs'][self.name]['sw'][0] <= offset < json['Inputs'][self.name]['sw'][1],
                   IndexError,
                   "The offset must be inside the sample window")
-        return SamplePart(Stream(self.name, json, dim), json[self.json_name][self.name]['sw'][0], json[self.json_name][self.name]['sw'][1], offset)
+        return SamplePart(Stream(self.name, json, dim), json['Inputs'][self.name]['sw'][0], json['Inputs'][self.name]['sw'][1], offset)
 
     @enforce_types
     def z(self, delay:int) -> Stream:
         """
-        Considering the Zeta transform notation. The function is used to selects a unitary delay from the Input or the State.
+        Considering the Zeta transform notation. The function is used to selects a unitary delay from the Input.
 
         Parameters
         ----------
@@ -171,14 +174,14 @@ class InputState(NeuObj):
         dim = copy.deepcopy(self.dim)
         json = copy.deepcopy(self.json)
         sw = [(-delay) - 1, (-delay)]
-        json[self.json_name][self.name]['sw'] = sw
+        json['Inputs'][self.name]['sw'] = sw
         dim['sw'] = sw[1] - sw[0]
-        return SamplePart(Stream(self.name, json, dim), json[self.json_name][self.name]['sw'][0], json[self.json_name][self.name]['sw'][1], None)
+        return SamplePart(Stream(self.name, json, dim), json['Inputs'][self.name]['sw'][0], json['Inputs'][self.name]['sw'][1], None)
 
     @enforce_types
     def last(self) -> Stream:
         """
-        Selects the last passed instant for the input state.
+        Selects the last passed instant for the input.
 
         Returns
         -------
@@ -190,7 +193,7 @@ class InputState(NeuObj):
     @enforce_types
     def next(self) -> Stream:
         """
-        Selects the next instant for the input state.
+        Selects the next instant for the input.
 
         Returns
         -------
@@ -200,7 +203,7 @@ class InputState(NeuObj):
         return self.z(-1)
 
     @enforce_types
-    def s(self, order:int,  method:str = 'euler') -> Stream:
+    def s(self, order:int, *, der_name:str|None = None, int_name:str|None = None, method:str = 'euler') -> Stream:
         """
         Considering the Laplace transform notation. The function is used to operate an integral or derivate operation on the input.
         The order of the integral or the derivative operation is indicated by the order parameter.
@@ -221,23 +224,82 @@ class InputState(NeuObj):
         if order > 0:
             o = self.last()
             for i in range(order):
-                o = Derivate(o, method = method)
+                o = Derivate(o, der_name = der_name, int_name = int_name, method = method)
         elif order < 0:
             o = self.last()
             for i in range(-order):
-                o = Integrate(o, method = method)
+                o = Integrate(o, der_name = der_name, int_name = int_name, method = method)
         return o
 
-class Input(InputState):
     @enforce_types
-    def __init__(self, name:str, dimensions:int = 1):
-        InputState.__init__(self, 'Inputs', name, dimensions)
+    def connect(self, obj:Stream) -> "Input":
+        """
+        Update and return the current Input with a given Stream object.
 
-class State(InputState):
+        Parameters
+        ----------
+        obj : Stream
+            The Stream object for update the Input.
+
+        Returns
+        -------
+        Input
+            A Input with the connection to the obj Stream
+
+        Raises
+        ------
+        TypeError
+            If the provided object is not of type Input.
+        KeyError
+            If the Input variable is already connected.
+        """
+        check(type(obj) is Stream, TypeError,
+              f"The {obj} must be a Stream and not a {type(obj)}.")
+        self.json = merge(self.json, obj.json)
+        check('closedLoop' not in self.json['Inputs'][self.name] or 'connect' not in self.json['Inputs'][self.name], KeyError,
+              f"The Input variable {self.name} is already connected.")
+        self.json['Inputs'][self.name]['connect'] = obj.name
+        self.json['Inputs'][self.name]['local'] = 1
+        return self
+
     @enforce_types
-    def __init__(self, name:str, dimensions:int = 1):
-        InputState.__init__(self, 'States', name, dimensions)
+    def closedLoop(self, obj:Stream) -> "Input":
+        """
+        Update and return the current Input in a closed loop with a given Stream object.
 
+        Parameters
+        ----------
+        obj : Stream
+            The Stream object for update the Input.
+
+        Returns
+        -------
+        Input
+            A Input with the connection to the obj Stream
+
+        Raises
+        ------
+        TypeError
+            If the provided object is not of type Input.
+        KeyError
+            If the Input variable is already connected.
+        """
+        from nnodely.layers.input import Input
+        check(type(obj) is Stream, TypeError,
+              f"The {obj} must be a Stream and not a {type(obj)}.")
+        self.json = merge(self.json, obj.json)
+        check('closedLoop' not in self.json['Inputs'][self.name] or 'connect' not in self.json['Inputs'][self.name],
+              KeyError,
+              f"The Input variable {self.name} is already connected.")
+        self.json['Inputs'][self.name]['closedLoop'] = self.name
+        self.json['Inputs'][self.name]['local'] = 1
+        return self
+
+    def __str__(self):
+        return stream_to_str(self, 'Input')
+
+    def __repr__(self):
+        return self.__str__()
 
 # connect operation
 connect_name = 'connect'
@@ -245,24 +307,18 @@ closedloop_name = 'closedLoop'
 
 class Connect(Stream, ToStream):
     @enforce_types
-    def __init__(self, obj1:Stream, obj2:State) -> Stream:
-        check(type(obj1) is Stream, TypeError,
-              f"The {obj1} must be a Stream and not a {type(obj1)}.")
-        check(type(obj2) is State, TypeError,
-              f"The {obj2} must be a State and not a {type(obj2)}.")
+    def __init__(self, obj1:Stream, obj2:Input, *, local:bool=False) -> Stream:
         super().__init__(obj1.name,merge(obj1.json, obj2.json),obj1.dim)
-        check(closedloop_name not in self.json['States'][obj2.name] or connect_name not in self.json['States'][obj2.name],
-              KeyError,f"The state variable {obj2.name} is already connected.")
-        self.json['States'][obj2.name][connect_name] = obj1.name
+        check(closedloop_name not in self.json['Inputs'][obj2.name] or connect_name not in self.json['Inputs'][obj2.name],
+              KeyError,f"The input variable {obj2.name} is already connected.")
+        self.json['Inputs'][obj2.name][connect_name] = obj1.name
+        self.json['Inputs'][obj2.name]['local'] = int(local)
 
 class ClosedLoop(Stream, ToStream):
     @enforce_types
-    def __init__(self, obj1:Stream, obj2: State) -> Stream:
-        check(type(obj1) is Stream, TypeError,
-              f"The {obj1} must be a Stream and not a {type(obj1)}.")
-        check(type(obj2) is State, TypeError,
-              f"The {obj2} must be a State and not a {type(obj2)}.")
+    def __init__(self, obj1:Stream, obj2:Input, *, local:bool=False) -> Stream:
         super().__init__(obj1.name, merge(obj1.json, obj2.json), obj1.dim)
-        check(closedloop_name not in self.json['States'][obj2.name] or connect_name not in self.json['States'][obj2.name],
-              KeyError, f"The state variable {obj2.name} is already connected.")
-        self.json['States'][obj2.name][closedloop_name] = obj1.name
+        check(closedloop_name not in self.json['Inputs'][obj2.name] or connect_name not in self.json['Inputs'][obj2.name],
+              KeyError, f"The input variable {obj2.name} is already connected.")
+        self.json['Inputs'][obj2.name][closedloop_name] = obj1.name
+        self.json['Inputs'][obj2.name]['local'] = int(local)

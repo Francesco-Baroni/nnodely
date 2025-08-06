@@ -1,9 +1,9 @@
 import numpy as np
 from pprint import pformat
 
-from nnodely.visualizer.visualizer import Visualizer, color, GREEN, RED, BLUE
+from nnodely.visualizer.emptyvisualizer import EmptyVisualizer, color, GREEN, RED, BLUE
 
-class TextVisualizer(Visualizer):
+class TextVisualizer(EmptyVisualizer):
     def __init__(self, verbose=1):
         self.verbose = verbose
 
@@ -46,10 +46,8 @@ class TextVisualizer(Visualizer):
 
     def showModelInputWindow(self):
         if self.verbose >= 2:
-            input_ns_backward = {key: value['ns'][0] for key, value in
-                                 (self.modely._model_def['Inputs'] | self.modely._model_def['States']).items()}
-            input_ns_forward = {key: value['ns'][1] for key, value in
-                                (self.modely._model_def['Inputs'] | self.modely._model_def['States']).items()}
+            input_ns_backward = {key: value['ns'][0] for key, value in self.modely._model_def['Inputs'].items()}
+            input_ns_forward = {key: value['ns'][1] for key, value in self.modely._model_def['Inputs'].items()}
             self.__title(" nnodely Model Input Windows ")
             #self.__paramjson("time_window_backward:",self.modely.input_tw_backward)
             #self.__paramjson("time_window_forward:",self.modely.input_tw_forward)
@@ -81,7 +79,7 @@ class TextVisualizer(Visualizer):
 
     def showWeightsInTrain(self, batch = None, epoch = None, weights = None):
         if self.verbose >= 2:
-            par = self.modely.run_training_params
+            par = self.modely.running_parameters
             dim = len(self.modely._model_def['Minimizers'])
             COLOR = BLUE
             if epoch is not None:
@@ -113,7 +111,7 @@ class TextVisualizer(Visualizer):
 
     def showStartTraining(self):
         if self.verbose >= 1:
-            par = self.modely.run_training_params
+            par = self.modely.running_parameters
             dim = len(self.modely._model_def['Minimizers'])
             self.__title(" nnodely Training ", 12+(len(self.modely._model_def['Minimizers'])+1)*20)
             print(color('|'+(f'Epoch').center(10,' ')+'|'),end='')
@@ -144,7 +142,7 @@ class TextVisualizer(Visualizer):
     def showTraining(self, epoch, train_losses, val_losses):
         if self.verbose >= 1:
             eng = lambda val: np.format_float_scientific(val, precision=3)
-            par = self.modely.run_training_params
+            par = self.modely.running_parameters
             show_epoch = 1 if par['num_of_epochs'] <= 20 else 10
             dim = len(self.modely._model_def['Minimizers'])
             if epoch < par['num_of_epochs']:
@@ -195,55 +193,56 @@ class TextVisualizer(Visualizer):
     def showTrainParams(self):
         if self.verbose >= 1:
             self.__title(" nnodely Model Train Parameters ")
-            par = self.modely.run_training_params
-            batch_size = par['train_batch_size']
-            n_samples = par['n_samples_train']
-            n_update = par['update_per_epochs']
-            unused_samples = par['unused_samples']
+            par = self.modely.get_training_info()
 
             self.__paramjson("models:", par['models'])
-            self.__paramjson("num of epochs:", par['num_of_epochs'])
-            self.__param("update per epochs:", f"{n_update}")
-            if par['recurrent_train']:
-                self.__info("└>(n_samples-batch_size-prediction_samples+1)/(batch_size+step-1)+1")
+            self.__param("num of epochs:", str(par['num_of_epochs']))
+            self.__param("update per epochs:", str(par['update_per_epochs']))
+            if par['prediction_samples'] >= 0:
+                self.__info("└>len(train_indexes)//(batch_size+step)")
             else:
                 self.__info("└>(n_samples-batch_size)/batch_size+1")
 
             if par['shuffle_data']:
-                self.__param('shuffle _data:', str(par['shuffle_data']))
+                self.__param('shuffle data:', str(par['shuffle_data']))
 
-            if 'early_stopping' in par:
+            if 'early_stopping' in par and  par['early_stopping']:
                 self.__param('early stopping:', par['early_stopping'])
                 self.__paramjson('early stopping params:', par['early_stopping_params'])
 
-            if par['recurrent_train']:
+            if par['prediction_samples'] >= 0:
                 self.__param("prediction samples:", f"{par['prediction_samples']}")
-                self.__param("step:", f"{par['step']}")
+                self.__param("step:", f"{par['train_step']}")
                 self.__paramjson("closed loop:", par['closed_loop'])
                 self.__paramjson("connect:", par['connect'])
 
-            self.__param("train dataset:", f"{par['train_dataset']}")
-            self.__param("\t- num of samples:", f"{n_samples}")
-            self.__param("\t- batch size:", f"{batch_size}")
-            self.__param("\t- unused samples:", f"{unused_samples}")
-            if par['recurrent_train']:
-                self.__info("\t  └>n_samples-prediction_samples-update_per_epochs*(batch_size+step-1)")
-            else:
-                self.__info("\t  └>n_samples-update_per_epochs*batch_size")
+            self.__param("train dataset:", f"{par['train_tag']}")
+            self.__param("\t- batch size:", f"{par['train_batch_size']}")
+            self.__param("\t- num of samples:", f"{par['n_samples_train']}")
+            if par['prediction_samples'] >= 0:
+                self.__param("\t- num of first samples:", f"{par['n_first_samples_train']}")
 
-            if par['n_samples_val']:
-                self.__param("val dataset:", f"{par['validation_dataset']}")
-                self.__param("val {batch size, samples}:", f"{{{par['val_batch_size']}, {par['n_samples_val']}}}")
-            if par['n_samples_test']:
-                self.__param("test dataset:", f"{par['test_dataset']}")
-                self.__param("test {batch size, samples}:", f"{{{par['test_batch_size']}, {par['n_samples_test']}}}")
+            if par['n_samples_val'] > 0:
+                self.__param("validation dataset:", f"{par['val_tag']}")
+                self.__param("\t- batch size:", f"{par['val_batch_size']}")
+                self.__param("\t- num of samples:", f"{par['n_samples_val']}")
+                if par['prediction_samples'] >= 0:
+                    self.__param("\t- num of first samples:", f"{par['n_first_samples_val']}")
+
+            if par['n_samples_test'] > 0:
+                self.__param("test dataset:", f"{par['test_tag']}")
+                self.__param("\t- num of samples:", f"{par['n_samples_test']}")
+                if 'test_batch_size' in par:
+                    self.__param("\t- batch size:", f"{par['test_batch_size']}")
+                if par['prediction_samples'] >= 0:
+                    self.__param("\t- num of first samples:", f"{par['n_first_samples_test']}")
 
             self.__paramjson('minimizers:', par['minimizers'])
 
             self.__param("optimizer:", par['optimizer'])
-            self.__paramjson("optimizer defaults:",self.modely.run_training_params['optimizer_defaults'])
-            if self.modely.run_training_params['optimizer_params'] is not None:
-                self.__paramjson("optimizer params:", self.modely.run_training_params['optimizer_params'])
+            self.__paramjson("optimizer defaults:", par['optimizer_defaults'])
+            if par['optimizer_params'] is not None:
+                self.__paramjson("optimizer params:", par['optimizer_params'])
 
             self.__line()
 
@@ -270,23 +269,23 @@ class TextVisualizer(Visualizer):
                 print(color('|'+(f'{key}').center(dim_loss, ' ') + '|'), end='')
                 for loss in list(loss_type_list):
                     if value["loss"] == loss:
-                        print(color((f'{eng(self.modely._performance[name_data][key][value["loss"]])}').center(19, ' ') + '|'), end='')
+                        print(color((f'{eng(self.modely.performance[name_data][key][value["loss"]])}').center(19, ' ') + '|'), end='')
                     else:
                         print(color((f' ').center(19, ' ') + '|'), end='')
-                print(color((f'{eng(self.modely._performance[name_data][key]["fvu"]["total"])}').center(19, ' ') + '|'), end='')
-                print(color((f'{eng(self.modely._performance[name_data][key]["aic"]["value"])}').center(19, ' ') + '|'))
+                print(color((f'{eng(self.modely.performance[name_data][key]["fvu"]["total"])}').center(19, ' ') + '|'), end='')
+                print(color((f'{eng(self.modely.performance[name_data][key]["aic"]["value"])}').center(19, ' ') + '|'))
 
             print(color('|' + (f'').center(dim_loss + 20 * (len(loss_type_list) + 2), '-') + '|'))
             print(color('|'+(f'Total').center(dim_loss, ' ') + '|'), end='')
-            print(color((f'{eng(self.modely._performance[name_data]["total"]["mean_error"])}').center(len(loss_type_list)*20-1, ' ') + '|'), end='')
-            print(color((f'{eng(self.modely._performance[name_data]["total"]["fvu"])}').center(19, ' ') + '|'), end='')
-            print(color((f'{eng(self.modely._performance[name_data]["total"]["aic"])}').center(19, ' ') + '|'))
+            print(color((f'{eng(self.modely.performance[name_data]["total"]["mean_error"])}').center(len(loss_type_list)*20-1, ' ') + '|'), end='')
+            print(color((f'{eng(self.modely.performance[name_data]["total"]["fvu"])}').center(19, ' ') + '|'), end='')
+            print(color((f'{eng(self.modely.performance[name_data]["total"]["aic"])}').center(19, ' ') + '|'))
 
             print(color('|' + (f'').center(dim_loss + 20 * (len(loss_type_list) + 2), '-') + '|'))
 
         if self.verbose >= 2:
             self.__title(" Detalied Results ")
-            print(color(pformat(self.modely._performance), GREEN))
+            print(color(pformat(self.modely.performance), GREEN))
             self.__line()
 
     def saveModel(self, name, path):

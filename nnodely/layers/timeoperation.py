@@ -2,7 +2,8 @@ import torch.nn as nn
 import torch
 
 from nnodely.basic.relation import Stream, NeuObj, ToStream
-from nnodely.support.utils import merge, enforce_types, get_inputs, check
+from nnodely.support.utils import enforce_types, check
+from nnodely.support.jsonutils import merge, subjson_from_relation
 from nnodely.basic.model import Model
 from nnodely.support.fixstepsolver import Euler, Trapezoidal
 
@@ -24,14 +25,16 @@ class Integrate(Stream, ToStream):
     method : is the integration method
     """
     @enforce_types
-    def __init__(self, output:Stream, *, method:str = 'euler') -> Stream:
-        from nnodely.layers.input import State, ClosedLoop
-        s = State(output.name + "_int" + str(NeuObj.count), dimensions=output.dim['dim'])
+    def __init__(self, output:Stream, *,
+                 int_name:str|None = None, der_name:str|None = None, method:str = 'euler') -> Stream:
+        if int_name is None:
+            int_name = output.name + "_int" + str(NeuObj.count)
+        if der_name is None:
+            der_name = output.name + "_der" + str(NeuObj.count)
         check(method in SOLVERS, ValueError, f"The method '{method}' is not supported yet")
-        solver = SOLVERS[method]()
-        new_s = s.last() + solver.integrate(output)
-        out = ClosedLoop(new_s, s)
-        super().__init__(new_s.name, out.json, new_s.dim)
+        solver = SOLVERS[method](int_name,der_name)
+        output_int = solver.integrate(output)
+        super().__init__(output_int.name, output_int.json, output_int.dim)
 
 class Derivate(Stream, ToStream):
     """
@@ -42,22 +45,24 @@ class Derivate(Stream, ToStream):
     method : is the derivative method
     """
     @enforce_types
-    def __init__(self, output:Stream, input:Stream = None, *, method:str = 'euler') -> Stream:
+    def __init__(self, output:Stream, input:Stream = None, *,
+                 int_name:str|None = None, der_name:str|None = None, method:str = 'euler') -> Stream:
         if input is None:
+            if int_name is None:
+                int_name = output.name + "_int" + str(NeuObj.count)
+            if der_name is None:
+                der_name = output.name + "_der" + str(NeuObj.count)
             check(method in SOLVERS, ValueError, f"The method '{method}' is not supported yet")
-            solver = SOLVERS[method]()
-            output_dt = solver.derivate(output)
-            super().__init__(output_dt.name, output_dt.json, output_dt.dim)
+            solver = SOLVERS[method](int_name,der_name)
+            output_der = solver.derivate(output)
+            super().__init__(output_der.name, output_der.json, output_der.dim)
         else:
             super().__init__(der_relation_name + str(Stream.count), merge(output.json,input.json), input.dim)
             self.json['Relations'][self.name] = [der_relation_name, [output.name, input.name]]
-            grad_inputs = []
-            get_inputs(self.json, input.name, grad_inputs)
+            subjson = subjson_from_relation(self.json, input.name)
+            grad_inputs = subjson['Inputs'].keys()
             for i in grad_inputs:
-                if i in self.json['Inputs']:
-                    self.json['Inputs'][i]['type'] = 'derivate'
-                elif i in self.json['States']:
-                    self.json['States'][i]['type'] = 'derivate'
+                self.json['Inputs'][i]['type'] = 'derivate'
 
 
 class Derivate_Layer(nn.Module):

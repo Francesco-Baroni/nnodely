@@ -1,10 +1,11 @@
-import os, unittest
+import sys, os, unittest, copy
 
 import numpy as np
 
 from nnodely import *
 from nnodely.basic.relation import NeuObj, Stream
 from nnodely.support.logger import logging, nnLogger
+from nnodely.support.jsonutils import subjson_from_model
 
 log = nnLogger(__name__, logging.CRITICAL)
 log.setAllLevel(logging.CRITICAL)
@@ -46,11 +47,11 @@ class ModelyJsonTest(unittest.TestCase):
 
     def test_input(self):
         input = Input('in1')
-        self.assertEqual({'Info':{},'Constants': {},'Inputs': {'in1': {'dim': 1, 'tw': [0,0], 'sw': [0, 0]}}, 'Functions' : {}, 'Parameters' : {}, 'Outputs': {}, 'Relations': {},'States': {}},input.json)
+        self.assertEqual({'Info':{},'Constants': {},'Inputs': {'in1': {'dim': 1}}, 'Functions' : {}, 'Parameters' : {}, 'Outputs': {}, 'Relations': {}},input.json)
 
         #Discrete input removed
         #input = Input('in', values=[2,3,4])
-        #self.assertEqual({'Inputs': {'in': {'dim': 1, 'discrete': [2,3,4], 'tw': [0,0], 'sw': [0, 0]}},'Functions' : {}, 'Parameters' : {}, 'Outputs': {}, 'Relations': {},'States': {}},input.json)
+        #self.assertEqual({'Inputs': {'in': {'dim': 1, 'discrete': [2,3,4], 'tw': [0,0], 'sw': [0, 0]}},'Functions' : {}, 'Parameters' : {}, 'Outputs': {}, 'Relations': {}},input.json)
 
     def test_aritmetic(self):
         Stream.resetCount()
@@ -58,35 +59,35 @@ class ModelyJsonTest(unittest.TestCase):
         input = Input('in1')
         inlast = input.last()
         out = inlast+inlast
-        self.assertEqual({'Info':{},'Constants': {},'Inputs': {'in1': {'dim': 1, 'tw': [0,0], 'sw': [-1, 0]}},'Functions' : {}, 'Parameters' : {}, 'Outputs': {},'States': {}, 'Relations': {'Add2': ['Add', ['SamplePart1', 'SamplePart1']],
+        self.assertEqual({'Info':{},'Constants': {},'Inputs': {'in1': {'dim': 1, 'sw': [-1, 0]}},'Functions' : {}, 'Parameters' : {}, 'Outputs': {}, 'Relations': {'Add2': ['Add', ['SamplePart1', 'SamplePart1']],
                'SamplePart1': ['SamplePart', ['in1'], -1, [-1, 0]]}},out.json)
         out = input.tw(1) + input.tw(1)
-        self.assertEqual({'Info':{},'Constants': {},'Inputs': {'in1': {'dim': 1, 'tw': [-1,0], 'sw': [0, 0]}},'Functions' : {}, 'Parameters' : {}, 'Outputs': {},'States': {}, 'Relations': {'Add7': ['Add', ['TimePart4', 'TimePart6']],
+        self.assertEqual({'Info':{},'Constants': {},'Inputs': {'in1': {'dim': 1, 'tw': [-1,0]}},'Functions' : {}, 'Parameters' : {}, 'Outputs': {}, 'Relations': {'Add7': ['Add', ['TimePart4', 'TimePart6']],
                'TimePart4': ['TimePart', ['in1'], -1, [-1, 0]],
                'TimePart6': ['TimePart', ['in1'], -1, [-1, 0]]}},out.json)
         out = input.tw(1) * input.tw(1)
-        self.assertEqual({'Info':{},'Constants': {},'Inputs': {'in1': {'dim': 1, 'tw': [-1,0], 'sw': [0, 0]}},'Functions' : {}, 'Parameters' : {}, 'Outputs': {}, 'States': {}, 'Relations': {'Mul12': ['Mul', ['TimePart9', 'TimePart11']],
+        self.assertEqual({'Info':{},'Constants': {},'Inputs': {'in1': {'dim': 1, 'tw': [-1,0]}},'Functions' : {}, 'Parameters' : {}, 'Outputs': {},  'Relations': {'Mul12': ['Mul', ['TimePart9', 'TimePart11']],
                'TimePart9': ['TimePart', ['in1'], -1, [-1, 0]],
                'TimePart11': ['TimePart', ['in1'], -1, [-1, 0]]}},out.json)
         out = input.tw(1) - input.tw(1)
-        self.assertEqual({'Info':{},'Constants': {},'Inputs': {'in1': {'dim': 1, 'tw': [-1,0], 'sw': [0, 0]}},'Functions' : {}, 'Parameters' : {}, 'Outputs': {}, 'States': {}, 'Relations': {'Sub17': ['Sub', ['TimePart14', 'TimePart16']],
+        self.assertEqual({'Info':{},'Constants': {},'Inputs': {'in1': {'dim': 1, 'tw': [-1,0]}},'Functions' : {}, 'Parameters' : {}, 'Outputs': {},  'Relations': {'Sub17': ['Sub', ['TimePart14', 'TimePart16']],
                'TimePart14': ['TimePart', ['in1'], -1, [-1, 0]],
                'TimePart16': ['TimePart', ['in1'], -1, [-1, 0]]}},out.json)
         input = Input('in2', dimensions = 5)
         inlast = input.last()
         out = inlast + inlast
-        self.assertEqual({'Info':{},'Constants': {},'Inputs': {'in2': {'dim': 5, 'tw': [0,0], 'sw': [-1, 0]}},'Functions' : {}, 'Parameters' : {}, 'Outputs': {}, 'States': {}, 'Relations': {'Add20': ['Add', ['SamplePart19', 'SamplePart19']],
+        self.assertEqual({'Info':{},'Constants': {},'Inputs': {'in2': {'dim': 5, 'sw': [-1, 0]}},'Functions' : {}, 'Parameters' : {}, 'Outputs': {},  'Relations': {'Add20': ['Add', ['SamplePart19', 'SamplePart19']],
                'SamplePart19': ['SamplePart', ['in2'], -1, [-1, 0]]}},out.json)
         out = input.tw(1) + input.tw(1)
-        self.assertEqual({'Info':{},'Constants': {},'Inputs': {'in2': {'dim': 5, 'tw': [-1, 0], 'sw': [0, 0]}}, 'Functions': {}, 'Parameters': {},'Outputs': {}, 'States': {}, 'Relations': {'Add25': ['Add', ['TimePart22', 'TimePart24']],
+        self.assertEqual({'Info':{},'Constants': {},'Inputs': {'in2': {'dim': 5, 'tw': [-1, 0]}}, 'Functions': {}, 'Parameters': {},'Outputs': {},  'Relations': {'Add25': ['Add', ['TimePart22', 'TimePart24']],
                'TimePart22': ['TimePart', ['in2'], -1, [-1, 0]],
                'TimePart24': ['TimePart', ['in2'], -1, [-1, 0]]}}, out.json)
         out = input.tw([2,5]) + input.tw([3,6])
-        self.assertEqual({'Info':{},'Constants': {},'Inputs': {'in2': {'dim': 5, 'tw': [2, 6], 'sw': [0, 0]}}, 'Functions': {}, 'Parameters': {},'Outputs': {}, 'States': {}, 'Relations': {'Add30': ['Add', ['TimePart27', 'TimePart29']],
+        self.assertEqual({'Info':{},'Constants': {},'Inputs': {'in2': {'dim': 5, 'tw': [2, 6]}}, 'Functions': {}, 'Parameters': {},'Outputs': {},  'Relations': {'Add30': ['Add', ['TimePart27', 'TimePart29']],
                'TimePart27': ['TimePart', ['in2'], -1, [2, 5]],
                'TimePart29': ['TimePart', ['in2'], -1, [3, 6]]}}, out.json)
         out = input.tw([-5,-2]) + input.tw([-6,-3])
-        self.assertEqual({'Info':{},'Constants': {},'Inputs': {'in2': {'dim': 5, 'tw': [-6, -2], 'sw': [0, 0]}}, 'Functions': {}, 'Parameters': {},'Outputs': {}, 'States': {}, 'Relations': {'Add35': ['Add', ['TimePart32', 'TimePart34']],
+        self.assertEqual({'Info':{},'Constants': {},'Inputs': {'in2': {'dim': 5, 'tw': [-6, -2]}}, 'Functions': {}, 'Parameters': {},'Outputs': {},  'Relations': {'Add35': ['Add', ['TimePart32', 'TimePart34']],
                'TimePart32': ['TimePart', ['in2'], -1, [-5, -2]],
                'TimePart34': ['TimePart', ['in2'], -1, [-6, -3]]}}, out.json)
 
@@ -625,4 +626,92 @@ class ModelyJsonTest(unittest.TestCase):
         self.assertEqual((1, 1, 3), np.array(results['out5']).shape)
         self.assertEqual((1, 1, 3), np.array(results['out51']).shape)
 
+    def test_multi_model_json_and_subjson(self):
+        Stream.resetCount()
+        NeuObj.clearNames()
+        x = Input('x')
+        y = Input('y')
 
+        c1 = Constant('c1', values=5.0)
+        c3 = Constant('c3', values=5.0)
+
+        rel2 = Linear(W=Parameter('W2', values=[[2.0]]), b=False)(y.last())
+        rel4 = Linear(W=Parameter('W4', values=[[4.0]]), b=False)(y.last())
+        
+        def fun2(x, a):
+            return x * a
+        
+        def fun4(x, b):
+            return x + b
+
+        out1 = Output('out1', c1 + Linear(W=Parameter('W1', values=[[1.0]]), b=False)(x.last()))
+        out2 = Output('out2', rel2 + ParamFun(fun2, parameters_and_constants=[c1])(y.last()))
+        out3 = Output('out3', c3 + Linear(W=Parameter('W3', values=[[3.0]]), b=False)(x.last()))
+        out4 = Output('out4', rel4 + ParamFun(fun4, parameters_and_constants=[c3])(y.last()))
+
+        nn = Modely(visualizer=None)
+        nn.addModel('model_A', [out1, out2])
+        nn.addModel('model_B', [out3, out4])
+        nn.addClosedLoop(rel2,y)
+        
+        subjson_A = subjson_from_model(nn.json, 'model_A')
+        subjson_B = subjson_from_model(nn.json, 'model_B')
+        self.assertEqual(subjson_A['Constants']['c1'],nn.json['Constants']['c1'])
+        self.assertEqual(subjson_B['Constants']['c3'],nn.json['Constants']['c3'])
+        self.assertEqual(subjson_A['Functions']['FParamFun11'], nn.json['Functions']['FParamFun11'])
+        self.assertEqual(subjson_B['Functions']['FParamFun16'], nn.json['Functions']['FParamFun16'])
+        self.assertEqual(subjson_A['Inputs']['x'], nn.json['Inputs']['x'])
+        self.assertEqual(subjson_B['Inputs']['x'], nn.json['Inputs']['x'])
+        self.assertEqual(subjson_A['Models'], 'model_A')
+        self.assertEqual(subjson_B['Models'], 'model_B')
+        self.assertEqual(sorted(list(subjson_A['Relations'].keys())), sorted(nn.json['Models']['model_A']['Relations']))
+        self.assertEqual(sorted(list(subjson_B['Relations'].keys())), sorted(nn.json['Models']['model_B']['Relations']))
+        self.assertEqual(sorted(list(subjson_A['Parameters'].keys())), sorted(['W2', 'W1']))
+        self.assertEqual(sorted(list(subjson_B['Parameters'].keys())), sorted(['W3', 'W4']))
+        self.assertEqual(sorted(list(subjson_A['Outputs'].keys())), sorted(['out1', 'out2']))
+        self.assertEqual(sorted(list(subjson_B['Outputs'].keys())), sorted(['out3', 'out4']))
+        yval = copy.deepcopy(nn.json['Inputs']['y'])
+        del yval['closedLoop']
+        del yval['local']
+        self.assertEqual(subjson_A['Inputs']['y'], nn.json['Inputs']['y'])
+        self.assertEqual(subjson_B['Inputs']['y'], yval)
+
+        aa = Modely(visualizer=None)
+        aa.addModel('model_A', [out1, out2])
+        aa.addClosedLoop(rel2, y)
+        self.assertEqual(subjson_A, aa.json)
+
+        bb = Modely(visualizer=None)
+        bb.addModel('model_B', [out3, out4])
+        self.assertEqual(subjson_B, bb.json)
+
+    def test_add_remove_models(self):
+        Stream.resetCount()
+        NeuObj.clearNames()
+        x = Input('x')
+        y = Input('y')
+
+        c1 = Constant('c1', values=5.0)
+        c3 = Constant('c3', values=5.0)
+
+        rel2 = Linear(W=Parameter('W2', values=[[2.0]]), b=False)(y.last())
+        rel4 = Linear(W=Parameter('W4', values=[[4.0]]), b=False)(y.last())
+
+        def fun2(x, a):
+            return x * a
+
+        def fun4(x, b):
+            return x + b
+
+        out1 = Output('out1', c1 + Linear(W=Parameter('W1', values=[[1.0]]), b=False)(x.last()))
+        out2 = Output('out2', rel2 + ParamFun(fun2, parameters_and_constants=[c1])(y.last()))
+        out3 = Output('out3', c3 + Linear(W=Parameter('W3', values=[[3.0]]), b=False)(x.last()))
+        out4 = Output('out4', rel4 + ParamFun(fun4, parameters_and_constants=[c3])(y.last()))
+
+        nn = Modely(visualizer=None)
+        nn.addModel('model_A', [out1, out2])
+        model_A_json_1 = nn.json
+        nn.addModel('model_B', [out3, out4])
+        nn.removeModel('model_B')
+        model_A_json_2 = nn.json
+        self.assertEqual(model_A_json_1, model_A_json_2)
