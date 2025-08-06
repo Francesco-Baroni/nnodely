@@ -10,11 +10,8 @@ from nnodely.support.utils import check, enforce_types
 relu_relation_name = 'Relu'
 elu_relation_name = 'ELU'
 sigmoid_relation_name = 'Sigmoid'
-
 identity_relation_name = 'Identity'
-
 softmax_relation_name = 'Softmax'
-
 
 class Relu(Stream, ToStream):
     """
@@ -115,7 +112,6 @@ class Sigmoid(Stream, ToStream):
         `Sigmoid function <https://pytorch.org/docs/stable/generated/torch.nn.Sigmoid.html#torch.nn.Sigmoid>`_
 
     .. math::
-
         \sigma(x) = \frac{1}{1 + e^{-x}}
 
     :param obj: The relation stream.
@@ -192,11 +188,8 @@ def createSoftmax(self, *input):
     """
     return nn.Softmax(dim=-1)
 
-
 setattr(Model, relu_relation_name, createRelu)
 setattr(Model, elu_relation_name, createELU)
 setattr(Model, sigmoid_relation_name, createSigmoid)
-
 setattr(Model, identity_relation_name, createIdentity)
-
 setattr(Model, softmax_relation_name, createSoftmax)

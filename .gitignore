@@ -164,6 +164,9 @@ cython_debug/
 # vscode test
 .vscode
 
+# MacOS system files
+.DS_Store
+
 # default results folder
 results
 

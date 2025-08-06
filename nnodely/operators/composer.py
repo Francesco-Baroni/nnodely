@@ -67,13 +67,13 @@ class Composer(Network):
     @enforce_types
     def addConnect(self, stream_out:str|Output|Stream, input_in:str|Input, *, local:bool=False) -> None:
         """
-        Adds a connection from a relation stream to an input state.
+        Adds a connection from a relation stream to an input.
 
         Parameters
         ----------
         stream_out : Stream
             The relation stream to connect from.
-        state_list_in : Input or list of inputs
+        input_in : Input or list of inputs
             The input or list of input to connect to.
 
         Examples
@@ -99,14 +99,14 @@ class Composer(Network):
     @enforce_types
     def addClosedLoop(self, stream_out:str|Output|Stream, input_in:str|Input, *, local:bool=False) -> None:
         """
-        Adds a closed loop connection from a relation stream to an input state.
+        Adds a closed loop connection from a relation stream to an input.
 
         Parameters
         ----------
         stream_out : Stream
             The relation stream to connect from.
-        state_list_in : Input or list of inputs
-            The Input or the list of input to connect to.
+        input_in : Input or list of inputs
+            The Input or the list of inputs to connect to.
 
         Examples
         --------
@@ -131,7 +131,7 @@ class Composer(Network):
     @enforce_types
     def removeConnection(self, input_in:str|Input) -> None:
         """
-        Remove a closed loop or connect connection from an input state.
+        Remove a closed loop or connect connection from an input.
 
         Parameters
         ----------
@@ -154,18 +154,20 @@ class Composer(Network):
         """
         if isinstance(input_in, Input):
             input_name = input_in.name
+        else:
+            input_name = input_in
         self._model_def.removeConnection(input_name)
 
     @enforce_types
     def neuralizeModel(self, sample_time:float|int|None = None, *, clear_model:bool = False, model_def:dict|None = None) -> None:
         """
         Neuralizes the model, preparing it for inference and training. This method creates a neural network model starting from the model definition.
-        It will also create all the time windows for the inputs and states.
+        It will also create all the time windows and correct slicing for all the inputs defined.
 
         Parameters
         ----------
         sample_time : float or None, optional
-            The sample time for the model. Default is None.
+            The sample time for the model. Default is 1.0
         clear_model : bool, optional
             Whether to clear the existing model definition. Default is False.
         model_def : dict or None, optional
@@ -227,7 +229,7 @@ class Composer(Network):
         closed_loop : dict, optional
             A dictionary specifying closed loop connections. The keys are input names and the values are output names. Default is an empty dictionary.
         connect : dict, optional
-            A dictionary specifying connections. The keys are input names and the values are output names. Default is an empty dictionary.
+            A dictionary specifying direct connections. The keys are input names and the values are output names. Default is an empty dictionary.
         prediction_samples : str or int, optional
             The number of prediction samples. Can be 'auto', None or an integer. Default is 'auto'.
         num_of_samples : str or int, optional
@@ -314,8 +316,6 @@ class Composer(Network):
                     if key in non_mandatory_inputs:
                         if key in model_inputs:
                             n_samples = len(inputs[key]) if sampled else len(inputs[key]) - self._model_def['Inputs'][key]['ntot'] + 1
-                        else:
-                            n_samples = len(inputs[key]) if sampled else len(inputs[key]) - self._model_def['States'][key]['ntot'] + 1
                         windows.append(n_samples)
             window_dim = min(windows) if windows else 0
         else:  ## No inputs

@@ -103,7 +103,7 @@ class Constant(NeuObj, Relation):
 
 class Parameter(NeuObj, Relation):
     """
-    Represents a parameter in the neural network model.
+    Represents a trainable parameter in the neural network model.
 
     Notes
     -----
@@ -121,7 +121,7 @@ class Parameter(NeuObj, Relation):
     sw : int, optional
         The sample window for the parameter. Default is None.
     values : list, float, int, np.ndarray, or None, optional
-        The values of the parameter. Default is None.
+        The values by which initialize the parameter. Default is None.
     init : Callable, optional
         A callable for initializing the parameter values. Default is None.
     init_params : dict, optional
@@ -221,7 +221,7 @@ class Parameter(NeuObj, Relation):
     
 class SampleTime():
     """
-    Represents a constant that value is equal to the sample time.
+    Represents a constant value that is equal to the sample time.
 
     Attributes
     ----------

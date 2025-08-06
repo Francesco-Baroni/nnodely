@@ -328,7 +328,7 @@ class Exporter(Network):
             model = self._model
             model.update()
         check(len(model_def.recurrentInputs().keys()) < len(model_def['Inputs'].keys()), TypeError,
-              "The network is autonomous only state variable are present.")
+              "The network is autonomous because only recurrent variables are present.")
         self.__exporter.exportONNX(model_def, model, inputs_order, outputs_order, name, model_folder)
 
     @enforce_types
@@ -337,16 +337,16 @@ class Exporter(Network):
         Run an inference session using an onnx model previously exported using the nnodely framework.
 
         .. note:: Feed-Forward ONNX model
-            For feed-forward models, the onnx model expect all the inputs and states to have 3 dimensions. The first dimension is the batch size, the second is the time window and the third is the feature dimension.
+            For feed-forward models, the onnx model expect all the recurrent inputs to have 3 dimensions. The first dimension is the batch size, the second is the time window and the third is the feature dimension.
         .. note:: Recurrent ONNX model
             For recurrent models, the onnx model expect all the inputs to have 4 dimensions. The first dimension is the prediction horizon, the second is the batch size, the third is the time window and the fourth is the feature dimension.
-            For recurrent models, the onnx model expect all the States to have 3 dimensions. The first dimension is the batch size, the second is the time window, the third is the feature dimension
+            For recurrent models, the onnx model expect all the recurrent inputs to have 3 dimensions. The first dimension is the batch size, the second is the time window, the third is the feature dimension
 
         Parameters
         ----------
         inputs : dict
-            A dictionary containing the input and state variables to be used to make the inference.
-            State variables are mandatory and are used to initialize the states of the model.
+            A dictionary containing the input and recurrent variables to be used to make the inference.
+            Recurrent variables are mandatory and are used to initialize the state memory of the model.
         path : str
             The path to the ONNX file to use.
 
@@ -354,7 +354,7 @@ class Exporter(Network):
         ------
         RuntimeError
             If the shape of the inputs are not equals to the ones defined in the onnx model.
-            If the batch size is not equal for all the inputs and states.
+            If the batch size is not equal for all the inputs.
 
         Examples
         --------
@@ -368,9 +368,10 @@ class Exporter(Network):
             >>> model_folder = folder/
             >>> dummy_input = {'x':np.ones(shape=(3, 1, 1)).astype(np.float32)}
             >>> predictions = Modely().onnxInference(dummy_input, model_folder)
+            
         Example - Recurrent:
             >>> x = Input('x')
-            >>> y = State('y')
+            >>> y = Input('y')
 
             >>> model_folder = folder/
             >>> dummy_input = {'x':np.ones(shape=(3, 1, 1, 1)).astype(np.float32)

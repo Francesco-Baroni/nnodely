@@ -135,7 +135,7 @@ class Modely(Composer, Trainer, Loader, Validator, Exporter):
         random.seed(seed)  ## set the random module seed
         np.random.seed(seed)  ## set the numpy seed
 
-    def trainAndAnalyze(self, test_dataset=None, test_batch_size=1, **kwargs):
+    def trainAndAnalyze(self, *, test_dataset: str | list | dict | None = None, test_batch_size: int = 128, **kwargs):
         """
         Trains the model using the provided datasets and parameters. After training, it analyzes the results on the training, validation, and test datasets.
 
@@ -250,39 +250,42 @@ class Modely(Composer, Trainer, Loader, Validator, Exporter):
             >>> mass_spring_damper.trainModel(splits=[70,20,10], prediction_samples=10, training_params = params)
         """
         ## Train the model
-        params = self.trainModel(**kwargs)
+        self.trainModel(**kwargs)
+        params = self.running_parameters
 
-        ## Get training parameters
-        train_dataset, validation_dataset = params['train_dataset'], params['validation_dataset']
-        dataset = params['dataset']
         minimize_gain = params['minimize_gain']
-        closed_loop, connect = params['closed_loop'], params['connect']
-        prediction_samples, step = params['prediction_samples'], params['step']
-        train_batch_size, val_batch_size = params['train_batch_size'], params['val_batch_size']
-        splits = params['splits']
+        closed_loop, connect, prediction_samples = params['closed_loop'], params['connect'], params['prediction_samples']
 
-        ## Get the Datasets for the results
-        XY_train, XY_val, XY_test, _, n_samples_val, n_samples_test, _, _, _ = self._setup_dataset(train_dataset, validation_dataset, test_dataset, dataset, splits, prediction_samples)
-        
+        if kwargs.get('train_dataset', None) is None:
+            check(test_dataset is None, ValueError, 'If train_dataset is None, test_dataset must also be None.')
+        else:
+            params['test_tag'] = self._get_tag(test_dataset)
+            params['XY_test'] = self._get_data(test_dataset)
+            params['n_samples_test'] = next(iter(params['XY_test'].values())).size(0) if params['XY_test'] else 0
+            params['test_indexes'] = self._get_batch_indexes(test_dataset, params['n_samples_test'], prediction_samples)
+
         ## Training set Results
-        train_dataset = train_dataset if train_dataset is not None else f"{dataset}_train"
-        self.resultAnalysis(train_dataset, XY_train, minimize_gain, closed_loop, connect, prediction_samples, step, train_batch_size)
+        self.resultAnalysis(params['XY_train'], name = params['train_tag'], minimize_gain = minimize_gain,
+                            closed_loop = closed_loop, connect = connect, prediction_samples = prediction_samples, step = params['train_step'], batch_size = params['train_batch_size'])
         
         ## Validation set Results
-        if n_samples_val > 0:
-            validation_dataset = validation_dataset if validation_dataset is not None else f"{dataset}_val"
-            self.resultAnalysis(validation_dataset, XY_val, minimize_gain, closed_loop, connect, prediction_samples, step, val_batch_size)
+        if params['n_samples_val'] > 0:
+            self.resultAnalysis(params['XY_val'], name = params['val_tag'], minimize_gain = minimize_gain,
+                            closed_loop = closed_loop, connect = connect, prediction_samples = prediction_samples, step = params['val_step'], batch_size = params['val_batch_size'])
         else:
-            log.warning(f"Validation dataset {validation_dataset} is empty. Skipping validation results analysis.")
+            log.warning("Validation dataset is empty. Skipping validation results analysis.")
 
         ## Test set Results
-        if n_samples_test > 0:
-            test_dataset = test_dataset if test_dataset is not None else f"{dataset}_test"
-            self.resultAnalysis(test_dataset, XY_test, minimize_gain, closed_loop, connect, prediction_samples, step, test_batch_size)
+        if params['n_samples_test'] > 0:
+            params['test_batch_size'] = self._clip_batch_size(len(params['test_indexes']), test_batch_size)
+            params['test_step'] = self._clip_step(params['step'], params['test_indexes'], params['test_batch_size'])
+            self.resultAnalysis(params['XY_test'], name = params['test_tag'], minimize_gain = minimize_gain,
+                            closed_loop = closed_loop, connect = connect, prediction_samples = prediction_samples, step = params['test_step'], batch_size = test_batch_size)
         else:
-            log.warning(f"Test dataset {test_dataset} is empty. Skipping test results analysis.")
+            log.warning("Test dataset is empty. Skipping test results analysis.")
 
         ## Show the results
         self.visualizer.showResults()
+        return self.get_training_info()
 
 nnodely = Modely

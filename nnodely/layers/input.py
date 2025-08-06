@@ -8,7 +8,7 @@ from nnodely.layers.timeoperation import Derivate, Integrate
 
 class Input(NeuObj):
     """
-    Represents an Input or State in the neural network model.
+    Represents an Input in the neural network model.
 
     .. image:: https://colab.research.google.com/assets/colab-badge.svg
         :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/states.ipynb
@@ -17,35 +17,35 @@ class Input(NeuObj):
     Parameters
     ----------
     json_name : str
-        The name of the JSON field to store the Input or the State configuration.
+        The name of the JSON field to store the Input configuration.
     name : str
-        The name of the Input or the State.
+        The name of the Input.
     dimensions : int, optional
-        The number of dimensions for the input state. Default is 1.
+        The number of dimensions for the input. Default is 1.
 
     Attributes
     ----------
     json_name : str
-        The name of the JSON field to store the input state configuration.
+        The name of the JSON field to store the input configuration.
     name : str
-        The name of the Input or the State.
+        The name of the Input.
     dim : dict
-        A dictionary containing the dimensions of the Input or the State.
+        A dictionary containing the dimensions of the Input.
     json : dict
-        A dictionary containing the configuration of the Input or the State.
+        A dictionary containing the configuration of the Input.
     """
     def __init__(self, name:str, *, dimensions:int = 1):
         """
-        Initializes the InputState object.
+        Initializes the Input object.
 
         Parameters
         ----------
         json_name : str
-            The name of the JSON field to store the Input or the State configuration.
+            The name of the JSON field to store the Input configuration.
         name : str
-            The name of the Input or the State.
+            The name of the Input.
         dimensions : int, optional
-            The number of dimensions for the Input or the State. Default is 1.
+            The number of dimensions for the Input. Default is 1.
         """
         NeuObj.__init__(self, name)
         check(type(dimensions) == int, TypeError,"The dimensions must be a integer")
@@ -55,7 +55,7 @@ class Input(NeuObj):
     @enforce_types
     def tw(self, tw:int|float|list, offset:int|float|None = None) -> Stream:
         """
-        Selects a time window for the Input and State.
+        Selects a time window for the Input.
 
         Parameters
         ----------
@@ -97,7 +97,7 @@ class Input(NeuObj):
     @enforce_types
     def sw(self, sw:int|list, offset:int|None = None) -> Stream:
         """
-        Selects a sample window for the Input and the State
+        Selects a sample window for the Input.
 
         Parameters
         ----------
@@ -181,7 +181,7 @@ class Input(NeuObj):
     @enforce_types
     def last(self) -> Stream:
         """
-        Selects the last passed instant for the input state.
+        Selects the last passed instant for the input.
 
         Returns
         -------
@@ -193,7 +193,7 @@ class Input(NeuObj):
     @enforce_types
     def next(self) -> Stream:
         """
-        Selects the next instant for the input state.
+        Selects the next instant for the input.
 
         Returns
         -------
@@ -310,7 +310,7 @@ class Connect(Stream, ToStream):
     def __init__(self, obj1:Stream, obj2:Input, *, local:bool=False) -> Stream:
         super().__init__(obj1.name,merge(obj1.json, obj2.json),obj1.dim)
         check(closedloop_name not in self.json['Inputs'][obj2.name] or connect_name not in self.json['Inputs'][obj2.name],
-              KeyError,f"The state variable {obj2.name} is already connected.")
+              KeyError,f"The input variable {obj2.name} is already connected.")
         self.json['Inputs'][obj2.name][connect_name] = obj1.name
         self.json['Inputs'][obj2.name]['local'] = int(local)
 
@@ -319,6 +319,6 @@ class ClosedLoop(Stream, ToStream):
     def __init__(self, obj1:Stream, obj2:Input, *, local:bool=False) -> Stream:
         super().__init__(obj1.name, merge(obj1.json, obj2.json), obj1.dim)
         check(closedloop_name not in self.json['Inputs'][obj2.name] or connect_name not in self.json['Inputs'][obj2.name],
-              KeyError, f"The state variable {obj2.name} is already connected.")
+              KeyError, f"The input variable {obj2.name} is already connected.")
         self.json['Inputs'][obj2.name][closedloop_name] = obj1.name
         self.json['Inputs'][obj2.name]['local'] = int(local)

@@ -1,6 +1,6 @@
 import copy
-
 from pprint import pformat
+
 
 from nnodely.support.utils import check
 
@@ -223,7 +223,18 @@ def stream_to_str(obj, type = 'Stream'):
     stream = color((stream_name).center(80, '-'), GREEN, True)
     return title + '\n' + json + '\n' + stream
 
-def plot_structure(json, filename='nnodely_graph'):
+def plot_structure(json, filename='nnodely_graph', library='matplotlib', view=True):
+        #json = self.modely.json if json is None else json
+        # if json is None:
+        #     raise ValueError("No JSON model definition provided. Please provide a valid JSON model definition.")
+        if library not in ['matplotlib', 'graphviz']:
+            raise ValueError("Invalid library specified. Use 'matplotlib' or 'graphviz'.")
+        if library == 'matplotlib':
+            plot_matplotlib_structure(json, filename, view=view)
+        elif library == 'graphviz':
+            plot_graphviz_structure(json, filename, view=view)
+
+def plot_matplotlib_structure(json, filename='nnodely_graph', view=True):
     import matplotlib.pyplot as plt
     from matplotlib import patches
     from matplotlib.lines import Line2D
@@ -235,9 +246,6 @@ def plot_structure(json, filename='nnodely_graph'):
     for input_name, input_type in json['Inputs'].items():
         layer_positions[input_name] = (x, y)
         y -= dy
-    # for state_name in json['States'].keys():
-    #     layer_positions[state_name] = (x, y)
-    #     y -= dy
     for constant_name in json['Constants'].keys():
         layer_positions[constant_name] = (x, y)
         y -= dy
@@ -282,9 +290,6 @@ def plot_structure(json, filename='nnodely_graph'):
         if layer in json['Inputs'].keys():
             color = 'lightgreen'
             tag = f'{layer}\ndim: {json["Inputs"][layer]["dim"]}\nWindow: {json["Inputs"][layer]["ntot"]}'
-        # elif layer in json['States'].keys():
-        #     color = 'green'
-        #     tag = f'{layer}\ndim: {json["States"][layer]["dim"]}\nWindow: {json["States"][layer]["ntot"]}'
         elif layer in json['Outputs'].keys():
             color = 'orange'
             tag = layer
@@ -338,18 +343,25 @@ def plot_structure(json, filename='nnodely_graph'):
     plt.title(f"Neural Network Diagram - Sampling [{json['Info']['SampleTime']}]", fontsize=12, fontweight='bold')
     ## Save the figure
     plt.savefig(filename, format="png", bbox_inches='tight')
-    plt.show()
+    if view:
+        plt.show()
 
-def plot_graphviz_structure(json, filename='nnodely_graph'):
+def plot_graphviz_structure(json, filename='nnodely_graph', view=True): # pragma: no cover
     import shutil
+    from graphviz import view
     from graphviz import Digraph
 
     # Check if Graphviz is installed
     if shutil.which('dot') is None:
-        raise RuntimeError(
+        # raise RuntimeError(
+        #     "Graphviz does not appear to be installed on your system. "
+        #     "Please install it from https://graphviz.org/download/"
+        # )
+        log.warning(
             "Graphviz does not appear to be installed on your system. "
             "Please install it from https://graphviz.org/download/"
         )
+        return
     
     dot = Digraph(comment='Structured Neural Network')
 
@@ -427,4 +439,4 @@ def plot_graphviz_structure(json, filename='nnodely_graph'):
     #     legend.edge('LegendRel', 'LegendOutput')
 
     # Render the graph
-    dot.render(filename=filename, view=True, format='svg')  # opens in default viewer and saves as SVG
+    dot.render(filename=filename, view=view, format='svg')  # opens in default viewer and saves as SVG

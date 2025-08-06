@@ -10,9 +10,7 @@ from nnodely.layers.output import Output
 from nnodely.layers.activation import Relu, ELU, Softmax, Sigmoid, Identity
 from nnodely.layers.fir import Fir
 from nnodely.layers.linear import Linear
-from nnodely.layers.arithmetic import Add, Sum, Sub, Mul, Div, Pow, Neg, Sign
-from nnodely.layers.trigonometric import Sin, Cos, Tan, Cosh, Tanh, Sech
-from nnodely.layers.arithmetic import Add, Sum, Sub, Mul, Div, Pow, Neg, Sign, Abs
+from nnodely.layers.arithmetic import Add, Sum, Sub, Mul, Div, Pow, Neg, Sign, Abs, Sign
 from nnodely.layers.trigonometric import Sin, Cos, Tan, Cosh, Tanh, Sech, Atan2
 from nnodely.layers.parametricfunction import ParamFun
 from nnodely.layers.fuzzify import Fuzzify
@@ -37,7 +35,7 @@ from nnodely.support import logger
 major, minor = sys.version_info.major, sys.version_info.minor
 logger.LOG_LEVEL = logging.INFO
 
-__version__ = '1.5.0'
+__version__ = '1.5.1'
 
 if major < 3:
     sys.exit("Sorry, Python 2 is not supported. You need Python >= 3.10 for "+__package__+".")
