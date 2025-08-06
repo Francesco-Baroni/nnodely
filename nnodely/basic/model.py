@@ -1,12 +1,15 @@
-from itertools import product
-from nnodely.support.utils import TORCH_DTYPE
-from nnodely.support import initializer
-import numpy as np
+import torch
+import copy
 
 import torch.nn as nn
-import torch
+import numpy as np
 
-import copy
+from itertools import product
+
+from nnodely.support.utils import TORCH_DTYPE
+from nnodely.support import initializer
+
+
 
 @torch.fx.wrap
 def connect(data_in, rel):
@@ -43,6 +46,9 @@ class Model(nn.Module):
         self.relation_inputs = {}
         self.closed_loop_update = {}
         self.connect_update = {}
+
+        ## Update the connect_update and closed_loop_update
+        self.update()
 
         ## Define the correct slicing
         for _, items in self.relations.items():
@@ -191,13 +197,14 @@ class Model(nn.Module):
         minimize_dict = {}
         for key in self.minimizers_keys:
             minimize_dict[key] = result_dict[self.outputs[key]] if key in self.outputs.keys() else result_dict[key]
-
         return output_dict, minimize_dict, closed_loop_update_dict, connect_update_dict
 
-
-    def update(self, closed_loop={}, connect={}):
+    def update(self, *, closed_loop = {}, connect = {}, disconnect = False):
         self.closed_loop_update = {}
         self.connect_update = {}
+
+        if disconnect:
+            return
 
         for key, state in self.states.items():
             if 'connect' in state.keys():

@@ -25,7 +25,8 @@ dependencies = [
     "pandas",
     "reportlab",
     "matplotlib",
-    "onnxruntime"
+    "onnxruntime",
+    "graphviz"
 ]
 dynamic = ["version"]
 

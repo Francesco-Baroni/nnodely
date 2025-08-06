@@ -4,16 +4,6 @@ from nnodely.support.utils import check
 
 available_losses = ['mse', 'rmse', 'mae', 'cross_entropy']
 
-# class CustomRMSE(nn.Module):
-#     def __init__(self):
-#         super(CustomRMSE, self).__init__()
-#         self.mse = nn.MSELoss()
-#
-#     def forward(self, inA, inB):
-#         #assert predictions.keys() == labels.keys(), "Keys of predictions and labels must match"
-#         #loss = torch.sqrt(self.mse(inA, inB))
-#         return self.mse(inA, inB)
-
 class CustomLoss(nn.Module):
     def __init__(self, loss_type='mse', **kwargs):
         super(CustomLoss, self).__init__()

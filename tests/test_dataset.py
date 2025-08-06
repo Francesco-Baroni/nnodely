@@ -313,7 +313,40 @@ class ModelyCreateDatasetTest(unittest.TestCase):
 
         self.assertEqual((9,1,1), test._data['dataset']['out'].shape)
         self.assertEqual([[[1.225]], [[1.224]], [[1.222]], [[1.22]], [[1.217]], [[1.214]], [[1.211]], [[1.207]], [[1.204]]], test._data['dataset']['out'].tolist())
-    
+
+    def test_filter_data(self):
+        NeuObj.clearNames()
+        input1 = Input('in1')
+        output = Input('out')
+        rel1 = Fir(input1.tw(0.05))
+        rel2 = Fir(input1.tw([-0.01,0.01]))
+        rel3 = Fir(input1.tw([-0.02,0.02]))
+        fun = Output('out-net',rel1+rel2+rel3)
+
+        test = Modely(visualizer=None)
+        test.addModel('fun', fun)
+        test.addMinimize('out', output.z(-1), fun)
+        test.neuralizeModel(0.01)
+
+        data_struct = ['x1','y1','x2','y2','','A1x','A1y','B1x','B1y','','A2x','A2y','B2x','out','','x3','in1','in2','time']
+        test.loadData(name='dataset', source=train_folder, format=data_struct, skiplines=4, delimiter='\t', header=None)
+
+        def filter_fn(sample):
+            return min(sample['in1']) > 0.957
+
+        test.filterData(filter_fn)
+
+        self.assertEqual((2,7,1), test._data['dataset']['in1'].shape)
+        self.assertEqual([[0.984],[0.983],[0.982],[0.98],[0.977],[0.973],[0.969]], test._data['dataset']['in1'][0].tolist())
+
+        self.assertEqual((2,1,1), test._data['dataset']['out'].shape)
+        self.assertEqual([[[1.225]], [[1.224]]], test._data['dataset']['out'].tolist())
+
+        test.loadData(name='dataset2', source=train_folder, format=data_struct, skiplines=4, delimiter='\t', header=None)
+        test.filterData(filter_fn, dataset_name='dataset2')
+        self.assertEqual((2,7,1), test._data['dataset2']['in1'].shape)
+        self.assertEqual((2, 1, 1), test._data['dataset2']['out'].shape)
+
     def test_build_dataset_complex6(self):
         NeuObj.clearNames()
         input1 = Input('in1')
@@ -558,7 +591,7 @@ class ModelyCreateDatasetTest(unittest.TestCase):
         ## Try to train the model
         # test.trainModel(splits=[80, 10, 10],
         #                 training_params={'num_of_epochs': 100, 'train_batch_size': 4, 'test_batch_size': 4})
-    
+
     def test_multifiles(self):
         NeuObj.clearNames()
         x = Input('x')
@@ -573,11 +606,136 @@ class ModelyCreateDatasetTest(unittest.TestCase):
 
         ## The folder contains 3 files with 10, 20 and 30 samples respectively
         data_struct = ['x']
+        ## each folder contains 3 files with 10, 20 and 30 samples respectively
         data_folder = os.path.join(os.path.dirname(__file__), 'multifile/')
-        test.loadData(name='dataset', source=data_folder, format=data_struct, skiplines=1)
+        data_folder2 = os.path.join(os.path.dirname(__file__), 'multifile2/')
+        ## this folder contains only one file with 50 samples
+        data_folder3 = os.path.join(os.path.dirname(__file__), 'multifile3/')
+        test.loadData(name='dataset1', source=data_folder, format=data_struct, skiplines=1)
+        test.loadData(name='dataset2', source=data_folder2, format=data_struct, skiplines=1)
+        test.loadData(name='dataset3', source=data_folder3, format=data_struct, skiplines=1) 
 
-        self.assertListEqual(list(test._data['dataset']['x'].shape), [45, 6, 1])
-        self.assertListEqual(test._multifile['dataset'], [5, 20, 45])
+        self.assertListEqual(list(test._data['dataset1']['x'].shape), [45, 6, 1])
+        self.assertListEqual(test._multifile['dataset1'], [5, 20, 45])
+        self.assertListEqual(list(test._data['dataset2']['x'].shape), [45, 6, 1])
+        self.assertListEqual(test._multifile['dataset2'], [5, 20, 45])
+        self.assertListEqual(list(test._data['dataset3']['x'].shape), [45, 6, 1])
+        self.assertEqual(test._num_of_samples['dataset1'], 45) ## 5 + 15 + 25
+        self.assertEqual(test._num_of_samples['dataset2'], 45) ## 5 + 15 + 25
+        self.assertEqual(test._num_of_samples['dataset3'], 45) ## 50 - 5
+
+        ## train one dataset using splits
+        tp = test.trainModel(dataset='dataset1', splits=[80, 10, 10], prediction_samples=3, num_of_epochs=1)
+        self.assertEqual(tp['n_samples_train'], 36) ## 45 * 0.8
+        self.assertEqual(tp['n_samples_val'], 4) ## 45 * 0.1
+        self.assertEqual(tp['n_samples_test'], 5) ## 45 * 0.1
+        self.assertEqual(test.running_parameters['train_indexes'], [0, 1, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32])
+        self.assertEqual(test.running_parameters['val_indexes'], [0])
+
+        ## train using one dataset for train and one for validation
+        tp = test.trainModel(train_dataset='dataset1', validation_dataset='dataset2', prediction_samples=3, num_of_epochs=1)
+        self.assertEqual(tp['n_samples_train'], 45)
+        self.assertEqual(tp['n_samples_val'], 45)
+        self.assertEqual(tp['n_samples_test'], 0)
+        self.assertEqual(test.running_parameters['train_indexes'], [0, 1, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41])
+        self.assertEqual(test.running_parameters['val_indexes'], [0, 1, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41])
+
+        ## train using two dataset for train and one for validation
+        tp = test.trainModel(train_dataset=['dataset1', 'dataset2'], validation_dataset='dataset3', prediction_samples=3, num_of_epochs=1)
+        self.assertEqual(tp['n_samples_train'], 90) ## 45 + 45
+        self.assertEqual(tp['n_samples_val'], 45)
+        self.assertEqual(tp['n_samples_test'], 0)
+        self.assertEqual(test.running_parameters['train_indexes'], [0, 1, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41,
+                                               45, 46, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86])
+        self.assertEqual(test.running_parameters['val_indexes'], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41])
+
+        ## train using two dataset for train and two for validation
+        tp = test.trainModel(train_dataset=['dataset1', 'dataset2'], validation_dataset=['dataset2','dataset3'], prediction_samples=3, num_of_epochs=1)
+        self.assertEqual(tp['n_samples_train'], 90) ## 45 + 45
+        self.assertEqual(tp['n_samples_val'], 90)
+        self.assertEqual(tp['n_samples_test'], 0)
+        self.assertEqual(test.running_parameters['train_indexes'], [0, 1, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41,
+                                               45, 46, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86])
+        self.assertEqual(test.running_parameters['val_indexes'], [0, 1, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41,
+                                               45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86])
+
+        ## train using two dataset for train and two for validation (dataset4 is ignored)
+        tp = test.trainModel(train_dataset=['dataset1', 'dataset2'], validation_dataset=['dataset2','dataset3','dataset4'], num_of_epochs=1, prediction_samples=3)
+        self.assertEqual(tp['n_samples_train'], 90) ## 45 + 45
+        self.assertEqual(tp['n_samples_val'], 90)
+        self.assertEqual(tp['n_samples_test'], 0)
+        self.assertEqual(test.running_parameters['train_indexes'], [0, 1, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41,
+                                               45, 46, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86])
+        self.assertEqual(test.running_parameters['val_indexes'], [0, 1, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41,
+                                               45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86])
+
+        ## Use all datasets by default
+        tp = test.trainModel(splits=[80, 10, 10], prediction_samples=3)
+        self.assertEqual(tp['n_samples_train'], 108) ## (45+45+45) * 0.8
+        self.assertEqual(tp['n_samples_val'], 14) ## 135 * 0.1
+        self.assertEqual(tp['n_samples_test'], 13) ## 135 * 0.1
+        self.assertEqual(test.running_parameters['train_indexes'], [0, 1, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41,
+                                               45, 46, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86,
+                                               90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104])
+        self.assertEqual(test.running_parameters['val_indexes'], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+        ## splits multifile
+        tp = test.trainModel(dataset=['dataset1', 'dataset2', 'dataset3'], splits=[80, 10, 10], prediction_samples=3)
+        self.assertEqual(tp['n_samples_train'], 108) ## (45+45+45) * 0.8
+        self.assertEqual(tp['n_samples_val'], 14) ## 90 * 0.1
+        self.assertEqual(tp['n_samples_test'], 13) ## 90 * 0.1
+        self.assertEqual(test.running_parameters['train_indexes'], [0, 1, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41,
+                                               45, 46, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86,
+                                               90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104])
+        self.assertEqual(test.running_parameters['val_indexes'], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+        ## train one dataset using splits
+        tp = test.trainModel(dataset='dataset1', splits=[80, 10, 10], num_of_epochs=1)
+        self.assertEqual(tp['n_samples_train'], 36) ## 45 * 0.8
+        self.assertEqual(tp['n_samples_val'], 4) ## 45 * 0.1
+        self.assertEqual(tp['n_samples_test'], 5) ## 45 * 0.1
+        self.assertEqual(test.running_parameters['train_indexes'], list(range(36)))
+        self.assertEqual(test.running_parameters['val_indexes'], list(range(4)))
+
+        ## train using one dataset for train and one for validation
+        tp = test.trainModel(train_dataset='dataset1', validation_dataset='dataset2', num_of_epochs=1)
+        self.assertEqual(tp['n_samples_train'], 45)
+        self.assertEqual(tp['n_samples_val'], 45)
+        self.assertEqual(tp['n_samples_test'], 0)
+        self.assertEqual(test.running_parameters['train_indexes'], list(range(45)))
+        self.assertEqual(test.running_parameters['val_indexes'], list(range(45)))
+
+        ## train using two dataset for train and one for validation
+        tp = test.trainModel(train_dataset=['dataset1', 'dataset2'], validation_dataset='dataset3', num_of_epochs=1)
+        self.assertEqual(tp['n_samples_train'], 90) ## 45 + 45
+        self.assertEqual(tp['n_samples_val'], 45)
+        self.assertEqual(tp['n_samples_test'], 0)
+        self.assertEqual(test.running_parameters['train_indexes'], list(range(90)))
+        self.assertEqual(test.running_parameters['val_indexes'], list(range(45)))
+
+        ## train using two dataset for train and two for validation
+        tp = test.trainModel(train_dataset=['dataset1', 'dataset2'], validation_dataset=['dataset2','dataset3'], num_of_epochs=1)
+        self.assertEqual(tp['n_samples_train'], 90) ## 45 + 45
+        self.assertEqual(tp['n_samples_val'], 90)
+        self.assertEqual(tp['n_samples_test'], 0)
+        self.assertEqual(test.running_parameters['train_indexes'], list(range(90)))
+        self.assertEqual(test.running_parameters['val_indexes'], list(range(90)))
+
+        ## train using two dataset for train and two for validation (dataset4 is ignored)
+        tp = test.trainModel(train_dataset=['dataset1', 'dataset2'], validation_dataset=['dataset2','dataset3','dataset4'], num_of_epochs=1)
+        self.assertEqual(tp['n_samples_train'], 90) ## 45 + 45
+        self.assertEqual(tp['n_samples_val'], 90)
+        self.assertEqual(tp['n_samples_test'], 0)
+        self.assertEqual(test.running_parameters['train_indexes'], list(range(90)))
+        self.assertEqual(test.running_parameters['val_indexes'], list(range(90)))
+
+        ## splits multifile
+        tp = test.trainModel(dataset=['dataset1', 'dataset2', 'dataset3'], splits=[80, 10, 10])
+        self.assertEqual(tp['n_samples_train'], 108) ## (45+45+45) * 0.8
+        self.assertEqual(tp['n_samples_val'], 14) ## 90 * 0.1
+        self.assertEqual(tp['n_samples_test'], 13) ## 90 * 0.1
+        self.assertEqual(test.running_parameters['train_indexes'], list(range(108)))
+        self.assertEqual(test.running_parameters['val_indexes'], list(range(14)))
 
     def test_multifiles_2(self):
         NeuObj.clearNames()
@@ -595,7 +753,7 @@ class ModelyCreateDatasetTest(unittest.TestCase):
         ## The folder contains 3 files with 10, 20 and 30 samples respectively
         data_struct = ['x', 'y']
         data_folder = os.path.join(os.path.dirname(__file__), 'multifile/')
-        test.loadData(name='dataset', source=data_folder, format=data_struct, skiplines=1, delimiter=' ')
+        test.loadData(name='dataset', source=data_folder, format=data_struct, skiplines=1)
         self.assertListEqual(list(test._data['dataset']['x'].shape), [42, 6, 1])
         self.assertListEqual(list(test._data['dataset']['y'].shape), [42, 4, 1])
         self.assertListEqual(test._multifile['dataset'], [4, 18, 42])
@@ -700,3 +858,36 @@ class ModelyCreateDatasetTest(unittest.TestCase):
             'w': np.linspace(1,10,10, dtype=np.float32)})
         with self.assertRaises(TypeError):
             test.loadData(name='dataset3', source=df2, resampling=True)
+
+    def test_load_data_modalities(self):
+        import pandas as pd
+        NeuObj.clearNames()
+        x = Input('x')
+        relation = Fir()(x.tw(0.05))
+        relation.closedLoop(x)
+        output = Output('out', relation)
+
+        test = Modely(visualizer=None, log_internal=True)
+        test.addModel('model', output)
+        test.addMinimize('error', output, x.next())
+        test.neuralizeModel(0.01)
+
+        ## Case 1: directory with files
+        data_struct = ['x']
+        data_folder = os.path.join(os.path.dirname(__file__), 'multifile/')
+        test.loadData(name='dataset_directory', source=data_folder, format=data_struct, skiplines=1)
+        self.assertListEqual(list(test._data['dataset_directory']['x'].shape), [45, 6, 1])
+        self.assertListEqual(test._multifile['dataset_directory'], [5, 20, 45])
+
+        ## Case 2: dictionary
+        train_data_x = np.array(10*[10] + 20*[20] + 30*[30], dtype=np.float32)
+        train_dataset = {'x': train_data_x, 'time': np.array(range(60), dtype=np.float32)}
+        test.loadData(name='dataset_dictionary', source=train_dataset, )
+        self.assertListEqual(list(test._data['dataset_dictionary']['x'].shape), [55, 6, 1])
+
+        ## Case 3: pandas DataFrame
+        df = pd.DataFrame({
+            'time': np.array(range(60), dtype=np.float32),
+            'x': np.array(10*[10] + 20*[20] + 30*[30], dtype=np.float32)})
+        test.loadData(name='dataset_pandas', source=df, resampling=True)
+        self.assertListEqual(list(test._data['dataset_pandas']['x'].shape), [5896, 6, 1])

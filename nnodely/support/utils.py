@@ -1,10 +1,9 @@
-import copy, torch, inspect
+import torch, inspect
 import types
 
 from collections import OrderedDict
 
 import numpy as np
-from pprint import pformat
 from functools import wraps
 from typing import get_type_hints
 import keyword
@@ -75,109 +74,6 @@ class ParamDict(ReadOnlyDict):
         value = self._data[key]['values'] if 'values' in self._data[key] else None
         return value
 
-
-def get_window(obj):
-    return 'tw' if 'tw' in obj.dim else ('sw' if 'sw' in obj.dim else None)
-
-def subjson_from_relation(json, relation):
-    json = copy.deepcopy(json)
-    # Get all the inputs needed to compute a specific relation from the json graph
-    inputs = set()
-    relations = set()
-    constants = set()
-    parameters = set()
-    functions = set()
-
-    def search(rel):
-        if rel in json['Inputs']:  # Found an input
-            inputs.add(rel)
-            if rel in json['Inputs']:
-                if 'connect' in json['Inputs'][rel] and json['Inputs'][rel]['local'] == 1:
-                    search(json['Inputs'][rel]['connect'])
-                if 'closed_loop' in json['Inputs'][rel] and json['Inputs'][rel]['local'] == 1:
-                    search(json['Inputs'][rel]['closed_loop'])
-                # if 'init' in json['Inputs'][rel]:
-                #     search(json['Inputs'][rel]['init'])
-        elif rel in json['Constants']:  # Found a constant or parameter
-            constants.add(rel)
-        elif rel in json['Parameters']:
-            parameters.add(rel)
-        elif rel in json['Functions']:
-            functions.add(rel)
-            if 'params_and_consts' in json['Functions'][rel]:
-                for sub_rel in json['Functions'][rel]['params_and_consts']:
-                    search(sub_rel)
-        elif rel in json['Relations']:  # Another relation
-            relations.add(rel)
-            for sub_rel in json['Relations'][rel][1]:
-                search(sub_rel)
-            for sub_rel in json['Relations'][rel][2:]:
-                if json['Relations'][rel][0] in ('Fir', 'Linear'):
-                    search(sub_rel)
-                if json['Relations'][rel][0] in ('Fuzzify'):
-                    search(sub_rel)
-                if json['Relations'][rel][0] in ('ParamFun'):
-                    search(sub_rel)
-
-    search(relation)
-    from nnodely.basic.relation import MAIN_JSON
-    sub_json = copy.deepcopy(MAIN_JSON)
-    sub_json['Relations'] = {key: value for key, value in json['Relations'].items() if key in relations}
-    sub_json['Inputs'] = {key: value for key, value in json['Inputs'].items() if key in inputs}
-    sub_json['Constants'] = {key: value for key, value in json['Constants'].items() if key in constants}
-    sub_json['Parameters'] = {key: value for key, value in json['Parameters'].items() if key in parameters}
-    sub_json['Functions'] = {key: value for key, value in json['Functions'].items() if key in functions}
-    sub_json['Outputs'] = {}
-    sub_json['Info'] = {}
-    return sub_json
-
-
-def subjson_from_output(json, outputs:str|list):
-    json = copy.deepcopy(json)
-    from nnodely.basic.relation import MAIN_JSON
-    sub_json = copy.deepcopy(MAIN_JSON)
-    if type(outputs) is str:
-        outputs = [outputs]
-    for output in outputs:
-        sub_json = merge(sub_json, subjson_from_relation(json,json['Outputs'][output]))
-        sub_json['Outputs'][output] = json['Outputs'][output]
-    return sub_json
-
-def subjson_from_model(json, models:str|list):
-    from nnodely.basic.relation import MAIN_JSON
-    json = copy.deepcopy(json)
-    sub_json = copy.deepcopy(MAIN_JSON)
-    models_names = set([json['Models']]) if type(json['Models']) is str else set(json['Models'].keys())
-    if type(models) is str or len(models) == 1:
-        if len(models) == 1:
-            models = models[0]
-        check(models in models_names, AttributeError, f"Model [{models}] not found!")
-        if type(json['Models']) is str:
-            outputs = set(json['Outputs'].keys())
-        else:
-            outputs = set(json['Models'][models]['Outputs'])
-        sub_json['Models'] = models
-    else:
-        outputs = set()
-        sub_json['Models'] = {}
-        for model in models:
-            check(model in models_names, AttributeError, f"Model [{model}] not found!")
-            outputs |= set(json['Models'][model]['Outputs'])
-            sub_json['Models'][model] = {key: value for key, value in json['Models'][model].items()}
-
-    # Remove the extern connections not keys in the graph
-    final_json = merge(sub_json, subjson_from_output(json, outputs))
-    for key, value in final_json['Inputs'].items():
-        if 'connect' in value and (value['local'] == 0 and value['connect'] not in final_json['Relations'].keys()):
-            del final_json['Inputs'][key]['connect']
-            del final_json['Inputs'][key]['local']
-            log.warning(f'The input {key} is "connect" outside the model connection removed for subjson')
-        if 'closedLoop' in value and (value['local'] == 0 and value['closedLoop'] not in final_json['Relations'].keys()):
-            del final_json['Inputs'][key]['closedLoop']
-            del final_json['Inputs'][key]['local']
-            log.warning(f'The input {key} is "closedLoop" outside the model connection removed for subjson')
-    return final_json
-
 def enforce_types(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -217,25 +113,14 @@ def enforce_types(func):
 
     return wrapper
 
-
-# Linear interpolation function, operating on batches of input data and returning batches of output data
-def linear_interp(x,x_data,y_data):
-    # Inputs: 
-    # x: query point, a tensor of shape torch.Size([N, 1, 1])
-    # x_data: map of x values, sorted in ascending order, a tensor of shape torch.Size([Q, 1])
-    # y_data: map of y values, a tensor of shape torch.Size([Q, 1])
-    # Output:
-    # y: interpolated value at x, a tensor of shape torch.Size([N, 1, 1])
-
-    # Saturate x to the range of x_data
-    x = torch.min(torch.max(x,x_data[0]),x_data[-1])
-
-    # Find the index of the closest value in x_data
-    idx = torch.argmin(torch.abs(x_data[:-1] - x),dim=1)
-    
-    # Linear interpolation
-    y = y_data[idx] + (y_data[idx+1] - y_data[idx])/(x_data[idx+1] - x_data[idx])*(x - x_data[idx])
-    return y
+def is_notebook():
+    try:
+        from IPython import get_ipython
+        if 'IPKernelApp' in get_ipython().config:
+            return True  # È un notebook
+    except Exception:
+        pass
+    return False  # È uno script
 
 def tensor_to_list(data):
     if isinstance(data, torch.Tensor):
@@ -262,16 +147,6 @@ def get_batch_size(n_samples, batch_size = None, predicion_samples = 0):
     predicion_samples = 0 if predicion_samples == -1 else predicion_samples #This value is used to disconnect the connect
     return batch_size if batch_size <= n_samples - predicion_samples else max(0, n_samples - predicion_samples)
 
-def get_models_json(json):
-    model_json = {}
-    model_json['Parameters'] = list(json['Parameters'].keys())
-    model_json['Constants'] = list(json['Constants'].keys())
-    model_json['Inputs'] = list(json['Inputs'].keys())
-    model_json['Outputs'] = list(json['Outputs'].keys())
-    model_json['Functions'] = list(json['Functions'].keys())
-    model_json['Relations'] = list(json['Relations'].keys())
-    return model_json
-
 def check_and_get_list(name_list, available_names, error_fun):
     if type(name_list) is str:
         name_list = [name_list]
@@ -280,114 +155,9 @@ def check_and_get_list(name_list, available_names, error_fun):
             check(name in available_names, IndexError,  error_fun(name))
     return name_list
 
-def check_model(json):
-    all_inputs = json['Inputs'].keys()
-    all_outputs = json['Outputs'].keys()
-
-    from nnodely.basic.relation import MAIN_JSON
-    subjson = MAIN_JSON
-    for name in all_outputs:
-        subjson = merge(subjson, subjson_from_output(json, name))
-    needed_inputs = subjson['Inputs'].keys()
-    extenal_inputs = set(all_inputs) - set(needed_inputs)
-
-    check(all_inputs == needed_inputs, RuntimeError,
-          f'Connect or close loop operation on the inputs {list(extenal_inputs)}, that are not used in the model.')
-    return json
-
-# Codice per comprimere le relazioni
-        #print(self.json['Relations'])
-        # used_rel = {string for values in self.json['Relations'].values() for string in values[1]}
-        # if obj1.name not in used_rel and obj1.name in self.json['Relations'].keys() and self.json['Relations'][obj1.name][0] == add_relation_name:
-        #     self.json['Relations'][self.name] = [add_relation_name, self.json['Relations'][obj1.name][1]+[obj2.name]]
-        #     del self.json['Relations'][obj1.name]
-        # else:
-        # Devo aggiungere un operazione che rimuove un operazione di Add,Sub,Mul,Div se può essere unita ad un'altra operazione dello stesso tipo
-        #
-def merge(source, destination, main = True):
-    if main:
-        for key, value in destination["Functions"].items():
-            if key in source["Functions"].keys() and 'n_input' in value.keys() and 'n_input' in source["Functions"][key].keys():
-                check(value == {} or source["Functions"][key] == {} or value['n_input'] == source["Functions"][key]['n_input'],
-                      TypeError,
-                      f"The ParamFun {key} is present multiple times, with different number of inputs. "
-                      f"The ParamFun {key} is called with {value['n_input']} parameters and with {source['Functions'][key]['n_input']} parameters.")
-        for key, value in destination["Parameters"].items():
-            if key in source["Parameters"].keys():
-                if 'dim' in value.keys() and 'dim' in source["Parameters"][key].keys():
-                    check(value['dim'] == source["Parameters"][key]['dim'],
-                          TypeError,
-                          f"The Parameter {key} is present multiple times, with different dimensions. "
-                          f"The Parameter {key} is called with {value['dim']} dimension and with {source['Parameters'][key]['dim']} dimension.")
-                window_dest = 'tw' if 'tw' in value else ('sw' if 'sw' in value else None)
-                window_source = 'tw' if 'tw' in source["Parameters"][key] else ('sw' if 'sw' in source["Parameters"][key] else None)
-                if window_dest is not None:
-                    check(window_dest == window_source and value[window_dest] == source["Parameters"][key][window_source] ,
-                          TypeError,
-                          f"The Parameter {key} is present multiple times, with different window. "
-                          f"The Parameter {key} is called with {window_dest}={value[window_dest]} dimension and with {window_source}={source['Parameters'][key][window_source]} dimension.")
-
-        log.debug("Merge Source")
-        log.debug("\n"+pformat(source))
-        log.debug("Merge Destination")
-        log.debug("\n"+pformat(destination))
-        result = copy.deepcopy(destination)
-    else:
-        result = destination
-    for key, value in source.items():
-        if isinstance(value, dict):
-            # get node or create one
-            node = result.setdefault(key, {})
-            merge(value, node, False)
-        else:
-            if key in result and type(result[key]) is list:
-                if key == 'tw' or key == 'sw':
-                    if result[key][0] > value[0]:
-                        result[key][0] = value[0]
-                    if result[key][1] < value[1]:
-                        result[key][1] = value[1]
-            else:
-                result[key] = value
-    if main == True:
-        log.debug("Merge Result")
-        log.debug("\n" + pformat(result))
-    return result
-
 def check(condition, exception, string):
     if not condition:
         raise exception(string)
-
-def argmax_max(iterable):
-    return max(enumerate(iterable), key=lambda x: x[1])
-
-def argmin_min(iterable):
-    return min(enumerate(iterable), key=lambda x: x[1])
-
-def argmax_dict(iterable: dict):
-    return max(iterable.items(), key=lambda x: x[1])
-
-def argmin_dict(iterable: dict):
-    return min(iterable.items(), key=lambda x: x[1])
-
-def binary_cheks(self, obj1, obj2, name):
-    from nnodely.basic.relation import Stream, toStream
-    obj1,obj2 = toStream(obj1),toStream(obj2)
-    check(type(obj1) is Stream,TypeError,
-          f"The type of {obj1} is {type(obj1)} and is not supported for add operation.")
-    check(type(obj2) is Stream,TypeError,
-          f"The type of {obj2} is {type(obj2)} and is not supported for add operation.")
-    window_obj1 = get_window(obj1)
-    window_obj2 = get_window(obj2)
-    if window_obj1 is not None and window_obj2 is not None:
-        check(window_obj1==window_obj2, TypeError,
-              f"For {name} the time window type must match or None but they were {window_obj1} and {window_obj2}.")
-        check(obj1.dim[window_obj1] == obj2.dim[window_obj2], ValueError,
-              f"For {name} the time window must match or None but they were {window_obj1}={obj1.dim[window_obj1]} and {window_obj2}={obj2.dim[window_obj2]}.")
-    check(obj1.dim['dim'] == obj2.dim['dim'] or obj1.dim == {'dim':1} or obj2.dim == {'dim':1}, ValueError,
-          f"For {name} the dimension of {obj1.name} = {obj1.dim} must be the same of {obj2.name} = {obj2.dim}.")
-    dim = obj1.dim | obj2.dim
-    dim['dim'] = max(obj1.dim['dim'], obj2.dim['dim'])
-    return obj1, obj2, dim
 
 # Function used to verified the number of gradient operations in the graph
 # def count_gradient_operations(grad_fn):

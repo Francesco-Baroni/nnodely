@@ -1,7 +1,6 @@
 import os
 
 from datetime import datetime
-
 from nnodely.visualizer import EmptyVisualizer
 
 class EmptyExporter:

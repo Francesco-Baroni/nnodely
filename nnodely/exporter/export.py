@@ -43,34 +43,14 @@ def export_python_model(model_def, model, model_path):
     # Get the symbolic tracer
     with torch.no_grad():
         trace = symbolic_trace(model)
-        # print('TRACED MODEL \n', trace.code)
 
-    ## Standard way to modify the graph
-    # # Replace all _tensor_constant variables with their constant values
-    # for node in trace.graph.nodes:
-    #     if node.op == 'get_attr' and node.target.startswith('_tensor_constant'):
-    #         constant_value = getattr(model, node.target).item()
-    #         with trace.graph.inserting_after(node):
-    #             new_node = trace.graph.create_node('call_function', torch.tensor, (constant_value,))
-    #         node.replace_all_uses_with(new_node)
-    #         trace.graph.erase_node(node)
-    #
-    # # Recompile the graph
-    # trace.recompile()
-    ## Standard way to modify the graph
-
-    recurrent_inputs = {key:value for key, value in model_def['Inputs'].items() if
-                        ('closedLoop' in value.keys() or 'connect' in value.keys())}
-    inputs = {key: value for key, value in model_def['Inputs'].items() if
-                        ('closedLoop' not in value.keys() and 'connect' not in value.keys())}
-
+    recurrent_inputs = {key:value for key, value in model_def['Inputs'].items() if ('closedLoop' in value.keys() or 'connect' in value.keys())}
+    inputs = {key: value for key, value in model_def['Inputs'].items() if ('closedLoop' not in value.keys() and 'connect' not in value.keys())}
     attributes = sorted(set([line for line in trace.code.split() if 'self.' in line]))
-    #print('attributes: ', attributes)
-    #print('model.relation_forward: ', model.relation_forward.SamplePart14.W)
+
     saved_functions = []
 
     with open(model_path, 'w') as file:
-        #file.write("import torch.nn as nn\n")
         file.write("import torch\n\n")
 
         ## write the connect wrap function
@@ -101,8 +81,7 @@ def export_python_model(model_def, model, model_path):
                                 file.write("\n")
                                 saved_functions.append(function_name[i])
                 else:
-                    if (function_name != 'Rectangular') and (function_name != 'Triangular') and (
-                            function_name not in saved_functions):
+                    if (function_name != 'Rectangular') and (function_name != 'Triangular') and (function_name not in saved_functions):
                         function_code = function_code.replace(f'def {function_name}',
                                                               f'def {package_name}_layers_fuzzify_{function_name}')
                         #file.write("@torch.fx.wrap\n")
@@ -113,7 +92,6 @@ def export_python_model(model_def, model, model_path):
 
             elif 'ParamFun' in name:
                 function_name = model_def['Functions'][name]['name']
-                # torch.fx.wrap(self.model_def['Functions'][name]['name'])
                 if function_name not in saved_functions:
                     code = model_def['Functions'][name]['code']
                     code = code.replace(f'def {function_name}', f'def {package_name}_layers_parametricfunction_{function_name}')
@@ -129,23 +107,17 @@ def export_python_model(model_def, model, model_path):
         for attr in attributes:
             if 'all_constant' in attr:
                 key = attr.split('.')[-1]
-                file.write(
-                    f"        self.all_constants[\"{key}\"] = torch.tensor({model.all_constants[key].tolist()}, requires_grad=False)\n")
-                #file.write(f"        {attr} = torch.tensor({getattr(trace, attr.replace('self.', ''))})\n")
+                file.write(f"        self.all_constants[\"{key}\"] = torch.tensor({model.all_constants[key].tolist()}, requires_grad=False)\n")
             elif 'relation_forward' in attr:
                 key = attr.split('.')[2]
                 if 'Fir' in key or 'Linear' in key:
                     if 'weights' in attr.split('.')[3]:
                         param = model_def['Relations'][key][2]
-                        value = model.all_parameters[param] #.squeeze(0) if 'Linear' in key else model.all_parameters[param]
-                        file.write(
-                            f"        self.all_parameters[\"{param}\"] = torch.nn.Parameter(torch.tensor({value.tolist()}), requires_grad=True)\n")
+                        value = model.all_parameters[param] 
+                        file.write(f"        self.all_parameters[\"{param}\"] = torch.nn.Parameter(torch.tensor({value.tolist()}), requires_grad=True)\n")
                     elif 'bias' in attr.split('.')[3]:
                         param = model_def['Relations'][key][3]
-                        # value = model.all_parameters[param].data.squeeze(0) if 'Linear' in key else model.all_parameters[param].data
-                        # value = model.all_parameters[param].data
-                        file.write(
-                            f"        self.all_parameters[\"{param}\"] = torch.nn.Parameter(torch.tensor({model.all_parameters[param].tolist()}), requires_grad=True)\n")
+                        file.write(f"        self.all_parameters[\"{param}\"] = torch.nn.Parameter(torch.tensor({model.all_parameters[param].tolist()}), requires_grad=True)\n")
                     elif 'dropout' in attr.split('.')[3]:
                         param = model_def['Relations'][key][4]
                         file.write(f"        self.{key} = torch.nn.Dropout(p={param})\n")
@@ -158,28 +130,15 @@ def export_python_model(model_def, model, model_path):
                     file.write(f"        self.all_constants[\"{key}\"] = torch.{temp_value}\n")
             elif 'all_parameters' in attr:
                 key = attr.split('.')[-1]
-                file.write(
-                    f"        self.all_parameters[\"{key}\"] = torch.nn.Parameter(torch.tensor({model.all_parameters[key].tolist()}), requires_grad=True)\n")
+                file.write(f"        self.all_parameters[\"{key}\"] = torch.nn.Parameter(torch.tensor({model.all_parameters[key].tolist()}), requires_grad=True)\n")
             elif '_tensor_constant' in attr:
                 key = attr.split('.')[-1]
-                file.write(
-                    f"        {attr} = torch.tensor({getattr(model,key).item()})\n")
+                file.write(f"        {attr} = torch.tensor({getattr(model,key).item()})\n")
 
         file.write("        self.all_parameters = torch.nn.ParameterDict(self.all_parameters)\n")
         file.write("        self.all_constants = torch.nn.ParameterDict(self.all_constants)\n\n")
-        file.write("    def update(self, closed_loop={}, connect={}):\n")
+        file.write("    def update(self, closed_loop={}, connect={}, disconnect=False):\n")
         file.write("        pass\n")
-        # file.write("        self.closed_loop_update = {}\n")
-        # file.write("        self.connect_update = {}\n")
-        # file.write("        for key, state in self.states.items():\n")
-        # file.write("            if 'connect' in state.keys():\n")
-        # file.write("                self.connect_update[key] = state['connect']\n")
-        # file.write("            elif 'closedLoop' in state.keys():\n")
-        # file.write("                self.closed_loop_update[key] = state['closedLoop']\n")
-        # file.write("        for connect_in, connect_rel in connect.items():\n")
-        # file.write("            self.connect_update[connect_in] = self.outputs[connect_rel]\n")
-        # file.write("        for close_in, close_rel in closed_loop.items():\n")
-        # file.write("            self.closed_loop_update[close_in] = self.outputs[close_rel]\n")
 
         for line in trace.code.split("\n")[len(saved_functions) + 2:]:
             if 'self.relation_forward' in line:
@@ -235,10 +194,7 @@ def export_python_model(model_def, model, model_path):
             file.write("            for key, value in results.items():\n")
             file.write("                results[key].append(out[key])\n")
             file.write("            for key, val in closed_loop.items():\n")
-            #file.write("                shift = val.size(1)\n")
             file.write("                self.states[key] = nnodely_basic_model_connect(self.states[key], val)\n")
-            #file.write("            for key, value in connect.items():\n") 
-            #file.write("                self.states[key] = value\n")
             file.write("        return results\n")
 
 def export_pythononnx_model(model_def, model_path, model_onnx_path, input_order=None, outputs_order=None):
@@ -251,6 +207,9 @@ def export_pythononnx_model(model_def, model_path, model_onnx_path, input_order=
     
     model_inputs = input_order if input_order else list(model_def['Inputs'].keys())
     model_outputs = outputs_order if outputs_order else list(model_def['Outputs'].keys())
+    model_losses = []
+    if model_def['Minimizers']:
+        model_losses = [loss_dict['A'] for loss_dict in model_def['Minimizers'].values() if 'A' in loss_dict.keys()] + [loss_dict['B'] for loss_dict in model_def['Minimizers'].values() if 'A' in loss_dict.keys()]
     recurrent_inputs = [key for key, value in model_def['Inputs'].items() if ('closedLoop' in value.keys() or 'connect' in value.keys())]
     inputs = [key for key in model_inputs if key not in recurrent_inputs]
 
@@ -267,6 +226,9 @@ def export_pythononnx_model(model_def, model_path, model_onnx_path, input_order=
     for i, key in enumerate(model_outputs):
         outputs += f'outputs[0][\'{key}\']' + (',' if i < len(model_outputs) - 1 else ',)')
     outputs += ', ('
+    for i, key in enumerate(model_losses):
+        outputs += f'outputs[1][\'{key}\'], '# + (',' if i < len(model_outputs) - 1 else ',)')
+    outputs += '), ('
     for key in closed_loop_states:
         outputs += f'outputs[2][\'{key}\'], '
     outputs += '), ('
@@ -277,13 +239,11 @@ def export_pythononnx_model(model_def, model_path, model_onnx_path, input_order=
     # Open and read the file
     file_content = []
     with open(model_path, 'r') as file:
-        #file_content = file.read()
         for line in file:
             if 'return ({' in line:
                 file_content.append(line)
                 break
             file_content.append(line)
-        #file_content = file.readlines()[:-26]
     file_content = ''.join(file_content)
     
     # Replace the forward header
@@ -293,9 +253,7 @@ def export_pythononnx_model(model_def, model_path, model_onnx_path, input_order=
         file_content = file_content.replace(key, value)
     # Write the modified content back to a new file
     # Replace the return statement
-    # Trova l'ultima occorrenza di 'return'
     last_return_index = file_content.rfind('return')
-    # Se 'return' è trovato, sostituiscilo con 'outputs ='
     if last_return_index != -1:
         file_content = file_content[:last_return_index] + 'outputs =' + file_content[last_return_index + len('return'):]
     file_content += outputs
@@ -323,24 +281,19 @@ def export_pythononnx_model(model_def, model_path, model_onnx_path, input_order=
             for key in model_outputs:
                 file.write(f"        results_{key} = []\n")
             file.write("        for idx in range(n_samples):\n")
-            call_str = "            out, closed_loop, connect = self.Cell("
+            call_str = "            out, losses, closed_loop, connect = self.Cell("
             for key in model_inputs:
                 call_str += f"{key}[idx], " if key in inputs else f"{key}, "
             call_str += ")\n"
             file.write(call_str)
-            #if len(outputs_order) > 1:
             for idx, key in enumerate(model_outputs):
                 file.write(f"            results_{key}.append(out[{idx}])\n")
-            #else:
-            #    file.write(f"            results_{outputs_order[0]}.append(out)\n")
             for idx, key in enumerate(closed_loop_states):
-                file.write(f"            shift = closed_loop[{idx}].size(1)\n")
                 file.write(f"            {key} = nnodely_basic_model_connect({key}, closed_loop[{idx}])\n")
             for idx, key in enumerate(connect_states):
                 file.write(f"            {key} = connect[{idx}]\n")
             for idx, key in enumerate(model_outputs):
                 file.write(f"        results_{key} = torch.stack(results_{key}, dim=0)\n")
-            #file.write("        results = torch.cat(results, dim=0)\n")
             return_str = "        return "
             for key in model_outputs:
                 return_str += f"results_{key}, "
@@ -411,7 +364,9 @@ def onnx_inference(inputs, path, optimize_graph=False):
     import onnxruntime as ort
     # Create an ONNX Runtime session
     # Define session options
-    if optimize_graph == False: ## TODO: Warning when using constant folding in inference CanUpdateImplicitInputNameInSubgraphs]  Implicit input name Cell.all_constants.Constant75 cannot be safely updated to Cell.all_constants.Constant76 in one of the subgraphs.
+    ## TODO: Warning when using constant folding in inference CanUpdateImplicitInputNameInSubgraphs]  
+    ## TODO: Implicit input name Cell.all_constants.Constant75 cannot be safely updated to Cell.all_constants.Constant76 in one of the subgraphs.
+    if optimize_graph == False:
         session_options = ort.SessionOptions()
         # Set graph optimization level to disable all optimizations
         session_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_DISABLE_ALL

@@ -69,7 +69,7 @@ class Constant(NeuObj, Relation):
     """
     @enforce_types
     def __init__(self, name:str,
-                 values:list|float|int|np.ndarray,
+                 values:list|float|int|np.ndarray, *,
                  tw:float|int|None = None,
                  sw:int|None = None):
 
@@ -103,7 +103,7 @@ class Constant(NeuObj, Relation):
 
 class Parameter(NeuObj, Relation):
     """
-    Represents a parameter in the neural network model.
+    Represents a trainable parameter in the neural network model.
 
     Notes
     -----
@@ -121,7 +121,7 @@ class Parameter(NeuObj, Relation):
     sw : int, optional
         The sample window for the parameter. Default is None.
     values : list, float, int, np.ndarray, or None, optional
-        The values of the parameter. Default is None.
+        The values by which initialize the parameter. Default is None.
     init : Callable, optional
         A callable for initializing the parameter values. Default is None.
     init_params : dict, optional
@@ -157,7 +157,7 @@ class Parameter(NeuObj, Relation):
     """
     @enforce_types
     def __init__(self, name:str,
-                 dimensions:int|list|tuple|None = None,
+                 dimensions:int|list|tuple|None = None, *,
                  tw:float|int|None = None,
                  sw:int|None = None,
                  values:list|float|int|np.ndarray|None = None,
@@ -221,7 +221,7 @@ class Parameter(NeuObj, Relation):
     
 class SampleTime():
     """
-    Represents a constant that value is equal to the sample time.
+    Represents a constant value that is equal to the sample time.
 
     Attributes
     ----------

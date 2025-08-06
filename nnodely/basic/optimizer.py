@@ -77,7 +77,7 @@ class Optimizer:
         optimizer_defaults : dict
             A dictionary of default optimizer settings.
         """
-        self.optimizer_defaults = optimizer_defaults
+        self.optimizer_defaults = copy.deepcopy(optimizer_defaults)
 
     def set_params(self, optimizer_params):
         """

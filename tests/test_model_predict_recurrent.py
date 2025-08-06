@@ -77,6 +77,16 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         self.assertEqual(test.states['x_state'], torch.tensor([[[0.0]]]).tolist())
         self.assertEqual({'out': [0.0]}, result)
 
+        test.removeConnection('x_state')
+        test.neuralizeModel(0.01)
+        result = test(inputs={'x': [2], 'x_state':[1]})
+        self.assertEqual({'out': [1]}, result)
+        result = test(inputs={'x': [2]})
+        self.assertEqual({'out': [0.0]}, result)
+        result = test(inputs={'x_state': [2.0]})
+        self.assertEqual({'out': [2.0]}, result)
+
+
     def test_predict_values_fir_simple_closed_loop_predict(self):
         NeuObj.clearNames()
         x = Input('x')
@@ -572,7 +582,7 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         self.assertEqual(result['out'], [sum(x) for x in zip(result['out_x'],result['out_y'],result['out_z'])])
 
     def test_predict_values_and_connect_variables_2models_more_window_connect(self):
-        NeuObj.clearNames()
+        clearNames()
         ## Model1
         input1 = Input('in1')
         a = Parameter('a', dimensions=1, tw=0.05, values=[[1],[1],[1],[1],[1]])
@@ -812,6 +822,16 @@ class ModelyRecurrentPredictTest(unittest.TestCase):
         # out3 # = [[-10,-16],[-16,-10]] -> 1) [0,0,0,-10,-16]*[1,2,3,4,5] -> [-16*5+-10*4=-120] 2) [0,0,-10,-16,-10]*[1,2,3,4,5] -> [-10*3+-16*4+-10*5 = -144] -> [-120,-144]
         self.assertEqual({'out1': [[-10.0, -16.0],[-16.0, -10.0]], 'out2': [-120.0,-114.0], 'out3': [-120.0,-144], 'out4': [-120.0,-114.0]},
                          test({'in1': [[1.0, 2.0], [2.0, 3.0], [1.0,2.0]]}))
+
+        with self.assertRaises(ValueError):
+            test.removeConnection(input1)
+        test.removeConnection(inout)
+        test.neuralizeModel()
+        self.assertEqual({'out1': [[-10.0, -16.0]], 'out2': [0.0], 'out3': [0.0], 'out4': [-120.0]}, test({'in1': [[1.0, 2.0], [2.0, 3.0]]}))
+        self.assertEqual({'out1': [[-10.0, -16.0]], 'out2': [-120.0], 'out3': [-120.0], 'out4': [-120.0]},
+                         test({'in1': [[1.0, 2.0], [2.0, 3.0]], 'inout': [0, 0, 0, -10, -16]}))
+        self.assertEqual({'out1': [[-10.0, -16.0], [-16.0, -10.0]], 'out2': [0.0, 0.0], 'out3': [0.0, 0.0], 'out4': [-120.0, -114.0]},
+                         test({'in1': [[1.0, 2.0], [2.0, 3.0], [1.0, 2.0]]}))
 
     def test_predict_values_linear_and_fir_2models_more_window_connect_predict(self):
         NeuObj.clearNames()

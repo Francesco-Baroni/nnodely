@@ -2,6 +2,7 @@ from pprint import pformat
 
 from nnodely.basic.relation import Stream, NeuObj
 from nnodely.support.utils import enforce_types
+from nnodely.support.jsonutils import stream_to_str
 
 from nnodely.support.logger import logging, nnLogger
 log = nnLogger(__name__, logging.CRITICAL)
@@ -43,3 +44,9 @@ class Output(NeuObj):
         self.json['Outputs'][name] = {}
         self.json['Outputs'][name] = relation.name
         log.debug("\n"+pformat(self.json))
+
+    def __str__(self):
+        return stream_to_str(self, 'Output')
+
+    def __repr__(self):
+        return self.__str__()

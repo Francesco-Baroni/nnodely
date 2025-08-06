@@ -1,13 +1,14 @@
 import copy
 
 from nnodely.basic.relation import NeuObj, Stream, ToStream
-from nnodely.support.utils import check, merge, enforce_types
+from nnodely.support.utils import check, enforce_types
+from nnodely.support.jsonutils import merge, stream_to_str
 from nnodely.layers.part import SamplePart, TimePart
 from nnodely.layers.timeoperation import Derivate, Integrate
 
 class Input(NeuObj):
     """
-    Represents an Input or State in the neural network model.
+    Represents an Input in the neural network model.
 
     .. image:: https://colab.research.google.com/assets/colab-badge.svg
         :target: https://colab.research.google.com/github/tonegas/nnodely/blob/main/examples/states.ipynb
@@ -16,35 +17,35 @@ class Input(NeuObj):
     Parameters
     ----------
     json_name : str
-        The name of the JSON field to store the Input or the State configuration.
+        The name of the JSON field to store the Input configuration.
     name : str
-        The name of the Input or the State.
+        The name of the Input.
     dimensions : int, optional
-        The number of dimensions for the input state. Default is 1.
+        The number of dimensions for the input. Default is 1.
 
     Attributes
     ----------
     json_name : str
-        The name of the JSON field to store the input state configuration.
+        The name of the JSON field to store the input configuration.
     name : str
-        The name of the Input or the State.
+        The name of the Input.
     dim : dict
-        A dictionary containing the dimensions of the Input or the State.
+        A dictionary containing the dimensions of the Input.
     json : dict
-        A dictionary containing the configuration of the Input or the State.
+        A dictionary containing the configuration of the Input.
     """
-    def __init__(self, name:str, dimensions:int = 1):
+    def __init__(self, name:str, *, dimensions:int = 1):
         """
-        Initializes the InputState object.
+        Initializes the Input object.
 
         Parameters
         ----------
         json_name : str
-            The name of the JSON field to store the Input or the State configuration.
+            The name of the JSON field to store the Input configuration.
         name : str
-            The name of the Input or the State.
+            The name of the Input.
         dimensions : int, optional
-            The number of dimensions for the Input or the State. Default is 1.
+            The number of dimensions for the Input. Default is 1.
         """
         NeuObj.__init__(self, name)
         check(type(dimensions) == int, TypeError,"The dimensions must be a integer")
@@ -54,7 +55,7 @@ class Input(NeuObj):
     @enforce_types
     def tw(self, tw:int|float|list, offset:int|float|None = None) -> Stream:
         """
-        Selects a time window for the Input and State.
+        Selects a time window for the Input.
 
         Parameters
         ----------
@@ -96,7 +97,7 @@ class Input(NeuObj):
     @enforce_types
     def sw(self, sw:int|list, offset:int|None = None) -> Stream:
         """
-        Selects a sample window for the Input and the State
+        Selects a sample window for the Input.
 
         Parameters
         ----------
@@ -180,7 +181,7 @@ class Input(NeuObj):
     @enforce_types
     def last(self) -> Stream:
         """
-        Selects the last passed instant for the input state.
+        Selects the last passed instant for the input.
 
         Returns
         -------
@@ -192,7 +193,7 @@ class Input(NeuObj):
     @enforce_types
     def next(self) -> Stream:
         """
-        Selects the next instant for the input state.
+        Selects the next instant for the input.
 
         Returns
         -------
@@ -294,6 +295,12 @@ class Input(NeuObj):
         self.json['Inputs'][self.name]['local'] = 1
         return self
 
+    def __str__(self):
+        return stream_to_str(self, 'Input')
+
+    def __repr__(self):
+        return self.__str__()
+
 # connect operation
 connect_name = 'connect'
 closedloop_name = 'closedLoop'
@@ -303,23 +310,15 @@ class Connect(Stream, ToStream):
     def __init__(self, obj1:Stream, obj2:Input, *, local:bool=False) -> Stream:
         super().__init__(obj1.name,merge(obj1.json, obj2.json),obj1.dim)
         check(closedloop_name not in self.json['Inputs'][obj2.name] or connect_name not in self.json['Inputs'][obj2.name],
-              KeyError,f"The state variable {obj2.name} is already connected.")
+              KeyError,f"The input variable {obj2.name} is already connected.")
         self.json['Inputs'][obj2.name][connect_name] = obj1.name
         self.json['Inputs'][obj2.name]['local'] = int(local)
 
 class ClosedLoop(Stream, ToStream):
     @enforce_types
     def __init__(self, obj1:Stream, obj2:Input, *, local:bool=False) -> Stream:
-        # if init is None:
         super().__init__(obj1.name, merge(obj1.json, obj2.json), obj1.dim)
-        # else:
-        #     super().__init__(obj1.name, merge(obj1.json, merge(obj2.json,init.json)), obj1.dim)
         check(closedloop_name not in self.json['Inputs'][obj2.name] or connect_name not in self.json['Inputs'][obj2.name],
-              KeyError, f"The state variable {obj2.name} is already connected.")
+              KeyError, f"The input variable {obj2.name} is already connected.")
         self.json['Inputs'][obj2.name][closedloop_name] = obj1.name
         self.json['Inputs'][obj2.name]['local'] = int(local)
-        # if init is not None:
-        #     subjson = subjson_from_relation(self.json, init.name)
-        #     needed_inputs = subjson['Inputs'].keys()
-        #     check(obj2.name not in needed_inputs, KeyError, f"Inconsistency Error: Cannot initialize the state variable {obj2.name} with the relation {init.name}.")
-        #     self.json['Inputs'][obj2.name]['init'] = init.name

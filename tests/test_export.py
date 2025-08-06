@@ -305,7 +305,7 @@ class ModelyExportTest(unittest.TestCase):
 
         self.test.neuralizeModel(0.5, clear_model=True)
         # Export all network with minimize
-        self.test.exportONNX(inputs_order=['x', 'y', 'z'], outputs_order=['out', 'out2', 'out3', 'out4', 'out5', 'out6'])  # Export the onnx model
+        self.test.exportONNX(inputs_order=['x', 'y', 'z'], outputs_order=['out', 'out2', 'out3', 'out4', 'out5', 'out6', 'out7'])  # Export the onnx model
         # Export the all models in onnx format
         self.test.exportONNX(models=['modelA','modelB','modelC','modelD'], inputs_order=['x', 'y'], outputs_order=['out', 'out2', 'out3', 'out4', 'out5', 'out6'])  # Export the onnx model
         # Export only the modelB in onnx format
@@ -328,9 +328,16 @@ class ModelyExportTest(unittest.TestCase):
         data_y = np.arange(0.0, 10, 0.1)
         a, b = -1.0, 2.0
         dataset = {'x': data_x, 'y': data_y, 'z': a * data_x + b * data_y}
-        params = {'num_of_epochs': 20, 'lr': 0.01}
+        params = {'num_of_epochs': 20, 'lr': 0.0005}
         self.test.loadData(name='dataset', source=dataset)  # Create the dataset
         self.test.trainModel(optimizer='SGD', training_params=params)  # Train the traced model
+        self.test.exportReport()
+
+        self.test.loadData(name='dataset2', source=dataset)  # Create the dataset
+        self.test.trainAndAnalyze(optimizer='SGD', train_dataset='dataset', validation_dataset='dataset2', training_params=params)  # Train the traced model
+        self.test.exportReport()
+
+        self.test.removeMinimize(['error1','error2','error3','error4'])
         self.test.exportReport()
 
         if os.path.exists(self.test.getWorkspace()):

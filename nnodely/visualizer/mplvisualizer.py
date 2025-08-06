@@ -60,16 +60,16 @@ class MPLVisualizer(TextVisualizer):
             for key in self.modely._model_def['Minimizers'].keys():
                 self.__process_training[key] = subprocess.Popen(['python', self.__training_visualizer_script], stdin=subprocess.PIPE, text=True)
 
-        num_of_epochs = self.modely.run_training_params['num_of_epochs']
-        train_dataset = self.modely.run_training_params['train_dataset']
-        validation_dataset = self.modely.run_training_params['validation_dataset']
+        num_of_epochs = self.modely.running_parameters['num_of_epochs']
+        train_tag = self.modely.running_parameters['train_tag']
+        val_tag = self.modely.running_parameters['val_tag']
         if epoch+1 <= num_of_epochs:
             for key in self.modely._model_def['Minimizers'].keys():
                 if val_losses:
                     val_loss = val_losses[key][epoch]
                 else:
                     val_loss = []
-                data = {"title":f"Training on {train_dataset} and {validation_dataset}", "key": key, "last": num_of_epochs - (epoch + 1), "epoch": epoch,
+                data = {"title":f"Training on {train_tag} and {val_tag}", "key": key, "last": num_of_epochs - (epoch + 1), "epoch": epoch,
                         "train_losses": train_losses[key][epoch], "val_losses": val_loss}
                 try:
                     # Send data to the visualizer process
