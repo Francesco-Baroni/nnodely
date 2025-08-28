@@ -3,8 +3,7 @@ import torch.nn as nn
 
 from nnodely.basic.relation import ToStream, Stream, toStream
 from nnodely.basic.model import Model
-from nnodely.support.jsonutils import merge, binary_cheks
-from nnodely.support.utils import check, enforce_types
+from nnodely.support.utils import check, enforce_types, merge
 from nnodely.layers.parameter import Parameter, Constant
 
 sin_relation_name = 'Sin'
