@@ -35,7 +35,7 @@ class Validator(Network):
                        prediction_samples: int | str = -1, #TODO uniform to training set to 0
                        step: int = 0,
                        batch_size: int | None = None
-                       ) -> None:
+                       ):
         """
         The function is used to analyze the performance of the model on the provided dataset.
 
@@ -104,7 +104,6 @@ class Validator(Network):
                 self._recurrent_inference(data, batch_indexes, batch_size, minimize_gain, prediction_samples,
                                           step, non_mandatory_inputs, mandatory_inputs, losses,
                                           total_losses = total_losses, A = A, B = B)
-
                 for key, value in self._model_def['Minimizers'].items():
                     for horizon_idx in range(prediction_samples + 1):
                         if A is not None:
@@ -120,7 +119,6 @@ class Validator(Network):
                 self._model.update(disconnect=True)
                 self._inference(data, n_samples, batch_size, minimize_gain, losses,
                                 total_losses = total_losses, A = A, B = B)
-
                 for key, value in self._model_def['Minimizers'].items():
                     A[key] = np.concatenate(A[key])
                     B[key] = np.concatenate(B[key])
@@ -139,8 +137,8 @@ class Validator(Network):
                 #error_var_manual = np.sum((residual-error_mean) ** 2) / (len(self.__prediction['B'][ind]) - 0)
                 #print(f"{key} var np:{new_error_var} and var manual:{error_var_manual}")
                 with warnings.catch_warnings(record=True) as w:
-                    self.__performance[dataset_tag][key]['fvu']['A'] = (error_var / np.var(A_np)).item()
-                    self.__performance[dataset_tag][key]['fvu']['B'] = (error_var / np.var(B_np)).item()
+                    self.__performance[dataset_tag][key]['fvu']['A'] = (error_var / (np.var(A_np)+1e-6)).item()
+                    self.__performance[dataset_tag][key]['fvu']['B'] = (error_var / (np.var(B_np)+1e-6)).item()
                     if w and np.var(A_np) == 0.0 and  np.var(B_np) == 0.0:
                         self.__performance[dataset_tag][key]['fvu']['A'] = np.nan
                         self.__performance[dataset_tag][key]['fvu']['B'] = np.nan
@@ -173,3 +171,4 @@ class Validator(Network):
             self.__performance[dataset_tag]['total']['aic'] = np.mean([self.__performance[dataset_tag][key]['aic']['value']for key in self._model_def['Minimizers'].keys()])
 
         self.visualizer.showResult(dataset_tag)
+        return self.__performance[dataset_tag]

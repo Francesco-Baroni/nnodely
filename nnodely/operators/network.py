@@ -339,8 +339,10 @@ class Network:
 
             ## Calculate the total loss
             total_loss = 0
-            for ind in range(len(self._model_def['Minimizers'])):
+            for ind, (key, value) in enumerate(self._model_def['Minimizers'].items()):
                 loss = sum(horizon_losses[ind]) / (prediction_samples + 1)
+                if total_losses is not None:
+                    total_losses[key].append(loss.detach().numpy())
                 aux_losses[ind][batch_val] = loss.item()
                 total_loss += loss
 
@@ -351,7 +353,6 @@ class Network:
                 optimizer.step()
                 self.visualizer.showWeightsInTrain(batch=batch_val)
             batch_val += 1
-
         ## return the losses
         return aux_losses
 
