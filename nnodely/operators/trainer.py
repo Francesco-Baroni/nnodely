@@ -5,7 +5,7 @@ from functools import wraps
 
 from nnodely.basic.modeldef import ModelDef
 from nnodely.basic.model import Model
-from nnodely.basic.optimizer import Optimizer, SGD, Adam
+from nnodely.basic.optimizer import Optimizer, SGD, Adam, AdamW
 from nnodely.basic.loss import CustomLoss
 from nnodely.operators.network import Network
 from nnodely.support.utils import check, enforce_types
@@ -117,6 +117,8 @@ class Trainer(Network):
                 optimizer = SGD({}, [])
             elif optimizer == 'Adam':
                 optimizer = Adam({}, [])
+            elif optimizer == 'AdamW':
+                optimizer = AdamW({}, [])
         else:
             optimizer = copy.deepcopy(optimizer)
             check(issubclass(type(optimizer), Optimizer), TypeError, "The optimizer must be an Optimizer or str")

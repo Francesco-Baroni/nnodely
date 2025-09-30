@@ -244,3 +244,13 @@ class Adam(Optimizer):
 
     def get_torch_optimizer(self):
         return torch.optim.Adam(self.replace_key_with_params(), **self.optimizer_defaults)
+    
+class AdamW(Optimizer):
+    """
+    AdamW optimizer.
+    """
+    def __init__(self, optimizer_defaults = {}, optimizer_params = []):
+        super(AdamW, self).__init__('AdamW', optimizer_defaults, optimizer_params)
+
+    def get_torch_optimizer(self):
+        return torch.optim.AdamW(self.replace_key_with_params(), **self.optimizer_defaults)
